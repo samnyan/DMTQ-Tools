@@ -64,10 +64,10 @@ Command types
 
 ### 1: Note
 #### Params
-* 2 bytes sound index
-* 1 byte volume
-* 1 byte pan
-* 1 byte attribute
+* 2 bytes Sound index in sounds table
+* 1 byte Volume
+* 1 byte Pan
+* 1 byte Attribute (Note type)
 * 1 byte? length (for long notes, unit is a single position)
 * 2 bytes unknown
 
@@ -85,22 +85,7 @@ Command types
 ### 2: Volume
 #### Params
 * 1 bytes volume
-* 7 bytes unknown (1 + 1 + 1 + 4 bytes?) (It is ok to fill with 0)
-An example from the same song (A new pattern)
-```
-00 00 00 00 02 73 00 00 00 88 3A 34 02
-00 00 00 00 02 73 00 00 00 88 3A 34 02
-00 00 00 00 02 7D 00 00 00 88 3A 34 02
-00 00 00 00 02 69 00 00 00 88 3A 34 02
-```
-
-An example from another song (A older pattern)
-```
-00 00 00 00 02 73 C7 F3 01 28 FE C7 02
-00 00 00 00 02 73 C7 F3 01 28 FE C7 02
-00 00 00 00 02 7D 00 00 00 C0 3C 50 01
-00 00 00 00 02 69 00 00 00 40 7A F3 01
-```
+* 7 bytes unknown (It is ok to fill with 0)
 
 
 ### 3: BPM change
