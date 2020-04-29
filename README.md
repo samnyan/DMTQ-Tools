@@ -29,3 +29,13 @@ Convert decrypted .pt format to a readable text format. You need to decrypted it
 Combine with bytes to text tool, it should be able to port song from Arcade version.
 
 For format explain please see the [pt-format.md](pt-format.md)
+
+### lz4 tool
+
+For compress and decompress .lz4 file use in update pack.
+
+Just drag the onto the exe, it will detect the extention and compress or decompress the file.
+
+Or use parameter 
+* -d <folder> to decompress all file inside that folder.
+* -c <folder> to compress all file inside that folder.
