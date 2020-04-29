@@ -39,3 +39,26 @@ Just drag the onto the exe, it will detect the extention and compress or decompr
 Or use parameter 
 * -d <folder> to decompress all file inside that folder.
 * -c <folder> to compress all file inside that folder.
+
+
+## Useful information
+
+### Port song from Arcade version
+
+What you need is a unpacked .pak with all .ogg inside, and a decrypted .pt file.
+
+(If you are planing to port custom, you should have the unpacked .pak, but still need to decrypt the .pt)
+
+Drag the folder that containing all the .ogg files to fpk_tool to generate a .fpk pack.
+
+Convert video to .webm format if you want to have video.
+
+Use pt_to_text to convert decrypted .pt to text format.
+
+Open the converted .txt file, check if the end position (End Ticks) is set to the last note position or later than last note position.
+
+Use bytes_to_text to convert the .txt back to DMTQ's .bytes file.
+
+Now you can replace the .fpk and patterns to the server side, and re-download the song to your device.
+
+If every thing is good, you can create a new patch by changing the patch file on server. Use lz4_tool to decompress and compress those file.
