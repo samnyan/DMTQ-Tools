@@ -5,6 +5,10 @@ VisualStudioVersion = 16.0.30011.22
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "fpk_tool", "fpk_tool\fpk_tool.csproj", "{068CE1B8-707E-4AB3-85AA-7D92A2AAC942}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "bytes_to_text", "bytes_to_text\bytes_to_text.csproj", "{6C74B9CB-E76A-4004-8598-4C76ABE3111B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "pt_to_text", "pt_to_text\pt_to_text.csproj", "{691C59D1-2FBA-414A-8B4E-19CF84479FF2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +19,14 @@ Global
 		{068CE1B8-707E-4AB3-85AA-7D92A2AAC942}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{068CE1B8-707E-4AB3-85AA-7D92A2AAC942}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{068CE1B8-707E-4AB3-85AA-7D92A2AAC942}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6C74B9CB-E76A-4004-8598-4C76ABE3111B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6C74B9CB-E76A-4004-8598-4C76ABE3111B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6C74B9CB-E76A-4004-8598-4C76ABE3111B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6C74B9CB-E76A-4004-8598-4C76ABE3111B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{691C59D1-2FBA-414A-8B4E-19CF84479FF2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{691C59D1-2FBA-414A-8B4E-19CF84479FF2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{691C59D1-2FBA-414A-8B4E-19CF84479FF2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{691C59D1-2FBA-414A-8B4E-19CF84479FF2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
