@@ -358,3 +358,5 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+pt_to_text/LoginInfo.cs
