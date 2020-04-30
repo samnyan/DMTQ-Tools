@@ -20,10 +20,11 @@ namespace pt_to_text
                 using (FileStream ifs = new FileStream(file.FullName, FileMode.Open))
                 using (BinaryReader reader = new BinaryReader(ifs))
                 using (MemoryStream ms = new MemoryStream(100))
-                using (BinaryReader msReader = new BinaryReader(ms))
+                using (BinaryReader msReader = new BinaryReader(ms, System.Text.Encoding.ASCII))
                 using (FileStream ofs = new FileStream(Path.Combine(file.DirectoryName, Path.GetFileNameWithoutExtension(file.Name) + ".txt"), FileMode.Create))
-                using (StreamWriter writer = new StreamWriter(ofs))
+                using (StreamWriter sw = new StreamWriter(ofs))
                 {
+                    Writer writer = new Writer(sw);
                     string header = new string(reader.ReadChars(0x4));
                     if(header != "PTFF")
                     {
@@ -32,8 +33,8 @@ namespace pt_to_text
                     }
                     
                     ifs.Seek(0x18, SeekOrigin.Begin);
-                    int firstId = reader.ReadInt32();
-                    if(firstId > 1024)
+                    int firstId = reader.ReadInt16(); // For some pt file has 2 bytes header
+                    if(firstId != 1)
                     {
                         // Do decryption
                         Console.WriteLine("Decrypting file");
@@ -45,6 +46,19 @@ namespace pt_to_text
                     {
                         ifs.Seek(0, SeekOrigin.Begin);
                         ifs.CopyTo(ms);
+                    }
+
+                    ms.Seek(0x18, SeekOrigin.Begin);
+                    if (ms.ReadByte() != 0x1)
+                    {
+                        Console.WriteLine("Warning: First sound table index is not 1");
+                    }
+
+                    // Check if this .pt file has padding
+                    bool isPadded = false;
+                    if(ms.ReadByte() == 0 && ms.ReadByte() == 0 & ms.ReadByte() == 0)
+                    {
+                        isPadded = true;
                     }
 
                     ms.Seek(0x4, SeekOrigin.Begin);
@@ -70,13 +84,26 @@ namespace pt_to_text
                     for (int i = 0; i < soundCount; i++)
                     {
                         ms.Seek(currentOffset, SeekOrigin.Begin);
-                        int id = msReader.ReadInt32();
-                        char[] fileNameChars = msReader.ReadChars(0x40);
-                        string fileName = new string(fileNameChars).Replace("\0", string.Empty).Trim();
+                        int id;
+                        if(isPadded)
+                        {
+                            id = msReader.ReadInt32();
+                        } else
+                        {
+                            id = msReader.ReadInt16();
+                        }
+                        string fileName = new string(msReader.ReadChars(0x40));
+                        fileName = fileName.Substring(0, fileName.IndexOf("\0"));
                         writer.WriteLine("#WAV" + id.ToString("X4") + " " + fileName);
-                        Console.WriteLine("#WAV" + id.ToString("X4") + " " + fileName);
 
-                        currentOffset += 0x44;
+                        if (isPadded)
+                        {
+                            currentOffset += 0x44;
+                        }
+                        else
+                        {
+                            currentOffset += 0x42;
+                        }
                     }
 
                     writer.WriteLine("POSITION COMMAND PARAMETER");
@@ -84,34 +111,59 @@ namespace pt_to_text
                     while (currentOffset < ms.Length)
                     {
                         // Read by 0x10
-
                         int trackHeader = msReader.ReadInt32();
+
                         if(trackHeader == 1381259845) // Check EZTR header
                         {
-                            // Skip header
-                            ms.Seek(0x3C, SeekOrigin.Current);
-
+                            // Read Header
+                            msReader.ReadInt16();
+                            string trackName = new string(msReader.ReadChars(0x40));
+                            int ticks = msReader.ReadInt32();
+                            int commandCount = msReader.ReadInt32();
+                            if(isPadded) msReader.ReadInt16();
+                            writer.WriteLine("#0 " + "TRACK_START " + currentTrackCount + " '' ");
+                            currentTrackCount++;
                         } else
                         {
-                            int position = trackHeader;
+                            ms.Seek(-4, SeekOrigin.Current);
+                            //int position = msReader.ReadInt16();
+                            //int cmd = msReader.ReadByte();
+                            //if (cmd > 0x1 && cmd <= 0x4)
+                            //{
+
+                            //} else
+                            //{
+                            //    ms.Seek(-3, SeekOrigin.Current);
+                            //    position = msReader.ReadInt32();
+                            //    cmd = msReader.ReadByte();
+                            //}
+                            int position = msReader.ReadInt32();
                             int cmd = msReader.ReadByte();
                             switch (cmd)
                             {
-                                case 0x0: // Track Start
-                                    {
-                                        char[] temp = msReader.ReadChars(0xB);
-                                        writer.WriteLine("#" + position + " " + "TRACK_START " + currentTrackCount + " '' ");
-                                        break;
-                                    }
                                 case 0x1: // Note
                                     {
-                                        ms.Seek(0x3, SeekOrigin.Current);
-                                        int soundIndex = msReader.ReadInt16();
+                                        if (isPadded) ms.Seek(0x3, SeekOrigin.Current);
+                                        int soundIndex;
+                                        if (isPadded)
+                                        {
+                                            soundIndex = msReader.ReadInt16();
+                                        }
+                                        else
+                                        {
+                                            soundIndex = msReader.ReadByte();
+                                        }
                                         int volume = msReader.ReadByte();
                                         int pan = msReader.ReadByte();
                                         int type = msReader.ReadByte();
                                         int length = msReader.ReadByte();
-                                        int unknown = msReader.ReadInt16();
+                                        int unknown;
+                                        if (isPadded) { 
+                                            unknown = msReader.ReadInt16(); 
+                                        } else
+                                        {
+                                            unknown = msReader.ReadByte();
+                                        }
                                         writer.WriteLine(
                                             "#" + position + " " +
                                             "NOTE" + " " +
@@ -125,26 +177,55 @@ namespace pt_to_text
                                     }
                                 case 0x2: // Volume
                                     {
-                                        ms.Seek(0x3, SeekOrigin.Current);
+                                        if (isPadded) ms.Seek(0x3, SeekOrigin.Current);
                                         int volume = msReader.ReadByte();
                                         int unknown1 = msReader.ReadByte();
                                         int unknown2 = msReader.ReadByte();
                                         int unknown3 = msReader.ReadByte();
-                                        int unknown4 = msReader.ReadInt32();
+                                        int unknown4;
+                                        if(isPadded)
+                                        {
+                                            unknown4 = msReader.ReadInt32();
+                                        }else
+                                        {
+                                            unknown4 = msReader.ReadInt16();
+                                        }
                                         writer.WriteLine("#" + position + " " + "VOLUME" + " " + volume + " " + unknown1 + " " + unknown2 + " " + unknown3 + " " + unknown4);
                                         break;
                                     }
                                 case 0x3: // BPM Change
                                     {
-                                        ms.Seek(0x3, SeekOrigin.Current);
+                                        if (isPadded) ms.Seek(0x3, SeekOrigin.Current);
                                         int bpm = msReader.ReadInt32();
-                                        ms.Seek(0x4, SeekOrigin.Current);
+                                        if (isPadded)
+                                        {
+                                            ms.Seek(0x4, SeekOrigin.Current);
+                                        } else
+                                        {
+                                            ms.Seek(0x2, SeekOrigin.Current);
+                                        }
+                                        
                                         writer.WriteLine("#" + position + " " + "BPM_CHANGE" + " " + bpm);
+                                        break;
+                                    }
+                                case 0x4: // Beat 
+                                    {
+                                        if (isPadded) ms.Seek(0x3, SeekOrigin.Current);
+                                        int beat = msReader.ReadInt16();
+                                        if(isPadded)
+                                        {
+                                            ms.Seek(0x6, SeekOrigin.Current);
+                                        }
+                                        else
+                                        {
+                                            ms.Seek(0x4, SeekOrigin.Current);
+                                        }
+                                        
                                         break;
                                     }
                                 default: // Other
                                     {
-                                        ms.Seek(0x3, SeekOrigin.Current);
+                                        if (isPadded) ms.Seek(0x3, SeekOrigin.Current);
                                         long unknown1 = msReader.ReadInt64();
                                         writer.WriteLine("#" + position + " " + cmd + " " + unknown1);
                                         break;
@@ -188,6 +269,22 @@ namespace pt_to_text
                 return client.DownloadToByteArray(taskId);
 
             }
+        }
+    }
+
+    class Writer
+    {
+        private StreamWriter writer;
+
+        public Writer(StreamWriter writer)
+        {
+            this.writer = writer;
+        }
+
+        public void WriteLine(string val)
+        {
+            writer.WriteLine(val);
+            Console.WriteLine(val);
         }
     }
 }

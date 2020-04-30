@@ -126,7 +126,7 @@ Edit those file by following the exist data. If you miss some of them, the game 
 
 You don't have to compress it back to .lz4 after finished the edit. Set `compressed` to 0 in `patch_new.csv` save so much time for you.
 
-Now copy the finished file to other language table folder.
+Now copy the finished file to other language table folder. (You can skip this step if you only use in one language)
 
 **Song Preview**
 
