@@ -24,7 +24,7 @@ This tool can help you better understand the bytes format. For more detail pleas
 
 ### pt to text
 
-Convert decrypted .pt format to a readable text format. You need to decrypted it first to use this tool.
+Convert .pt format to a readable text format. This tool can decrypt .pt file now, but if you want to build it from source, please provide the decrypt api server info in the LoginInfo.cs.
 
 Combine with bytes to text tool, it should be able to port song from Arcade version.
 
@@ -45,15 +45,15 @@ Or use parameter
 
 ### Port song from Arcade version
 
-What you need is a unpacked .pak with all .ogg inside, and a decrypted .pt file.
+What you need is a unpacked .pak with all .ogg inside, and a .pt file.
 
-(If you are planing to port custom, you should have the unpacked .pak, but still need to decrypt the .pt)
+(If you are planing to port custom, you should have the unpacked .pak)
 
 Drag the folder that containing all the .ogg files to fpk_tool to generate a .fpk pack.
 
 Convert video to .webm format if you want to have video.
 
-Use pt_to_text to convert decrypted .pt to text format.
+Use pt_to_text to convert .pt to text format.
 
 Open the converted .txt file, check if the end position (End Ticks) is set to the last note position or later than last note position.
 
