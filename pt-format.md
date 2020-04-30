@@ -14,7 +14,7 @@ header
 
 Sounds Table
 ----------------------------
-* Starts at offset 8
+* Starts at offset 0x18
 * An array of entries that are 0x43 (68) bytes in size each:
     * 4 bytes index
     * 0x40 (64) bytes filename

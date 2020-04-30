@@ -8,8 +8,13 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "bytes_to_text", "bytes_to_text\bytes_to_text.csproj", "{6C74B9CB-E76A-4004-8598-4C76ABE3111B}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "pt_to_text", "pt_to_text\pt_to_text.csproj", "{691C59D1-2FBA-414A-8B4E-19CF84479FF2}"
+	ProjectSection(ProjectDependencies) = postProject
+		{9B3528F5-9C12-47F8-988B-F94B2788D541} = {9B3528F5-9C12-47F8-988B-F94B2788D541}
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "lz4_tool", "lz4_tool\lz4_tool.csproj", "{D4932649-12AC-4406-98A3-E9773F831F03}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UnpackMe.SDK.Standard", "..\UnpackMe.SDK.Standard\UnpackMe.SDK.Standard.csproj", "{9B3528F5-9C12-47F8-988B-F94B2788D541}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,6 +38,10 @@ Global
 		{D4932649-12AC-4406-98A3-E9773F831F03}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D4932649-12AC-4406-98A3-E9773F831F03}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D4932649-12AC-4406-98A3-E9773F831F03}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9B3528F5-9C12-47F8-988B-F94B2788D541}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9B3528F5-9C12-47F8-988B-F94B2788D541}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9B3528F5-9C12-47F8-988B-F94B2788D541}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9B3528F5-9C12-47F8-988B-F94B2788D541}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
