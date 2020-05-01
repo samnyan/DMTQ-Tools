@@ -33,7 +33,7 @@ namespace pt_to_text
                     }
                     
                     ifs.Seek(0x18, SeekOrigin.Begin);
-                    int firstId = reader.ReadInt16(); // For some pt file has 2 bytes header
+                    int firstId = reader.ReadByte(); // For some pt file has 1 byte header
                     if(firstId != 1)
                     {
                         // Do decryption
@@ -54,15 +54,16 @@ namespace pt_to_text
                         Console.WriteLine("Warning: First sound table index is not 1");
                     }
 
-                    // Check if this .pt file has padding
+                    // Check the file version
+
+                    ms.Seek(0x4, SeekOrigin.Begin);
+                    int version = msReader.ReadInt16();
                     bool isPadded = false;
-                    if(ms.ReadByte() == 0 && ms.ReadByte() == 0 & ms.ReadByte() == 0)
+                    if (version == 1)
                     {
                         isPadded = true;
                     }
 
-                    ms.Seek(0x4, SeekOrigin.Begin);
-                    int unknownFlag = msReader.ReadInt16();
                     // Read sound info
                     int positionsPerMeasure = msReader.ReadInt16();
                     float initialBpm = msReader.ReadSingle();
@@ -85,12 +86,15 @@ namespace pt_to_text
                     {
                         ms.Seek(currentOffset, SeekOrigin.Begin);
                         int id;
+                        int flag;
                         if(isPadded)
                         {
-                            id = msReader.ReadInt32();
+                            id = msReader.ReadInt16();
+                            flag = msReader.ReadInt16();
                         } else
                         {
-                            id = msReader.ReadInt16();
+                            id = msReader.ReadByte();
+                            flag = msReader.ReadByte();
                         }
                         string fileName = new string(msReader.ReadChars(0x40));
                         fileName = fileName.Substring(0, fileName.IndexOf("\0"));
@@ -126,17 +130,6 @@ namespace pt_to_text
                         } else
                         {
                             ms.Seek(-4, SeekOrigin.Current);
-                            //int position = msReader.ReadInt16();
-                            //int cmd = msReader.ReadByte();
-                            //if (cmd > 0x1 && cmd <= 0x4)
-                            //{
-
-                            //} else
-                            //{
-                            //    ms.Seek(-3, SeekOrigin.Current);
-                            //    position = msReader.ReadInt32();
-                            //    cmd = msReader.ReadByte();
-                            //}
                             int position = msReader.ReadInt32();
                             int cmd = msReader.ReadByte();
                             switch (cmd)
@@ -196,7 +189,7 @@ namespace pt_to_text
                                 case 0x3: // BPM Change
                                     {
                                         if (isPadded) ms.Seek(0x3, SeekOrigin.Current);
-                                        int bpm = msReader.ReadInt32();
+                                        float bpm = msReader.ReadSingle();
                                         if (isPadded)
                                         {
                                             ms.Seek(0x4, SeekOrigin.Current);
@@ -212,7 +205,8 @@ namespace pt_to_text
                                     {
                                         if (isPadded) ms.Seek(0x3, SeekOrigin.Current);
                                         int beat = msReader.ReadInt16();
-                                        if(isPadded)
+                                        writer.WriteLine("#" + position + " " + cmd + " " + beat);
+                                        if (isPadded)
                                         {
                                             ms.Seek(0x6, SeekOrigin.Current);
                                         }

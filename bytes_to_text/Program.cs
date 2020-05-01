@@ -134,7 +134,7 @@ namespace bytes_to_text
                                             }
                                         case 0x3: // BPM Change
                                             {
-                                                int bpm = reader.ReadInt32();
+                                                float bpm = reader.ReadSingle();
                                                 int unknown = reader.ReadInt32();
                                                 writer.WriteLine("#" + position + " " + "BPM_CHANGE" + " " + bpm + " " + unknown);
                                                 break;
@@ -312,7 +312,7 @@ namespace bytes_to_text
                                                 commandCounter++;
                                                 track.Write(BitConverter.GetBytes(commandPos), 0, 4);
                                                 track.Write(new byte[] { 3 }, 0, 1);
-                                                int bpm = int.Parse(par[2]); // BPM here is store as int
+                                                float bpm = Single.Parse(par[2]); // BPM here is store as float
                                                 track.Write(BitConverter.GetBytes(bpm), 0, 4);
                                                 track.Write(new byte[] { 0, 0, 0, 0 }, 0, 4);
                                                 break;

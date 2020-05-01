@@ -3,8 +3,8 @@ DJMax Technika PT Song Format
 
 header
 ----------------------------
-* 4 bytes of 50 54 46 46(PTFF)
-* 2 bytes Unknown (always 01 00 ?)
+* 4 bytes of 50 54 46 46("PTFF")
+* 2 bytes Version (always 01 00 / 00 06 means Ver1.0 / Ver 0.6)
 * 2 bytes Ticks per measure
 * 4 bytes Master BPM (float)
 * 2 bytes Number of tracks
@@ -16,7 +16,8 @@ Sounds Table
 ----------------------------
 * Starts at offset 0x18
 * An array of entries that are 0x43 (68) bytes in size each:
-    * 4 bytes index
+    * 2 bytes index
+    * 2 bytes command
     * 0x40 (64) bytes filename
 
 
