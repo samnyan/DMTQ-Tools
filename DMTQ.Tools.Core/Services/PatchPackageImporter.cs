@@ -42,7 +42,7 @@ public sealed class PatchPackageImporter(
             foreach (var entry in manifest.Entries)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                var relativePath = PathClassifier.Normalize(entry.FileName);
+                var relativePath = PathClassifier.NormalizePackageRelativePath(entry.FileName);
                 var sourcePath = ResolveSourcePath(packageRoot, relativePath, entry.Compressed);
 
                 if (PathClassifier.IsCsvTable(relativePath))

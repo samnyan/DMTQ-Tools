@@ -22,7 +22,7 @@ public sealed class PatchPackageExporter(
         foreach (var sourceEntry in package.Manifest.Entries)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var relativePath = PathClassifier.Normalize(sourceEntry.FileName);
+            var relativePath = PathClassifier.NormalizePackageRelativePath(sourceEntry.FileName);
 
             if (PathClassifier.IsCsvTable(relativePath))
             {

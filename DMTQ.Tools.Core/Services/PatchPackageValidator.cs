@@ -16,7 +16,7 @@ public sealed class PatchPackageValidator(PatchChecksumService checksumService)
         foreach (var entry in manifest.Entries)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var relativePath = PathClassifier.Normalize(entry.FileName);
+            var relativePath = PathClassifier.NormalizePackageRelativePath(entry.FileName);
             var filePath = Path.Combine(packageRoot, relativePath.Replace('/', Path.DirectorySeparatorChar));
             var compressedPath = filePath + ".lz4";
 
