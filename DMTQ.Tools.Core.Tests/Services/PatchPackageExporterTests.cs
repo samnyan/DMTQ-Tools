@@ -51,6 +51,50 @@ public sealed class PatchPackageExporterTests
         }
     }
 
+    [TestMethod]
+    public async Task ImportExportValidateAsync_SucceedsForSamplePackage()
+    {
+        var repoRoot = FindRepoRoot();
+        var packageRoot = Path.Combine(repoRoot, "external", "patch", "phone_new", "1.003.005", "android");
+        Directory.Exists(packageRoot).Should().BeTrue("the repository sample package is required for this integration test");
+
+        var projectRoot = Path.Combine(Path.GetTempPath(), "dmtq-roundtrip-project-" + Guid.NewGuid().ToString("N"));
+        var exportRoot = Path.Combine(Path.GetTempPath(), "dmtq-roundtrip-output-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var compression = new Lz4CompressionService();
+            var checksum = new PatchChecksumService();
+            var importer = new PatchPackageImporter(compression, new PatchManifestReader(), new CsvTableReader());
+            var package = await importer.ImportAsync(packageRoot, projectRoot);
+
+            var exporter = new PatchPackageExporter(
+                new CsvTableWriter(),
+                new PatchManifestWriter(),
+                compression,
+                checksum);
+            var exportedManifest = await exporter.ExportAsync(package, exportRoot);
+
+            var validator = new PatchPackageValidator(checksum);
+            var validation = await validator.ValidateAsync(exportedManifest, exportRoot);
+
+            validation.Errors.Should().BeEmpty();
+            validation.IsValid.Should().BeTrue();
+            exportedManifest.Entries.Should().HaveCount(package.Manifest.Entries.Count);
+        }
+        finally
+        {
+            if (Directory.Exists(projectRoot))
+            {
+                Directory.Delete(projectRoot, recursive: true);
+            }
+
+            if (Directory.Exists(exportRoot))
+            {
+                Directory.Delete(exportRoot, recursive: true);
+            }
+        }
+    }
+
     private static string FindRepoRoot()
     {
         var current = AppContext.BaseDirectory;
