@@ -22,10 +22,12 @@ namespace DMTQ_Tools
                 });
 
             builder.Services.AddMauiBlazorWebView();
-            builder.Services.AddFluentUIComponents(options =>
-            {
-                options.ServiceLifetime = ServiceLifetime.Singleton;
-            });
+
+            // IMPORTANT: Must use default ServiceLifetime.Scoped for FluentUI in MAUI BlazorWebView.
+            // Singleton causes MessageService to resolve before NavigationManager is initialized
+            // → "WebViewNavigationManager has not been initialized" crash.
+            // DO NOT change to ServiceLifetime.Singleton.
+            builder.Services.AddFluentUIComponents();
 
             builder.Services.AddSingleton<Lz4CompressionService>();
             builder.Services.AddSingleton<PatchManifestReader>();

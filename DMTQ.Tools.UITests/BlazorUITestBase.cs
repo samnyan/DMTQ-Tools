@@ -21,10 +21,7 @@ public abstract class BlazorUITestBase : Bunit.TestContext
         Services.AddSingleton<LogicalTableService>();
         Services.AddSingleton<SongCatalogService>();
         Services.AddSingleton<SongEditService>();
-        Services.AddFluentUIComponents(options =>
-        {
-            options.ServiceLifetime = ServiceLifetime.Singleton;
-        });
+        Services.AddFluentUIComponents();
 
         // FluentUI components invoke JS interop in OnAfterRenderAsync (v=... is build-specific).
         // Use Loose mode so unregistered JS calls return empty/default instead of throwing.
