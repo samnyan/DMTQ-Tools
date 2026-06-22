@@ -17,6 +17,7 @@ public abstract class BlazorUITestBase : Bunit.TestContext
     {
         Services.AddSingleton<IProjectState>(state);
         Services.AddSingleton<IProjectWorkflow>(new FakeWorkflow(state));
+        Services.AddSingleton<IFolderPicker>(new FakeFolderPicker());
         Services.AddSingleton<LogicalTableService>();
         Services.AddSingleton<SongCatalogService>();
         Services.AddSingleton<SongEditService>();
@@ -89,5 +90,11 @@ public abstract class BlazorUITestBase : Bunit.TestContext
         public Task RemoveResourceAsync(string p, string? pl, CancellationToken ct = default) => Task.CompletedTask;
         public Task SetResourceCompressionAsync(string p, string? pl, bool c, CancellationToken ct = default) => Task.CompletedTask;
         public Task SetPreviewIncludedPlatformsAsync(string p, IReadOnlyCollection<string> ip, CancellationToken ct = default) => Task.CompletedTask;
+    }
+
+    private sealed class FakeFolderPicker : IFolderPicker
+    {
+        public string? PickResult { get; set; }
+        public Task<string?> PickFolderAsync(CancellationToken ct = default) => Task.FromResult(PickResult);
     }
 }

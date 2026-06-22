@@ -1,22 +1,29 @@
 ﻿@page "/"
+@using Icons = Microsoft.FluentUI.AspNetCore.Components.Icons
 @inject IProjectState State
 @inject IProjectWorkflow Workflow
+@inject IFolderPicker FolderPicker
+@inject NavigationManager Navigation
+@inject IDialogService DialogService
 
 <h1>Project</h1>
 
-<FluentStack Orientation="Orientation.Vertical" Style="margin-bottom: 1rem;">
-    <FluentTextField @bind-Value="projectRoot"
-                     Label="Project directory"
-                     Placeholder="D:\DMTQProjects\MyPatch"
-                     Style="max-width: 40rem;" />
+<FluentStack Orientation="Orientation.Vertical" VerticalGap="16" Style="margin-bottom: 1.25rem;">
+    <div style="display: flex; gap: 8px; align-items: flex-start;">
+        <FluentTextField @bind-Value="projectRoot"
+                         Label="Project folder"
+                         Placeholder="Select or enter a project folder path..."
+                         Style="flex: 1; max-width: 40rem;" />
+        <FluentButton Appearance="Appearance.Neutral"
+                      IconStart="@(new Icons.Regular.Size20.Folder())"
+                      OnClick="BrowseFolder"
+                      Style="margin-top: 1.5rem;">Browse</FluentButton>
+    </div>
 
     <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8">
         <FluentButton Appearance="Appearance.Accent"
-                      OnClick="CreateProject"
-                      Disabled="@isBusy">Create</FluentButton>
-        <FluentButton Appearance="Appearance.Neutral"
-                      OnClick="OpenProject"
-                      Disabled="@isBusy">Open Saved</FluentButton>
+                      OnClick="ConfirmProject"
+                      Disabled="@(string.IsNullOrWhiteSpace(projectRoot) || isBusy)">Confirm</FluentButton>
         <FluentButton Appearance="Appearance.Neutral"
                       OnClick="SaveProject"
                       Disabled="@(!State.HasPackage || isBusy)">Save</FluentButton>
@@ -24,7 +31,7 @@
 
     @if (!string.IsNullOrWhiteSpace(message))
     {
-        <FluentMessageBar Title="@message" Intent="MessageIntent.Info" />
+        <FluentMessageBar Title="@message" Intent="@messageIntent" />
     }
 </FluentStack>
 
@@ -88,6 +95,7 @@
 @code {
     private string projectRoot = string.Empty;
     private string? message;
+    private MessageIntent messageIntent = MessageIntent.Info;
     private bool isBusy;
 
     private string PlatformSummary => State.Platforms.Count == 0
@@ -98,39 +106,70 @@
         ? "Not run"
         : State.LastValidationResult.IsValid ? "Passed" : $"{State.LastValidationResult.Errors.Count} errors";
 
-    private async Task CreateProject()
+    private async Task BrowseFolder()
     {
-        isBusy = true;
-        message = "Creating project...";
-        try
-        {
-            await Workflow.CreateProjectAsync(projectRoot);
-            message = "Project created and saved.";
-        }
-        catch (Exception ex)
-        {
-            message = ex.Message;
-            State.Diagnostics.Add("Project error: " + ex.Message);
-        }
-        finally
-        {
-            isBusy = false;
-        }
+        var result = await FolderPicker.PickFolderAsync();
+        if (!string.IsNullOrWhiteSpace(result))
+            projectRoot = result;
     }
 
-    private async Task OpenProject()
+    private async Task ConfirmProject()
     {
+        var root = projectRoot.Trim();
+        if (string.IsNullOrWhiteSpace(root))
+        {
+            ShowMessage("Please enter a project folder path.", MessageIntent.Warning);
+            return;
+        }
+
+        if (!Directory.Exists(root))
+        {
+            ShowMessage($"Folder '{root}' does not exist.", MessageIntent.Error);
+            return;
+        }
+
         isBusy = true;
-        message = "Opening project...";
+        message = null;
+
         try
         {
-            await Workflow.OpenProjectAsync(projectRoot);
-            message = "Project opened.";
+            bool hasProjectFile = File.Exists(Path.Combine(root, "project.json"));
+            bool isEmpty = !Directory.EnumerateFileSystemEntries(root).Any();
+
+            if (hasProjectFile)
+            {
+                // Existing project — load it
+                await Workflow.OpenProjectAsync(root);
+                ShowMessage("Project loaded.", MessageIntent.Info);
+            }
+            else if (isEmpty)
+            {
+                // Empty directory — ask to create
+                var dialog = await DialogService.ShowConfirmationAsync(
+                    "This folder is empty. Create a new project here?",
+                    "Create", "Cancel",
+                    "New project");
+                var result = await dialog.Result;
+                if (!result.Cancelled)
+                {
+                    await Workflow.CreateProjectAsync(root);
+                    ShowMessage("Project created. Go to the Import page to import a patch package.", MessageIntent.Info);
+                }
+            }
+            else
+            {
+                // Has files but no project.json
+                ShowMessage(
+                    $"This folder contains files but is not a DMTQ project. " +
+                    $"Please choose an empty folder, then go to the " +
+                    $"Import page to import an existing patch package.",
+                    MessageIntent.Error);
+            }
         }
         catch (Exception ex)
         {
-            message = ex.Message;
-            State.Diagnostics.Add("Open project error: " + ex.Message);
+            ShowMessage(ex.Message, MessageIntent.Error);
+            State.Diagnostics.Add("Project error: " + ex.Message);
         }
         finally
         {
@@ -141,20 +180,26 @@
     private async Task SaveProject()
     {
         isBusy = true;
-        message = "Saving project...";
+        message = null;
         try
         {
             await Workflow.SaveProjectAsync();
-            message = "Project saved.";
+            ShowMessage("Project saved.", MessageIntent.Info);
         }
         catch (Exception ex)
         {
-            message = ex.Message;
+            ShowMessage(ex.Message, MessageIntent.Error);
             State.Diagnostics.Add("Save project error: " + ex.Message);
         }
         finally
         {
             isBusy = false;
         }
+    }
+
+    private void ShowMessage(string? text, MessageIntent intent)
+    {
+        message = text;
+        messageIntent = intent;
     }
 }

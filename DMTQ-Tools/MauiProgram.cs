@@ -42,6 +42,8 @@ namespace DMTQ_Tools
             builder.Services.AddSingleton<PlatformPackageImporter>();
             builder.Services.AddSingleton<PlatformPackageExporter>();
 
+            builder.Services.AddSingleton<IFolderPicker, MauiFolderPicker>();
+
             var state = new GameTableManagerState();
             builder.Services.AddSingleton<IProjectState>(state);
             builder.Services.AddSingleton(state);
