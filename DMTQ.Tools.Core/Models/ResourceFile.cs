@@ -4,4 +4,5 @@ public sealed record ResourceFile(
     string PackageRelativePath,
     string ProjectRelativePath,
     string Category,
-    bool Compressed);
+    bool Compressed,
+    string? SourcePackagePath);

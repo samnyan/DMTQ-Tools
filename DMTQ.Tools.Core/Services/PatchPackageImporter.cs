@@ -55,11 +55,21 @@ public sealed class PatchPackageImporter(
                 }
                 else
                 {
+                    var projectRelativePath = Path.Combine("resources", relativePath).Replace('\\', '/');
+                    var archivedPath = Path.Combine(projectRoot, projectRelativePath.Replace('/', Path.DirectorySeparatorChar));
+                    Directory.CreateDirectory(Path.GetDirectoryName(archivedPath) ?? projectRoot);
+                    await using (var source = File.OpenRead(sourcePath))
+                    await using (var destination = File.Create(archivedPath))
+                    {
+                        await source.CopyToAsync(destination, cancellationToken).ConfigureAwait(false);
+                    }
+
                     package.Resources.Add(new ResourceFile(
                         relativePath,
-                        Path.Combine("resources", relativePath).Replace('\\', '/'),
+                        projectRelativePath,
                         PathClassifier.ResourceCategory(relativePath),
-                        entry.Compressed));
+                        entry.Compressed,
+                        sourcePath));
                 }
             }
 

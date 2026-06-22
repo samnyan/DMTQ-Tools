@@ -34,6 +34,20 @@ public sealed class PatchPackageImporterTests
                 .Should().Contain(["cn", "jp", "kr", "tw", "us"]);
             package.Resources.Should().Contain(r => r.PackageRelativePath.StartsWith("dlc/", StringComparison.Ordinal));
             package.Resources.Should().Contain(r => r.PackageRelativePath.StartsWith("preview/", StringComparison.Ordinal));
+
+            var archivedResources = package.Resources
+                .Where(r => r.PackageRelativePath.StartsWith("dlc/", StringComparison.Ordinal)
+                    || r.PackageRelativePath.StartsWith("preview/", StringComparison.Ordinal))
+                .Take(5)
+                .ToArray();
+
+            archivedResources.Should().NotBeEmpty();
+            foreach (var resource in archivedResources)
+            {
+                var archivedPath = Path.Combine(tempProjectRoot, resource.ProjectRelativePath.Replace('/', Path.DirectorySeparatorChar));
+                File.Exists(archivedPath).Should().BeTrue("import should copy resource files into the project archive");
+                new FileInfo(archivedPath).Length.Should().BeGreaterThan(0);
+            }
         }
         finally
         {
