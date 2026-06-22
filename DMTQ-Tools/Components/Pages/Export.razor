@@ -1,0 +1,96 @@
+@page "/export"
+@inject GameTableManagerState State
+@inject GameTableManagerWorkflow Workflow
+
+<h1>Export</h1>
+
+<section class="toolbar-panel">
+    <label class="form-label" for="exportRoot">Output directory</label>
+    <div class="input-row">
+        <input id="exportRoot" class="form-control" @bind="exportRoot" placeholder="D:\DMTQExports\android" />
+        <button class="btn btn-primary" @onclick="ExportPackage" disabled="@(!State.HasPackage || isBusy)">Export</button>
+    </div>
+
+    <label class="form-label" for="compressionMode">Compression policy</label>
+    <select id="compressionMode" class="form-control narrow-control" @bind="State.ExportCompressionMode">
+        <option value="Keep">Keep imported manifest flags</option>
+        <option value="CompressAll">Compress every manifest entry</option>
+        <option value="UncompressAll">Uncompress every manifest entry</option>
+    </select>
+
+    @if (!State.HasPackage)
+    {
+        <div class="status-message">Import a package before exporting.</div>
+    }
+    @if (!string.IsNullOrWhiteSpace(message))
+    {
+        <div class="status-message">@message</div>
+    }
+</section>
+
+@if (State.LastExportManifest is not null)
+{
+    <section class="metrics-grid">
+        <div class="metric">
+            <span class="metric-label">Manifest entries</span>
+            <strong>@State.LastExportManifest.Entries.Count</strong>
+        </div>
+        <div class="metric">
+            <span class="metric-label">Compressed entries</span>
+            <strong>@State.LastExportManifest.Entries.Count(e => e.Compressed)</strong>
+        </div>
+        <div class="metric">
+            <span class="metric-label">Uncompressed entries</span>
+            <strong>@State.LastExportManifest.Entries.Count(e => !e.Compressed)</strong>
+        </div>
+        <div class="metric">
+            <span class="metric-label">Validation</span>
+            <strong>@ValidationText</strong>
+        </div>
+    </section>
+}
+
+@if (State.LastValidationResult is not null && !State.LastValidationResult.IsValid)
+{
+    <section class="toolbar-panel">
+        <h2>Validation errors</h2>
+        <ul class="diagnostic-list">
+            @foreach (var error in State.LastValidationResult.Errors.Take(100))
+            {
+                <li>@error</li>
+            }
+        </ul>
+    </section>
+}
+
+@code {
+    private string exportRoot = string.Empty;
+    private string? message;
+    private bool isBusy;
+
+    private string ValidationText => State.LastValidationResult is null
+        ? "Not run"
+        : State.LastValidationResult.IsValid ? "Passed" : $"{State.LastValidationResult.Errors.Count} errors";
+
+    private async Task ExportPackage()
+    {
+        isBusy = true;
+        message = "Exporting package...";
+        try
+        {
+            await Workflow.ExportPackageAsync(exportRoot);
+            message = State.LastValidationResult?.IsValid == true
+                ? "Export completed and validation passed."
+                : "Export completed with validation errors.";
+        }
+        catch (Exception ex)
+        {
+            message = ex.Message;
+            State.Diagnostics.Add("Export error: " + ex.Message);
+        }
+        finally
+        {
+            isBusy = false;
+        }
+    }
+}
