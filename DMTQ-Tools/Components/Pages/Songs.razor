@@ -1,0 +1,212 @@
+@page "/songs"
+@inject GameTableManagerState State
+@inject SongCatalogService SongCatalog
+
+<h1>Songs</h1>
+
+@if (State.CurrentPackage is null)
+{
+    <section class="toolbar-panel">
+        <div class="status-message">Import or open a project before browsing songs.</div>
+    </section>
+}
+else
+{
+    <section class="toolbar-panel song-toolbar">
+        <input class="form-control" @bind="filter" @bind:event="oninput" placeholder="Filter by song ID, title, product, item..." />
+        <label class="form-label">
+            Language
+            <select class="form-control" @bind="selectedLanguage">
+                @foreach (var language in Languages)
+                {
+                    <option value="@language">@language</option>
+                }
+            </select>
+        </label>
+    </section>
+
+    <section class="metrics-grid">
+        <div class="metric">
+            <span class="metric-label">Songs</span>
+            <strong>@Catalog.Count</strong>
+        </div>
+        <div class="metric">
+            <span class="metric-label">Patterns</span>
+            <strong>@Catalog.Sum(song => song.Patterns.Count)</strong>
+        </div>
+        <div class="metric">
+            <span class="metric-label">With preview</span>
+            <strong>@Catalog.Count(song => song.HasPreview)</strong>
+        </div>
+        <div class="metric">
+            <span class="metric-label">Languages</span>
+            <strong>@string.Join(", ", Languages)</strong>
+        </div>
+    </section>
+
+    <section class="song-browser">
+        <aside class="song-list">
+            @foreach (var song in FilteredSongs.Take(300))
+            {
+                <button class="song-list-item @(song.SongId == SelectedSong?.SongId ? "selected" : "")" @onclick="() => SelectSong(song.SongId)">
+                    <strong>@DisplayTitle(song)</strong>
+                    <span>@song.SongId / @song.Patterns.Count pattern(s) / @(song.HasPreview ? "preview" : "no preview")</span>
+                </button>
+            }
+        </aside>
+
+        <section class="song-detail">
+            @if (SelectedSong is null)
+            {
+                <div class="status-message">Select a song.</div>
+            }
+            else
+            {
+                <div class="table-header">
+                    <div>
+                        <h2>@DisplayTitle(SelectedSong)</h2>
+                        <p>@SelectedSong.SongId</p>
+                    </div>
+                    <div class="table-counts">@SelectedSong.Patterns.Count pattern(s)</div>
+                </div>
+
+                <div class="song-summary-grid">
+                    <div>
+                        <span class="metric-label">Description</span>
+                        <strong>@SelectedSong.GetDescription(selectedLanguage)</strong>
+                    </div>
+                    <div>
+                        <span class="metric-label">Item</span>
+                        <strong>@SelectedSong.GetItemName(selectedLanguage)</strong>
+                    </div>
+                    <div>
+                        <span class="metric-label">Preview</span>
+                        <strong>@(SelectedSong.PreviewPackageRelativePath ?? "-")</strong>
+                    </div>
+                    <div>
+                        <span class="metric-label">Products</span>
+                        <strong>@string.Join(", ", SelectedSong.ProductIds)</strong>
+                    </div>
+                    <div>
+                        <span class="metric-label">Items</span>
+                        <strong>@string.Join(", ", SelectedSong.ItemIds)</strong>
+                    </div>
+                    <div>
+                        <span class="metric-label">Categories</span>
+                        <strong>@string.Join(", ", SelectedSong.CategoryIds)</strong>
+                    </div>
+                </div>
+
+                <h2 class="section-heading">Localized Titles</h2>
+                <div class="grid-scroll compact-grid-scroll">
+                    <table class="data-grid">
+                        <thead>
+                            <tr>
+                                <th>Language</th>
+                                <th>Title</th>
+                                <th>Description</th>
+                                <th>Item Name</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var language in Languages)
+                            {
+                                <tr>
+                                    <td>@language</td>
+                                    <td>@(SelectedSong.TitlesByLanguage.TryGetValue(language, out var title) ? title : "")</td>
+                                    <td>@(SelectedSong.DescriptionsByLanguage.TryGetValue(language, out var desc) ? desc : "")</td>
+                                    <td>@(SelectedSong.ItemNamesByLanguage.TryGetValue(language, out var itemName) ? itemName : "")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <h2 class="section-heading">Patterns</h2>
+                <div class="grid-scroll compact-grid-scroll">
+                    <table class="data-grid">
+                        <thead>
+                            <tr>
+                                <th>Pattern ID</th>
+                                <th>Name</th>
+                                <th>Difficulty</th>
+                                <th>Level</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var pattern in SelectedSong.Patterns)
+                            {
+                                <tr>
+                                    <td>@pattern.PatternId</td>
+                                    <td>@pattern.PatternName</td>
+                                    <td>@pattern.Difficulty</td>
+                                    <td>@pattern.Level</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </section>
+    </section>
+}
+
+@code {
+    private string filter = string.Empty;
+    private string selectedLanguage = "us";
+    private string? selectedSongId;
+
+    private IReadOnlyList<SongCatalogEntry> Catalog => State.CurrentPackage is null
+        ? []
+        : SongCatalog.BuildCatalog(State.CurrentPackage);
+
+    private IReadOnlyList<string> Languages
+    {
+        get
+        {
+            var languages = Catalog
+                .SelectMany(song => song.TitlesByLanguage.Keys
+                    .Concat(song.DescriptionsByLanguage.Keys)
+                    .Concat(song.ItemNamesByLanguage.Keys))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(language => language, StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+
+            return languages.Length == 0 ? ["us"] : languages;
+        }
+    }
+
+    private IEnumerable<SongCatalogEntry> FilteredSongs
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(filter))
+            {
+                return Catalog;
+            }
+
+            return Catalog.Where(song =>
+                song.SongId.Contains(filter, StringComparison.OrdinalIgnoreCase)
+                || song.GetTitle(selectedLanguage).Contains(filter, StringComparison.OrdinalIgnoreCase)
+                || song.GetItemName(selectedLanguage).Contains(filter, StringComparison.OrdinalIgnoreCase)
+                || song.ProductIds.Any(id => id.Contains(filter, StringComparison.OrdinalIgnoreCase))
+                || song.ItemIds.Any(id => id.Contains(filter, StringComparison.OrdinalIgnoreCase))
+                || song.CategoryIds.Any(id => id.Contains(filter, StringComparison.OrdinalIgnoreCase)));
+        }
+    }
+
+    private SongCatalogEntry? SelectedSong
+        => Catalog.FirstOrDefault(song => song.SongId == selectedSongId)
+            ?? FilteredSongs.FirstOrDefault();
+
+    private void SelectSong(string songId)
+    {
+        selectedSongId = songId;
+    }
+
+    private string DisplayTitle(SongCatalogEntry song)
+    {
+        var title = song.GetTitle(selectedLanguage);
+        return string.IsNullOrWhiteSpace(title) ? song.SongId : title;
+    }
+}
