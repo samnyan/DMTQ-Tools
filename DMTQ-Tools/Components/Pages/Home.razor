@@ -6,9 +6,11 @@
 
 <section class="toolbar-panel">
     <label class="form-label" for="projectRoot">Project directory</label>
-    <div class="input-row">
+    <div class="input-row project-actions">
         <input id="projectRoot" class="form-control" @bind="projectRoot" placeholder="D:\DMTQProjects\MyPatch" />
-        <button class="btn btn-primary" @onclick="CreateProject">Create/Open</button>
+        <button class="btn btn-primary" @onclick="CreateProject" disabled="@isBusy">Create</button>
+        <button class="btn btn-secondary" @onclick="OpenProject" disabled="@isBusy">Open Saved</button>
+        <button class="btn btn-secondary" @onclick="SaveProject" disabled="@(!State.HasPackage || isBusy)">Save</button>
     </div>
     @if (!string.IsNullOrWhiteSpace(message))
     {
@@ -54,6 +56,7 @@
 @code {
     private string projectRoot = string.Empty;
     private string? message;
+    private bool isBusy;
 
     private string ValidationText => State.LastValidationResult is null
         ? "Not run"
@@ -70,6 +73,46 @@
         {
             message = ex.Message;
             State.Diagnostics.Add("Project error: " + ex.Message);
+        }
+    }
+
+    private async Task OpenProject()
+    {
+        isBusy = true;
+        message = "Opening project...";
+        try
+        {
+            await Workflow.OpenProjectAsync(projectRoot);
+            message = "Project opened.";
+        }
+        catch (Exception ex)
+        {
+            message = ex.Message;
+            State.Diagnostics.Add("Open project error: " + ex.Message);
+        }
+        finally
+        {
+            isBusy = false;
+        }
+    }
+
+    private async Task SaveProject()
+    {
+        isBusy = true;
+        message = "Saving project...";
+        try
+        {
+            await Workflow.SaveProjectAsync();
+            message = "Project saved.";
+        }
+        catch (Exception ex)
+        {
+            message = ex.Message;
+            State.Diagnostics.Add("Save project error: " + ex.Message);
+        }
+        finally
+        {
+            isBusy = false;
         }
     }
 }

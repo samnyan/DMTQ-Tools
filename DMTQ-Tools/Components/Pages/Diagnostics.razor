@@ -4,6 +4,22 @@
 <h1>Diagnostics</h1>
 
 <section class="toolbar-panel">
+    <h2>Project file</h2>
+    @if (string.IsNullOrWhiteSpace(State.ProjectRoot))
+    {
+        <div class="status-message">No project selected.</div>
+    }
+    else
+    {
+        var projectFile = System.IO.Path.Combine(State.ProjectRoot, "project.json");
+        <div class="status-message">@projectFile</div>
+        <div class="status-message @(System.IO.File.Exists(projectFile) ? "success" : "")">
+            @(System.IO.File.Exists(projectFile) ? "Project file exists." : "Project has not been saved yet.")
+        </div>
+    }
+</section>
+
+<section class="toolbar-panel">
     <h2>Workflow log</h2>
     @if (State.Diagnostics.Count == 0)
     {

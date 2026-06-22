@@ -268,3 +268,13 @@ h1:focus {
         max-height: 16rem;
     }
 }
+
+.project-actions {
+    grid-template-columns: minmax(0, 1fr) auto auto auto;
+}
+
+@media (max-width: 900px) {
+    .project-actions {
+        grid-template-columns: 1fr;
+    }
+}
