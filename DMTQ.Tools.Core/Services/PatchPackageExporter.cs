@@ -54,27 +54,17 @@ public sealed class PatchPackageExporter(
                 Directory.CreateDirectory(Path.GetDirectoryName(exportPath) ?? exportRoot);
                 File.Copy(archivedPath, exportPath, overwrite: true);
 
-                var uncompressedPath = sourceEntry.Compressed && exportPath.EndsWith(".lz4", StringComparison.OrdinalIgnoreCase)
-                    ? exportPath[..^4]
-                    : exportPath;
-                string? compressedPath = null;
-
-                if (sourceEntry.Compressed)
+                var compressedPath = sourceEntry.Compressed ? exportPath + ".lz4" : null;
+                if (compressedPath is not null)
                 {
-                    compressedPath = exportPath.EndsWith(".lz4", StringComparison.OrdinalIgnoreCase)
-                        ? exportPath
-                        : exportPath + ".lz4";
-
-                    if (!exportPath.EndsWith(".lz4", StringComparison.OrdinalIgnoreCase))
-                    {
-                        await compressionService.CompressFileAsync(exportPath, compressedPath, cancellationToken).ConfigureAwait(false);
-                    }
+                    await compressionService.CompressFileAsync(exportPath, compressedPath, cancellationToken)
+                        .ConfigureAwait(false);
                 }
 
                 exportedManifest.Entries.Add(await CreateExportEntryAsync(
                     sourceEntry,
                     relativePath,
-                    File.Exists(uncompressedPath) ? uncompressedPath : exportPath,
+                    exportPath,
                     compressedPath,
                     sourceEntry.Compressed,
                     cancellationToken).ConfigureAwait(false));
