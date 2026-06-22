@@ -80,6 +80,22 @@ public sealed class PatchPackageExporterTests
             validation.Errors.Should().BeEmpty();
             validation.IsValid.Should().BeTrue();
             exportedManifest.Entries.Should().HaveCount(package.Manifest.Entries.Count);
+
+            var resourceEntry = exportedManifest.Entries.First(e =>
+                e.Compressed && e.FileName.StartsWith("dlc/", StringComparison.Ordinal));
+            var resourcePath = Path.Combine(exportRoot, resourceEntry.FileName.Replace('/', Path.DirectorySeparatorChar));
+            var compressedResourcePath = resourcePath + ".lz4";
+            var decompressedResourcePath = Path.Combine(exportRoot, "roundtrip-resource-check-" + Guid.NewGuid().ToString("N"));
+
+            File.Exists(resourcePath).Should().BeTrue();
+            File.Exists(compressedResourcePath).Should().BeTrue();
+            checksum.GetFileSize(resourcePath).Should().Be(resourceEntry.FileSize);
+            (await checksum.ComputeMd5Async(resourcePath)).Should().Be(resourceEntry.Checksum);
+
+            await compression.DecompressFileAsync(compressedResourcePath, decompressedResourcePath);
+            var exportedBytes = await File.ReadAllBytesAsync(resourcePath);
+            var decompressedBytes = await File.ReadAllBytesAsync(decompressedResourcePath);
+            decompressedBytes.Should().Equal(exportedBytes);
         }
         finally
         {
