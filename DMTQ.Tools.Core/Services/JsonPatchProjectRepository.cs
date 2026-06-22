@@ -70,6 +70,7 @@ public sealed class JsonPatchProjectRepository : IPatchProjectRepository
         public List<PatchFileEntryDto> ManifestEntries { get; set; } = [];
         public List<GameTableDto> Tables { get; set; } = [];
         public List<ResourceFileDto> Resources { get; set; } = [];
+        public List<PlatformPackageRecordDto> Platforms { get; set; } = [];
 
         public static ProjectDocument FromPackage(
             PatchPackage package,
@@ -83,7 +84,8 @@ public sealed class JsonPatchProjectRepository : IPatchProjectRepository
                 ProjectInfo = ProjectInfoDto.FromModel(package.ProjectInfo),
                 ManifestEntries = package.Manifest.Entries.Select(PatchFileEntryDto.FromModel).ToList(),
                 Tables = package.Tables.Tables.Select(GameTableDto.FromModel).ToList(),
-                Resources = package.Resources.Select(ResourceFileDto.FromModel).ToList()
+                Resources = package.Resources.Select(ResourceFileDto.FromModel).ToList(),
+                Platforms = package.Platforms.Select(PlatformPackageRecordDto.FromModel).ToList()
             };
         }
 
@@ -97,6 +99,7 @@ public sealed class JsonPatchProjectRepository : IPatchProjectRepository
             package.Manifest.Entries.AddRange(ManifestEntries.Select(entry => entry.ToModel()));
             package.Tables.Tables.AddRange(Tables.Select(table => table.ToModel()));
             package.Resources.AddRange(Resources.Select(resource => resource.ToModel()));
+            package.Platforms.AddRange(Platforms.Select(platform => platform.ToModel()));
 
             var options = new PackageExportOptions();
             foreach (var item in CompressionOverrides)
@@ -239,6 +242,8 @@ public sealed class JsonPatchProjectRepository : IPatchProjectRepository
         public string Category { get; set; } = string.Empty;
         public bool Compressed { get; set; }
         public string? SourcePackagePath { get; set; }
+        public string? Platform { get; set; }
+        public List<string>? IncludedPlatforms { get; set; }
 
         public static ResourceFileDto FromModel(ResourceFile model)
             => new()
@@ -247,10 +252,53 @@ public sealed class JsonPatchProjectRepository : IPatchProjectRepository
                 ProjectRelativePath = model.ProjectRelativePath,
                 Category = model.Category,
                 Compressed = model.Compressed,
-                SourcePackagePath = model.SourcePackagePath
+                SourcePackagePath = model.SourcePackagePath,
+                Platform = model.Platform,
+                IncludedPlatforms = model.IncludedPlatforms?.ToList()
             };
 
         public ResourceFile ToModel()
-            => new(PackageRelativePath, ProjectRelativePath, Category, Compressed, SourcePackagePath);
+            => new(PackageRelativePath, ProjectRelativePath, Category, Compressed, SourcePackagePath, Platform, IncludedPlatforms);
+    }
+
+    private sealed class PlatformPackageRecordDto
+    {
+        public string Platform { get; set; } = string.Empty;
+        public string SourcePackageRoot { get; set; } = string.Empty;
+        public string? Version { get; set; }
+        public DateTimeOffset ImportedAt { get; set; }
+        public List<PatchFileEntryDto> BaselineManifestEntries { get; set; } = [];
+        public int ImportedTableFileCount { get; set; }
+        public int ImportedResourceFileCount { get; set; }
+        public int MissingPhysicalFileCount { get; set; }
+
+        public static PlatformPackageRecordDto FromModel(PlatformPackageRecord model)
+            => new()
+            {
+                Platform = model.Platform,
+                SourcePackageRoot = model.SourcePackageRoot,
+                Version = model.Version,
+                ImportedAt = model.ImportedAt,
+                BaselineManifestEntries = model.BaselineManifestEntries.Select(PatchFileEntryDto.FromModel).ToList(),
+                ImportedTableFileCount = model.ImportedTableFileCount,
+                ImportedResourceFileCount = model.ImportedResourceFileCount,
+                MissingPhysicalFileCount = model.MissingPhysicalFileCount
+            };
+
+        public PlatformPackageRecord ToModel()
+        {
+            var record = new PlatformPackageRecord
+            {
+                Platform = Platform,
+                SourcePackageRoot = SourcePackageRoot,
+                Version = Version,
+                ImportedAt = ImportedAt,
+                ImportedTableFileCount = ImportedTableFileCount,
+                ImportedResourceFileCount = ImportedResourceFileCount,
+                MissingPhysicalFileCount = MissingPhysicalFileCount
+            };
+            record.BaselineManifestEntries.AddRange(BaselineManifestEntries.Select(entry => entry.ToModel()));
+            return record;
+        }
     }
 }

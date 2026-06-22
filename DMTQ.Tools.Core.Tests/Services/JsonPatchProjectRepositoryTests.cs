@@ -112,6 +112,57 @@ public sealed class JsonPatchProjectRepositoryTests
         throw new DirectoryNotFoundException("Could not locate repository root containing DMTQ-Tools.sln.");
     }
 
+    [TestMethod]
+    public async Task SaveAndLoadAsync_RoundTripsPlatformMetadataAndPreviewInclusion()
+    {
+        var projectRoot = Path.Combine(Path.GetTempPath(), "dmtq-json-platform-project-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            Directory.CreateDirectory(projectRoot);
+            var package = CreateMinimalPackage(projectRoot);
+            package.Platforms.Add(new PlatformPackageRecord
+            {
+                Platform = "android",
+                SourcePackageRoot = "source-android",
+                Version = "1.003.005",
+                ImportedTableFileCount = 1,
+                ImportedResourceFileCount = 1,
+                MissingPhysicalFileCount = 0,
+                BaselineManifestEntries =
+                {
+                    new PatchFileEntry("preview/oblivion.p.opus", 12, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", 0, string.Empty, 0, false, string.Empty, string.Empty)
+                }
+            });
+            package.Resources.Clear();
+            package.Resources.Add(new ResourceFile(
+                "preview/oblivion.p.opus",
+                "resources/shared/preview/oblivion.p.opus",
+                "preview",
+                false,
+                null,
+                null,
+                ["android", "ios"]));
+
+            var repository = new JsonPatchProjectRepository();
+
+            await repository.SaveAsync(package, "Keep", new PackageExportOptions(), projectRoot);
+            var snapshot = await repository.LoadAsync(projectRoot);
+
+            snapshot.Package.Platforms.Should().ContainSingle(p => p.Platform == "android");
+            snapshot.Package.Platforms[0].BaselineManifestEntries.Should().ContainSingle(e => e.FileName == "preview/oblivion.p.opus");
+            snapshot.Package.Resources.Should().ContainSingle();
+            snapshot.Package.Resources[0].IncludedPlatforms.Should().BeEquivalentTo("android", "ios");
+            snapshot.Package.Resources[0].ProjectRelativePath.Should().Be("resources/shared/preview/oblivion.p.opus");
+        }
+        finally
+        {
+            if (Directory.Exists(projectRoot))
+            {
+                Directory.Delete(projectRoot, recursive: true);
+            }
+        }
+    }
+
     private static PatchPackage CreateMinimalPackage(string projectRoot)
     {
         var package = new PatchPackage
