@@ -1,8 +1,10 @@
 @page "/songs"
+@inject NavigationManager Navigation
 @inject IProjectState State
 @inject IProjectWorkflow Workflow
-@inject SongCatalogService SongCatalog
 @inject SongEditService SongEditor
+@inject SongCatalogService SongCatalog
+@inject IDialogService DialogService
 
 <h1>Songs</h1>
 
@@ -14,198 +16,106 @@
 }
 else
 {
-    <FluentStack Orientation="Orientation.Vertical" Style="margin-bottom: 1rem;">
-        <FluentTextField @bind-Value="filter" Immediate="true" Placeholder="Filter by song ID, title, product, item..." />
-        <FluentSelect Items="Languages" OptionText="@(i => i)" OptionValue="@(i => i)" @bind-SelectedOption="selectedLanguage" Label="Language" />
-    </FluentStack>
+    <FluentStack Orientation="Orientation.Vertical" VerticalGap="16">
 
-    <FluentGrid Spacing="3" AdaptiveRendering="true">
-        <FluentGridItem xs="12" sm="6" md="3">
-            <FluentCard>
-                <span class="metric-label">Songs</span><strong>@Catalog.Count</strong>
-            </FluentCard>
-        </FluentGridItem>
-        <FluentGridItem xs="12" sm="6" md="3">
-            <FluentCard>
-                <span class="metric-label">Patterns</span><strong>@Catalog.Sum(s => s.Patterns.Count)</strong>
-            </FluentCard>
-        </FluentGridItem>
-        <FluentGridItem xs="12" sm="6" md="3">
-            <FluentCard>
-                <span class="metric-label">With preview</span><strong>@Catalog.Count(s => s.HasPreview)</strong>
-            </FluentCard>
-        </FluentGridItem>
-        <FluentGridItem xs="12" sm="6" md="3">
-            <FluentCard>
-                <span class="metric-label">Languages</span><strong>@string.Join(", ", Languages)</strong>
-            </FluentCard>
-        </FluentGridItem>
-    </FluentGrid>
-
-    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16" Style="min-height: 34rem;">
-        <FluentStack Orientation="Orientation.Vertical" Style="width: 300px; overflow-y: auto; flex-shrink: 0;">
-            @foreach (var song in FilteredSongs.Take(300))
-            {
-                <FluentButton Style="width: 100%; text-align: left; margin-bottom: 2px;"
-                              Appearance="@(song.Id == SelectedSong?.Id ? Appearance.Accent : Appearance.Neutral)"
-                              OnClick="() => SelectSong(song.Id)">
-                    <strong>@DisplayTitle(song)</strong>
-                    <span>@song.Id / @song.Patterns.Count pattern(s) / @(song.HasPreview ? "preview" : "no preview")</span>
-                </FluentButton>
-            }
-            <div class="song-add-section">
-                <FluentButton Appearance="Appearance.Accent" OnClick="() => showAddSong = !showAddSong">+ Add Song</FluentButton>
-                @if (showAddSong)
-                {
-                    <div class="song-add-form">
-                        <FluentTextField @bind-Value="newSongId" Label="Song ID" />
-                        <FluentTextField @bind-Value="newProductId" Label="Product ID" />
-                        <FluentTextField @bind-Value="newItemId" Label="Item ID" />
-                        <FluentTextField @bind-Value="newCategoryId" Label="Category ID" />
-                        <FluentButton Appearance="Appearance.Neutral" OnClick="AddSong" Disabled="@isBusy">Create</FluentButton>
-                        @if (!string.IsNullOrEmpty(addMessage))
-                        {
-                            <FluentMessageBar Title="@addMessage" Intent="MessageIntent.Info" />
-                        }
-                    </div>
-                }
-            </div>
+        @* ── Toolbar ── *@
+        <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center">
+            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" VerticalAlignment="VerticalAlignment.Center">
+                <FluentTextField @bind-Value="filter" Immediate="true" Placeholder="Filter by song ID, title, item..."
+                                 Style="min-width: 280px;" />
+                <FluentSelect Items="Languages"
+                              OptionText="@(l => l)"
+                              OptionValue="@(l => l)"
+                              @bind-SelectedOption="selectedLanguage"
+                              Label="Language"
+                              Style="min-width: 100px;" />
+            </FluentStack>
+            <FluentButton Appearance="Appearance.Accent"
+                          IconStart="@(new Icons.Regular.Size20.Add())"
+                          OnClick="CreateNewSong">Add Song</FluentButton>
         </FluentStack>
 
-        <section class="song-detail" style="flex: 1;">
-            @if (SelectedSong is null)
-            {
-                <FluentMessageBar Title="Select a song from the list." Intent="MessageIntent.Info" />
-            }
-            else
-            {
-                @* ── Song Info ── *@
-                <div class="table-header">
-                    <h2>@DisplayTitle(SelectedSong)</h2>
-                    <span class="song-id-badge">@SelectedSong.Id</span>
-                </div>
+        @* ── Metrics ── *@
+        <FluentGrid Spacing="3" AdaptiveRendering="true">
+            <FluentGridItem xs="12" sm="6" md="3">
+                <FluentCard>
+                    <span class="metric-label">Songs</span><strong>@Catalog.Count</strong>
+                </FluentCard>
+            </FluentGridItem>
+            <FluentGridItem xs="12" sm="6" md="3">
+                <FluentCard>
+                    <span class="metric-label">Patterns</span><strong>@Catalog.Sum(s => s.Patterns.Count)</strong>
+                </FluentCard>
+            </FluentGridItem>
+            <FluentGridItem xs="12" sm="6" md="3">
+                <FluentCard>
+                    <span class="metric-label">With preview</span><strong>@Catalog.Count(s => s.HasPreview)</strong>
+                </FluentCard>
+            </FluentGridItem>
+            <FluentGridItem xs="12" sm="6" md="3">
+                <FluentCard>
+                    <span class="metric-label">Languages</span><strong>@Languages.Count</strong>
+                </FluentCard>
+            </FluentGridItem>
+        </FluentGrid>
 
-                <div class="song-form-grid">
-                    <FluentTextField @bind-Value="SelectedSong.ItemId" Label="Item ID" />
-                    <FluentTextField @bind-Value="SelectedSong.Name" Label="Name" />
-                    <FluentTextField @bind-Value="SelectedSong.FullName" Label="Full Name" />
-                    <FluentTextField @bind-Value="SelectedSong.Genre" Label="Genre" />
-                    <FluentTextField @bind-Value="SelectedSong.ArtistName" Label="Artist Name" />
-                    <FluentTextField @bind-Value="SelectedSong.OriginalBgaYn" Label="Original BGA" />
-                    <FluentTextField @bind-Value="SelectedSong.LoopBgaYn" Label="Loop BGA" />
-                    <FluentTextField @bind-Value="SelectedSong.ComposedBy" Label="Composed By" />
-                    <FluentTextField @bind-Value="SelectedSong.Singer" Label="Singer" />
-                    <FluentTextField @bind-Value="SelectedSong.FeatBy" Label="Feat By" />
-                    <FluentTextField @bind-Value="SelectedSong.ArrangedBy" Label="Arranged By" />
-                    <FluentTextField @bind-Value="SelectedSong.VisualizedBy" Label="Visualized By" />
-                    <FluentTextField @bind-Value="SelectedSong.CostGamePoint" Label="Cost Game Point" />
-                    <FluentTextField @bind-Value="SelectedSong.CostGameCash" Label="Cost Game Cash" />
-                    <FluentTextField @bind-Value="SelectedSong.Flag" Label="Flag" />
-                    <FluentTextField @bind-Value="SelectedSong.Status" Label="Status" />
-                    <FluentTextField @bind-Value="SelectedSong.FreeYn" Label="Free" />
-                    <FluentTextField @bind-Value="SelectedSong.HiddenYn" Label="Hidden" />
-                    <FluentTextField @bind-Value="SelectedSong.OpenYn" Label="Open" />
-                    <FluentTextField @bind-Value="SelectedSong.TrackId" Label="Track ID" />
-                    <FluentTextField @bind-Value="SelectedSong.ModDate" Label="Mod Date" />
-                    <FluentTextField @bind-Value="SelectedSong.Update" Label="Update" />
-                </div>
-                <div class="song-form-grid">
-                    <FluentTextField @bind-Value="SelectedSong.PreviewPackageRelativePath" Label="Preview path" />
-                    <FluentTextField @bind-Value="editTitle" Label="@($"Title ({selectedLanguage})")" />
-                    <FluentTextField @bind-Value="editDescription" Label="@($"Description ({selectedLanguage})")" />
-                </div>
-                <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8" VerticalAlignment="VerticalAlignment.Center">
-                    <FluentButton Appearance="Appearance.Accent" OnClick="SaveSelectedSong" Disabled="@isBusy">Save Song</FluentButton>
-                    @if (!string.IsNullOrEmpty(editMessage))
-                    {
-                        <FluentMessageBar Title="@editMessage" Intent="MessageIntent.Info" />
-                    }
-                </FluentStack>
+        @* ── DataGrid ── *@
+        @if (Catalog.Count > 0)
+        {
+            <FluentDataGrid Items="@FilteredSongs.AsQueryable()" TGridItem="Song"
+                            ShowHover="true"
+                            Pagination="@pagination"
+                            ResizableColumns="true"
+                            HeaderCellAsButtonWithMenu="true">
+                <PropertyColumn Property="@(s => s.Id)" Title="Song ID" Sortable="true" />
+                <TemplateColumn Title="Name" Sortable="true" SortBy="@(GridSort<Song>.ByAscending(s => s.Name))">
+                    <strong>@DisplayTitle(context)</strong>
+                </TemplateColumn>
+                <PropertyColumn Property="@(s => s.Genre)" Title="Genre" Sortable="true" />
+                <PropertyColumn Property="@(s => s.ArtistName)" Title="Artist" Sortable="true" />
+                <TemplateColumn Title="Patterns">
+                    @context.Patterns.Count
+                </TemplateColumn>
+                <TemplateColumn Title="Preview">
+                    @(context.HasPreview ? "Yes" : "No")
+                </TemplateColumn>
+                <TemplateColumn Title="Actions">
+                    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="4">
+                        <FluentButton IconStart="@(new Icons.Regular.Size20.Edit())"
+                                      Appearance="Appearance.Neutral"
+                                      OnClick="() => EditSong(context.Id)"
+                                      Title="Edit" />
+                        <FluentButton IconStart="@(new Icons.Regular.Size20.Delete())"
+                                      Appearance="Appearance.Neutral"
+                                      OnClick="() => DeleteSongAsync(context)"
+                                      Title="Delete" />
+                    </FluentStack>
+                </TemplateColumn>
+            </FluentDataGrid>
+            <FluentPaginator State="@pagination" />
+        }
+        else
+        {
+            <FluentMessageBar Title="No songs found. Import CSV data or add a song." Intent="MessageIntent.Info" />
+        }
 
-                @* ── Localization table ── *@
-                <h2 class="section-heading">Localized Texts</h2>
-                <div class="grid-scroll compact-grid-scroll">
-                    <table class="data-grid">
-                        <thead><tr><th>Language</th><th>Title</th><th>Description</th><th>Item Name</th></tr></thead>
-                        <tbody>
-                            @foreach (var lang in Languages)
-                            {
-                                <tr>
-                                    <td>@lang</td>
-                                    <td>@GetLocalized(SelectedSong.TitlesByLanguage, lang)</td>
-                                    <td>@GetLocalized(SelectedSong.DescriptionsByLanguage, lang)</td>
-                                    <td>@GetLocalized(SelectedSong.ItemNamesByLanguage, lang)</td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-
-                <h2 class="section-heading">Linked IDs</h2>
-                <div class="song-summary-grid">
-                    <div><span class="metric-label">Products</span><strong>@string.Join(", ", SelectedSong.ProductIds)</strong></div>
-                    <div><span class="metric-label">Items</span><strong>@string.Join(", ", SelectedSong.ItemIds)</strong></div>
-                    <div><span class="metric-label">Categories</span><strong>@string.Join(", ", SelectedSong.CategoryIds)</strong></div>
-                </div>
-
-                @* ── Patterns ── *@
-                <div class="table-header">
-                    <h2 class="section-heading">Song Patterns</h2>
-                    <FluentButton Appearance="Appearance.Neutral" OnClick="() => showAddPattern = !showAddPattern">+ Add Pattern</FluentButton>
-                </div>
-                @if (showAddPattern)
-                {
-                    <div class="song-add-form">
-                        <FluentTextField @bind-Value="newPatternId" Label="Pattern ID" />
-                        <FluentTextField @bind-Value="newPatternLine" Label="Line (2Line/3Line/4Line)" />
-                        <FluentTextField @bind-Value="newPatternSignature" Label="Signature (1/2/3)" />
-                        <FluentTextField @bind-Value="newPatternDifficulty" Label="Difficulty" />
-                        <FluentButton Appearance="Appearance.Neutral" OnClick="AddPattern" Disabled="@isBusy">Add Pattern</FluentButton>
-                    </div>
-                }
-                <div class="grid-scroll compact-grid-scroll">
-                    <table class="data-grid">
-                        <thead><tr><th>Pattern ID</th><th>Line</th><th>Signature</th><th>Difficulty</th><th>Level</th><th></th></tr></thead>
-                        <tbody>
-                            @foreach (var pattern in SortedPatterns)
-                            {
-                                <tr>
-                                    <td>@pattern.PatternId</td>
-                                    <td><input class="cell-input" @bind="pattern.Line" /></td>
-                                    <td><input class="cell-input" @bind="pattern.Signature" /></td>
-                                    <td><input class="cell-input" @bind="pattern.Difficulty" /></td>
-                                    <td><input class="cell-input" @bind="pattern.Level" /></td>
-                                    <td><FluentButton Style="padding: 0.2rem 0.5rem; font-size: 0.8rem;" Appearance="Appearance.Neutral" OnClick="() => SavePattern(pattern)"
-                                        Disabled="@isBusy">Save</FluentButton></td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            }
-        </section>
+        @if (!string.IsNullOrEmpty(message))
+        {
+            <FluentMessageBar Title="@message" Intent="MessageIntent.Info" />
+        }
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <FluentMessageBar Title="@errorMessage" Intent="MessageIntent.Error" />
+        }
     </FluentStack>
 }
 
 @code {
     private string filter = string.Empty;
     private string selectedLanguage = "us";
-    private string? selectedSongId;
-    private bool isBusy;
-    private string? editMessage;
-    private string? addMessage;
-    private string editTitle = string.Empty;
-    private string editDescription = string.Empty;
-    private string newSongId = string.Empty;
-    private string newProductId = string.Empty;
-    private string newItemId = string.Empty;
-    private string newCategoryId = string.Empty;
-    private string newPatternId = string.Empty;
-    private string newPatternLine = string.Empty;
-    private string newPatternSignature = string.Empty;
-    private string newPatternDifficulty = string.Empty;
-    private bool showAddSong;
-    private bool showAddPattern;
+    private string? message;
+    private string? errorMessage;
+    private PaginationState pagination = new() { ItemsPerPage = 25 };
 
     private PatchPackage? _lastPackage;
     private IReadOnlyList<Song> _catalog = [];
@@ -232,160 +142,51 @@ else
             if (string.IsNullOrWhiteSpace(filter)) return Catalog;
             return Catalog.Where(song =>
                 song.Id.Contains(filter, StringComparison.OrdinalIgnoreCase)
-                || song.GetTitle(selectedLanguage ?? "us").Contains(filter, StringComparison.OrdinalIgnoreCase)
-                || song.GetItemName(selectedLanguage ?? "us").Contains(filter, StringComparison.OrdinalIgnoreCase)
-                || song.ProductIds.Any(id => id.Contains(filter, StringComparison.OrdinalIgnoreCase))
-                || song.ItemIds.Any(id => id.Contains(filter, StringComparison.OrdinalIgnoreCase))
-                || song.CategoryIds.Any(id => id.Contains(filter, StringComparison.OrdinalIgnoreCase)));
+                || song.GetTitle(selectedLanguage).Contains(filter, StringComparison.OrdinalIgnoreCase)
+                || song.GetItemName(selectedLanguage).Contains(filter, StringComparison.OrdinalIgnoreCase)
+                || song.Name.Contains(filter, StringComparison.OrdinalIgnoreCase)
+                || song.ArtistName.Contains(filter, StringComparison.OrdinalIgnoreCase)
+                || song.Genre.Contains(filter, StringComparison.OrdinalIgnoreCase)
+                || song.ProductIds.Any(id => id.Contains(filter, StringComparison.OrdinalIgnoreCase)));
         }
-    }
-
-    private Song? SelectedSong
-        => Catalog.FirstOrDefault(s => s.Id == selectedSongId) ?? FilteredSongs.FirstOrDefault();
-
-    private IEnumerable<SongPattern> SortedPatterns
-    {
-        get
-        {
-            if (SelectedSong is null) return [];
-            return SelectedSong.Patterns
-                .OrderBy(p => p.Line.Length).ThenBy(p => p.Line)
-                .ThenBy(p => p.Signature.Length).ThenBy(p => p.Signature);
-        }
-    }
-
-    private void SelectSong(string songId)
-    {
-        selectedSongId = songId;
-        showAddPattern = false;
-        if (SelectedSong is not null)
-        {
-            editTitle = SelectedSong.GetTitle(selectedLanguage ?? "us");
-            editDescription = SelectedSong.GetDescription(selectedLanguage ?? "us");
-        }
-        editMessage = null;
     }
 
     private string DisplayTitle(Song song)
     {
-        var lang = selectedLanguage ?? "us";
-        var title = song.GetTitle(lang);
+        var title = song.GetTitle(selectedLanguage);
         return string.IsNullOrWhiteSpace(title) ? song.Id : title;
     }
 
-    private static string GetLocalized(Dictionary<string, string> dict, string lang)
-        => dict.TryGetValue(lang, out var v) ? v : "";
+    private void CreateNewSong() => Navigation.NavigateTo("/songs/editor/new");
+    private void EditSong(string songId) => Navigation.NavigateTo($"/songs/editor/{songId}");
 
-    // ── Save Song ──
-
-    private async Task SaveSelectedSong()
-    {
-        if (State.CurrentPackage is null || SelectedSong is null) return;
-        isBusy = true;
-        try
-        {
-            SelectedSong.TitlesByLanguage[selectedLanguage ?? "us"] = editTitle;
-            SelectedSong.DescriptionsByLanguage[selectedLanguage ?? "us"] = editDescription;
-
-            SongEditor.UpdateSong(State.CurrentPackage, SelectedSong);
-            await Workflow.SaveProjectAsync();
-            _lastPackage = null;
-            editMessage = "Song saved.";
-            State.Diagnostics.Add($"Song edited: {SelectedSong.Id}");
-        }
-        catch (Exception ex)
-        {
-            editMessage = ex.Message;
-            State.Diagnostics.Add("Song edit error: " + ex.Message);
-        }
-        finally { isBusy = false; }
-    }
-
-    // ── Save Pattern ──
-
-    private async Task SavePattern(SongPattern pattern)
-    {
-        if (State.CurrentPackage is null || SelectedSong is null) return;
-        isBusy = true;
-        try
-        {
-            SongEditor.UpdatePattern(State.CurrentPackage, SelectedSong.Id, pattern.PatternId, pattern);
-            await Workflow.SaveProjectAsync();
-            _lastPackage = null;
-            editMessage = $"Pattern {pattern.PatternId} saved.";
-            State.Diagnostics.Add($"Pattern edited: {pattern.PatternId}");
-        }
-        catch (Exception ex)
-        {
-            editMessage = ex.Message;
-            State.Diagnostics.Add("Pattern edit error: " + ex.Message);
-        }
-        finally { isBusy = false; }
-    }
-
-    // ── Add Pattern ──
-
-    private async Task AddPattern()
-    {
-        if (State.CurrentPackage is null || SelectedSong is null) return;
-        isBusy = true;
-        try
-        {
-            var pattern = new SongPattern { PatternId = newPatternId, SongId = SelectedSong.Id };
-            if (!string.IsNullOrWhiteSpace(newPatternLine)) pattern.Line = newPatternLine;
-            if (!string.IsNullOrWhiteSpace(newPatternSignature)) pattern.Signature = newPatternSignature;
-            if (!string.IsNullOrWhiteSpace(newPatternDifficulty)) pattern.Difficulty = newPatternDifficulty;
-
-            SongEditor.AddPattern(State.CurrentPackage, SelectedSong.Id, pattern);
-            await Workflow.SaveProjectAsync();
-            _lastPackage = null;
-            newPatternId = string.Empty;
-            newPatternLine = string.Empty;
-            newPatternSignature = string.Empty;
-            newPatternDifficulty = string.Empty;
-            showAddPattern = false;
-            editMessage = $"Pattern {pattern.PatternId} added.";
-            State.Diagnostics.Add($"Pattern added: {pattern.PatternId}");
-        }
-        catch (Exception ex)
-        {
-            editMessage = ex.Message;
-            State.Diagnostics.Add("Add pattern error: " + ex.Message);
-        }
-        finally { isBusy = false; }
-    }
-
-    // ── Add Song ──
-
-    private async Task AddSong()
+    private async Task DeleteSongAsync(Song song)
     {
         if (State.CurrentPackage is null) return;
-        isBusy = true;
+
+        message = null;
+        errorMessage = null;
+
+        var dialog = await DialogService.ShowConfirmationAsync(
+            $"Delete song '{DisplayTitle(song)}' ({song.Id})? This will remove the song and all its patterns.",
+            "Delete", "Cancel", "Delete Song");
+
+        var result = await dialog.Result;
+        if (result.Cancelled) return;
+
         try
         {
-            var song = new Song { Id = newSongId };
-            if (!string.IsNullOrWhiteSpace(newProductId)) song.ProductIds.Add(newProductId);
-            if (!string.IsNullOrWhiteSpace(newItemId)) song.ItemIds.Add(newItemId);
-            if (!string.IsNullOrWhiteSpace(newCategoryId)) song.CategoryIds.Add(newCategoryId);
-
-            SongEditor.AddSong(State.CurrentPackage, song);
+            SongEditor.RemoveSong(State.CurrentPackage, song.Id);
             await Workflow.SaveProjectAsync();
-            _lastPackage = null;
-            selectedSongId = newSongId;
-            newSongId = string.Empty;
-            newProductId = string.Empty;
-            newItemId = string.Empty;
-            newCategoryId = string.Empty;
-            showAddSong = false;
-            addMessage = $"Song {song.Id} created.";
-            State.Diagnostics.Add($"Song added: {song.Id}");
+            _lastPackage = null; // invalidate catalog cache
+            State.Diagnostics.Add($"Song deleted: {song.Id}");
+            message = $"Song {DisplayTitle(song)} deleted.";
         }
         catch (Exception ex)
         {
-            addMessage = ex.Message;
-            State.Diagnostics.Add("Add song error: " + ex.Message);
+            errorMessage = ex.Message;
+            State.Diagnostics.Add("Delete song error: " + ex.Message);
         }
-        finally { isBusy = false; }
     }
 
     private static IReadOnlyList<string> ComputeLanguages(IReadOnlyList<Song> catalog)

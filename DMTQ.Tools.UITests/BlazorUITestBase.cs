@@ -1,6 +1,9 @@
 using DMTQ.Tools.Core.Models;
 using DMTQ.Tools.Core.Services;
+using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Rendering;
 using Microsoft.FluentUI.AspNetCore.Components;
+using Bunit;
 
 namespace DMTQ.Tools.UITests;
 
@@ -22,6 +25,23 @@ public abstract class BlazorUITestBase : Bunit.TestContext
         // FluentUI components invoke JS interop in OnAfterRenderAsync (v=... is build-specific).
         // Use Loose mode so unregistered JS calls return empty/default instead of throwing.
         JSInterop.Mode = JSRuntimeMode.Loose;
+    }
+
+    /// <summary>
+    /// Renders a page that uses FluentDataGrid (needs FluentMenuProvider ancestor).
+    /// </summary>
+    protected IRenderedComponent<TComponent> RenderWithProviders<TComponent>()
+        where TComponent : IComponent
+    {
+        var fragment = Render(builder =>
+        {
+            builder.OpenComponent<FluentMenuProvider>(0);
+            builder.CloseComponent();
+            builder.OpenComponent<TComponent>(1);
+            builder.CloseComponent();
+        });
+        // Return the page portion (second component) as IRenderedComponent
+        return (IRenderedComponent<TComponent>)fragment.FindComponents<TComponent>().Single();
     }
 
     protected GameTableManagerTestState CreateStateWithEmptyPackage()

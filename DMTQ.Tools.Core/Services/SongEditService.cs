@@ -110,6 +110,22 @@ public sealed class SongEditService
         }
     }
 
+    public void RemoveSong(PatchPackage package, string songId)
+    {
+        ArgumentNullException.ThrowIfNull(package);
+        ArgumentException.ThrowIfNullOrWhiteSpace(songId);
+
+        foreach (var table in package.Tables.Tables)
+        {
+            var toRemove = table.Rows
+                .Where(row => GetCell(row, "song_id").Equals(songId, StringComparison.OrdinalIgnoreCase))
+                .ToArray();
+
+            foreach (var row in toRemove)
+                table.Rows.Remove(row);
+        }
+    }
+
     // ── Cell mapping: Song → CSV cells ──
 
     private static void WriteSongCells(GameTableRow row, Song song)

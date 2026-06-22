@@ -1,4 +1,7 @@
 using DMTQ.Tools.Core.Models;
+using DMTQ.Tools.Core.Services;
+using Microsoft.AspNetCore.Components.Rendering;
+using Microsoft.FluentUI.AspNetCore.Components;
 
 namespace DMTQ.Tools.UITests.Pages;
 
@@ -13,58 +16,52 @@ public sealed class SongsPageTests : BlazorUITestBase
         state.SetProjectRoot("test-project");
         RegisterAllServices(state);
 
-        var cut = Render<Songs>();
+        var cut = RenderWithProviders<Songs>();
 
         cut.Markup.Should().Contain("Songs");
         cut.Markup.Should().Contain("1001");
+        cut.Markup.Should().Contain("Add Song");
     }
 
     [TestMethod]
-    public void ShowsFormFieldsWhenSongSelected()
+    public void ShowsDataGridColumns()
     {
         var state = CreateStateWithEmptyPackage();
         state.SetPackage(CreateSamplePackage());
         state.SetProjectRoot("test-project");
         RegisterAllServices(state);
 
-        var cut = Render<Songs>();
+        var cut = RenderWithProviders<Songs>();
 
-        cut.Markup.Should().Contain("Item ID");
-        cut.Markup.Should().Contain("Name");
+        cut.Markup.Should().Contain("Song ID");
         cut.Markup.Should().Contain("Genre");
-        cut.Markup.Should().Contain("TestSong");
+        cut.Markup.Should().Contain("Patterns");
     }
 
     [TestMethod]
-    public void ShowsPatternsTableWhenSongSelected()
+    public void ShowsNoSongsMessageWhenEmpty()
     {
         var state = CreateStateWithEmptyPackage();
-        state.SetPackage(CreateSamplePackage());
+        state.SetPackage(new PatchPackage { ProjectInfo = new ProjectInfo("test-project", null, "1.0", null) });
         state.SetProjectRoot("test-project");
         RegisterAllServices(state);
 
-        var cut = Render<Songs>();
+        var cut = RenderWithProviders<Songs>();
 
-        cut.Markup.Should().Contain("Song Patterns");
-        cut.Markup.Should().Contain("9001");
+        cut.Markup.Should().Contain("No songs found");
     }
 
     private static PatchPackage CreateSamplePackage()
     {
-        var package = new PatchPackage
-        {
-            ProjectInfo = new ProjectInfo("test-project", null, "1.0", null)
-        };
+        var package = new PatchPackage { ProjectInfo = new ProjectInfo("test-project", null, "1.0", null) };
 
         var songTable = new GameTable { PackageRelativePath = "table/us/song_song.csv", TableName = "song_song", LanguageCode = "us" };
         songTable.Columns.Add(new GameTableColumn("song_id", 0));
-        songTable.Columns.Add(new GameTableColumn("item_id", 1));
-        songTable.Columns.Add(new GameTableColumn("name", 2));
-        songTable.Columns.Add(new GameTableColumn("genre", 3));
-        songTable.Columns.Add(new GameTableColumn("artist_name", 4));
+        songTable.Columns.Add(new GameTableColumn("name", 1));
+        songTable.Columns.Add(new GameTableColumn("genre", 2));
+        songTable.Columns.Add(new GameTableColumn("artist_name", 3));
         var songRow = new GameTableRow { Order = 0 };
         songRow.Cells.Add(new GameTableCell("song_id", "1001"));
-        songRow.Cells.Add(new GameTableCell("item_id", "5001"));
         songRow.Cells.Add(new GameTableCell("name", "TestSong"));
         songRow.Cells.Add(new GameTableCell("genre", "Electronic"));
         songRow.Cells.Add(new GameTableCell("artist_name", "TestArtist"));
@@ -74,17 +71,13 @@ public sealed class SongsPageTests : BlazorUITestBase
         var patternTable = new GameTable { PackageRelativePath = "table/us/song_songPattern.csv", TableName = "song_songPattern", LanguageCode = "us" };
         patternTable.Columns.Add(new GameTableColumn("pattern_id", 0));
         patternTable.Columns.Add(new GameTableColumn("song_id", 1));
-        patternTable.Columns.Add(new GameTableColumn("signature", 2));
-        patternTable.Columns.Add(new GameTableColumn("line", 3));
-        patternTable.Columns.Add(new GameTableColumn("difficulty", 4));
-        patternTable.Columns.Add(new GameTableColumn("level", 5));
+        patternTable.Columns.Add(new GameTableColumn("line", 2));
+        patternTable.Columns.Add(new GameTableColumn("difficulty", 3));
         var patternRow = new GameTableRow { Order = 0 };
         patternRow.Cells.Add(new GameTableCell("pattern_id", "9001"));
         patternRow.Cells.Add(new GameTableCell("song_id", "1001"));
-        patternRow.Cells.Add(new GameTableCell("signature", "1"));
         patternRow.Cells.Add(new GameTableCell("line", "2Line"));
         patternRow.Cells.Add(new GameTableCell("difficulty", "easy"));
-        patternRow.Cells.Add(new GameTableCell("level", "5"));
         patternTable.Rows.Add(patternRow);
         package.Tables.Tables.Add(patternTable);
 

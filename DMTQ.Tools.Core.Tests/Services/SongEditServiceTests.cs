@@ -201,6 +201,53 @@ public sealed class SongEditServiceTests
         Cell(row, "line").Should().Be("2Line");
     }
 
+    [TestMethod]
+    public void RemoveSong_DeletesAllRelatedRows()
+    {
+        var package = CreatePackage();
+        package.Tables.Tables.Add(CreateTable("table/us/song_song.csv", "song_song", "us",
+            ["song_id", "name", "artist_name"],
+            ["1001", "SongA", "ArtistA"],
+            ["1002", "SongB", "ArtistB"]));
+        package.Tables.Tables.Add(CreateTable("table/us/song_songPattern.csv", "song_songPattern", "us",
+            ["pattern_id", "song_id", "difficulty"],
+            ["9001", "1001", "easy"],
+            ["9002", "1001", "hard"],
+            ["9003", "1002", "normal"]));
+        package.Tables.Tables.Add(CreateTable("table/us/song_desc_us.csv", "song_desc_us", "us",
+            ["song_id", "title", "description"],
+            ["1001", "Old US", "Old desc"],
+            ["1002", "SongB Title", "SongB Desc"]));
+
+        new SongEditService().RemoveSong(package, "1001");
+
+        // Song row removed
+        package.Tables.Tables.Single(t => t.TableName == "song_song").Rows.Should().HaveCount(1);
+        Cell(package.Tables.Tables.Single(t => t.TableName == "song_song").Rows[0], "song_id").Should().Be("1002");
+
+        // Pattern rows removed (both 9001 and 9002)
+        package.Tables.Tables.Single(t => t.TableName == "song_songPattern").Rows.Should().HaveCount(1);
+        Cell(package.Tables.Tables.Single(t => t.TableName == "song_songPattern").Rows[0], "song_id").Should().Be("1002");
+
+        // Localized row removed
+        package.Tables.Tables.Single(t => t.TableName == "song_desc_us").Rows.Should().HaveCount(1);
+        Cell(package.Tables.Tables.Single(t => t.TableName == "song_desc_us").Rows[0], "song_id").Should().Be("1002");
+    }
+
+    [TestMethod]
+    public void RemoveSong_NoOpsWhenSongDoesNotExist()
+    {
+        var package = CreatePackage();
+        package.Tables.Tables.Add(CreateTable("table/us/song_song.csv", "song_song", "us",
+            ["song_id"], ["1002"]));
+
+        var action = () => new SongEditService().RemoveSong(package, "9999");
+        action.Should().NotThrow();
+
+        // Existing song remains untouched
+        package.Tables.Tables.Single(t => t.TableName == "song_song").Rows.Should().HaveCount(1);
+    }
+
     private static PatchPackage CreatePackage()
         => new() { ProjectInfo = new ProjectInfo("project", null, "1.003.005", null) };
 
