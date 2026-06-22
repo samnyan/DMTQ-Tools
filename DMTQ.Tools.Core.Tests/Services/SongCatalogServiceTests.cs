@@ -81,6 +81,29 @@ public sealed class SongCatalogServiceTests
         new SongCatalogService().BuildCatalog(package).Should().BeEmpty();
     }
 
+    [TestMethod]
+    public void BuildCatalog_DeduplicatesPatternsAcrossMultipleLanguageTables()
+    {
+        var package = CreatePackage();
+        package.Tables.Tables.Add(CreateTable(
+            "table/us/song_song.csv", "song_song", "us",
+            ["song_id", "name"], ["1001", "TestSong"]));
+        package.Tables.Tables.Add(CreateTable(
+            "table/us/song_songPattern.csv", "song_songPattern", "us",
+            ["pattern_id", "song_id", "signature", "line", "difficulty", "level"],
+            ["9001", "1001", "1", "2Line", "expert", "12"]));
+        package.Tables.Tables.Add(CreateTable(
+            "table/cn/song_songPattern.csv", "song_songPattern", "cn",
+            ["pattern_id", "song_id", "signature", "line", "difficulty", "level"],
+            ["9001", "1001", "1", "2Line", "expert", "12"]));
+
+        var catalog = new SongCatalogService().BuildCatalog(package);
+
+        var song = catalog.Single();
+        song.Patterns.Should().ContainSingle();
+        song.Patterns[0].PatternId.Should().Be("9001");
+    }
+
     private static PatchPackage CreatePackage()
         => new() { ProjectInfo = new ProjectInfo("project", null, "1.003.005", null) };
 

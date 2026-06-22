@@ -73,6 +73,8 @@ public sealed class SongCatalogService
 
     private static void AddPatternRows(PatchPackage package, Dictionary<string, Song> songs)
     {
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
         foreach (var table in FindTables(package, "song_songPattern"))
         {
             foreach (var row in table.Rows.OrderBy(row => row.Order))
@@ -85,6 +87,12 @@ public sealed class SongCatalogService
 
                 var patternId = GetCell(row, "pattern_id", "song_pattern_id", "id");
                 if (string.IsNullOrWhiteSpace(patternId))
+                {
+                    continue;
+                }
+
+                var key = songId + "::" + patternId;
+                if (!seen.Add(key))
                 {
                     continue;
                 }
