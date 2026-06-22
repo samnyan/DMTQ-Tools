@@ -9,6 +9,7 @@ public sealed class GameTableManagerState
     public PatchManifest? LastExportManifest { get; private set; }
     public PatchValidationResult? LastValidationResult { get; private set; }
     public string ExportCompressionMode { get; set; } = "Keep";
+    public PackageExportOptions? RestoredExportOptions { get; private set; }
     public List<string> Diagnostics { get; } = [];
 
     public bool HasProject => !string.IsNullOrWhiteSpace(ProjectRoot);
@@ -27,6 +28,7 @@ public sealed class GameTableManagerState
         CurrentPackage = package;
         LastExportManifest = null;
         LastValidationResult = null;
+        RestoredExportOptions = null;
         Diagnostics.Add($"Imported package: {package.Manifest.Entries.Count} manifest entries, {package.Tables.Tables.Count} tables, {package.Resources.Count} resources.");
     }
 
@@ -49,6 +51,11 @@ public sealed class GameTableManagerState
             return options;
         }
 
+        if (ExportCompressionMode == "Keep" && RestoredExportOptions is not null)
+        {
+            return RestoredExportOptions;
+        }
+
         if (ExportCompressionMode == "CompressAll")
         {
             foreach (var entry in CurrentPackage.Manifest.Entries)
@@ -65,5 +72,25 @@ public sealed class GameTableManagerState
         }
 
         return options;
+    }
+
+    public void SetExportCompressionMode(string exportCompressionMode)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(exportCompressionMode);
+        ExportCompressionMode = exportCompressionMode;
+        Diagnostics.Add($"Export compression mode set: {exportCompressionMode}");
+    }
+
+    public void RestoreProject(PatchProjectSnapshot snapshot)
+    {
+        ArgumentNullException.ThrowIfNull(snapshot);
+        ProjectRoot = snapshot.Package.ProjectInfo.ProjectRoot;
+        CurrentPackage = snapshot.Package;
+        ExportCompressionMode = snapshot.ExportCompressionMode;
+        RestoredExportOptions = snapshot.ExportOptions;
+        LastExportManifest = null;
+        LastValidationResult = null;
+        Diagnostics.Add($"Opened project: {ProjectRoot}");
+        Diagnostics.Add($"Loaded package: {snapshot.Package.Manifest.Entries.Count} manifest entries, {snapshot.Package.Tables.Tables.Count} tables, {snapshot.Package.Resources.Count} resources.");
     }
 }

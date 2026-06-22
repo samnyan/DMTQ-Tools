@@ -6,7 +6,8 @@ public sealed class GameTableManagerWorkflow(
     GameTableManagerState state,
     PatchPackageImporter importer,
     PatchPackageExporter exporter,
-    PatchPackageValidator validator)
+    PatchPackageValidator validator,
+    IPatchProjectRepository repository)
 {
     public void CreateProject(string projectRoot)
     {
@@ -50,5 +51,38 @@ public sealed class GameTableManagerWorkflow(
         var validation = await validator.ValidateAsync(manifest, exportRoot, cancellationToken)
             .ConfigureAwait(false);
         state.SetExportResult(manifest, validation);
+    }
+
+    public async Task SaveProjectAsync(CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(state.ProjectRoot))
+        {
+            throw new InvalidOperationException("Create or open a project directory before saving.");
+        }
+
+        if (state.CurrentPackage is null)
+        {
+            throw new InvalidOperationException("Import a package before saving.");
+        }
+
+        await repository.SaveAsync(
+                state.CurrentPackage,
+                state.ExportCompressionMode,
+                state.CreateExportOptions(),
+                state.ProjectRoot,
+                cancellationToken)
+            .ConfigureAwait(false);
+        state.Diagnostics.Add("Project saved.");
+    }
+
+    public async Task OpenProjectAsync(
+        string projectRoot,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(projectRoot);
+
+        var snapshot = await repository.LoadAsync(projectRoot, cancellationToken)
+            .ConfigureAwait(false);
+        state.RestoreProject(snapshot);
     }
 }
