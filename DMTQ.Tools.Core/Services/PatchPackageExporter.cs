@@ -43,15 +43,20 @@ public sealed class PatchPackageExporter(
                     await tableWriter.WriteAsync(table, stream, cancellationToken).ConfigureAwait(false);
                 }
 
-                var compressedPath = uncompressedPath + ".lz4";
-                await compressionService.CompressFileAsync(uncompressedPath, compressedPath, cancellationToken).ConfigureAwait(false);
+                var shouldCompress = options.ShouldCompress(sourceEntry);
+                var compressedPath = shouldCompress ? uncompressedPath + ".lz4" : null;
+                if (compressedPath is not null)
+                {
+                    await compressionService.CompressFileAsync(uncompressedPath, compressedPath, cancellationToken)
+                        .ConfigureAwait(false);
+                }
 
                 exportedManifest.Entries.Add(await CreateExportEntryAsync(
                     sourceEntry,
                     relativePath,
                     uncompressedPath,
                     compressedPath,
-                    compressed: true,
+                    shouldCompress,
                     cancellationToken).ConfigureAwait(false));
             }
             else
@@ -97,13 +102,21 @@ public sealed class PatchPackageExporter(
         bool compressed,
         CancellationToken cancellationToken)
     {
-        var compressedFilePath = compressedPath ?? filePath;
+        var fileSize = checksumService.GetFileSize(filePath);
+        var checksum = await checksumService.ComputeMd5Async(filePath, cancellationToken).ConfigureAwait(false);
+        var compressedFileSize = compressedPath is null
+            ? 0
+            : checksumService.GetFileSize(compressedPath);
+        var compressedChecksum = compressedPath is null
+            ? string.Empty
+            : await checksumService.ComputeMd5Async(compressedPath, cancellationToken).ConfigureAwait(false);
+
         return new PatchFileEntry(
             relativePath,
-            checksumService.GetFileSize(filePath),
-            await checksumService.ComputeMd5Async(filePath, cancellationToken).ConfigureAwait(false),
-            checksumService.GetFileSize(compressedFilePath),
-            await checksumService.ComputeMd5Async(compressedFilePath, cancellationToken).ConfigureAwait(false),
+            fileSize,
+            checksum,
+            compressedFileSize,
+            compressedChecksum,
             sourceEntry.AcquireOnDemand,
             compressed,
             sourceEntry.Platform,
