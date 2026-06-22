@@ -1,47 +1,7 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">DMTQ Tools</a>
-    </div>
-</div>
-
-<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
-
-<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
-    <nav class="flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Project
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="import">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Import
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="tables">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Tables
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="songs">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Songs
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="resources">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Resources
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="export">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Export
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="diagnostics">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Diagnostics
-            </NavLink>
-        </div>
-    </nav>
-</div>
+﻿<FluentNavLink Href="" Icon="@(new Icons.Regular.Size20.Home())" Match="NavLinkMatch.All">Project</FluentNavLink>
+<FluentNavLink Href="import" Icon="@(new Icons.Regular.Size20.ArrowDownload())">Import</FluentNavLink>
+<FluentNavLink Href="tables" Icon="@(new Icons.Regular.Size20.Table())">Tables</FluentNavLink>
+<FluentNavLink Href="songs" Icon="@(new Icons.Regular.Size20.MusicNote1())">Songs</FluentNavLink>
+<FluentNavLink Href="resources" Icon="@(new Icons.Regular.Size20.Folder())">Resources</FluentNavLink>
+<FluentNavLink Href="export" Icon="@(new Icons.Regular.Size20.ArrowUpload())">Export</FluentNavLink>
+<FluentNavLink Href="diagnostics" Icon="@(new Icons.Regular.Size20.Wrench())">Diagnostics</FluentNavLink>

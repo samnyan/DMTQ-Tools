@@ -7,58 +7,63 @@
 
 @if (State.CurrentPackage is null)
 {
-    <section class="toolbar-panel">
+    <FluentStack Orientation="Orientation.Vertical" Style="margin-bottom: 1rem;">
         <div class="status-message">Import or open a project before browsing tables.</div>
-    </section>
+    </FluentStack>
 }
 else
 {
-    <section class="toolbar-panel">
-        <div class="input-row">
-            <input class="form-control" @bind="filter" @bind:event="oninput" placeholder="Filter logical tables" />
-            <button class="btn btn-secondary" @onclick="SaveProject" disabled="@isSaving">Save</button>
-        </div>
+    <FluentStack Orientation="Orientation.Vertical" Style="margin-bottom: 1rem;">
+        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8" VerticalAlignment="VerticalAlignment.Center">
+            <FluentTextField @bind-Value="filter"
+                             Immediate="true"
+                             Placeholder="Filter logical tables"
+                             Style="flex: 1; max-width: 30rem;" />
+            <FluentButton Appearance="Appearance.Neutral"
+                          OnClick="SaveProject"
+                          Disabled="@isSaving">Save</FluentButton>
+        </FluentStack>
         @if (!string.IsNullOrWhiteSpace(message))
         {
-            <div class="status-message">@message</div>
+            <FluentMessageBar Title="@message" Intent="MessageIntent.Info" />
         }
-    </section>
+    </FluentStack>
 
-    <section class="table-browser">
-        <aside class="table-list">
-            <div class="table-list-items">
-                @foreach (var table in FilteredLogicalTables)
-                {
-                    <button class="table-list-item @(table.Key == SelectedLogicalTable?.Key ? "selected" : "")" @onclick="() => SelectLogicalTable(table.Key)">
+    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16" Style="min-height: 32rem;">
+        <FluentStack Orientation="Orientation.Vertical" Style="width: 22rem; min-width: 16rem; max-height: 32rem; overflow: auto; border: 1px solid var(--neutral-stroke-rest); border-radius: 6px; padding: 0.75rem;">
+            @foreach (var table in FilteredLogicalTables)
+            {
+                <FluentButton Appearance="@(table.Key == SelectedLogicalTable?.Key ? Appearance.Accent : Appearance.Neutral)"
+                              OnClick="@(() => SelectLogicalTable(table.Key))"
+                              Style="text-align: left; margin-bottom: 0.25rem; width: 100%;">
+                    <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Start">
                         <strong>@table.DisplayName</strong>
-                        <span>@table.Kind / @table.Rows.Count rows / @table.SourcePackageRelativePaths.Count CSV files</span>
-                    </button>
-                }
-            </div>
-        </aside>
-        <section class="table-preview">
+                        <span style="color: #5f6b7a; font-size: 0.8rem;">@table.Kind / @table.Rows.Count rows / @table.SourcePackageRelativePaths.Count CSV files</span>
+                    </FluentStack>
+                </FluentButton>
+            }
+        </FluentStack>
+        <FluentStack Orientation="Orientation.Vertical" Style="flex: 1; min-width: 0; border: 1px solid var(--neutral-stroke-rest); border-radius: 6px; padding: 1rem;">
             @if (SelectedLogicalTable is null)
             {
                 <div class="status-message">Select a logical table.</div>
             }
             else
             {
-                <div class="table-header">
-                    <div>
-                        <h2>@SelectedLogicalTable.DisplayName</h2>
-                        <p>@SelectedLogicalTable.Kind table backed by @SelectedLogicalTable.SourcePackageRelativePaths.Count CSV file(s)</p>
-                    </div>
-                    <div class="table-counts">
-                        @SelectedLogicalTable.Columns.Count columns / @SelectedLogicalTable.Rows.Count rows
-                    </div>
-                </div>
+                <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Style="margin-bottom: 0.75rem;">
+                    <FluentStack Orientation="Orientation.Vertical">
+                        <h2 style="font-size: 1.2rem; margin: 0;">@SelectedLogicalTable.DisplayName</h2>
+                        <p style="color: #5f6b7a; margin: 0.25rem 0 0; overflow-wrap: anywhere;">@SelectedLogicalTable.Kind table backed by @SelectedLogicalTable.SourcePackageRelativePaths.Count CSV file(s)</p>
+                    </FluentStack>
+                    <span style="color: #5f6b7a; white-space: nowrap;">@SelectedLogicalTable.Columns.Count columns / @SelectedLogicalTable.Rows.Count rows</span>
+                </FluentStack>
 
                 @if (SelectedLogicalTable.Languages.Count > 0)
                 {
-                    <div class="hint">Languages: @string.Join(", ", SelectedLogicalTable.Languages)</div>
+                    <div style="color: #5f6b7a; font-size: 0.9rem; margin: 0.5rem 0;">Languages: @string.Join(", ", SelectedLogicalTable.Languages)</div>
                 }
 
-                <div class="grid-scroll">
+                <div style="overflow: auto; max-height: 34rem;">
                     <table class="data-grid editable-grid">
                         <thead>
                             <tr>
@@ -91,14 +96,14 @@ else
                         </tbody>
                     </table>
                 </div>
-                <div class="hint">Showing first 100 logical rows. Add/delete rows are planned for a later round.</div>
+                <div style="color: #5f6b7a; font-size: 0.9rem; margin-top: 0.5rem;">Showing first 100 logical rows. Add/delete rows are planned for a later round.</div>
             }
-        </section>
-    </section>
+        </FluentStack>
+    </FluentStack>
 
-    <details class="toolbar-panel raw-table-panel">
+    <details style="margin-top: 1rem; border: 1px solid var(--neutral-stroke-rest); border-radius: 6px; padding: 1rem;">
         <summary>Advanced raw CSV files</summary>
-        <div class="raw-table-list">
+        <div style="display: grid; gap: 0.35rem; margin-top: 0.75rem; color: #5f6b7a; font-size: 0.9rem;">
             @foreach (var table in State.CurrentPackage.Tables.Tables.OrderBy(table => table.PackageRelativePath))
             {
                 <div>@table.PackageRelativePath (@table.Rows.Count rows)</div>

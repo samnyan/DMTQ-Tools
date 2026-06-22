@@ -7,135 +7,134 @@
 
 @if (State.CurrentPackage is null)
 {
-    <section class="toolbar-panel">
-        <div class="status-message">Import or open a project before managing resources.</div>
-    </section>
+    <FluentStack Orientation="Orientation.Vertical" Style="margin-bottom: 1rem;">
+        <FluentMessageBar Title="Import or open a project before managing resources." Intent="MessageIntent.Warning" />
+    </FluentStack>
 }
 else
 {
-    <section class="toolbar-panel resource-toolbar">
-        <input class="form-control" @bind="filter" @bind:event="oninput" placeholder="Filter resources" />
-        <select class="form-control narrow-control" @bind="categoryFilter">
-            <option value="">All categories</option>
-            @foreach (var category in Catalog.Select(r => r.Category).Distinct().OrderBy(v => v))
-            {
-                <option value="@category">@category</option>
-            }
-        </select>
-    </section>
+    <FluentStack Orientation="Orientation.Vertical" Style="margin-bottom: 1rem;">
+        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8" VerticalAlignment="VerticalAlignment.Center">
+            <FluentTextField @bind-Value="filter" Immediate="true" Placeholder="Filter resources" />
+            <FluentSelect Items="@(new List<string> { "" }.Concat(Catalog.Select(r => r.Category).Distinct().OrderBy(v => v)))"
+                          OptionText="@(i => string.IsNullOrEmpty(i) ? "All categories" : i)"
+                          OptionValue="@(i => i)"
+                          @bind-SelectedOption="categoryFilter"
+                          Label="Category" />
+        </FluentStack>
+    </FluentStack>
 
-    <section class="metrics-grid">
-        <div class="metric">
-            <span class="metric-label">Resources</span>
-            <strong>@Catalog.Count</strong>
-        </div>
-        <div class="metric">
-            <span class="metric-label">Preview</span>
-            <strong>@Catalog.Count(r => r.Category == "preview")</strong>
-        </div>
-        <div class="metric">
-            <span class="metric-label">Platform-specific</span>
-            <strong>@Catalog.Count(r => !string.IsNullOrWhiteSpace(r.Platform))</strong>
-        </div>
-        <div class="metric">
-            <span class="metric-label">Compressed</span>
-            <strong>@Catalog.Count(r => r.Compressed)</strong>
-        </div>
-    </section>
+    <FluentGrid Spacing="3" AdaptiveRendering="true">
+        <FluentGridItem xs="12" sm="6" md="4">
+            <FluentCard>
+                <span class="metric-label">Resources</span>
+                <strong>@Catalog.Count</strong>
+            </FluentCard>
+        </FluentGridItem>
+        <FluentGridItem xs="12" sm="6" md="4">
+            <FluentCard>
+                <span class="metric-label">Preview</span>
+                <strong>@Catalog.Count(r => r.Category == "preview")</strong>
+            </FluentCard>
+        </FluentGridItem>
+        <FluentGridItem xs="12" sm="6" md="4">
+            <FluentCard>
+                <span class="metric-label">Platform-specific</span>
+                <strong>@Catalog.Count(r => !string.IsNullOrWhiteSpace(r.Platform))</strong>
+            </FluentCard>
+        </FluentGridItem>
+        <FluentGridItem xs="12" sm="6" md="4">
+            <FluentCard>
+                <span class="metric-label">Compressed</span>
+                <strong>@Catalog.Count(r => r.Compressed)</strong>
+            </FluentCard>
+        </FluentGridItem>
+    </FluentGrid>
 
-    <section class="resource-browser">
-        <aside class="resource-list">
+    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16" Style="min-height: 34rem;">
+        <FluentStack Orientation="Orientation.Vertical" Style="width: 300px; overflow-y: auto;">
             @foreach (var resource in FilteredResources.Take(500))
             {
-                <button class="resource-list-item @(IsSelected(resource) ? "selected" : "")" @onclick="() => SelectResource(resource)">
-                    <strong>@resource.PackageRelativePath</strong>
-                    <span>@resource.Category / @(resource.Platform ?? "shared") / @(resource.Compressed ? "compressed" : "uncompressed")</span>
-                </button>
+                <FluentButton Style="width: 100%;"
+                              Appearance="@(IsSelected(resource) ? Appearance.Accent : Appearance.Neutral)"
+                              OnClick="() => SelectResource(resource)">
+                    <FluentStack Orientation="Orientation.Vertical">
+                        <strong>@resource.PackageRelativePath</strong>
+                        <span>@resource.Category / @(resource.Platform ?? "shared") / @(resource.Compressed ? "compressed" : "uncompressed")</span>
+                    </FluentStack>
+                </FluentButton>
             }
-        </aside>
+        </FluentStack>
 
-        <section class="resource-detail">
+        <FluentStack Orientation="Orientation.Vertical" Style="flex: 1;">
             @if (SelectedResource is null)
             {
-                <div class="status-message">Select a resource.</div>
+                <FluentMessageBar Title="Select a resource." Intent="MessageIntent.Info" />
             }
             else
             {
-                <div class="table-header">
+                <FluentStack Orientation="Orientation.Horizontal" Style="justify-content: space-between; align-items: center;">
                     <div>
                         <h2>@SelectedResource.PackageRelativePath</h2>
                         <p>@SelectedResource.ProjectRelativePath</p>
                     </div>
                     <div class="table-counts">@SelectedResource.Category</div>
-                </div>
+                </FluentStack>
 
-                <div class="resource-form-grid">
-                    <label class="form-label">
-                        Source file for replacement
-                        <input class="form-control" @bind="sourceFilePath" />
-                    </label>
-                    <label class="form-label">
-                        Compression
-                        <select class="form-control" @bind="selectedCompressedText">
-                            <option value="true">Compressed</option>
-                            <option value="false">Uncompressed</option>
-                        </select>
-                    </label>
-                </div>
+                <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16" Wrap="true">
+                    <FluentTextField @bind-Value="sourceFilePath" Label="Source file for replacement" />
+                    <FluentSelect Items="@(new[] { "true", "false" })"
+                                  OptionText="@(i => i == "true" ? "Compressed" : "Uncompressed")"
+                                  OptionValue="@(i => i)"
+                                  @bind-SelectedOption="selectedCompressedText"
+                                  Label="Compression" />
+                </FluentStack>
 
                 @if (SelectedResource.IsSharedPreview)
                 {
-                    <div class="resource-platforms">
-                        <label><input type="checkbox" @bind="includeAndroid" /> android</label>
-                        <label><input type="checkbox" @bind="includeIos" /> ios</label>
-                    </div>
+                    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16" Wrap="true">
+                        <FluentCheckbox @bind-Value="includeAndroid" Label="android" />
+                        <FluentCheckbox @bind-Value="includeIos" Label="ios" />
+                    </FluentStack>
                 }
 
-                <div class="input-row resource-actions">
-                    <button class="btn btn-primary" @onclick="ReplaceSelected" disabled="@isBusy">Replace</button>
-                    <button class="btn btn-secondary" @onclick="SaveSelectedMetadata" disabled="@isBusy">Save Metadata</button>
-                    <button class="btn btn-secondary" @onclick="RemoveSelected" disabled="@isBusy">Remove</button>
-                </div>
+                <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8">
+                    <FluentButton Appearance="Appearance.Accent" OnClick="ReplaceSelected" Disabled="@isBusy">Replace</FluentButton>
+                    <FluentButton Appearance="Appearance.Neutral" OnClick="SaveSelectedMetadata" Disabled="@isBusy">Save Metadata</FluentButton>
+                    <FluentButton Appearance="Appearance.Neutral" OnClick="RemoveSelected" Disabled="@isBusy">Remove</FluentButton>
+                </FluentStack>
             }
-        </section>
-    </section>
+        </FluentStack>
+    </FluentStack>
 
-    <section class="toolbar-panel">
+    <FluentStack Orientation="Orientation.Vertical" Style="margin-bottom: 1rem;">
         <h2 class="section-heading">Add Resource</h2>
-        <div class="resource-form-grid">
-            <label class="form-label">
-                Source file
-                <input class="form-control" @bind="newSourceFilePath" />
-            </label>
-            <label class="form-label">
-                Package path
-                <input class="form-control" @bind="newPackagePath" placeholder="preview/song.p.opus or dlc/file.bundle" />
-            </label>
-            <label class="form-label">
-                Platform
-                <select class="form-control" @bind="newPlatform">
-                    <option value="">shared preview</option>
-                    <option value="android">android</option>
-                    <option value="ios">ios</option>
-                </select>
-            </label>
-            <label class="form-label">
-                Compression
-                <select class="form-control" @bind="newCompressedText">
-                    <option value="true">Compressed</option>
-                    <option value="false">Uncompressed</option>
-                </select>
-            </label>
-        </div>
-        <div class="resource-platforms">
-            <label><input type="checkbox" @bind="newIncludeAndroid" /> android preview inclusion</label>
-            <label><input type="checkbox" @bind="newIncludeIos" /> ios preview inclusion</label>
-        </div>
-        <div class="input-row">
-            <button class="btn btn-primary" @onclick="AddResource" disabled="@isBusy">Add Resource</button>
-            <span class="status-message">@message</span>
-        </div>
-    </section>
+        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16" Wrap="true">
+            <FluentTextField @bind-Value="newSourceFilePath" Label="Source file" />
+            <FluentTextField @bind-Value="newPackagePath" Placeholder="preview/song.p.opus or dlc/file.bundle" Label="Package path" />
+            <FluentSelect Items="@(new[] { "", "android", "ios" })"
+                          OptionText="@(i => string.IsNullOrEmpty(i) ? "shared preview" : i)"
+                          OptionValue="@(i => i)"
+                          @bind-SelectedOption="newPlatform"
+                          Label="Platform" />
+            <FluentSelect Items="@(new[] { "true", "false" })"
+                          OptionText="@(i => i == "true" ? "Compressed" : "Uncompressed")"
+                          OptionValue="@(i => i)"
+                          @bind-SelectedOption="newCompressedText"
+                          Label="Compression" />
+        </FluentStack>
+        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16" Wrap="true">
+            <FluentCheckbox @bind-Value="newIncludeAndroid" Label="android preview inclusion" />
+            <FluentCheckbox @bind-Value="newIncludeIos" Label="ios preview inclusion" />
+        </FluentStack>
+        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8" VerticalAlignment="VerticalAlignment.Center">
+            <FluentButton Appearance="Appearance.Accent" OnClick="AddResource" Disabled="@isBusy">Add Resource</FluentButton>
+            @if (message is not null)
+            {
+                <FluentMessageBar Title="@message" Intent="MessageIntent.Info" />
+            }
+        </FluentStack>
+    </FluentStack>
 }
 
 @code {

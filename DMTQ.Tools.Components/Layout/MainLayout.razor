@@ -1,17 +1,34 @@
 ﻿@inherits LayoutComponentBase
 
-<div class="page">
-    <div class="sidebar">
+<FluentDesignTheme Mode="DesignThemeModes.System"
+                   OfficeColor="OfficeColor.Teams"
+                   StorageName="dmtq-theme" />
+
+<FluentMainLayout NavMenuTitle="DMTQ Tools"
+                  NavMenuWidth="250">
+    <Header>
+        <FluentStack Orientation="Orientation.Horizontal"
+                     HorizontalAlignment="HorizontalAlignment.SpaceBetween"
+                     Width="100%" Style="padding: 0 1rem;">
+            <span style="font-weight: 600;">GameTableManager</span>
+        </FluentStack>
+    </Header>
+    <NavMenuContent>
         <NavMenu />
-    </div>
+    </NavMenuContent>
+    <Body>
+        <FluentBodyContent>
+            <article style="padding: 1rem 1.5rem;">
+                @Body
+            </article>
+        </FluentBodyContent>
+    </Body>
+</FluentMainLayout>
 
-    <main>
-        <div class="top-row px-4">
-            <span>GameTableManager</span>
-        </div>
-
-        <article class="content px-4">
-            @Body
-        </article>
-    </main>
-</div>
+@* Required FluentUI providers. With Scoped lifetime, NavigationManager
+   is available when these resolve during Blazor rendering. *@
+<FluentToastProvider />
+<FluentDialogProvider />
+<FluentMessageBarProvider />
+<FluentTooltipProvider />
+<FluentKeyCodeProvider />

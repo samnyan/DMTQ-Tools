@@ -8,62 +8,74 @@
 
 @if (State.CurrentPackage is null)
 {
-    <section class="toolbar-panel">
-        <div class="status-message">Import or open a project before editing songs.</div>
-    </section>
+    <FluentStack Orientation="Orientation.Vertical" Style="margin-bottom: 1rem;">
+        <FluentMessageBar Title="Import or open a project before editing songs." Intent="MessageIntent.Warning" />
+    </FluentStack>
 }
 else
 {
-    <section class="toolbar-panel song-toolbar">
-        <input class="form-control" @bind="filter" @bind:event="oninput" placeholder="Filter by song ID, title, product, item..." />
-        <label class="form-label">
-            Language
-            <select class="form-control" @bind="selectedLanguage">
-                @foreach (var language in Languages)
-                {
-                    <option value="@language">@language</option>
-                }
-            </select>
-        </label>
-    </section>
+    <FluentStack Orientation="Orientation.Vertical" Style="margin-bottom: 1rem;">
+        <FluentTextField @bind-Value="filter" Immediate="true" Placeholder="Filter by song ID, title, product, item..." />
+        <FluentSelect Items="Languages" OptionText="@(i => i)" OptionValue="@(i => i)" @bind-SelectedOption="selectedLanguage" Label="Language" />
+    </FluentStack>
 
-    <section class="metrics-grid">
-        <div class="metric"><span class="metric-label">Songs</span><strong>@Catalog.Count</strong></div>
-        <div class="metric"><span class="metric-label">Patterns</span><strong>@Catalog.Sum(s => s.Patterns.Count)</strong></div>
-        <div class="metric"><span class="metric-label">With preview</span><strong>@Catalog.Count(s => s.HasPreview)</strong></div>
-        <div class="metric"><span class="metric-label">Languages</span><strong>@string.Join(", ", Languages)</strong></div>
-    </section>
+    <FluentGrid Spacing="3" AdaptiveRendering="true">
+        <FluentGridItem xs="12" sm="6" md="3">
+            <FluentCard>
+                <span class="metric-label">Songs</span><strong>@Catalog.Count</strong>
+            </FluentCard>
+        </FluentGridItem>
+        <FluentGridItem xs="12" sm="6" md="3">
+            <FluentCard>
+                <span class="metric-label">Patterns</span><strong>@Catalog.Sum(s => s.Patterns.Count)</strong>
+            </FluentCard>
+        </FluentGridItem>
+        <FluentGridItem xs="12" sm="6" md="3">
+            <FluentCard>
+                <span class="metric-label">With preview</span><strong>@Catalog.Count(s => s.HasPreview)</strong>
+            </FluentCard>
+        </FluentGridItem>
+        <FluentGridItem xs="12" sm="6" md="3">
+            <FluentCard>
+                <span class="metric-label">Languages</span><strong>@string.Join(", ", Languages)</strong>
+            </FluentCard>
+        </FluentGridItem>
+    </FluentGrid>
 
-    <section class="song-browser">
-        <aside class="song-list">
+    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16" Style="min-height: 34rem;">
+        <FluentStack Orientation="Orientation.Vertical" Style="width: 300px; overflow-y: auto; flex-shrink: 0;">
             @foreach (var song in FilteredSongs.Take(300))
             {
-                <button class="song-list-item @(song.Id == SelectedSong?.Id ? "selected" : "")"
-                    @onclick="() => SelectSong(song.Id)">
+                <FluentButton Style="width: 100%; text-align: left; margin-bottom: 2px;"
+                              Appearance="@(song.Id == SelectedSong?.Id ? Appearance.Accent : Appearance.Neutral)"
+                              OnClick="() => SelectSong(song.Id)">
                     <strong>@DisplayTitle(song)</strong>
                     <span>@song.Id / @song.Patterns.Count pattern(s) / @(song.HasPreview ? "preview" : "no preview")</span>
-                </button>
+                </FluentButton>
             }
             <div class="song-add-section">
-                <button class="btn btn-primary" @onclick="() => showAddSong = !showAddSong">+ Add Song</button>
+                <FluentButton Appearance="Appearance.Accent" OnClick="() => showAddSong = !showAddSong">+ Add Song</FluentButton>
                 @if (showAddSong)
                 {
                     <div class="song-add-form">
-                        <input class="form-control" @bind="newSongId" placeholder="Song ID" />
-                        <input class="form-control" @bind="newProductId" placeholder="Product ID" />
-                        <input class="form-control" @bind="newItemId" placeholder="Item ID" />
-                        <input class="form-control" @bind="newCategoryId" placeholder="Category ID" />
-                        <button class="btn btn-secondary" @onclick="AddSong" disabled="@isBusy">Create</button>
-                        <span class="status-message">@addMessage</span>
+                        <FluentTextField @bind-Value="newSongId" Label="Song ID" />
+                        <FluentTextField @bind-Value="newProductId" Label="Product ID" />
+                        <FluentTextField @bind-Value="newItemId" Label="Item ID" />
+                        <FluentTextField @bind-Value="newCategoryId" Label="Category ID" />
+                        <FluentButton Appearance="Appearance.Neutral" OnClick="AddSong" Disabled="@isBusy">Create</FluentButton>
+                        @if (!string.IsNullOrEmpty(addMessage))
+                        {
+                            <FluentMessageBar Title="@addMessage" Intent="MessageIntent.Info" />
+                        }
                     </div>
                 }
             </div>
-        </aside>
+        </FluentStack>
 
-        <section class="song-detail">
+        <section class="song-detail" style="flex: 1;">
             @if (SelectedSong is null)
             {
-                <div class="status-message">Select a song from the list.</div>
+                <FluentMessageBar Title="Select a song from the list." Intent="MessageIntent.Info" />
             }
             else
             {
@@ -74,38 +86,41 @@ else
                 </div>
 
                 <div class="song-form-grid">
-                    <label class="form-label">Item ID <input class="form-control" @bind="SelectedSong.ItemId" /></label>
-                    <label class="form-label">Name <input class="form-control" @bind="SelectedSong.Name" /></label>
-                    <label class="form-label">Full Name <input class="form-control" @bind="SelectedSong.FullName" /></label>
-                    <label class="form-label">Genre <input class="form-control" @bind="SelectedSong.Genre" /></label>
-                    <label class="form-label">Artist Name <input class="form-control" @bind="SelectedSong.ArtistName" /></label>
-                    <label class="form-label">Original BGA <input class="form-control" @bind="SelectedSong.OriginalBgaYn" /></label>
-                    <label class="form-label">Loop BGA <input class="form-control" @bind="SelectedSong.LoopBgaYn" /></label>
-                    <label class="form-label">Composed By <input class="form-control" @bind="SelectedSong.ComposedBy" /></label>
-                    <label class="form-label">Singer <input class="form-control" @bind="SelectedSong.Singer" /></label>
-                    <label class="form-label">Feat By <input class="form-control" @bind="SelectedSong.FeatBy" /></label>
-                    <label class="form-label">Arranged By <input class="form-control" @bind="SelectedSong.ArrangedBy" /></label>
-                    <label class="form-label">Visualized By <input class="form-control" @bind="SelectedSong.VisualizedBy" /></label>
-                    <label class="form-label">Cost Game Point <input class="form-control" @bind="SelectedSong.CostGamePoint" /></label>
-                    <label class="form-label">Cost Game Cash <input class="form-control" @bind="SelectedSong.CostGameCash" /></label>
-                    <label class="form-label">Flag <input class="form-control" @bind="SelectedSong.Flag" /></label>
-                    <label class="form-label">Status <input class="form-control" @bind="SelectedSong.Status" /></label>
-                    <label class="form-label">Free <input class="form-control" @bind="SelectedSong.FreeYn" /></label>
-                    <label class="form-label">Hidden <input class="form-control" @bind="SelectedSong.HiddenYn" /></label>
-                    <label class="form-label">Open <input class="form-control" @bind="SelectedSong.OpenYn" /></label>
-                    <label class="form-label">Track ID <input class="form-control" @bind="SelectedSong.TrackId" /></label>
-                    <label class="form-label">Mod Date <input class="form-control" @bind="SelectedSong.ModDate" /></label>
-                    <label class="form-label">Update <input class="form-control" @bind="SelectedSong.Update" /></label>
+                    <FluentTextField @bind-Value="SelectedSong.ItemId" Label="Item ID" />
+                    <FluentTextField @bind-Value="SelectedSong.Name" Label="Name" />
+                    <FluentTextField @bind-Value="SelectedSong.FullName" Label="Full Name" />
+                    <FluentTextField @bind-Value="SelectedSong.Genre" Label="Genre" />
+                    <FluentTextField @bind-Value="SelectedSong.ArtistName" Label="Artist Name" />
+                    <FluentTextField @bind-Value="SelectedSong.OriginalBgaYn" Label="Original BGA" />
+                    <FluentTextField @bind-Value="SelectedSong.LoopBgaYn" Label="Loop BGA" />
+                    <FluentTextField @bind-Value="SelectedSong.ComposedBy" Label="Composed By" />
+                    <FluentTextField @bind-Value="SelectedSong.Singer" Label="Singer" />
+                    <FluentTextField @bind-Value="SelectedSong.FeatBy" Label="Feat By" />
+                    <FluentTextField @bind-Value="SelectedSong.ArrangedBy" Label="Arranged By" />
+                    <FluentTextField @bind-Value="SelectedSong.VisualizedBy" Label="Visualized By" />
+                    <FluentTextField @bind-Value="SelectedSong.CostGamePoint" Label="Cost Game Point" />
+                    <FluentTextField @bind-Value="SelectedSong.CostGameCash" Label="Cost Game Cash" />
+                    <FluentTextField @bind-Value="SelectedSong.Flag" Label="Flag" />
+                    <FluentTextField @bind-Value="SelectedSong.Status" Label="Status" />
+                    <FluentTextField @bind-Value="SelectedSong.FreeYn" Label="Free" />
+                    <FluentTextField @bind-Value="SelectedSong.HiddenYn" Label="Hidden" />
+                    <FluentTextField @bind-Value="SelectedSong.OpenYn" Label="Open" />
+                    <FluentTextField @bind-Value="SelectedSong.TrackId" Label="Track ID" />
+                    <FluentTextField @bind-Value="SelectedSong.ModDate" Label="Mod Date" />
+                    <FluentTextField @bind-Value="SelectedSong.Update" Label="Update" />
                 </div>
                 <div class="song-form-grid">
-                    <label class="form-label">Preview path <input class="form-control" @bind="SelectedSong.PreviewPackageRelativePath" /></label>
-                    <label class="form-label">Title (@selectedLanguage) <input class="form-control" @bind="editTitle" /></label>
-                    <label class="form-label">Description (@selectedLanguage) <input class="form-control" @bind="editDescription" /></label>
+                    <FluentTextField @bind-Value="SelectedSong.PreviewPackageRelativePath" Label="Preview path" />
+                    <FluentTextField @bind-Value="editTitle" Label="@($"Title ({selectedLanguage})")" />
+                    <FluentTextField @bind-Value="editDescription" Label="@($"Description ({selectedLanguage})")" />
                 </div>
-                <div class="input-row">
-                    <button class="btn btn-primary" @onclick="SaveSelectedSong" disabled="@isBusy">Save Song</button>
-                    <span class="status-message">@editMessage</span>
-                </div>
+                <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8" VerticalAlignment="VerticalAlignment.Center">
+                    <FluentButton Appearance="Appearance.Accent" OnClick="SaveSelectedSong" Disabled="@isBusy">Save Song</FluentButton>
+                    @if (!string.IsNullOrEmpty(editMessage))
+                    {
+                        <FluentMessageBar Title="@editMessage" Intent="MessageIntent.Info" />
+                    }
+                </FluentStack>
 
                 @* ── Localization table ── *@
                 <h2 class="section-heading">Localized Texts</h2>
@@ -136,16 +151,16 @@ else
                 @* ── Patterns ── *@
                 <div class="table-header">
                     <h2 class="section-heading">Song Patterns</h2>
-                    <button class="btn btn-secondary" @onclick="() => showAddPattern = !showAddPattern">+ Add Pattern</button>
+                    <FluentButton Appearance="Appearance.Neutral" OnClick="() => showAddPattern = !showAddPattern">+ Add Pattern</FluentButton>
                 </div>
                 @if (showAddPattern)
                 {
                     <div class="song-add-form">
-                        <input class="form-control" @bind="newPatternId" placeholder="Pattern ID" />
-                        <input class="form-control" @bind="newPatternLine" placeholder="Line (2Line/3Line/4Line)" />
-                        <input class="form-control" @bind="newPatternSignature" placeholder="Signature (1/2/3)" />
-                        <input class="form-control" @bind="newPatternDifficulty" placeholder="Difficulty" />
-                        <button class="btn btn-secondary" @onclick="AddPattern" disabled="@isBusy">Add Pattern</button>
+                        <FluentTextField @bind-Value="newPatternId" Label="Pattern ID" />
+                        <FluentTextField @bind-Value="newPatternLine" Label="Line (2Line/3Line/4Line)" />
+                        <FluentTextField @bind-Value="newPatternSignature" Label="Signature (1/2/3)" />
+                        <FluentTextField @bind-Value="newPatternDifficulty" Label="Difficulty" />
+                        <FluentButton Appearance="Appearance.Neutral" OnClick="AddPattern" Disabled="@isBusy">Add Pattern</FluentButton>
                     </div>
                 }
                 <div class="grid-scroll compact-grid-scroll">
@@ -160,8 +175,8 @@ else
                                     <td><input class="cell-input" @bind="pattern.Signature" /></td>
                                     <td><input class="cell-input" @bind="pattern.Difficulty" /></td>
                                     <td><input class="cell-input" @bind="pattern.Level" /></td>
-                                    <td><button class="btn btn-secondary btn-small" @onclick="() => SavePattern(pattern)"
-                                        disabled="@isBusy">Save</button></td>
+                                    <td><FluentButton Style="padding: 0.2rem 0.5rem; font-size: 0.8rem;" Appearance="Appearance.Neutral" OnClick="() => SavePattern(pattern)"
+                                        Disabled="@isBusy">Save</FluentButton></td>
                                 </tr>
                             }
                         </tbody>
@@ -169,7 +184,7 @@ else
                 </div>
             }
         </section>
-    </section>
+    </FluentStack>
 }
 
 @code {
@@ -217,8 +232,8 @@ else
             if (string.IsNullOrWhiteSpace(filter)) return Catalog;
             return Catalog.Where(song =>
                 song.Id.Contains(filter, StringComparison.OrdinalIgnoreCase)
-                || song.GetTitle(selectedLanguage).Contains(filter, StringComparison.OrdinalIgnoreCase)
-                || song.GetItemName(selectedLanguage).Contains(filter, StringComparison.OrdinalIgnoreCase)
+                || song.GetTitle(selectedLanguage ?? "us").Contains(filter, StringComparison.OrdinalIgnoreCase)
+                || song.GetItemName(selectedLanguage ?? "us").Contains(filter, StringComparison.OrdinalIgnoreCase)
                 || song.ProductIds.Any(id => id.Contains(filter, StringComparison.OrdinalIgnoreCase))
                 || song.ItemIds.Any(id => id.Contains(filter, StringComparison.OrdinalIgnoreCase))
                 || song.CategoryIds.Any(id => id.Contains(filter, StringComparison.OrdinalIgnoreCase)));
@@ -245,15 +260,16 @@ else
         showAddPattern = false;
         if (SelectedSong is not null)
         {
-            editTitle = SelectedSong.GetTitle(selectedLanguage);
-            editDescription = SelectedSong.GetDescription(selectedLanguage);
+            editTitle = SelectedSong.GetTitle(selectedLanguage ?? "us");
+            editDescription = SelectedSong.GetDescription(selectedLanguage ?? "us");
         }
         editMessage = null;
     }
 
     private string DisplayTitle(Song song)
     {
-        var title = song.GetTitle(selectedLanguage);
+        var lang = selectedLanguage ?? "us";
+        var title = song.GetTitle(lang);
         return string.IsNullOrWhiteSpace(title) ? song.Id : title;
     }
 
@@ -268,8 +284,8 @@ else
         isBusy = true;
         try
         {
-            SelectedSong.TitlesByLanguage[selectedLanguage] = editTitle;
-            SelectedSong.DescriptionsByLanguage[selectedLanguage] = editDescription;
+            SelectedSong.TitlesByLanguage[selectedLanguage ?? "us"] = editTitle;
+            SelectedSong.DescriptionsByLanguage[selectedLanguage ?? "us"] = editDescription;
 
             SongEditor.UpdateSong(State.CurrentPackage, SelectedSong);
             await Workflow.SaveProjectAsync();

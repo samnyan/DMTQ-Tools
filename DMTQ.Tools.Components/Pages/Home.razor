@@ -4,58 +4,86 @@
 
 <h1>Project</h1>
 
-<section class="toolbar-panel">
-    <label class="form-label" for="projectRoot">Project directory</label>
-    <div class="input-row project-actions">
-        <input id="projectRoot" class="form-control" @bind="projectRoot" placeholder="D:\DMTQProjects\MyPatch" />
-        <button class="btn btn-primary" @onclick="CreateProject" disabled="@isBusy">Create</button>
-        <button class="btn btn-secondary" @onclick="OpenProject" disabled="@isBusy">Open Saved</button>
-        <button class="btn btn-secondary" @onclick="SaveProject" disabled="@(!State.HasPackage || isBusy)">Save</button>
-    </div>
+<FluentStack Orientation="Orientation.Vertical" Style="margin-bottom: 1rem;">
+    <FluentTextField @bind-Value="projectRoot"
+                     Label="Project directory"
+                     Placeholder="D:\DMTQProjects\MyPatch"
+                     Style="max-width: 40rem;" />
+
+    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8">
+        <FluentButton Appearance="Appearance.Accent"
+                      OnClick="CreateProject"
+                      Disabled="@isBusy">Create</FluentButton>
+        <FluentButton Appearance="Appearance.Neutral"
+                      OnClick="OpenProject"
+                      Disabled="@isBusy">Open Saved</FluentButton>
+        <FluentButton Appearance="Appearance.Neutral"
+                      OnClick="SaveProject"
+                      Disabled="@(!State.HasPackage || isBusy)">Save</FluentButton>
+    </FluentStack>
+
     @if (!string.IsNullOrWhiteSpace(message))
     {
-        <div class="status-message">@message</div>
+        <FluentMessageBar Title="@message" Intent="MessageIntent.Info" />
     }
-</section>
+</FluentStack>
 
-<section class="metrics-grid">
-    <div class="metric">
-        <span class="metric-label">Project</span>
-        <strong>@(State.ProjectRoot ?? "Not selected")</strong>
-    </div>
-    <div class="metric">
-        <span class="metric-label">Source</span>
-        <strong>@(State.CurrentPackage?.ProjectInfo.SourcePackageRoot ?? "Not imported")</strong>
-    </div>
-    <div class="metric">
-        <span class="metric-label">Version</span>
-        <strong>@(State.CurrentPackage?.ProjectInfo.Version ?? "-")</strong>
-    </div>
-    <div class="metric">
-        <span class="metric-label">Primary platform</span>
-        <strong>@(State.CurrentPackage?.ProjectInfo.Platform ?? "-")</strong>
-    </div>
-    <div class="metric">
-        <span class="metric-label">Imported platforms</span>
-        <strong>@PlatformSummary</strong>
-    </div>
-    <div class="metric">
-        <span class="metric-label">Manifest entries</span>
-        <strong>@(State.CurrentPackage?.Manifest.Entries.Count ?? 0)</strong>
-    </div>
-    <div class="metric">
-        <span class="metric-label">Tables</span>
-        <strong>@(State.CurrentPackage?.Tables.Tables.Count ?? 0)</strong>
-    </div>
-    <div class="metric">
-        <span class="metric-label">Resources</span>
-        <strong>@(State.CurrentPackage?.Resources.Count ?? 0)</strong>
-    </div>
-    <div class="metric">
-        <span class="metric-label">Last validation</span>
-        <strong>@ValidationText</strong>
-    </div>
-</section>
+<FluentGrid Spacing="3" Justify="JustifyContent.Center" AdaptiveRendering="true">
+    <FluentGridItem xs="12" sm="6" md="4" lg="3">
+        <FluentCard>
+            <span style="color: #5f6b7a; font-size: 0.8rem;">Project</span>
+            <p style="font-weight: 600; overflow-wrap: anywhere;">@(State.ProjectRoot ?? "Not selected")</p>
+        </FluentCard>
+    </FluentGridItem>
+    <FluentGridItem xs="12" sm="6" md="4" lg="3">
+        <FluentCard>
+            <span style="color: #5f6b7a; font-size: 0.8rem;">Source</span>
+            <p style="font-weight: 600; overflow-wrap: anywhere;">@(State.CurrentPackage?.ProjectInfo.SourcePackageRoot ?? "Not imported")</p>
+        </FluentCard>
+    </FluentGridItem>
+    <FluentGridItem xs="12" sm="6" md="4" lg="3">
+        <FluentCard>
+            <span style="color: #5f6b7a; font-size: 0.8rem;">Version</span>
+            <p style="font-weight: 600;">@(State.CurrentPackage?.ProjectInfo.Version ?? "-")</p>
+        </FluentCard>
+    </FluentGridItem>
+    <FluentGridItem xs="12" sm="6" md="4" lg="3">
+        <FluentCard>
+            <span style="color: #5f6b7a; font-size: 0.8rem;">Primary platform</span>
+            <p style="font-weight: 600;">@(State.CurrentPackage?.ProjectInfo.Platform ?? "-")</p>
+        </FluentCard>
+    </FluentGridItem>
+    <FluentGridItem xs="12" sm="6" md="4" lg="3">
+        <FluentCard>
+            <span style="color: #5f6b7a; font-size: 0.8rem;">Imported platforms</span>
+            <p style="font-weight: 600;">@PlatformSummary</p>
+        </FluentCard>
+    </FluentGridItem>
+    <FluentGridItem xs="12" sm="6" md="4" lg="3">
+        <FluentCard>
+            <span style="color: #5f6b7a; font-size: 0.8rem;">Manifest entries</span>
+            <p style="font-weight: 600;">@(State.CurrentPackage?.Manifest.Entries.Count ?? 0)</p>
+        </FluentCard>
+    </FluentGridItem>
+    <FluentGridItem xs="12" sm="6" md="4" lg="3">
+        <FluentCard>
+            <span style="color: #5f6b7a; font-size: 0.8rem;">Tables</span>
+            <p style="font-weight: 600;">@(State.CurrentPackage?.Tables.Tables.Count ?? 0)</p>
+        </FluentCard>
+    </FluentGridItem>
+    <FluentGridItem xs="12" sm="6" md="4" lg="3">
+        <FluentCard>
+            <span style="color: #5f6b7a; font-size: 0.8rem;">Resources</span>
+            <p style="font-weight: 600;">@(State.CurrentPackage?.Resources.Count ?? 0)</p>
+        </FluentCard>
+    </FluentGridItem>
+    <FluentGridItem xs="12" sm="6" md="4" lg="3">
+        <FluentCard>
+            <span style="color: #5f6b7a; font-size: 0.8rem;">Last validation</span>
+            <p style="font-weight: 600;">@ValidationText</p>
+        </FluentCard>
+    </FluentGridItem>
+</FluentGrid>
 
 @code {
     private string projectRoot = string.Empty;

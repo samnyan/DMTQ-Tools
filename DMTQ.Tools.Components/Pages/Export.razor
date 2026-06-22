@@ -6,31 +6,34 @@
 <h1>Export</h1>
 
 <section class="toolbar-panel">
-    <label class="form-label" for="platform">Platform</label>
-    <select id="platform" class="form-control narrow-control" @bind="State.SelectedExportPlatform">
-        @foreach (var platform in State.Platforms.Select(p => p.Platform).OrderBy(p => p))
-        {
-            <option value="@platform">@platform</option>
-        }
-    </select>
+    <FluentSelect Items="@(State.Platforms.Select(p => p.Platform).OrderBy(p => p))"
+                  OptionText="@(i => i)"
+                  OptionValue="@(i => i)"
+                  @bind-SelectedOption="State.SelectedExportPlatform"
+                  Label="Platform" />
 
-    <label class="form-label" for="platformExportMode">Package output</label>
-    <select id="platformExportMode" class="form-control narrow-control" @bind="State.PlatformExportMode">
-        <option value="@DMTQ.Tools.Core.Models.PlatformExportMode.Delta">Delta: skip unchanged baseline files</option>
-        <option value="@DMTQ.Tools.Core.Models.PlatformExportMode.Full">Full: write every current file</option>
-    </select>
+    <FluentSelect Items="@(new[] { DMTQ.Tools.Core.Models.PlatformExportMode.Delta, DMTQ.Tools.Core.Models.PlatformExportMode.Full })"
+                  OptionText="@(mode => mode == DMTQ.Tools.Core.Models.PlatformExportMode.Delta ? "Delta: skip unchanged baseline files" : "Full: write every current file")"
+                  OptionValue="@(mode => mode.ToString())"
+                  @bind-SelectedOption="State.PlatformExportMode"
+                  Label="Package output" />
 
-    <label class="form-label" for="compressionMode">Compression policy</label>
-    <select id="compressionMode" class="form-control narrow-control" @bind="State.ExportCompressionMode">
-        <option value="Keep">Keep imported manifest flags</option>
-        <option value="CompressAll">Compress every manifest entry</option>
-        <option value="UncompressAll">Uncompress every manifest entry</option>
-    </select>
+    <FluentSelect Items="@(new[] { "Keep", "CompressAll", "UncompressAll" })"
+                  OptionText="@(i => i)"
+                  OptionValue="@(i => i)"
+                  @bind-SelectedOption="State.ExportCompressionMode"
+                  Label="Compression policy" />
 
-    <label class="form-label" for="exportRoot">Output directory</label>
     <div class="input-row">
-        <input id="exportRoot" class="form-control" @bind="exportRoot" placeholder="D:\DMTQExports\android" />
-        <button class="btn btn-primary" @onclick="ExportPlatformPackage" disabled="@(!State.HasPackage || State.Platforms.Count == 0 || isBusy)">Export</button>
+        <FluentTextField @bind-Value="exportRoot"
+                         Label="Output directory"
+                         Placeholder="D:\DMTQExports\android"
+                         Style="flex: 1;" />
+        <FluentButton Appearance="Appearance.Accent"
+                      @onclick="ExportPlatformPackage"
+                      Disabled="@(!State.HasPackage || State.Platforms.Count == 0 || isBusy)">
+            Export
+        </FluentButton>
     </div>
 
     @if (!State.HasPackage)
@@ -41,7 +44,7 @@
     @if (qaSummary is not null)
     {
         <div class="qa-summary @(qaSummary.IsClean ? "success" : qaSummary.HasErrors ? "error" : "warning")">
-            Pre-export QA: @qaSummary.Summary
+            <strong>Pre-export QA:</strong> @qaSummary.Summary
             @if (qaSummary.HasErrors)
             {
                 <span> — Fix errors before exporting.</span>
@@ -57,32 +60,44 @@
 
 @if (State.LastPlatformExportResult is not null)
 {
-    <section class="metrics-grid">
-        <div class="metric">
-            <span class="metric-label">Platform</span>
-            <strong>@State.LastPlatformExportResult.Platform</strong>
-        </div>
-        <div class="metric">
-            <span class="metric-label">Manifest entries</span>
-            <strong>@State.LastPlatformExportResult.ManifestEntryCount</strong>
-        </div>
-        <div class="metric">
-            <span class="metric-label">Files written</span>
-            <strong>@State.LastPlatformExportResult.FilesWritten</strong>
-        </div>
-        <div class="metric">
-            <span class="metric-label">Skipped baseline</span>
-            <strong>@State.LastPlatformExportResult.FilesSkippedAsBaseline</strong>
-        </div>
-        <div class="metric">
-            <span class="metric-label">Missing current files</span>
-            <strong>@State.LastPlatformExportResult.MissingCurrentFiles</strong>
-        </div>
-        <div class="metric">
-            <span class="metric-label">Validation</span>
-            <strong>@ValidationText</strong>
-        </div>
-    </section>
+    <FluentGrid Spacing="3" AdaptiveRendering="true">
+        <FluentGridItem xs="12" sm="6" md="4">
+            <FluentCard>
+                <span class="metric-label">Platform</span>
+                <strong>@State.LastPlatformExportResult.Platform</strong>
+            </FluentCard>
+        </FluentGridItem>
+        <FluentGridItem xs="12" sm="6" md="4">
+            <FluentCard>
+                <span class="metric-label">Manifest entries</span>
+                <strong>@State.LastPlatformExportResult.ManifestEntryCount</strong>
+            </FluentCard>
+        </FluentGridItem>
+        <FluentGridItem xs="12" sm="6" md="4">
+            <FluentCard>
+                <span class="metric-label">Files written</span>
+                <strong>@State.LastPlatformExportResult.FilesWritten</strong>
+            </FluentCard>
+        </FluentGridItem>
+        <FluentGridItem xs="12" sm="6" md="4">
+            <FluentCard>
+                <span class="metric-label">Skipped baseline</span>
+                <strong>@State.LastPlatformExportResult.FilesSkippedAsBaseline</strong>
+            </FluentCard>
+        </FluentGridItem>
+        <FluentGridItem xs="12" sm="6" md="4">
+            <FluentCard>
+                <span class="metric-label">Missing current files</span>
+                <strong>@State.LastPlatformExportResult.MissingCurrentFiles</strong>
+            </FluentCard>
+        </FluentGridItem>
+        <FluentGridItem xs="12" sm="6" md="4">
+            <FluentCard>
+                <span class="metric-label">Validation</span>
+                <strong>@ValidationText</strong>
+            </FluentCard>
+        </FluentGridItem>
+    </FluentGrid>
 }
 
 @if (State.LastValidationResult is not null && !State.LastValidationResult.IsValid)

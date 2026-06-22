@@ -23,7 +23,9 @@
 <section class="toolbar-panel">
     <div class="input-row">
         <h2>QA Check</h2>
-        <button class="btn btn-primary" @onclick="RunQa" disabled="@(!State.HasPackage || isBusy)">Run QA</button>
+        <FluentButton Appearance="Appearance.Accent"
+                      OnClick="RunQa"
+                      Disabled="@(!State.HasPackage || isBusy)">Run QA</FluentButton>
     </div>
     @if (qaReport is not null)
     {
@@ -33,25 +35,19 @@
         @if (!qaReport.IsClean)
         {
             <div class="grid-scroll compact-grid-scroll">
-                <table class="data-grid">
-                    <thead>
-                        <tr>
-                            <th>Severity</th>
-                            <th>Category</th>
-                            <th>Message</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var issue in qaReport.Issues.OrderBy(i => i.Severity).ThenBy(i => i.Category))
-                        {
-                            <tr class="qa-@(issue.Severity.ToString().ToLowerInvariant())">
-                                <td><span class="qa-badge qa-badge-@(issue.Severity.ToString().ToLowerInvariant())">@issue.Severity</span></td>
-                                <td>@issue.Category</td>
-                                <td>@issue.Message@(issue.Detail is not null ? $" — {issue.Detail}" : "")</td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
+                <FluentDataGrid Items="@qaReport.Issues.OrderBy(i => i.Severity).ThenBy(i => i.Category).AsQueryable()"
+                                TGridItem="QaIssue">
+                    <TemplateColumn Title="Severity">
+                        <FluentBadge Appearance="Appearance.Accent"
+                                     Color="@(context.Severity == QaIssueSeverity.Error ? "error" : context.Severity == QaIssueSeverity.Warning ? "warning" : "info")">
+                            @context.Severity
+                        </FluentBadge>
+                    </TemplateColumn>
+                    <PropertyColumn Title="Category" Property="@(i => i.Category)" />
+                    <TemplateColumn Title="Message">
+                        @context.Message@(context.Detail is not null ? $" — {context.Detail}" : "")
+                    </TemplateColumn>
+                </FluentDataGrid>
             </div>
         }
     }

@@ -1,5 +1,6 @@
 using DMTQ.Tools.Core.Models;
 using DMTQ.Tools.Core.Services;
+using Microsoft.FluentUI.AspNetCore.Components;
 
 namespace DMTQ.Tools.UITests;
 
@@ -16,6 +17,11 @@ public abstract class BlazorUITestBase : Bunit.TestContext
         Services.AddSingleton<LogicalTableService>();
         Services.AddSingleton<SongCatalogService>();
         Services.AddSingleton<SongEditService>();
+        Services.AddFluentUIComponents();
+
+        // FluentUI components invoke JS interop in OnAfterRenderAsync (v=... is build-specific).
+        // Use Loose mode so unregistered JS calls return empty/default instead of throwing.
+        JSInterop.Mode = JSRuntimeMode.Loose;
     }
 
     protected GameTableManagerTestState CreateStateWithEmptyPackage()
