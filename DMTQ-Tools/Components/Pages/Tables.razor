@@ -1,0 +1,116 @@
+@page "/tables"
+@inject GameTableManagerState State
+
+<h1>Tables</h1>
+
+@if (State.CurrentPackage is null)
+{
+    <section class="toolbar-panel">
+        <div class="status-message">Import a package before browsing tables.</div>
+    </section>
+}
+else
+{
+    <section class="table-browser">
+        <aside class="table-list">
+            <input class="form-control" @bind="filter" @bind:event="oninput" placeholder="Filter tables" />
+            <div class="table-list-items">
+                @foreach (var table in FilteredTables)
+                {
+                    <button class="table-list-item @(ReferenceEquals(table, SelectedTable) ? "selected" : "")" @onclick="() => SelectTable(table)">
+                        <strong>@table.TableName</strong>
+                        <span>@table.PackageRelativePath</span>
+                    </button>
+                }
+            </div>
+        </aside>
+        <section class="table-preview">
+            @if (SelectedTable is null)
+            {
+                <div class="status-message">Select a table.</div>
+            }
+            else
+            {
+                <div class="table-header">
+                    <div>
+                        <h2>@SelectedTable.TableName</h2>
+                        <p>@SelectedTable.PackageRelativePath</p>
+                    </div>
+                    <div class="table-counts">
+                        @SelectedTable.Columns.Count columns / @SelectedTable.Rows.Count rows
+                    </div>
+                </div>
+                <div class="grid-scroll">
+                    <table class="data-grid">
+                        <thead>
+                            <tr>
+                                @foreach (var column in SelectedTable.Columns.OrderBy(c => c.Order))
+                                {
+                                    <th>@column.Name</th>
+                                }
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var row in SelectedTable.Rows.OrderBy(r => r.Order).Take(100))
+                            {
+                                <tr>
+                                    @foreach (var column in SelectedTable.Columns.OrderBy(c => c.Order))
+                                    {
+                                        <td>@CellValue(row, column.Name)</td>
+                                    }
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <div class="hint">Showing first 100 rows. Editing is planned for a later round.</div>
+            }
+        </section>
+    </section>
+}
+
+@code {
+    private string filter = string.Empty;
+    private GameTable? selectedTable;
+
+    private GameTable? SelectedTable
+    {
+        get
+        {
+            if (selectedTable is not null)
+            {
+                return selectedTable;
+            }
+
+            return State.CurrentPackage?.Tables.Tables
+                .OrderBy(t => t.PackageRelativePath)
+                .FirstOrDefault();
+        }
+    }
+
+    private IEnumerable<GameTable> FilteredTables
+    {
+        get
+        {
+            var tables = State.CurrentPackage?.Tables.Tables ?? [];
+            if (string.IsNullOrWhiteSpace(filter))
+            {
+                return tables.OrderBy(t => t.PackageRelativePath);
+            }
+
+            return tables
+                .Where(t => t.PackageRelativePath.Contains(filter, StringComparison.OrdinalIgnoreCase)
+                    || t.TableName.Contains(filter, StringComparison.OrdinalIgnoreCase)
+                    || (t.LanguageCode?.Contains(filter, StringComparison.OrdinalIgnoreCase) ?? false))
+                .OrderBy(t => t.PackageRelativePath);
+        }
+    }
+
+    private void SelectTable(GameTable table)
+    {
+        selectedTable = table;
+    }
+
+    private static string CellValue(GameTableRow row, string columnName)
+        => row.Cells.FirstOrDefault(cell => cell.ColumnName == columnName)?.Value ?? string.Empty;
+}
