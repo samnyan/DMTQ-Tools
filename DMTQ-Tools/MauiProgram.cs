@@ -3,6 +3,8 @@ using DMTQ.Tools.Core.Services;
 using DMTQ_Tools.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.FluentUI.AspNetCore.Components;
+using Microsoft.Maui.DevFlow.Agent;
+using Microsoft.Maui.DevFlow.Blazor;
 
 namespace DMTQ_Tools
 {
@@ -49,6 +51,12 @@ namespace DMTQ_Tools
 #if DEBUG
             builder.Services.AddBlazorWebViewDeveloperTools();
             builder.Logging.AddDebug();
+
+            // DevFlow: MAUI automation toolkit (visual tree, element interaction, screenshots)
+            builder.AddMauiDevFlowAgent();
+
+            // DevFlow Blazor: Chrome DevTools Protocol bridge for BlazorWebView
+            builder.AddMauiBlazorDevFlowTools();
 #endif
 
             return builder.Build();
