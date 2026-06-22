@@ -13,7 +13,7 @@ public sealed class GameTableManagerWorkflow(
     PlatformPackageExporter platformExporter,
     ResourceManagerService resourceManager)
 {
-    public void CreateProject(string projectRoot)
+    public async Task CreateProjectAsync(string projectRoot)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(projectRoot);
 
@@ -22,6 +22,21 @@ public sealed class GameTableManagerWorkflow(
         Directory.CreateDirectory(Path.Combine(projectRoot, "exports"));
         Directory.CreateDirectory(Path.Combine(projectRoot, "temp"));
         state.SetProjectRoot(projectRoot);
+
+        // Immediately create an empty project file so it exists before any import.
+        var package = new PatchPackage
+        {
+            ProjectInfo = new ProjectInfo(projectRoot, null, "0.0.0", null)
+        };
+        state.SetPackage(package);
+        await repository.SaveAsync(
+                package,
+                state.ExportCompressionMode,
+                state.CreateExportOptions(),
+                projectRoot,
+                CancellationToken.None)
+            .ConfigureAwait(false);
+        state.Diagnostics.Add("Empty project created and saved.");
     }
 
     public async Task ImportPackageAsync(
@@ -110,9 +125,19 @@ public sealed class GameTableManagerWorkflow(
             });
         }
 
-        await platformImporter.ImportPlatformAsync(state.CurrentPackage, packageRoot, platform, cancellationToken)
+        await platformImporter.ImportPlatformAsync(state.CurrentPackage!, packageRoot, platform, cancellationToken)
             .ConfigureAwait(false);
         state.SetPlatformImportResult(platform);
+
+        // Auto-save the project after import so data persists.
+        await repository.SaveAsync(
+                state.CurrentPackage!,
+                state.ExportCompressionMode,
+                state.CreateExportOptions(),
+                state.ProjectRoot!,
+                cancellationToken)
+            .ConfigureAwait(false);
+        state.Diagnostics.Add("Auto-saved after import.");
     }
 
     public async Task ExportPlatformPackageAsync(

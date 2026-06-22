@@ -70,17 +70,23 @@
         ? "Not run"
         : State.LastValidationResult.IsValid ? "Passed" : $"{State.LastValidationResult.Errors.Count} errors";
 
-    private void CreateProject()
+    private async Task CreateProject()
     {
+        isBusy = true;
+        message = "Creating project...";
         try
         {
-            Workflow.CreateProject(projectRoot);
-            message = "Project directory is ready.";
+            await Workflow.CreateProjectAsync(projectRoot);
+            message = "Project created and saved.";
         }
         catch (Exception ex)
         {
             message = ex.Message;
             State.Diagnostics.Add("Project error: " + ex.Message);
+        }
+        finally
+        {
+            isBusy = false;
         }
     }
 
