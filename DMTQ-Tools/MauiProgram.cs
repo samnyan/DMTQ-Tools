@@ -28,6 +28,7 @@ namespace DMTQ_Tools
             builder.Services.AddSingleton<PatchPackageExporter>();
             builder.Services.AddSingleton<PatchPackageValidator>();
             builder.Services.AddSingleton<IPatchProjectRepository, JsonPatchProjectRepository>();
+            builder.Services.AddSingleton<LogicalTableService>();
             builder.Services.AddSingleton<GameTableManagerState>();
             builder.Services.AddSingleton<GameTableManagerWorkflow>();
 
