@@ -240,6 +240,7 @@ h1:focus {
     border: 1px solid #d8dee6;
     padding: 0.35rem 0.5rem;
     white-space: nowrap;
+    vertical-align: top;
 }
 
 .data-grid th {

@@ -5,11 +5,19 @@
 <h1>Export</h1>
 
 <section class="toolbar-panel">
-    <label class="form-label" for="exportRoot">Output directory</label>
-    <div class="input-row">
-        <input id="exportRoot" class="form-control" @bind="exportRoot" placeholder="D:\DMTQExports\android" />
-        <button class="btn btn-primary" @onclick="ExportPackage" disabled="@(!State.HasPackage || isBusy)">Export</button>
-    </div>
+    <label class="form-label" for="platform">Platform</label>
+    <select id="platform" class="form-control narrow-control" @bind="State.SelectedExportPlatform">
+        @foreach (var platform in State.Platforms.Select(p => p.Platform).OrderBy(p => p))
+        {
+            <option value="@platform">@platform</option>
+        }
+    </select>
+
+    <label class="form-label" for="platformExportMode">Package output</label>
+    <select id="platformExportMode" class="form-control narrow-control" @bind="State.PlatformExportMode">
+        <option value="@DMTQ.Tools.Core.Models.PlatformExportMode.Delta">Delta: skip unchanged baseline files</option>
+        <option value="@DMTQ.Tools.Core.Models.PlatformExportMode.Full">Full: write every current file</option>
+    </select>
 
     <label class="form-label" for="compressionMode">Compression policy</label>
     <select id="compressionMode" class="form-control narrow-control" @bind="State.ExportCompressionMode">
@@ -17,6 +25,12 @@
         <option value="CompressAll">Compress every manifest entry</option>
         <option value="UncompressAll">Uncompress every manifest entry</option>
     </select>
+
+    <label class="form-label" for="exportRoot">Output directory</label>
+    <div class="input-row">
+        <input id="exportRoot" class="form-control" @bind="exportRoot" placeholder="D:\DMTQExports\android" />
+        <button class="btn btn-primary" @onclick="ExportPlatformPackage" disabled="@(!State.HasPackage || State.Platforms.Count == 0 || isBusy)">Export</button>
+    </div>
 
     @if (!State.HasPackage)
     {
@@ -28,20 +42,28 @@
     }
 </section>
 
-@if (State.LastExportManifest is not null)
+@if (State.LastPlatformExportResult is not null)
 {
     <section class="metrics-grid">
         <div class="metric">
+            <span class="metric-label">Platform</span>
+            <strong>@State.LastPlatformExportResult.Platform</strong>
+        </div>
+        <div class="metric">
             <span class="metric-label">Manifest entries</span>
-            <strong>@State.LastExportManifest.Entries.Count</strong>
+            <strong>@State.LastPlatformExportResult.ManifestEntryCount</strong>
         </div>
         <div class="metric">
-            <span class="metric-label">Compressed entries</span>
-            <strong>@State.LastExportManifest.Entries.Count(e => e.Compressed)</strong>
+            <span class="metric-label">Files written</span>
+            <strong>@State.LastPlatformExportResult.FilesWritten</strong>
         </div>
         <div class="metric">
-            <span class="metric-label">Uncompressed entries</span>
-            <strong>@State.LastExportManifest.Entries.Count(e => !e.Compressed)</strong>
+            <span class="metric-label">Skipped baseline</span>
+            <strong>@State.LastPlatformExportResult.FilesSkippedAsBaseline</strong>
+        </div>
+        <div class="metric">
+            <span class="metric-label">Missing current files</span>
+            <strong>@State.LastPlatformExportResult.MissingCurrentFiles</strong>
         </div>
         <div class="metric">
             <span class="metric-label">Validation</span>
@@ -72,21 +94,24 @@
         ? "Not run"
         : State.LastValidationResult.IsValid ? "Passed" : $"{State.LastValidationResult.Errors.Count} errors";
 
-    private async Task ExportPackage()
+    private async Task ExportPlatformPackage()
     {
         isBusy = true;
-        message = "Exporting package...";
+        message = "Exporting platform package...";
         try
         {
-            await Workflow.ExportPackageAsync(exportRoot);
-            message = State.LastValidationResult?.IsValid == true
-                ? "Export completed and validation passed."
-                : "Export completed with validation errors.";
+            await Workflow.ExportPlatformPackageAsync(
+                exportRoot,
+                State.SelectedExportPlatform,
+                State.PlatformExportMode);
+            message = State.LastPlatformExportResult?.Validation.IsValid == true
+                ? "Platform export completed and validation passed."
+                : "Platform export completed with validation errors.";
         }
         catch (Exception ex)
         {
             message = ex.Message;
-            State.Diagnostics.Add("Export error: " + ex.Message);
+            State.Diagnostics.Add("Platform export error: " + ex.Message);
         }
         finally
         {

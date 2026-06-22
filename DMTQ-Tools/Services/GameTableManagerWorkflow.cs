@@ -1,3 +1,4 @@
+using DMTQ.Tools.Core.Models;
 using DMTQ.Tools.Core.Services;
 
 namespace DMTQ_Tools.Services;
@@ -7,7 +8,9 @@ public sealed class GameTableManagerWorkflow(
     PatchPackageImporter importer,
     PatchPackageExporter exporter,
     PatchPackageValidator validator,
-    IPatchProjectRepository repository)
+    IPatchProjectRepository repository,
+    PlatformPackageImporter platformImporter,
+    PlatformPackageExporter platformExporter)
 {
     public void CreateProject(string projectRoot)
     {
@@ -84,5 +87,57 @@ public sealed class GameTableManagerWorkflow(
         var snapshot = await repository.LoadAsync(projectRoot, cancellationToken)
             .ConfigureAwait(false);
         state.RestoreProject(snapshot);
+    }
+
+    public async Task ImportPlatformPackageAsync(
+        string packageRoot,
+        string platform,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(packageRoot);
+        ArgumentException.ThrowIfNullOrWhiteSpace(platform);
+        if (string.IsNullOrWhiteSpace(state.ProjectRoot))
+        {
+            throw new InvalidOperationException("Create or open a project directory before importing a platform package.");
+        }
+
+        if (state.CurrentPackage is null)
+        {
+            state.SetPackage(new DMTQ.Tools.Core.Models.PatchPackage
+            {
+                ProjectInfo = new DMTQ.Tools.Core.Models.ProjectInfo(state.ProjectRoot, null, null, null)
+            });
+        }
+
+        await platformImporter.ImportPlatformAsync(state.CurrentPackage, packageRoot, platform, cancellationToken)
+            .ConfigureAwait(false);
+        state.SetPlatformImportResult(platform);
+    }
+
+    public async Task ExportPlatformPackageAsync(
+        string exportRoot,
+        string platform,
+        PlatformExportMode exportMode,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(exportRoot);
+        ArgumentException.ThrowIfNullOrWhiteSpace(platform);
+        if (state.CurrentPackage is null)
+        {
+            throw new InvalidOperationException("Import a package before exporting.");
+        }
+
+        var result = await platformExporter.ExportPlatformAsync(
+                state.CurrentPackage,
+                exportRoot,
+                new DMTQ.Tools.Core.Models.PlatformExportOptions
+                {
+                    Platform = platform,
+                    Mode = exportMode,
+                    PackageOptions = state.CreateExportOptions()
+                },
+                cancellationToken)
+            .ConfigureAwait(false);
+        state.SetPlatformExportResult(result);
     }
 }

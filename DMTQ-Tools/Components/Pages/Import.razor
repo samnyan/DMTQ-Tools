@@ -5,10 +5,15 @@
 <h1>Import</h1>
 
 <section class="toolbar-panel">
+    <label class="form-label" for="platform">Platform</label>
+    <select id="platform" class="form-control narrow-control" @bind="platform">
+        <option value="android">android</option>
+        <option value="ios">ios</option>
+    </select>
     <label class="form-label" for="packageRoot">Source package directory</label>
     <div class="input-row">
         <input id="packageRoot" class="form-control" @bind="packageRoot" placeholder="D:\GitHub\DMTQ-Tools\external\patch\phone_new\1.003.005\android" />
-        <button class="btn btn-primary" @onclick="ImportPackage" disabled="@isBusy">Import</button>
+        <button class="btn btn-primary" @onclick="ImportPlatformPackage" disabled="@isBusy">Import Platform</button>
     </div>
     <div class="hint">Create or open a project on the Project page before importing.</div>
     @if (!string.IsNullOrWhiteSpace(message))
@@ -37,10 +42,43 @@
             <strong>@LanguageSummary</strong>
         </div>
     </section>
+
+    @if (State.Platforms.Count > 0)
+    {
+        <section class="toolbar-panel">
+            <h2>Platforms</h2>
+            <table class="data-grid">
+                <thead>
+                    <tr>
+                        <th>Platform</th>
+                        <th>Baseline entries</th>
+                        <th>Imported tables</th>
+                        <th>Imported resources</th>
+                        <th>Missing physical files</th>
+                        <th>Source</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in State.Platforms.OrderBy(p => p.Platform))
+                    {
+                        <tr>
+                            <td>@item.Platform</td>
+                            <td>@item.BaselineManifestEntries.Count</td>
+                            <td>@item.ImportedTableFileCount</td>
+                            <td>@item.ImportedResourceFileCount</td>
+                            <td>@item.MissingPhysicalFileCount</td>
+                            <td>@item.SourcePackageRoot</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </section>
+    }
 }
 
 @code {
     private string packageRoot = string.Empty;
+    private string platform = "android";
     private string? message;
     private bool isBusy;
 
@@ -52,13 +90,13 @@
             .Distinct()
             .OrderBy(code => code));
 
-    private async Task ImportPackage()
+    private async Task ImportPlatformPackage()
     {
         isBusy = true;
-        message = "Importing package...";
+        message = "Importing platform package...";
         try
         {
-            await Workflow.ImportPackageAsync(packageRoot);
+            await Workflow.ImportPlatformPackageAsync(packageRoot, platform);
             message = "Import completed.";
         }
         catch (Exception ex)

@@ -32,8 +32,12 @@
         <strong>@(State.CurrentPackage?.ProjectInfo.Version ?? "-")</strong>
     </div>
     <div class="metric">
-        <span class="metric-label">Platform</span>
+        <span class="metric-label">Primary platform</span>
         <strong>@(State.CurrentPackage?.ProjectInfo.Platform ?? "-")</strong>
+    </div>
+    <div class="metric">
+        <span class="metric-label">Imported platforms</span>
+        <strong>@PlatformSummary</strong>
     </div>
     <div class="metric">
         <span class="metric-label">Manifest entries</span>
@@ -57,6 +61,10 @@
     private string projectRoot = string.Empty;
     private string? message;
     private bool isBusy;
+
+    private string PlatformSummary => State.Platforms.Count == 0
+        ? "-"
+        : string.Join(", ", State.Platforms.Select(p => $"{p.Platform} ({p.BaselineManifestEntries.Count})"));
 
     private string ValidationText => State.LastValidationResult is null
         ? "Not run"

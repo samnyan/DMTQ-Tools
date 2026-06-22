@@ -12,6 +12,11 @@ public sealed class GameTableManagerState
     public PackageExportOptions? RestoredExportOptions { get; private set; }
     public List<string> Diagnostics { get; } = [];
 
+    public PlatformExportResult? LastPlatformExportResult { get; private set; }
+    public string SelectedExportPlatform { get; set; } = "android";
+    public PlatformExportMode PlatformExportMode { get; set; } = PlatformExportMode.Delta;
+    public IReadOnlyList<PlatformPackageRecord> Platforms => CurrentPackage?.Platforms ?? [];
+
     public bool HasProject => !string.IsNullOrWhiteSpace(ProjectRoot);
     public bool HasPackage => CurrentPackage is not null;
 
@@ -28,6 +33,7 @@ public sealed class GameTableManagerState
         CurrentPackage = package;
         LastExportManifest = null;
         LastValidationResult = null;
+        LastPlatformExportResult = null;
         RestoredExportOptions = null;
         Diagnostics.Add($"Imported package: {package.Manifest.Entries.Count} manifest entries, {package.Tables.Tables.Count} tables, {package.Resources.Count} resources.");
     }
@@ -41,6 +47,31 @@ public sealed class GameTableManagerState
         Diagnostics.Add(validation.IsValid
             ? $"Export validation passed: {manifest.Entries.Count} manifest entries."
             : $"Export validation failed: {validation.Errors.Count} errors.");
+    }
+
+    public void SetPlatformImportResult(string platform)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(platform);
+        LastExportManifest = null;
+        LastValidationResult = null;
+        LastPlatformExportResult = null;
+        SelectedExportPlatform = platform;
+        var imported = CurrentPackage?.Platforms.FirstOrDefault(p =>
+            p.Platform.Equals(platform, StringComparison.OrdinalIgnoreCase));
+        Diagnostics.Add(imported is null
+            ? $"Platform import completed: {platform}."
+            : $"Platform import completed: {platform}, {imported.BaselineManifestEntries.Count} baseline entries, {imported.MissingPhysicalFileCount} missing physical files.");
+    }
+
+    public void SetPlatformExportResult(PlatformExportResult result)
+    {
+        ArgumentNullException.ThrowIfNull(result);
+        LastPlatformExportResult = result;
+        LastExportManifest = result.Manifest;
+        LastValidationResult = result.Validation;
+        Diagnostics.Add(result.Validation.IsValid
+            ? $"Platform export validation passed: {result.Platform}, {result.ManifestEntryCount} manifest entries, {result.FilesWritten} files written, {result.FilesSkippedAsBaseline} skipped."
+            : $"Platform export validation failed: {result.Platform}, {result.Validation.Errors.Count} errors.");
     }
 
     public PackageExportOptions CreateExportOptions()
@@ -90,6 +121,7 @@ public sealed class GameTableManagerState
         RestoredExportOptions = snapshot.ExportOptions;
         LastExportManifest = null;
         LastValidationResult = null;
+        LastPlatformExportResult = null;
         Diagnostics.Add($"Opened project: {ProjectRoot}");
         Diagnostics.Add($"Loaded package: {snapshot.Package.Manifest.Entries.Count} manifest entries, {snapshot.Package.Tables.Tables.Count} tables, {snapshot.Package.Resources.Count} resources.");
     }
