@@ -1,0 +1,74 @@
+@page "/import"
+@inject GameTableManagerState State
+@inject GameTableManagerWorkflow Workflow
+
+<h1>Import</h1>
+
+<section class="toolbar-panel">
+    <label class="form-label" for="packageRoot">Source package directory</label>
+    <div class="input-row">
+        <input id="packageRoot" class="form-control" @bind="packageRoot" placeholder="D:\GitHub\DMTQ-Tools\external\patch\phone_new\1.003.005\android" />
+        <button class="btn btn-primary" @onclick="ImportPackage" disabled="@isBusy">Import</button>
+    </div>
+    <div class="hint">Create or open a project on the Project page before importing.</div>
+    @if (!string.IsNullOrWhiteSpace(message))
+    {
+        <div class="status-message">@message</div>
+    }
+</section>
+
+@if (State.CurrentPackage is not null)
+{
+    <section class="metrics-grid">
+        <div class="metric">
+            <span class="metric-label">Manifest entries</span>
+            <strong>@State.CurrentPackage.Manifest.Entries.Count</strong>
+        </div>
+        <div class="metric">
+            <span class="metric-label">Tables</span>
+            <strong>@State.CurrentPackage.Tables.Tables.Count</strong>
+        </div>
+        <div class="metric">
+            <span class="metric-label">Resources</span>
+            <strong>@State.CurrentPackage.Resources.Count</strong>
+        </div>
+        <div class="metric">
+            <span class="metric-label">Languages</span>
+            <strong>@LanguageSummary</strong>
+        </div>
+    </section>
+}
+
+@code {
+    private string packageRoot = string.Empty;
+    private string? message;
+    private bool isBusy;
+
+    private string LanguageSummary => State.CurrentPackage is null
+        ? "-"
+        : string.Join(", ", State.CurrentPackage.Tables.Tables
+            .Select(t => t.LanguageCode)
+            .Where(code => !string.IsNullOrWhiteSpace(code))
+            .Distinct()
+            .OrderBy(code => code));
+
+    private async Task ImportPackage()
+    {
+        isBusy = true;
+        message = "Importing package...";
+        try
+        {
+            await Workflow.ImportPackageAsync(packageRoot);
+            message = "Import completed.";
+        }
+        catch (Exception ex)
+        {
+            message = ex.Message;
+            State.Diagnostics.Add("Import error: " + ex.Message);
+        }
+        finally
+        {
+            isBusy = false;
+        }
+    }
+}
