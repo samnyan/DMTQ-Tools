@@ -136,22 +136,19 @@ section {
     min-width: 0;
 }
 
-/* ── Data grid (Tables editable grid, Songs tables) ── */
+/* ── Descriptions: language heading ── */
+.lang-heading {
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin: 0 0 0.25rem;
+    color: var(--neutral-foreground-rest);
+}
+
+/* ── Data grid (used by legacy editable tables) ── */
 .grid-scroll {
     overflow: auto;
     max-height: 34rem;
     min-width: 0;
-}
-
-.compact-grid-scroll {
-    max-height: 18rem;
-}
-
-.data-grid {
-    border-collapse: collapse;
-    min-width: 100%;
-    font-size: 0.85rem;
-    table-layout: auto;
 }
 
 .data-grid th,
@@ -166,24 +163,6 @@ section {
     background: #f4f7fb;
     position: sticky;
     top: 0;
-}
-
-.editable-grid td {
-    padding: 0;
-}
-
-.cell-input {
-    width: 100%;
-    min-width: 10rem;
-    border: 0;
-    padding: 0.35rem 0.5rem;
-    background: transparent;
-    font: inherit;
-}
-
-.cell-input:focus {
-    outline: 2px solid #1b6ec2;
-    background: #fff;
 }
 
 /* ── Songs page ── */

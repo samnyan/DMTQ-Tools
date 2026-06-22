@@ -93,40 +93,41 @@
                 <section>
                     <h2 class="section-heading">Descriptions</h2>
                     <p class="section-hint">Overrides per language. Leave blank to use Basic Info values on export.</p>
-                    <div class="grid-scroll compact-grid-scroll">
-                        <table class="data-grid">
-                            <thead>
-                                <tr>
-                                    <th style="min-width:50px">Lang</th>
-                                    <th>FullName</th>
-                                    <th>Genre</th>
-                                    <th>Artist</th>
-                                    <th>ComposedBy</th>
-                                    <th>Singer</th>
-                                    <th>FeatBy</th>
-                                    <th>ArrangedBy</th>
-                                    <th>VisualizedBy</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var lang in DefaultLanguages)
-                                {
-                                    var loc = GetOrCreateLocalization(lang);
-                                    <tr>
-                                        <td><strong>@lang</strong></td>
-                                        <td><input class="cell-input" @bind="loc.FullName" /></td>
-                                        <td><input class="cell-input" @bind="loc.Genre" /></td>
-                                        <td><input class="cell-input" @bind="loc.ArtistName" /></td>
-                                        <td><input class="cell-input" @bind="loc.ComposedBy" /></td>
-                                        <td><input class="cell-input" @bind="loc.Singer" /></td>
-                                        <td><input class="cell-input" @bind="loc.FeatBy" /></td>
-                                        <td><input class="cell-input" @bind="loc.ArrangedBy" /></td>
-                                        <td><input class="cell-input" @bind="loc.VisualizedBy" /></td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    </div>
+                    <FluentStack Orientation="Orientation.Vertical" VerticalGap="16" HorizontalAlignment="HorizontalAlignment.Stretch">
+                        @foreach (var lang in DefaultLanguages)
+                        {
+                            var loc = GetOrCreateLocalization(lang);
+                            <div>
+                                <h3 class="lang-heading">@lang</h3>
+                                <FluentGrid Spacing="2">
+                                    <FluentGridItem xs="12" sm="6" md="4" lg="3">
+                                        <FluentTextField @bind-Value="loc.FullName" Label="FullName" />
+                                    </FluentGridItem>
+                                    <FluentGridItem xs="12" sm="6" md="4" lg="3">
+                                        <FluentTextField @bind-Value="loc.Genre" Label="Genre" />
+                                    </FluentGridItem>
+                                    <FluentGridItem xs="12" sm="6" md="4" lg="3">
+                                        <FluentTextField @bind-Value="loc.ArtistName" Label="Artist" />
+                                    </FluentGridItem>
+                                    <FluentGridItem xs="12" sm="6" md="4" lg="3">
+                                        <FluentTextField @bind-Value="loc.ComposedBy" Label="Composed By" />
+                                    </FluentGridItem>
+                                    <FluentGridItem xs="12" sm="6" md="4" lg="3">
+                                        <FluentTextField @bind-Value="loc.Singer" Label="Singer" />
+                                    </FluentGridItem>
+                                    <FluentGridItem xs="12" sm="6" md="4" lg="3">
+                                        <FluentTextField @bind-Value="loc.FeatBy" Label="Feat By" />
+                                    </FluentGridItem>
+                                    <FluentGridItem xs="12" sm="6" md="4" lg="3">
+                                        <FluentTextField @bind-Value="loc.ArrangedBy" Label="Arranged By" />
+                                    </FluentGridItem>
+                                    <FluentGridItem xs="12" sm="6" md="4" lg="3">
+                                        <FluentTextField @bind-Value="loc.VisualizedBy" Label="Visualized By" />
+                                    </FluentGridItem>
+                                </FluentGrid>
+                            </div>
+                        }
+                    </FluentStack>
                 </section>
 
                 @* ════════════════════════════════════════════
