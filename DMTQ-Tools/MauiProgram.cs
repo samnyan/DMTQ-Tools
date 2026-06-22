@@ -22,7 +22,10 @@ namespace DMTQ_Tools
                 });
 
             builder.Services.AddMauiBlazorWebView();
-            builder.Services.AddFluentUIComponents();
+            builder.Services.AddFluentUIComponents(options =>
+            {
+                options.ServiceLifetime = ServiceLifetime.Singleton;
+            });
 
             builder.Services.AddSingleton<Lz4CompressionService>();
             builder.Services.AddSingleton<PatchManifestReader>();
