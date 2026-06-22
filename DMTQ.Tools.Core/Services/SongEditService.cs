@@ -4,31 +4,31 @@ namespace DMTQ.Tools.Core.Services;
 
 public sealed class SongEditService
 {
-    public void UpdateSong(PatchPackage package, SongEditRequest request)
+    public void UpdateSong(PatchPackage package, Song song)
     {
         ArgumentNullException.ThrowIfNull(package);
-        ArgumentNullException.ThrowIfNull(request);
-        ArgumentException.ThrowIfNullOrWhiteSpace(request.SongId);
+        ArgumentNullException.ThrowIfNull(song);
+        ArgumentException.ThrowIfNullOrWhiteSpace(song.Id);
 
         var songRows = FindTables(package, "song_song")
-            .Select(table => new { Table = table, Row = FindRow(table, "song_id", request.SongId) })
+            .Select(table => new { Table = table, Row = FindRow(table, "song_id", song.Id) })
             .Where(item => item.Row is not null)
             .ToArray();
         if (songRows.Length == 0)
         {
-            throw new InvalidOperationException($"Song '{request.SongId}' was not found.");
+            throw new InvalidOperationException($"Song '{song.Id}' was not found.");
         }
 
         foreach (var item in songRows)
         {
-            foreach (var field in request.SourceFields)
+            foreach (var field in song.SourceFields)
             {
                 SetCell(item.Row!, field.Key, field.Value);
             }
 
-            if (!string.IsNullOrWhiteSpace(request.PreviewPackageRelativePath))
+            if (!string.IsNullOrWhiteSpace(song.PreviewPackageRelativePath))
             {
-                SetCell(item.Row!, "preview", request.PreviewPackageRelativePath);
+                SetCell(item.Row!, "preview", song.PreviewPackageRelativePath);
             }
         }
 
@@ -40,36 +40,240 @@ public sealed class SongEditService
                 continue;
             }
 
-            var row = FindRow(table, "song_id", request.SongId);
+            var row = FindRow(table, "song_id", song.Id);
             if (row is null)
             {
                 continue;
             }
 
-            if (request.TitlesByLanguage.TryGetValue(language, out var title))
+            if (song.TitlesByLanguage.TryGetValue(language, out var title))
             {
                 SetCell(row, "title", title);
             }
 
-            if (request.DescriptionsByLanguage.TryGetValue(language, out var description))
+            if (song.DescriptionsByLanguage.TryGetValue(language, out var description))
             {
                 SetCell(row, "description", description);
             }
         }
 
+        foreach (var pattern in song.Patterns)
+        {
+            UpdatePatternInternal(package, song.Id, pattern.PatternId, pattern.SourceFields);
+        }
+    }
+
+    public void AddSong(PatchPackage package, Song song)
+    {
+        ArgumentNullException.ThrowIfNull(package);
+        ArgumentNullException.ThrowIfNull(song);
+        ArgumentException.ThrowIfNullOrWhiteSpace(song.Id);
+
+        if (FindTables(package, "song_song").Any(table => FindRow(table, "song_id", song.Id) is not null))
+        {
+            throw new InvalidOperationException($"Song '{song.Id}' already exists.");
+        }
+
+        AppendSongRows(package, song);
+        AppendPatternRows(package, song);
+        AppendSongDescriptionRows(package, song);
+        AppendItemDescriptionRows(package, song);
+        AppendProductRows(package, song);
+        AppendProductItemRows(package, song);
+        AppendCategoryProductRows(package, song);
+    }
+
+    public void UpdatePattern(
+        PatchPackage package,
+        string songId,
+        string patternId,
+        IReadOnlyDictionary<string, string> fields)
+    {
+        ArgumentNullException.ThrowIfNull(package);
+        ArgumentException.ThrowIfNullOrWhiteSpace(songId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(patternId);
+        ArgumentNullException.ThrowIfNull(fields);
+
+        UpdatePatternInternal(package, songId, patternId, fields);
+    }
+
+    public void AddPattern(
+        PatchPackage package,
+        string songId,
+        SongPattern pattern)
+    {
+        ArgumentNullException.ThrowIfNull(package);
+        ArgumentException.ThrowIfNullOrWhiteSpace(songId);
+        ArgumentNullException.ThrowIfNull(pattern);
+
+        var songTables = FindTables(package, "song_song");
+        if (!songTables.Any(table => FindRow(table, "song_id", songId) is not null))
+        {
+            throw new InvalidOperationException($"Song '{songId}' does not exist. Add the song first.");
+        }
+
         foreach (var table in FindTables(package, "song_songPattern"))
         {
-            foreach (var row in table.Rows.Where(row => GetCell(row, "song_id") == request.SongId))
+            if (table.Rows.Any(row =>
+                    GetCell(row, "song_id").Equals(songId, StringComparison.OrdinalIgnoreCase)
+                    && GetCell(row, "pattern_id").Equals(pattern.PatternId, StringComparison.OrdinalIgnoreCase)))
             {
-                var patternId = GetCell(row, "pattern_id");
-                if (request.PatternDifficultyByPatternId.TryGetValue(patternId, out var difficulty))
+                throw new InvalidOperationException(
+                    $"Pattern '{pattern.PatternId}' already exists for song '{songId}'.");
+            }
+
+            var row = CreateEmptyRow(table);
+            SetCell(row, "pattern_id", pattern.PatternId);
+            SetCell(row, "song_id", songId);
+            foreach (var field in pattern.SourceFields)
+            {
+                SetCell(row, field.Key, field.Value);
+            }
+
+            table.Rows.Add(row);
+        }
+    }
+
+    private static void UpdatePatternInternal(
+        PatchPackage package,
+        string songId,
+        string patternId,
+        IReadOnlyDictionary<string, string> fields)
+    {
+        var updated = false;
+        foreach (var table in FindTables(package, "song_songPattern"))
+        {
+            var row = table.Rows.FirstOrDefault(r =>
+                GetCell(r, "song_id").Equals(songId, StringComparison.OrdinalIgnoreCase)
+                && GetCell(r, "pattern_id").Equals(patternId, StringComparison.OrdinalIgnoreCase));
+            if (row is null)
+            {
+                continue;
+            }
+
+            foreach (var field in fields)
+            {
+                SetCell(row, field.Key, field.Value);
+            }
+
+            updated = true;
+        }
+
+        if (!updated)
+        {
+            throw new InvalidOperationException(
+                $"Pattern '{patternId}' for song '{songId}' was not found.");
+        }
+    }
+
+    private static void AppendSongRows(PatchPackage package, Song song)
+    {
+        foreach (var table in FindTables(package, "song_song"))
+        {
+            var row = CreateEmptyRow(table);
+            SetCell(row, "song_id", song.Id);
+            foreach (var field in song.SourceFields)
+            {
+                SetCell(row, field.Key, field.Value);
+            }
+
+            if (!string.IsNullOrWhiteSpace(song.PreviewPackageRelativePath))
+            {
+                SetCell(row, "preview", song.PreviewPackageRelativePath);
+            }
+
+            table.Rows.Add(row);
+        }
+    }
+
+    private static void AppendPatternRows(PatchPackage package, Song song)
+    {
+        foreach (var table in FindTables(package, "song_songPattern"))
+        {
+            foreach (var pattern in song.Patterns)
+            {
+                var row = CreateEmptyRow(table);
+                SetCell(row, "pattern_id", pattern.PatternId);
+                SetCell(row, "song_id", song.Id);
+                foreach (var field in pattern.SourceFields)
                 {
-                    SetCell(row, "difficulty", difficulty);
+                    SetCell(row, field.Key, field.Value);
                 }
 
-                if (request.PatternLevelByPatternId.TryGetValue(patternId, out var level))
+                table.Rows.Add(row);
+            }
+        }
+    }
+
+    private static void AppendSongDescriptionRows(PatchPackage package, Song song)
+    {
+        foreach (var table in FindLocalizedTables(package, "song_desc"))
+        {
+            var language = table.LanguageCode ?? ExtractLanguage(table.TableName);
+            var row = CreateEmptyRow(table);
+            SetCell(row, "song_id", song.Id);
+            SetCell(row, "title", song.TitlesByLanguage.TryGetValue(language, out var title) ? title : string.Empty);
+            SetCell(row, "description", song.DescriptionsByLanguage.TryGetValue(language, out var description) ? description : string.Empty);
+            table.Rows.Add(row);
+        }
+    }
+
+    private static void AppendItemDescriptionRows(PatchPackage package, Song song)
+    {
+        foreach (var table in FindLocalizedTables(package, "item_desc"))
+        {
+            var language = table.LanguageCode ?? ExtractLanguage(table.TableName);
+            var row = CreateEmptyRow(table);
+            SetCell(row, "item_id", song.ItemIds.FirstOrDefault() ?? song.Id);
+            SetCell(row, "name", song.ItemNamesByLanguage.TryGetValue(language, out var name) ? name : string.Empty);
+            SetCell(row, "description", song.DescriptionsByLanguage.TryGetValue(language, out var description) ? description : string.Empty);
+            table.Rows.Add(row);
+        }
+    }
+
+    private static void AppendProductRows(PatchPackage package, Song song)
+    {
+        foreach (var productId in song.ProductIds)
+        {
+            foreach (var table in FindTables(package, "product_product"))
+            {
+                var row = CreateEmptyRow(table);
+                SetCell(row, "product_id", productId);
+                SetCell(row, "song_id", song.Id);
+                table.Rows.Add(row);
+            }
+        }
+    }
+
+    private static void AppendProductItemRows(PatchPackage package, Song song)
+    {
+        foreach (var productId in song.ProductIds)
+        {
+            foreach (var itemId in song.ItemIds)
+            {
+                foreach (var table in FindTables(package, "product_item"))
                 {
-                    SetCell(row, "level", level);
+                    var row = CreateEmptyRow(table);
+                    SetCell(row, "product_id", productId);
+                    SetCell(row, "item_id", itemId);
+                    table.Rows.Add(row);
+                }
+            }
+        }
+    }
+
+    private static void AppendCategoryProductRows(PatchPackage package, Song song)
+    {
+        foreach (var categoryId in song.CategoryIds)
+        {
+            foreach (var productId in song.ProductIds)
+            {
+                foreach (var table in FindTables(package, "category_categoryproduct"))
+                {
+                    var row = CreateEmptyRow(table);
+                    SetCell(row, "category_id", categoryId);
+                    SetCell(row, "product_id", productId);
+                    table.Rows.Add(row);
                 }
             }
         }
@@ -105,125 +309,6 @@ public sealed class SongEditService
     {
         var index = tableName.LastIndexOf('_');
         return index < 0 || index == tableName.Length - 1 ? string.Empty : tableName[(index + 1)..];
-    }
-
-    public void AddSong(PatchPackage package, AddSongRequest request)
-    {
-        ArgumentNullException.ThrowIfNull(package);
-        ArgumentNullException.ThrowIfNull(request);
-        ArgumentException.ThrowIfNullOrWhiteSpace(request.SongId);
-        ArgumentException.ThrowIfNullOrWhiteSpace(request.ProductId);
-        ArgumentException.ThrowIfNullOrWhiteSpace(request.ItemId);
-        ArgumentException.ThrowIfNullOrWhiteSpace(request.CategoryId);
-
-        if (FindTables(package, "song_song").Any(table => FindRow(table, "song_id", request.SongId) is not null))
-        {
-            throw new InvalidOperationException($"Song '{request.SongId}' already exists.");
-        }
-
-        AppendSongRows(package, request);
-        AppendPatternRows(package, request);
-        AppendSongDescriptionRows(package, request);
-        AppendItemDescriptionRows(package, request);
-        AppendProductRows(package, request);
-        AppendProductItemRows(package, request);
-        AppendCategoryProductRows(package, request);
-    }
-
-    private static void AppendSongRows(PatchPackage package, AddSongRequest request)
-    {
-        foreach (var table in FindTables(package, "song_song"))
-        {
-            var row = CreateEmptyRow(table);
-            SetCell(row, "song_id", request.SongId);
-            foreach (var field in request.SongFields)
-            {
-                SetCell(row, field.Key, field.Value);
-            }
-
-            if (!string.IsNullOrWhiteSpace(request.PreviewPackageRelativePath))
-            {
-                SetCell(row, "preview", request.PreviewPackageRelativePath);
-            }
-
-            table.Rows.Add(row);
-        }
-    }
-
-    private static void AppendPatternRows(PatchPackage package, AddSongRequest request)
-    {
-        foreach (var table in FindTables(package, "song_songPattern"))
-        {
-            foreach (var pattern in request.Patterns)
-            {
-                var row = CreateEmptyRow(table);
-                SetCell(row, "pattern_id", pattern.PatternId);
-                SetCell(row, "song_id", request.SongId);
-                SetCell(row, "name", pattern.PatternName);
-                SetCell(row, "difficulty", pattern.Difficulty);
-                SetCell(row, "level", pattern.Level);
-                table.Rows.Add(row);
-            }
-        }
-    }
-
-    private static void AppendSongDescriptionRows(PatchPackage package, AddSongRequest request)
-    {
-        foreach (var table in FindLocalizedTables(package, "song_desc"))
-        {
-            var language = table.LanguageCode ?? ExtractLanguage(table.TableName);
-            var row = CreateEmptyRow(table);
-            SetCell(row, "song_id", request.SongId);
-            SetCell(row, "title", request.TitlesByLanguage.TryGetValue(language, out var title) ? title : string.Empty);
-            SetCell(row, "description", request.DescriptionsByLanguage.TryGetValue(language, out var description) ? description : string.Empty);
-            table.Rows.Add(row);
-        }
-    }
-
-    private static void AppendItemDescriptionRows(PatchPackage package, AddSongRequest request)
-    {
-        foreach (var table in FindLocalizedTables(package, "item_desc"))
-        {
-            var language = table.LanguageCode ?? ExtractLanguage(table.TableName);
-            var row = CreateEmptyRow(table);
-            SetCell(row, "item_id", request.ItemId);
-            SetCell(row, "name", request.ItemNamesByLanguage.TryGetValue(language, out var name) ? name : string.Empty);
-            SetCell(row, "description", request.ItemDescriptionsByLanguage.TryGetValue(language, out var description) ? description : string.Empty);
-            table.Rows.Add(row);
-        }
-    }
-
-    private static void AppendProductRows(PatchPackage package, AddSongRequest request)
-    {
-        foreach (var table in FindTables(package, "product_product"))
-        {
-            var row = CreateEmptyRow(table);
-            SetCell(row, "product_id", request.ProductId);
-            SetCell(row, "song_id", request.SongId);
-            table.Rows.Add(row);
-        }
-    }
-
-    private static void AppendProductItemRows(PatchPackage package, AddSongRequest request)
-    {
-        foreach (var table in FindTables(package, "product_item"))
-        {
-            var row = CreateEmptyRow(table);
-            SetCell(row, "product_id", request.ProductId);
-            SetCell(row, "item_id", request.ItemId);
-            table.Rows.Add(row);
-        }
-    }
-
-    private static void AppendCategoryProductRows(PatchPackage package, AddSongRequest request)
-    {
-        foreach (var table in FindTables(package, "category_categoryproduct"))
-        {
-            var row = CreateEmptyRow(table);
-            SetCell(row, "category_id", request.CategoryId);
-            SetCell(row, "product_id", request.ProductId);
-            table.Rows.Add(row);
-        }
     }
 
     private static GameTableRow CreateEmptyRow(GameTable table)

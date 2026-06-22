@@ -50,7 +50,7 @@ public sealed class SongCatalogServiceTests
 
         catalog.Should().ContainSingle();
         var song = catalog[0];
-        song.SongId.Should().Be("1001");
+        song.Id.Should().Be("1001");
         song.GetTitle("us").Should().Be("Oblivion");
         song.GetTitle("jp").Should().Be("オブリビオン");
         song.GetDescription("jp").Should().Be("JP description");

@@ -8,5 +8,6 @@ public sealed class SongEditRequest
     public Dictionary<string, string> DescriptionsByLanguage { get; } = new(StringComparer.OrdinalIgnoreCase);
     public Dictionary<string, string> PatternDifficultyByPatternId { get; } = new(StringComparer.OrdinalIgnoreCase);
     public Dictionary<string, string> PatternLevelByPatternId { get; } = new(StringComparer.OrdinalIgnoreCase);
+    public Dictionary<string, Dictionary<string, string>> PatternFieldsByPatternId { get; } = new(StringComparer.OrdinalIgnoreCase);
     public string? PreviewPackageRelativePath { get; init; }
 }

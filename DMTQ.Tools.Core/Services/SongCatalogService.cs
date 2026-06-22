@@ -1,11 +1,10 @@
-using System.Text.RegularExpressions;
 using DMTQ.Tools.Core.Models;
 
 namespace DMTQ.Tools.Core.Services;
 
 public sealed partial class SongCatalogService
 {
-    public IReadOnlyList<SongCatalogEntry> BuildCatalog(PatchPackage package)
+    public IReadOnlyList<Song> BuildCatalog(PatchPackage package)
     {
         ArgumentNullException.ThrowIfNull(package);
 
@@ -23,13 +22,13 @@ public sealed partial class SongCatalogService
 
         return songs.Values
             .OrderBy(song => song.GetTitle("us"), StringComparer.OrdinalIgnoreCase)
-            .ThenBy(song => song.SongId, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(song => song.Id, StringComparer.OrdinalIgnoreCase)
             .ToArray();
     }
 
-    private static Dictionary<string, SongCatalogEntry> BuildSongRows(GameTable songTable)
+    private static Dictionary<string, Song> BuildSongRows(GameTable songTable)
     {
-        var result = new Dictionary<string, SongCatalogEntry>(StringComparer.OrdinalIgnoreCase);
+        var result = new Dictionary<string, Song>(StringComparer.OrdinalIgnoreCase);
         foreach (var row in songTable.Rows.OrderBy(row => row.Order))
         {
             var songId = GetCell(row, "song_id", "songId", "id");
@@ -38,15 +37,15 @@ public sealed partial class SongCatalogService
                 continue;
             }
 
-            var entry = new SongCatalogEntry { SongId = songId };
-            CopyCells(row, entry.SourceFields);
-            result[songId] = entry;
+            var song = new Song { Id = songId };
+            CopyCells(row, song.SourceFields);
+            result[songId] = song;
         }
 
         return result;
     }
 
-    private static void AddPatternRows(PatchPackage package, Dictionary<string, SongCatalogEntry> songs)
+    private static void AddPatternRows(PatchPackage package, Dictionary<string, Song> songs)
     {
         foreach (var table in FindTables(package, "song_songPattern"))
         {
@@ -58,13 +57,16 @@ public sealed partial class SongCatalogService
                     continue;
                 }
 
-                var pattern = new SongPatternSummary
+                var patternId = GetCell(row, "pattern_id", "song_pattern_id", "id");
+                if (string.IsNullOrWhiteSpace(patternId))
                 {
-                    SongId = songId,
-                    PatternId = GetCell(row, "pattern_id", "song_pattern_id", "id"),
-                    PatternName = GetCell(row, "name", "pattern_name"),
-                    Difficulty = GetCell(row, "difficulty", "difficulty_type", "diff"),
-                    Level = GetCell(row, "level", "level_text", "rating")
+                    continue;
+                }
+
+                var pattern = new SongPattern
+                {
+                    PatternId = patternId,
+                    SongId = songId
                 };
                 CopyCells(row, pattern.SourceFields);
                 song.Patterns.Add(pattern);
@@ -78,7 +80,7 @@ public sealed partial class SongCatalogService
         }
     }
 
-    private static void AddSongDescriptions(PatchPackage package, Dictionary<string, SongCatalogEntry> songs)
+    private static void AddSongDescriptions(PatchPackage package, Dictionary<string, Song> songs)
     {
         foreach (var table in FindLocalizedTables(package, "song_desc"))
         {
@@ -106,7 +108,7 @@ public sealed partial class SongCatalogService
         }
     }
 
-    private static void AddProductAndItemLinks(PatchPackage package, Dictionary<string, SongCatalogEntry> songs)
+    private static void AddProductAndItemLinks(PatchPackage package, Dictionary<string, Song> songs)
     {
         var productToSong = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         foreach (var table in FindTables(package, "product_product"))
@@ -173,7 +175,7 @@ public sealed partial class SongCatalogService
         }
     }
 
-    private static void AddPreviewLinks(PatchPackage package, Dictionary<string, SongCatalogEntry> songs)
+    private static void AddPreviewLinks(PatchPackage package, Dictionary<string, Song> songs)
     {
         var previewPaths = package.Resources
             .Where(resource => resource.Category.Equals("preview", StringComparison.OrdinalIgnoreCase))
@@ -190,7 +192,7 @@ public sealed partial class SongCatalogService
             }
 
             var songIdMatch = previewPaths.FirstOrDefault(path =>
-                path.Contains(song.SongId, StringComparison.OrdinalIgnoreCase));
+                path.Contains(song.Id, StringComparison.OrdinalIgnoreCase));
             if (!string.IsNullOrWhiteSpace(songIdMatch))
             {
                 song.PreviewPackageRelativePath = songIdMatch;
@@ -234,7 +236,7 @@ public sealed partial class SongCatalogService
         }
     }
 
-    private static string GetSourceField(SongCatalogEntry song, params string[] fieldNames)
+    private static string GetSourceField(Song song, params string[] fieldNames)
     {
         foreach (var fieldName in fieldNames)
         {
@@ -257,10 +259,7 @@ public sealed partial class SongCatalogService
 
     private static string? ExtractLanguage(string tableName)
     {
-        var match = LanguageSuffixRegex().Match(tableName);
-        return match.Success ? match.Groups["lang"].Value : null;
+        var index = tableName.LastIndexOf('_');
+        return index < 0 || index == tableName.Length - 1 ? null : tableName[(index + 1)..];
     }
-
-    [GeneratedRegex("_(?<lang>[^_]+)$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
-    private static partial Regex LanguageSuffixRegex();
 }

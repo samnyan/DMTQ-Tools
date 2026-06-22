@@ -6,4 +6,5 @@ public sealed class AddSongPatternRequest
     public string PatternName { get; init; } = string.Empty;
     public string Difficulty { get; init; } = string.Empty;
     public string Level { get; init; } = string.Empty;
+    public Dictionary<string, string> Fields { get; } = new(StringComparer.OrdinalIgnoreCase);
 }

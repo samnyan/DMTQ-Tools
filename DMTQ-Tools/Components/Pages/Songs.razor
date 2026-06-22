@@ -9,7 +9,7 @@
 @if (State.CurrentPackage is null)
 {
     <section class="toolbar-panel">
-        <div class="status-message">Import or open a project before browsing songs.</div>
+        <div class="status-message">Import or open a project before editing songs.</div>
     </section>
 }
 else
@@ -28,152 +28,144 @@ else
     </section>
 
     <section class="metrics-grid">
-        <div class="metric">
-            <span class="metric-label">Songs</span>
-            <strong>@Catalog.Count</strong>
-        </div>
-        <div class="metric">
-            <span class="metric-label">Patterns</span>
-            <strong>@Catalog.Sum(song => song.Patterns.Count)</strong>
-        </div>
-        <div class="metric">
-            <span class="metric-label">With preview</span>
-            <strong>@Catalog.Count(song => song.HasPreview)</strong>
-        </div>
-        <div class="metric">
-            <span class="metric-label">Languages</span>
-            <strong>@string.Join(", ", Languages)</strong>
-        </div>
+        <div class="metric"><span class="metric-label">Songs</span><strong>@Catalog.Count</strong></div>
+        <div class="metric"><span class="metric-label">Patterns</span><strong>@Catalog.Sum(s => s.Patterns.Count)</strong></div>
+        <div class="metric"><span class="metric-label">With preview</span><strong>@Catalog.Count(s => s.HasPreview)</strong></div>
+        <div class="metric"><span class="metric-label">Languages</span><strong>@string.Join(", ", Languages)</strong></div>
     </section>
 
     <section class="song-browser">
         <aside class="song-list">
             @foreach (var song in FilteredSongs.Take(300))
             {
-                <button class="song-list-item @(song.SongId == SelectedSong?.SongId ? "selected" : "")" @onclick="() => SelectSong(song.SongId)">
+                <button class="song-list-item @(song.Id == SelectedSong?.Id ? "selected" : "")"
+                    @onclick="() => SelectSong(song.Id)">
                     <strong>@DisplayTitle(song)</strong>
-                    <span>@song.SongId / @song.Patterns.Count pattern(s) / @(song.HasPreview ? "preview" : "no preview")</span>
+                    <span>@song.Id / @song.Patterns.Count pattern(s) / @(song.HasPreview ? "preview" : "no preview")</span>
                 </button>
             }
+            <div class="song-add-section">
+                <button class="btn btn-primary" @onclick="() => showAddSong = !showAddSong">+ Add Song</button>
+                @if (showAddSong)
+                {
+                    <div class="song-add-form">
+                        <input class="form-control" @bind="newSongId" placeholder="Song ID" />
+                        <input class="form-control" @bind="newProductId" placeholder="Product ID" />
+                        <input class="form-control" @bind="newItemId" placeholder="Item ID" />
+                        <input class="form-control" @bind="newCategoryId" placeholder="Category ID" />
+                        <button class="btn btn-secondary" @onclick="AddSong" disabled="@isBusy">Create</button>
+                        <span class="status-message">@addMessage</span>
+                    </div>
+                }
+            </div>
         </aside>
 
         <section class="song-detail">
             @if (SelectedSong is null)
             {
-                <div class="status-message">Select a song.</div>
+                <div class="status-message">Select a song from the list.</div>
             }
             else
             {
+                @* ── Song Info ── *@
                 <div class="table-header">
-                    <div>
-                        <h2>@DisplayTitle(SelectedSong)</h2>
-                        <p>@SelectedSong.SongId</p>
-                    </div>
-                    <div class="table-counts">@SelectedSong.Patterns.Count pattern(s)</div>
+                    <h2>@DisplayTitle(SelectedSong)</h2>
+                    <span class="song-id-badge">@SelectedSong.Id</span>
                 </div>
 
-                <div class="song-summary-grid">
-                    <div>
-                        <span class="metric-label">Description</span>
-                        <strong>@SelectedSong.GetDescription(selectedLanguage)</strong>
-                    </div>
-                    <div>
-                        <span class="metric-label">Item</span>
-                        <strong>@SelectedSong.GetItemName(selectedLanguage)</strong>
-                    </div>
-                    <div>
-                        <span class="metric-label">Preview</span>
-                        <strong>@(SelectedSong.PreviewPackageRelativePath ?? "-")</strong>
-                    </div>
-                    <div>
-                        <span class="metric-label">Products</span>
-                        <strong>@string.Join(", ", SelectedSong.ProductIds)</strong>
-                    </div>
-                    <div>
-                        <span class="metric-label">Items</span>
-                        <strong>@string.Join(", ", SelectedSong.ItemIds)</strong>
-                    </div>
-                    <div>
-                        <span class="metric-label">Categories</span>
-                        <strong>@string.Join(", ", SelectedSong.CategoryIds)</strong>
-                    </div>
+                <div class="song-form-grid">
+                    @foreach (var field in SongInfoFields)
+                    {
+                        var value = GetSourceField(SelectedSong, field);
+                        <label class="form-label">
+                            @field
+                            <input class="form-control" value="@value"
+                                @onchange='args => OnSongFieldChanged(args, field)' />
+                        </label>
+                    }
+                </div>
+                <div class="song-form-grid">
+                    <label class="form-label">
+                        Preview path
+                        <input class="form-control" @bind="editPreviewPath" />
+                    </label>
+                    <label class="form-label">
+                        Title (@selectedLanguage)
+                        <input class="form-control" @bind="editTitle" />
+                    </label>
+                    <label class="form-label">
+                        Description (@selectedLanguage)
+                        <input class="form-control" @bind="editDescription" />
+                    </label>
+                    <label class="form-label">
+                        Item Name (@selectedLanguage)
+                        <input class="form-control" @bind="editItemName" />
+                    </label>
+                </div>
+                <div class="input-row">
+                    <button class="btn btn-primary" @onclick="SaveSelectedSong" disabled="@isBusy">Save Song</button>
+                    <span class="status-message">@editMessage</span>
                 </div>
 
-                <section class="song-editor-panel">
-                    <div class="table-header">
-                        <h2 class="section-heading">Edit Selected Song</h2>
-                        <button class="btn btn-secondary" @onclick="LoadEditForm" disabled="@(SelectedSong is null)">Load</button>
-                    </div>
-                    <div class="song-form-grid">
-                        <label class="form-label">
-                            Preview path
-                            <input class="form-control" @bind="editPreviewPath" />
-                        </label>
-                        <label class="form-label">
-                            Asset ID
-                            <input class="form-control" @bind="editAssetId" />
-                        </label>
-                    </div>
-                    <div class="song-form-grid">
-                        <label class="form-label">
-                            Title (@selectedLanguage)
-                            <input class="form-control" @bind="editTitle" />
-                        </label>
-                        <label class="form-label">
-                            Description (@selectedLanguage)
-                            <input class="form-control" @bind="editDescription" />
-                        </label>
-                    </div>
-                    <div class="input-row">
-                        <button class="btn btn-primary" @onclick="SaveSelectedSong" disabled="@isBusy">Save Song</button>
-                        <span class="status-message">@editMessage</span>
-                    </div>
-                </section>
-
-                <h2 class="section-heading">Localized Titles</h2>
+                @* ── Localization table ── *@
+                <h2 class="section-heading">Localized Texts</h2>
                 <div class="grid-scroll compact-grid-scroll">
                     <table class="data-grid">
-                        <thead>
-                            <tr>
-                                <th>Language</th>
-                                <th>Title</th>
-                                <th>Description</th>
-                                <th>Item Name</th>
-                            </tr>
-                        </thead>
+                        <thead><tr><th>Language</th><th>Title</th><th>Description</th><th>Item Name</th></tr></thead>
                         <tbody>
-                            @foreach (var language in Languages)
+                            @foreach (var lang in Languages)
                             {
                                 <tr>
-                                    <td>@language</td>
-                                    <td>@(SelectedSong.TitlesByLanguage.TryGetValue(language, out var title) ? title : "")</td>
-                                    <td>@(SelectedSong.DescriptionsByLanguage.TryGetValue(language, out var desc) ? desc : "")</td>
-                                    <td>@(SelectedSong.ItemNamesByLanguage.TryGetValue(language, out var itemName) ? itemName : "")</td>
+                                    <td>@lang</td>
+                                    <td>@GetLocalized(SelectedSong.TitlesByLanguage, lang)</td>
+                                    <td>@GetLocalized(SelectedSong.DescriptionsByLanguage, lang)</td>
+                                    <td>@GetLocalized(SelectedSong.ItemNamesByLanguage, lang)</td>
                                 </tr>
                             }
                         </tbody>
                     </table>
                 </div>
 
-                <h2 class="section-heading">Patterns</h2>
+                <h2 class="section-heading">Linked IDs</h2>
+                <div class="song-summary-grid">
+                    <div><span class="metric-label">Products</span><strong>@string.Join(", ", SelectedSong.ProductIds)</strong></div>
+                    <div><span class="metric-label">Items</span><strong>@string.Join(", ", SelectedSong.ItemIds)</strong></div>
+                    <div><span class="metric-label">Categories</span><strong>@string.Join(", ", SelectedSong.CategoryIds)</strong></div>
+                </div>
+
+                @* ── Patterns ── *@
+                <div class="table-header">
+                    <h2 class="section-heading">Song Patterns</h2>
+                    <button class="btn btn-secondary" @onclick="() => showAddPattern = !showAddPattern">+ Add Pattern</button>
+                </div>
+                @if (showAddPattern)
+                {
+                    <div class="song-add-form">
+                        <input class="form-control" @bind="newPatternId" placeholder="Pattern ID" />
+                        <input class="form-control" @bind="newPatternLine" placeholder="Line (2Line/3Line/4Line)" />
+                        <input class="form-control" @bind="newPatternSignature" placeholder="Signature (1/2/3)" />
+                        <input class="form-control" @bind="newPatternDifficulty" placeholder="Difficulty" />
+                        <button class="btn btn-secondary" @onclick="AddPattern" disabled="@isBusy">Add Pattern</button>
+                    </div>
+                }
                 <div class="grid-scroll compact-grid-scroll">
                     <table class="data-grid">
-                        <thead>
-                            <tr>
-                                <th>Pattern ID</th>
-                                <th>Name</th>
-                                <th>Difficulty</th>
-                                <th>Level</th>
-                            </tr>
-                        </thead>
+                        <thead><tr><th>Pattern ID</th><th>Line</th><th>Signature</th><th>Difficulty</th><th>Level</th><th></th></tr></thead>
                         <tbody>
-                            @foreach (var pattern in SelectedSong.Patterns)
+                            @foreach (var pattern in SortedPatterns)
                             {
                                 <tr>
                                     <td>@pattern.PatternId</td>
-                                    <td>@pattern.PatternName</td>
-                                    <td>@pattern.Difficulty</td>
-                                    <td>@pattern.Level</td>
+                                    <td><input class="cell-input" value="@pattern.Line"
+                                        @onchange='args => OnPatternFieldChanged(args, pattern.PatternId, "line")' /></td>
+                                    <td><input class="cell-input" value="@pattern.Signature"
+                                        @onchange='args => OnPatternFieldChanged(args, pattern.PatternId, "signature")' /></td>
+                                    <td><input class="cell-input" value="@pattern.Difficulty"
+                                        @onchange='args => OnPatternFieldChanged(args, pattern.PatternId, "difficulty")' /></td>
+                                    <td><input class="cell-input" value="@pattern.Level"
+                                        @onchange='args => OnPatternFieldChanged(args, pattern.PatternId, "level")' /></td>
+                                    <td><button class="btn btn-secondary btn-small" @onclick="() => SavePattern(pattern.PatternId)"
+                                        disabled="@isBusy">Save</button></td>
                                 </tr>
                             }
                         </tbody>
@@ -181,68 +173,6 @@ else
                 </div>
             }
         </section>
-    </section>
-
-    <section class="toolbar-panel song-editor-panel">
-        <h2 class="section-heading">Add Song</h2>
-        <div class="song-form-grid">
-            <label class="form-label">
-                Song ID
-                <input class="form-control" @bind="newSongId" />
-            </label>
-            <label class="form-label">
-                Product ID
-                <input class="form-control" @bind="newProductId" />
-            </label>
-            <label class="form-label">
-                Item ID
-                <input class="form-control" @bind="newItemId" />
-            </label>
-            <label class="form-label">
-                Category ID
-                <input class="form-control" @bind="newCategoryId" />
-            </label>
-        </div>
-        <div class="song-form-grid">
-            <label class="form-label">
-                Pattern ID
-                <input class="form-control" @bind="newPatternId" />
-            </label>
-            <label class="form-label">
-                Difficulty
-                <input class="form-control" @bind="newPatternDifficulty" />
-            </label>
-            <label class="form-label">
-                Level
-                <input class="form-control" @bind="newPatternLevel" />
-            </label>
-            <label class="form-label">
-                Preview path
-                <input class="form-control" @bind="newPreviewPath" />
-            </label>
-        </div>
-        <div class="song-form-grid">
-            <label class="form-label">
-                Title (@selectedLanguage)
-                <input class="form-control" @bind="newTitle" />
-            </label>
-            <label class="form-label">
-                Description (@selectedLanguage)
-                <input class="form-control" @bind="newDescription" />
-            </label>
-            <label class="form-label">
-                Item Name (@selectedLanguage)
-                <input class="form-control" @bind="newItemName" />
-            </label>
-            <label class="form-label">
-                Asset ID
-                <input class="form-control" @bind="newAssetId" />
-            </label>
-        </div>
-        <div class="input-row">
-            <button class="btn btn-primary" @onclick="AddSong" disabled="@isBusy">Add Song</button>
-            <span class="status-message">@addMessage</span>
-        </div>
     </section>
 }
 
@@ -254,68 +184,55 @@ else
     private string? editMessage;
     private string? addMessage;
     private string editPreviewPath = string.Empty;
-    private string editAssetId = string.Empty;
     private string editTitle = string.Empty;
     private string editDescription = string.Empty;
+    private string editItemName = string.Empty;
     private string newSongId = string.Empty;
     private string newProductId = string.Empty;
     private string newItemId = string.Empty;
     private string newCategoryId = string.Empty;
     private string newPatternId = string.Empty;
+    private string newPatternLine = string.Empty;
+    private string newPatternSignature = string.Empty;
     private string newPatternDifficulty = string.Empty;
-    private string newPatternLevel = string.Empty;
-    private string newPreviewPath = string.Empty;
-    private string newTitle = string.Empty;
-    private string newDescription = string.Empty;
-    private string newItemName = string.Empty;
-    private string newAssetId = string.Empty;
+    private bool showAddSong;
+    private bool showAddPattern;
+    private Dictionary<string, string> pendingEdits = new(StringComparer.OrdinalIgnoreCase);
+    private Dictionary<string, Dictionary<string, string>> pendingPatternEdits = new(StringComparer.OrdinalIgnoreCase);
+
     private PatchPackage? _lastPackage;
-    private IReadOnlyList<SongCatalogEntry> _catalog = [];
+    private IReadOnlyList<Song> _catalog = [];
     private IReadOnlyList<string> _cachedLanguages = [];
 
-    private IReadOnlyList<SongCatalogEntry> Catalog
+    private static readonly string[] SongInfoFields =
+    [
+        "item_id", "name", "full_name", "genre", "artist_name", "original_bga_yn",
+        "loop_bga_yn", "composed_by", "singer", "feat_by", "arranged_by", "visualized_by",
+        "cost_game_point", "cost_game_cash", "flag", "status", "free_yn", "hidden_yn",
+        "open_yn", "track_id", "mod_date", "update"
+    ];
+
+    private IReadOnlyList<Song> Catalog
     {
         get
         {
-            if (ReferenceEquals(State.CurrentPackage, _lastPackage))
-            {
-                return _catalog;
-            }
-
+            if (ReferenceEquals(State.CurrentPackage, _lastPackage)) return _catalog;
             _lastPackage = State.CurrentPackage;
-            _catalog = State.CurrentPackage is null
-                ? []
-                : SongCatalog.BuildCatalog(State.CurrentPackage);
-
-            _cachedLanguages = _catalog
-                .SelectMany(song => song.TitlesByLanguage.Keys
-                    .Concat(song.DescriptionsByLanguage.Keys)
-                    .Concat(song.ItemNamesByLanguage.Keys))
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .OrderBy(language => language, StringComparer.OrdinalIgnoreCase)
-                .ToArray();
-
-            if (_cachedLanguages.Count == 0)
-            {
-                _cachedLanguages = ["us"];
-            }
-
+            _catalog = State.CurrentPackage is null ? [] : SongCatalog.BuildCatalog(State.CurrentPackage);
+            _cachedLanguages = ComputeLanguages(_catalog);
             return _catalog;
         }
     }
 
     private IReadOnlyList<string> Languages => _cachedLanguages;
 
-    private IEnumerable<SongCatalogEntry> FilteredSongs
+    private IEnumerable<Song> FilteredSongs
     {
         get
         {
-            if (string.IsNullOrWhiteSpace(filter))
-            {
-                return Catalog;
-            }
+            if (string.IsNullOrWhiteSpace(filter)) return Catalog;
             return Catalog.Where(song =>
-                song.SongId.Contains(filter, StringComparison.OrdinalIgnoreCase)
+                song.Id.Contains(filter, StringComparison.OrdinalIgnoreCase)
                 || song.GetTitle(selectedLanguage).Contains(filter, StringComparison.OrdinalIgnoreCase)
                 || song.GetItemName(selectedLanguage).Contains(filter, StringComparison.OrdinalIgnoreCase)
                 || song.ProductIds.Any(id => id.Contains(filter, StringComparison.OrdinalIgnoreCase))
@@ -324,127 +241,192 @@ else
         }
     }
 
-    private SongCatalogEntry? SelectedSong
-        => Catalog.FirstOrDefault(song => song.SongId == selectedSongId)
-            ?? FilteredSongs.FirstOrDefault();
+    private Song? SelectedSong
+        => Catalog.FirstOrDefault(s => s.Id == selectedSongId) ?? FilteredSongs.FirstOrDefault();
+
+    private IEnumerable<SongPattern> SortedPatterns
+    {
+        get
+        {
+            if (SelectedSong is null) return [];
+            return SelectedSong.Patterns
+                .OrderBy(p => p.Line.Length).ThenBy(p => p.Line)
+                .ThenBy(p => p.Signature.Length).ThenBy(p => p.Signature);
+        }
+    }
 
     private void SelectSong(string songId)
     {
         selectedSongId = songId;
-    }
-
-    private string DisplayTitle(SongCatalogEntry song)
-    {
-        var title = song.GetTitle(selectedLanguage);
-        return string.IsNullOrWhiteSpace(title) ? song.SongId : title;
-    }
-
-    private void LoadEditForm()
-    {
-        if (SelectedSong is null)
+        showAddPattern = false;
+        pendingEdits.Clear();
+        pendingPatternEdits.Clear();
+        if (SelectedSong is not null)
         {
-            return;
+            editPreviewPath = SelectedSong.PreviewPackageRelativePath ?? string.Empty;
+            editTitle = SelectedSong.GetTitle(selectedLanguage);
+            editDescription = SelectedSong.GetDescription(selectedLanguage);
+            editItemName = SelectedSong.GetItemName(selectedLanguage);
         }
-        editPreviewPath = SelectedSong.PreviewPackageRelativePath ?? string.Empty;
-        editAssetId = SelectedSong.SourceFields.TryGetValue("asset_id", out var assetId) ? assetId : string.Empty;
-        editTitle = SelectedSong.GetTitle(selectedLanguage);
-        editDescription = SelectedSong.GetDescription(selectedLanguage);
         editMessage = null;
     }
 
+    private string DisplayTitle(Song song)
+    {
+        var title = song.GetTitle(selectedLanguage);
+        return string.IsNullOrWhiteSpace(title) ? song.Id : title;
+    }
+
+    // ── Song Info edit helpers ──
+
+    private static string GetSourceField(Song song, string fieldName)
+        => song.SourceFields.TryGetValue(fieldName, out var v) ? v : string.Empty;
+
+    private void SetEditField(string fieldName, string value)
+        => pendingEdits[fieldName] = value;
+
+    private void OnSongFieldChanged(ChangeEventArgs args, string fieldName)
+        => pendingEdits[fieldName] = args.Value?.ToString() ?? string.Empty;
+
+    private static string GetLocalized(Dictionary<string, string> dict, string lang)
+        => dict.TryGetValue(lang, out var v) ? v : "";
+
     private async Task SaveSelectedSong()
     {
-        if (State.CurrentPackage is null || SelectedSong is null)
-        {
-            return;
-        }
+        if (State.CurrentPackage is null || SelectedSong is null) return;
         isBusy = true;
         try
         {
-            var request = new SongEditRequest
-            {
-                SongId = SelectedSong.SongId,
-                PreviewPackageRelativePath = string.IsNullOrWhiteSpace(editPreviewPath) ? null : editPreviewPath
-            };
-            request.SourceFields["asset_id"] = editAssetId;
-            request.TitlesByLanguage[selectedLanguage] = editTitle;
-            request.DescriptionsByLanguage[selectedLanguage] = editDescription;
-            SongEditor.UpdateSong(State.CurrentPackage, request);
+            foreach (var (key, value) in pendingEdits)
+                SelectedSong.SourceFields[key] = value;
+            if (!string.IsNullOrWhiteSpace(editPreviewPath))
+                SelectedSong.PreviewPackageRelativePath = editPreviewPath;
+            SelectedSong.TitlesByLanguage[selectedLanguage] = editTitle;
+            SelectedSong.DescriptionsByLanguage[selectedLanguage] = editDescription;
+            SelectedSong.ItemNamesByLanguage[selectedLanguage] = editItemName;
+
+            SongEditor.UpdateSong(State.CurrentPackage, SelectedSong);
             await Workflow.SaveProjectAsync();
-            _lastPackage = null; // invalidate cache so UI refreshes
+            _lastPackage = null; // invalidate cache
+            pendingEdits.Clear();
             editMessage = "Song saved.";
-            State.Diagnostics.Add($"Song edited: {SelectedSong.SongId}");
+            State.Diagnostics.Add($"Song edited: {SelectedSong.Id}");
         }
         catch (Exception ex)
         {
             editMessage = ex.Message;
             State.Diagnostics.Add("Song edit error: " + ex.Message);
         }
-        finally
-        {
-            isBusy = false;
-        }
+        finally { isBusy = false; }
     }
 
-    private async Task AddSong()
+    // ── Pattern edit helpers ──
+
+    private void UpdatePatternField(string patternId, string fieldName, string value)
     {
-        if (State.CurrentPackage is null)
+        if (!pendingPatternEdits.TryGetValue(patternId, out var fields))
         {
-            return;
+            fields = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            pendingPatternEdits[patternId] = fields;
         }
+        fields[fieldName] = value;
+    }
+
+    private void OnPatternFieldChanged(ChangeEventArgs args, string patternId, string fieldName)
+        => UpdatePatternField(patternId, fieldName, args.Value?.ToString() ?? string.Empty);
+
+    private async Task SavePattern(string patternId)
+    {
+        if (State.CurrentPackage is null || SelectedSong is null) return;
+        if (!pendingPatternEdits.TryGetValue(patternId, out var fields) || fields.Count == 0) return;
         isBusy = true;
         try
         {
-            var request = new AddSongRequest
-            {
-                SongId = newSongId,
-                ProductId = newProductId,
-                ItemId = newItemId,
-                CategoryId = newCategoryId,
-                PreviewPackageRelativePath = string.IsNullOrWhiteSpace(newPreviewPath) ? null : newPreviewPath
-            };
-            request.SongFields["asset_id"] = newAssetId;
-            request.TitlesByLanguage[selectedLanguage] = newTitle;
-            request.DescriptionsByLanguage[selectedLanguage] = newDescription;
-            request.ItemNamesByLanguage[selectedLanguage] = newItemName;
-            request.Patterns.Add(new AddSongPatternRequest
-            {
-                PatternId = newPatternId,
-                Difficulty = newPatternDifficulty,
-                Level = newPatternLevel
-            });
-            SongEditor.AddSong(State.CurrentPackage, request);
+            SongEditor.UpdatePattern(State.CurrentPackage, SelectedSong.Id, patternId, fields);
             await Workflow.SaveProjectAsync();
-            _lastPackage = null; // invalidate cache so UI refreshes
+            _lastPackage = null;
+            pendingPatternEdits.Remove(patternId);
+            editMessage = $"Pattern {patternId} saved.";
+            State.Diagnostics.Add($"Pattern edited: {patternId}");
+        }
+        catch (Exception ex)
+        {
+            editMessage = ex.Message;
+            State.Diagnostics.Add("Pattern edit error: " + ex.Message);
+        }
+        finally { isBusy = false; }
+    }
+
+    private async Task AddPattern()
+    {
+        if (State.CurrentPackage is null || SelectedSong is null) return;
+        isBusy = true;
+        try
+        {
+            var pattern = new SongPattern { PatternId = newPatternId, SongId = SelectedSong.Id };
+            if (!string.IsNullOrWhiteSpace(newPatternLine)) pattern.SourceFields["line"] = newPatternLine;
+            if (!string.IsNullOrWhiteSpace(newPatternSignature)) pattern.SourceFields["signature"] = newPatternSignature;
+            if (!string.IsNullOrWhiteSpace(newPatternDifficulty)) pattern.SourceFields["difficulty"] = newPatternDifficulty;
+
+            SongEditor.AddPattern(State.CurrentPackage, SelectedSong.Id, pattern);
+            await Workflow.SaveProjectAsync();
+            _lastPackage = null;
+            newPatternId = string.Empty;
+            newPatternLine = string.Empty;
+            newPatternSignature = string.Empty;
+            newPatternDifficulty = string.Empty;
+            showAddPattern = false;
+            editMessage = $"Pattern {pattern.PatternId} added.";
+            State.Diagnostics.Add($"Pattern added: {pattern.PatternId}");
+        }
+        catch (Exception ex)
+        {
+            editMessage = ex.Message;
+            State.Diagnostics.Add("Add pattern error: " + ex.Message);
+        }
+        finally { isBusy = false; }
+    }
+
+    // ── Add Song ──
+
+    private async Task AddSong()
+    {
+        if (State.CurrentPackage is null) return;
+        isBusy = true;
+        try
+        {
+            var song = new Song { Id = newSongId };
+            if (!string.IsNullOrWhiteSpace(newProductId)) song.ProductIds.Add(newProductId);
+            if (!string.IsNullOrWhiteSpace(newItemId)) song.ItemIds.Add(newItemId);
+            if (!string.IsNullOrWhiteSpace(newCategoryId)) song.CategoryIds.Add(newCategoryId);
+
+            SongEditor.AddSong(State.CurrentPackage, song);
+            await Workflow.SaveProjectAsync();
+            _lastPackage = null;
             selectedSongId = newSongId;
-            addMessage = "Song added.";
-            State.Diagnostics.Add($"Song added: {newSongId}");
-            ClearAddSongForm();
+            newSongId = string.Empty;
+            newProductId = string.Empty;
+            newItemId = string.Empty;
+            newCategoryId = string.Empty;
+            showAddSong = false;
+            addMessage = $"Song {song.Id} created.";
+            State.Diagnostics.Add($"Song added: {song.Id}");
         }
         catch (Exception ex)
         {
             addMessage = ex.Message;
             State.Diagnostics.Add("Add song error: " + ex.Message);
         }
-        finally
-        {
-            isBusy = false;
-        }
+        finally { isBusy = false; }
     }
 
-    private void ClearAddSongForm()
+    private static IReadOnlyList<string> ComputeLanguages(IReadOnlyList<Song> catalog)
     {
-        newSongId = string.Empty;
-        newProductId = string.Empty;
-        newItemId = string.Empty;
-        newCategoryId = string.Empty;
-        newPatternId = string.Empty;
-        newPatternDifficulty = string.Empty;
-        newPatternLevel = string.Empty;
-        newPreviewPath = string.Empty;
-        newTitle = string.Empty;
-        newDescription = string.Empty;
-        newItemName = string.Empty;
-        newAssetId = string.Empty;
+        var langs = catalog
+            .SelectMany(s => s.TitlesByLanguage.Keys.Concat(s.DescriptionsByLanguage.Keys).Concat(s.ItemNamesByLanguage.Keys))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(l => l, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+        return langs.Length == 0 ? ["us"] : langs;
     }
 }
