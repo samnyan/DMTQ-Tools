@@ -64,8 +64,13 @@
     <Reference Include="FileHelpers, Version=3.4.1.0, Culture=neutral, PublicKeyToken=3e0c08d59cc3d657, processorArchitecture=MSIL">
       <HintPath>..\packages\FileHelpers.3.4.1\lib\net45\FileHelpers.dll</HintPath>
     </Reference>
-    <Reference Include="LZ4, Version=1.0.15.93, Culture=neutral, PublicKeyToken=62e1b5ec1eec9bdd, processorArchitecture=MSIL">
-      <HintPath>..\packages\lz4net.1.0.15.93\lib\net4-client\LZ4.dll</HintPath>
+    <PackageReference Include="K4os.Compression.LZ4" Version="1.3.8" />
+    <PackageReference Include="K4os.Compression.LZ4.Legacy" Version="1.3.8" />
+    <Reference Include="K4os.Compression.LZ4">
+      <HintPath>$(NuGetPackageRoot)k4os.compression.lz4\1.3.8\lib\net462\K4os.Compression.LZ4.dll</HintPath>
+    </Reference>
+    <Reference Include="K4os.Compression.LZ4.Legacy">
+      <HintPath>$(NuGetPackageRoot)k4os.compression.lz4.legacy\1.3.8\lib\net462\K4os.Compression.LZ4.Legacy.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
