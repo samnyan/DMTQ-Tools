@@ -70,4 +70,45 @@ public sealed class PatchPackageValidatorTests
             }
         }
     }
+
+    [TestMethod]
+    public async Task ValidateAsync_ChecksCompressedFileWhenEntryIsCompressed()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "dmtq-validate-compressed-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            Directory.CreateDirectory(Path.Combine(root, "dlc"));
+            var filePath = Path.Combine(root, "dlc", "sample.unity3d");
+            var compressedPath = filePath + ".lz4";
+            await File.WriteAllTextAsync(filePath, "uncompressed");
+            await File.WriteAllTextAsync(compressedPath, "compressed");
+
+            var checksum = new PatchChecksumService();
+            var manifest = new PatchManifest();
+            manifest.Entries.Add(new PatchFileEntry(
+                "dlc/sample.unity3d",
+                checksum.GetFileSize(filePath),
+                await checksum.ComputeMd5Async(filePath),
+                checksum.GetFileSize(compressedPath),
+                await checksum.ComputeMd5Async(compressedPath),
+                0,
+                true,
+                string.Empty,
+                string.Empty));
+
+            var validator = new PatchPackageValidator(checksum);
+
+            var result = await validator.ValidateAsync(manifest, root);
+
+            result.IsValid.Should().BeTrue();
+            result.Errors.Should().BeEmpty();
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+            {
+                Directory.Delete(root, recursive: true);
+            }
+        }
+    }
 }
