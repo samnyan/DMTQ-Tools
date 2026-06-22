@@ -58,9 +58,16 @@ public sealed class PatchPackageImporter(
                     var projectRelativePath = Path.Combine("resources", relativePath).Replace('\\', '/');
                     var archivedPath = Path.Combine(projectRoot, projectRelativePath.Replace('/', Path.DirectorySeparatorChar));
                     Directory.CreateDirectory(Path.GetDirectoryName(archivedPath) ?? projectRoot);
-                    await using (var source = File.OpenRead(sourcePath))
-                    await using (var destination = File.Create(archivedPath))
+
+                    if (entry.Compressed)
                     {
+                        await compressionService.DecompressFileAsync(sourcePath, archivedPath, cancellationToken)
+                            .ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        await using var source = File.OpenRead(sourcePath);
+                        await using var destination = File.Create(archivedPath);
                         await source.CopyToAsync(destination, cancellationToken).ConfigureAwait(false);
                     }
 
