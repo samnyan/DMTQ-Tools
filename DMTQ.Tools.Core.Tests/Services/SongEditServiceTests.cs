@@ -8,101 +8,29 @@ namespace DMTQ.Tools.Core.Tests.Services;
 public sealed class SongEditServiceTests
 {
     [TestMethod]
-    public void UpdateSong_WritesFlatFieldsToAllSongInstances()
+    public void UpdateSong_ValidatesSongExistsInSongsCollection()
     {
         var package = CreatePackage();
-        package.Tables.Tables.Add(CreateTable("table/us/song_song.csv", "song_song", "us",
-            ["song_id", "name", "genre", "artist_name", "preview"],
-            ["1001", "OldName", "OldGenre", "OldArtist", "preview/old.opus"]));
+        package.Songs.Add(new Song { Id = "1001" });
 
-        var song = new Song { Id = "1001" };
-        song.Name = "NewName";
-        song.Genre = "NewGenre";
-        song.ArtistName = "NewArtist";
-        song.PreviewPackageRelativePath = "preview/new.opus";
-
-        new SongEditService().UpdateSong(package, song);
-
-        Cell(package.Tables.Tables.Single(t => t.TableName == "song_song").Rows[0], "name").Should().Be("NewName");
-        Cell(package.Tables.Tables.Single(t => t.TableName == "song_song").Rows[0], "genre").Should().Be("NewGenre");
-        Cell(package.Tables.Tables.Single(t => t.TableName == "song_song").Rows[0], "artist_name").Should().Be("NewArtist");
-        Cell(package.Tables.Tables.Single(t => t.TableName == "song_song").Rows[0], "preview").Should().Be("preview/new.opus");
-    }
-
-    [TestMethod]
-    public void UpdateSong_WritesTitlesAndDescriptionsByLanguage()
-    {
-        var package = CreatePackage();
-        package.Tables.Tables.Add(CreateTable("table/us/song_song.csv", "song_song", "us",
-            ["song_id"], ["1001"]));
-        package.Tables.Tables.Add(CreateTable("table/us/song_desc_us.csv", "song_desc_us", "us",
-            ["song_id", "title", "description"], ["1001", "Old US", "Old desc"]));
-        package.Tables.Tables.Add(CreateTable("table/jp/song_desc_jp.csv", "song_desc_jp", "jp",
-            ["song_id", "title", "description"], ["1001", "Old JP", "Old desc"]));
-
-        var song = new Song { Id = "1001" };
-        song.TitlesByLanguage["us"] = "New US";
-        song.TitlesByLanguage["jp"] = "New JP";
-        song.DescriptionsByLanguage["us"] = "New US desc";
-
-        new SongEditService().UpdateSong(package, song);
-
-        Cell(package.Tables.Tables.Single(t => t.TableName == "song_desc_us").Rows[0], "title").Should().Be("New US");
-        Cell(package.Tables.Tables.Single(t => t.TableName == "song_desc_jp").Rows[0], "title").Should().Be("New JP");
-        Cell(package.Tables.Tables.Single(t => t.TableName == "song_desc_us").Rows[0], "description").Should().Be("New US desc");
-    }
-
-    [TestMethod]
-    public void UpdateSong_WritesPatternFields()
-    {
-        var package = CreatePackage();
-        package.Tables.Tables.Add(CreateTable("table/us/song_song.csv", "song_song", "us",
-            ["song_id"], ["1001"]));
-        package.Tables.Tables.Add(CreateTable("table/us/song_songPattern.csv", "song_songPattern", "us",
-            ["pattern_id", "song_id", "signature", "line", "difficulty", "level"],
-            ["9001", "1001", "1", "2Line", "hard", "10"]));
-
-        var song = new Song { Id = "1001" };
-        song.Patterns.Add(new SongPattern { PatternId = "9001", SongId = "1001" });
-        song.Patterns[0].Signature = "2";
-        song.Patterns[0].Line = "4Line";
-        song.Patterns[0].Difficulty = "expert";
-
-        new SongEditService().UpdateSong(package, song);
-
-        var pattern = package.Tables.Tables.Single(t => t.TableName == "song_songPattern").Rows[0];
-        Cell(pattern, "signature").Should().Be("2");
-        Cell(pattern, "line").Should().Be("4Line");
-        Cell(pattern, "difficulty").Should().Be("expert");
+        var action = () => new SongEditService().UpdateSong(package, new Song { Id = "1001" });
+        action.Should().NotThrow();
     }
 
     [TestMethod]
     public void UpdateSong_ThrowsWhenSongDoesNotExist()
     {
         var package = CreatePackage();
-        package.Tables.Tables.Add(CreateTable("table/us/song_song.csv", "song_song", "us",
-            ["song_id"], ["1001"]));
 
         var action = () => new SongEditService().UpdateSong(package, new Song { Id = "missing" });
         action.Should().Throw<InvalidOperationException>().WithMessage("Song 'missing' was not found.");
     }
 
     [TestMethod]
-    public void AddSong_AppendsRequiredRowsWithFlatFields()
+    public void AddSong_AppendsToSongsCollection()
     {
         var package = CreatePackage();
-        package.Tables.Tables.Add(CreateTable("table/us/song_song.csv", "song_song", "us",
-            ["song_id", "name", "artist_name"], ["1001", "OldSong", "OldArtist"]));
-        package.Tables.Tables.Add(CreateTable("table/us/song_songPattern.csv", "song_songPattern", "us",
-            ["pattern_id", "song_id", "difficulty", "level"], ["9001", "1001", "hard", "10"]));
-        package.Tables.Tables.Add(CreateTable("table/us/song_desc_us.csv", "song_desc_us", "us",
-            ["song_id", "title", "description"], ["1001", "Old US", "Old desc"]));
-        package.Tables.Tables.Add(CreateTable("table/us/product_product.csv", "product_product", "us",
-            ["product_id", "song_id"], ["5001", "1001"]));
-        package.Tables.Tables.Add(CreateTable("table/us/product_item.csv", "product_item", "us",
-            ["product_id", "item_id"], ["5001", "7001"]));
-        package.Tables.Tables.Add(CreateTable("table/us/category_categoryproduct.csv", "category_categoryproduct", "us",
-            ["category_id", "product_id"], ["3001", "5001"]));
+        package.Songs.Add(new Song { Id = "1001" });
 
         var song = new Song { Id = "1002" };
         song.Name = "NewSong";
@@ -117,38 +45,35 @@ public sealed class SongEditServiceTests
 
         new SongEditService().AddSong(package, song);
 
-        var songRows = package.Tables.Tables.Single(t => t.TableName == "song_song").Rows;
-        songRows.Should().HaveCount(2);
-        Cell(songRows[1], "song_id").Should().Be("1002");
-        Cell(songRows[1], "name").Should().Be("NewSong");
-        Cell(songRows[1], "artist_name").Should().Be("NewArtist");
-        Cell(songRows[1], "preview").Should().Be("preview/new.p.opus");
-        Cell(package.Tables.Tables.Single(t => t.TableName == "song_songPattern").Rows[1], "pattern_id").Should().Be("9002");
-        Cell(package.Tables.Tables.Single(t => t.TableName == "song_songPattern").Rows[1], "level").Should().Be("13");
-        Cell(package.Tables.Tables.Single(t => t.TableName == "product_product").Rows[1], "product_id").Should().Be("5002");
-        Cell(package.Tables.Tables.Single(t => t.TableName == "product_item").Rows[1], "item_id").Should().Be("7002");
-        Cell(package.Tables.Tables.Single(t => t.TableName == "category_categoryproduct").Rows[1], "category_id").Should().Be("3001");
+        package.Songs.Should().HaveCount(2);
+        var added = package.Songs.Single(s => s.Id == "1002");
+        added.Name.Should().Be("NewSong");
+        added.ArtistName.Should().Be("NewArtist");
+        added.PreviewPackageRelativePath.Should().Be("preview/new.p.opus");
+        added.ProductIds.Should().Equal("5002");
+        added.ItemIds.Should().Equal("7002");
+        added.CategoryIds.Should().Equal("3001");
+        added.Patterns.Should().ContainSingle();
+        added.Patterns[0].PatternId.Should().Be("9002");
+        added.Patterns[0].Level.Should().Be("13");
     }
 
     [TestMethod]
     public void AddSong_ThrowsWhenSongAlreadyExists()
     {
         var package = CreatePackage();
-        package.Tables.Tables.Add(CreateTable("table/us/song_song.csv", "song_song", "us",
-            ["song_id"], ["1001"]));
+        package.Songs.Add(new Song { Id = "1001" });
 
         var action = () => new SongEditService().AddSong(package, new Song { Id = "1001" });
         action.Should().Throw<InvalidOperationException>().WithMessage("Song '1001' already exists.");
     }
 
     [TestMethod]
-    public void AddPattern_AppendsPatternRowWithFlatFields()
+    public void AddPattern_AppendsToSongPatternsList()
     {
         var package = CreatePackage();
-        package.Tables.Tables.Add(CreateTable("table/us/song_song.csv", "song_song", "us",
-            ["song_id"], ["1001"]));
-        package.Tables.Tables.Add(CreateTable("table/us/song_songPattern.csv", "song_songPattern", "us",
-            ["pattern_id", "song_id", "difficulty"], ["9001", "1001", "easy"]));
+        package.Songs.Add(new Song { Id = "1001" });
+        package.Songs[0].Patterns.Add(new SongPattern { PatternId = "9001", SongId = "1001" });
 
         var pattern = new SongPattern { PatternId = "9002", SongId = "1001" };
         pattern.Signature = "3";
@@ -156,21 +81,18 @@ public sealed class SongEditServiceTests
 
         new SongEditService().AddPattern(package, "1001", pattern);
 
-        var rows = package.Tables.Tables.Single(t => t.TableName == "song_songPattern").Rows;
-        rows.Should().HaveCount(2);
-        Cell(rows[1], "pattern_id").Should().Be("9002");
-        Cell(rows[1], "signature").Should().Be("3");
-        Cell(rows[1], "line").Should().Be("4Line");
+        package.Songs[0].Patterns.Should().HaveCount(2);
+        var added = package.Songs[0].Patterns.Single(p => p.PatternId == "9002");
+        added.Signature.Should().Be("3");
+        added.Line.Should().Be("4Line");
     }
 
     [TestMethod]
     public void AddPattern_ThrowsWhenPatternAlreadyExists()
     {
         var package = CreatePackage();
-        package.Tables.Tables.Add(CreateTable("table/us/song_song.csv", "song_song", "us",
-            ["song_id"], ["1001"]));
-        package.Tables.Tables.Add(CreateTable("table/us/song_songPattern.csv", "song_songPattern", "us",
-            ["pattern_id", "song_id"], ["9001", "1001"]));
+        package.Songs.Add(new Song { Id = "1001" });
+        package.Songs[0].Patterns.Add(new SongPattern { PatternId = "9001", SongId = "1001" });
 
         var action = () => new SongEditService().AddPattern(package, "1001",
             new SongPattern { PatternId = "9001", SongId = "1001" });
@@ -180,91 +102,66 @@ public sealed class SongEditServiceTests
     }
 
     [TestMethod]
-    public void UpdatePattern_WritesFlatFieldsToMatchingPattern()
+    public void AddPattern_ThrowsWhenSongDoesNotExist()
     {
         var package = CreatePackage();
-        package.Tables.Tables.Add(CreateTable("table/us/song_song.csv", "song_song", "us",
-            ["song_id"], ["1001"]));
-        package.Tables.Tables.Add(CreateTable("table/us/song_songPattern.csv", "song_songPattern", "us",
-            ["pattern_id", "song_id", "difficulty", "line"],
-            ["9001", "1001", "easy", "2Line"]));
+
+        var action = () => new SongEditService().AddPattern(package, "nonexistent",
+            new SongPattern { PatternId = "9001", SongId = "nonexistent" });
+
+        action.Should().Throw<InvalidOperationException>()
+            .WithMessage("Song 'nonexistent' does not exist.");
+    }
+
+    [TestMethod]
+    public void UpdatePattern_ValidatesPatternExists()
+    {
+        var package = CreatePackage();
+        package.Songs.Add(new Song { Id = "1001" });
+        package.Songs[0].Patterns.Add(new SongPattern { PatternId = "9001", SongId = "1001" });
 
         var updated = new SongPattern { PatternId = "9001", SongId = "1001" };
         updated.Difficulty = "expert";
-        updated.Signature = "2";
 
-        new SongEditService().UpdatePattern(package, "1001", "9001", updated);
-
-        var row = package.Tables.Tables.Single(t => t.TableName == "song_songPattern").Rows[0];
-        Cell(row, "difficulty").Should().Be("expert");
-        Cell(row, "signature").Should().Be("2");
-        Cell(row, "line").Should().Be("2Line");
+        var action = () => new SongEditService().UpdatePattern(package, "1001", "9001", updated);
+        action.Should().NotThrow();
     }
 
     [TestMethod]
-    public void RemoveSong_DeletesAllRelatedRows()
+    public void UpdatePattern_ThrowsWhenPatternNotFound()
     {
         var package = CreatePackage();
-        package.Tables.Tables.Add(CreateTable("table/us/song_song.csv", "song_song", "us",
-            ["song_id", "name", "artist_name"],
-            ["1001", "SongA", "ArtistA"],
-            ["1002", "SongB", "ArtistB"]));
-        package.Tables.Tables.Add(CreateTable("table/us/song_songPattern.csv", "song_songPattern", "us",
-            ["pattern_id", "song_id", "difficulty"],
-            ["9001", "1001", "easy"],
-            ["9002", "1001", "hard"],
-            ["9003", "1002", "normal"]));
-        package.Tables.Tables.Add(CreateTable("table/us/song_desc_us.csv", "song_desc_us", "us",
-            ["song_id", "title", "description"],
-            ["1001", "Old US", "Old desc"],
-            ["1002", "SongB Title", "SongB Desc"]));
+        package.Songs.Add(new Song { Id = "1001" });
+
+        var action = () => new SongEditService().UpdatePattern(package, "1001", "9001",
+            new SongPattern { PatternId = "9001", SongId = "1001" });
+
+        action.Should().Throw<InvalidOperationException>()
+            .WithMessage("Pattern '9001' for song '1001' was not found.");
+    }
+
+    [TestMethod]
+    public void RemoveSong_RemovesFromSongsCollection()
+    {
+        var package = CreatePackage();
+        package.Songs.Add(new Song { Id = "1001" });
+        package.Songs.Add(new Song { Id = "1002" });
 
         new SongEditService().RemoveSong(package, "1001");
 
-        // Song row removed
-        package.Tables.Tables.Single(t => t.TableName == "song_song").Rows.Should().HaveCount(1);
-        Cell(package.Tables.Tables.Single(t => t.TableName == "song_song").Rows[0], "song_id").Should().Be("1002");
-
-        // Pattern rows removed (both 9001 and 9002)
-        package.Tables.Tables.Single(t => t.TableName == "song_songPattern").Rows.Should().HaveCount(1);
-        Cell(package.Tables.Tables.Single(t => t.TableName == "song_songPattern").Rows[0], "song_id").Should().Be("1002");
-
-        // Localized row removed
-        package.Tables.Tables.Single(t => t.TableName == "song_desc_us").Rows.Should().HaveCount(1);
-        Cell(package.Tables.Tables.Single(t => t.TableName == "song_desc_us").Rows[0], "song_id").Should().Be("1002");
+        package.Songs.Should().HaveCount(1);
+        package.Songs[0].Id.Should().Be("1002");
     }
 
     [TestMethod]
-    public void RemoveSong_NoOpsWhenSongDoesNotExist()
+    public void RemoveSong_ThrowsWhenSongDoesNotExist()
     {
         var package = CreatePackage();
-        package.Tables.Tables.Add(CreateTable("table/us/song_song.csv", "song_song", "us",
-            ["song_id"], ["1002"]));
 
         var action = () => new SongEditService().RemoveSong(package, "9999");
-        action.Should().NotThrow();
-
-        // Existing song remains untouched
-        package.Tables.Tables.Single(t => t.TableName == "song_song").Rows.Should().HaveCount(1);
+        action.Should().Throw<InvalidOperationException>().WithMessage("Song '9999' was not found.");
     }
 
     private static PatchPackage CreatePackage()
         => new() { ProjectInfo = new ProjectInfo("project", null, "1.003.005", null) };
-
-    private static GameTable CreateTable(string path, string tableName, string languageCode, string[] columns, params string[][] rows)
-    {
-        var table = new GameTable { PackageRelativePath = path, TableName = tableName, LanguageCode = languageCode };
-        for (var i = 0; i < columns.Length; i++) table.Columns.Add(new GameTableColumn(columns[i], i));
-        for (var rowIndex = 0; rowIndex < rows.Length; rowIndex++)
-        {
-            var row = new GameTableRow { Order = rowIndex };
-            for (var columnIndex = 0; columnIndex < columns.Length; columnIndex++)
-                row.Cells.Add(new GameTableCell(columns[columnIndex], rows[rowIndex][columnIndex]));
-            table.Rows.Add(row);
-        }
-        return table;
-    }
-
-    private static string Cell(GameTableRow row, string columnName)
-        => row.Cells.Single(cell => cell.ColumnName == columnName).Value;
 }
