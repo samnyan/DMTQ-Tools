@@ -319,6 +319,71 @@ public sealed class PatchPackageExporterTests
         }
     }
 
+    [TestMethod]
+    public async Task ExportAsync_ValidatesMixedCompressionPolicy()
+    {
+        var repoRoot = FindRepoRoot();
+        var packageRoot = Path.Combine(repoRoot, "external", "patch", "phone_new", "1.003.005", "android");
+        Directory.Exists(packageRoot).Should().BeTrue("the repository sample package is required for this integration test");
+
+        var projectRoot = Path.Combine(Path.GetTempPath(), "dmtq-mixed-compression-project-" + Guid.NewGuid().ToString("N"));
+        var exportRoot = Path.Combine(Path.GetTempPath(), "dmtq-mixed-compression-output-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var compression = new Lz4CompressionService();
+            var checksum = new PatchChecksumService();
+            var importer = new PatchPackageImporter(compression, new PatchManifestReader(), new CsvTableReader());
+            var package = await importer.ImportAsync(packageRoot, projectRoot);
+            var resourceEntry = package.Manifest.Entries.First(e =>
+                e.Compressed && e.FileName.StartsWith("preview/", StringComparison.Ordinal));
+            var options = new PackageExportOptions();
+            options.SetCompression("table/us/song_song.csv", compressed: false);
+            options.SetCompression(resourceEntry.FileName, compressed: false);
+
+            var exporter = new PatchPackageExporter(
+                new CsvTableWriter(),
+                new PatchManifestWriter(),
+                compression,
+                checksum);
+
+            var exportedManifest = await exporter.ExportAsync(package, exportRoot, options);
+            var validator = new PatchPackageValidator(checksum);
+            var validation = await validator.ValidateAsync(exportedManifest, exportRoot);
+
+            validation.Errors.Should().BeEmpty();
+            validation.IsValid.Should().BeTrue();
+
+            var uncompressedTable = exportedManifest.Entries.Single(e => e.FileName == "table/us/song_song.csv");
+            uncompressedTable.Compressed.Should().BeFalse();
+            uncompressedTable.CompressedFileSize.Should().Be(0);
+            uncompressedTable.CompressedChecksum.Should().BeEmpty();
+            File.Exists(Path.Combine(exportRoot, "table", "us", "song_song.csv.lz4")).Should().BeFalse();
+
+            var uncompressedResource = exportedManifest.Entries.Single(e => e.FileName == resourceEntry.FileName);
+            uncompressedResource.Compressed.Should().BeFalse();
+            uncompressedResource.CompressedFileSize.Should().Be(0);
+            uncompressedResource.CompressedChecksum.Should().BeEmpty();
+            File.Exists(Path.Combine(exportRoot, resourceEntry.FileName.Replace('/', Path.DirectorySeparatorChar)) + ".lz4")
+                .Should().BeFalse();
+
+            var stillCompressedTable = exportedManifest.Entries.Single(e => e.FileName == "table/us/song_songPattern.csv");
+            stillCompressedTable.Compressed.Should().BeTrue();
+            File.Exists(Path.Combine(exportRoot, "table", "us", "song_songPattern.csv.lz4")).Should().BeTrue();
+        }
+        finally
+        {
+            if (Directory.Exists(projectRoot))
+            {
+                Directory.Delete(projectRoot, recursive: true);
+            }
+
+            if (Directory.Exists(exportRoot))
+            {
+                Directory.Delete(exportRoot, recursive: true);
+            }
+        }
+    }
+
     private static string FindRepoRoot()
     {
         var current = AppContext.BaseDirectory;
