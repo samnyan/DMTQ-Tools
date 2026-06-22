@@ -67,7 +67,8 @@ public sealed class PatchPackageExporter(
                 Directory.CreateDirectory(Path.GetDirectoryName(exportPath) ?? exportRoot);
                 File.Copy(archivedPath, exportPath, overwrite: true);
 
-                var compressedPath = sourceEntry.Compressed ? exportPath + ".lz4" : null;
+                var shouldCompress = options.ShouldCompress(sourceEntry);
+                var compressedPath = shouldCompress ? exportPath + ".lz4" : null;
                 if (compressedPath is not null)
                 {
                     await compressionService.CompressFileAsync(exportPath, compressedPath, cancellationToken)
@@ -79,7 +80,7 @@ public sealed class PatchPackageExporter(
                     relativePath,
                     exportPath,
                     compressedPath,
-                    sourceEntry.Compressed,
+                    shouldCompress,
                     cancellationToken).ConfigureAwait(false));
             }
         }
