@@ -74,33 +74,33 @@ else
                 </div>
 
                 <div class="song-form-grid">
-                    @foreach (var field in SongInfoFields)
-                    {
-                        var value = GetSourceField(SelectedSong, field);
-                        <label class="form-label">
-                            @field
-                            <input class="form-control" value="@value"
-                                @onchange='args => OnSongFieldChanged(args, field)' />
-                        </label>
-                    }
+                    <label class="form-label">Item ID <input class="form-control" @bind="SelectedSong.ItemId" /></label>
+                    <label class="form-label">Name <input class="form-control" @bind="SelectedSong.Name" /></label>
+                    <label class="form-label">Full Name <input class="form-control" @bind="SelectedSong.FullName" /></label>
+                    <label class="form-label">Genre <input class="form-control" @bind="SelectedSong.Genre" /></label>
+                    <label class="form-label">Artist Name <input class="form-control" @bind="SelectedSong.ArtistName" /></label>
+                    <label class="form-label">Original BGA <input class="form-control" @bind="SelectedSong.OriginalBgaYn" /></label>
+                    <label class="form-label">Loop BGA <input class="form-control" @bind="SelectedSong.LoopBgaYn" /></label>
+                    <label class="form-label">Composed By <input class="form-control" @bind="SelectedSong.ComposedBy" /></label>
+                    <label class="form-label">Singer <input class="form-control" @bind="SelectedSong.Singer" /></label>
+                    <label class="form-label">Feat By <input class="form-control" @bind="SelectedSong.FeatBy" /></label>
+                    <label class="form-label">Arranged By <input class="form-control" @bind="SelectedSong.ArrangedBy" /></label>
+                    <label class="form-label">Visualized By <input class="form-control" @bind="SelectedSong.VisualizedBy" /></label>
+                    <label class="form-label">Cost Game Point <input class="form-control" @bind="SelectedSong.CostGamePoint" /></label>
+                    <label class="form-label">Cost Game Cash <input class="form-control" @bind="SelectedSong.CostGameCash" /></label>
+                    <label class="form-label">Flag <input class="form-control" @bind="SelectedSong.Flag" /></label>
+                    <label class="form-label">Status <input class="form-control" @bind="SelectedSong.Status" /></label>
+                    <label class="form-label">Free <input class="form-control" @bind="SelectedSong.FreeYn" /></label>
+                    <label class="form-label">Hidden <input class="form-control" @bind="SelectedSong.HiddenYn" /></label>
+                    <label class="form-label">Open <input class="form-control" @bind="SelectedSong.OpenYn" /></label>
+                    <label class="form-label">Track ID <input class="form-control" @bind="SelectedSong.TrackId" /></label>
+                    <label class="form-label">Mod Date <input class="form-control" @bind="SelectedSong.ModDate" /></label>
+                    <label class="form-label">Update <input class="form-control" @bind="SelectedSong.Update" /></label>
                 </div>
                 <div class="song-form-grid">
-                    <label class="form-label">
-                        Preview path
-                        <input class="form-control" @bind="editPreviewPath" />
-                    </label>
-                    <label class="form-label">
-                        Title (@selectedLanguage)
-                        <input class="form-control" @bind="editTitle" />
-                    </label>
-                    <label class="form-label">
-                        Description (@selectedLanguage)
-                        <input class="form-control" @bind="editDescription" />
-                    </label>
-                    <label class="form-label">
-                        Item Name (@selectedLanguage)
-                        <input class="form-control" @bind="editItemName" />
-                    </label>
+                    <label class="form-label">Preview path <input class="form-control" @bind="SelectedSong.PreviewPackageRelativePath" /></label>
+                    <label class="form-label">Title (@selectedLanguage) <input class="form-control" @bind="editTitle" /></label>
+                    <label class="form-label">Description (@selectedLanguage) <input class="form-control" @bind="editDescription" /></label>
                 </div>
                 <div class="input-row">
                     <button class="btn btn-primary" @onclick="SaveSelectedSong" disabled="@isBusy">Save Song</button>
@@ -156,15 +156,11 @@ else
                             {
                                 <tr>
                                     <td>@pattern.PatternId</td>
-                                    <td><input class="cell-input" value="@pattern.Line"
-                                        @onchange='args => OnPatternFieldChanged(args, pattern.PatternId, "line")' /></td>
-                                    <td><input class="cell-input" value="@pattern.Signature"
-                                        @onchange='args => OnPatternFieldChanged(args, pattern.PatternId, "signature")' /></td>
-                                    <td><input class="cell-input" value="@pattern.Difficulty"
-                                        @onchange='args => OnPatternFieldChanged(args, pattern.PatternId, "difficulty")' /></td>
-                                    <td><input class="cell-input" value="@pattern.Level"
-                                        @onchange='args => OnPatternFieldChanged(args, pattern.PatternId, "level")' /></td>
-                                    <td><button class="btn btn-secondary btn-small" @onclick="() => SavePattern(pattern.PatternId)"
+                                    <td><input class="cell-input" @bind="pattern.Line" /></td>
+                                    <td><input class="cell-input" @bind="pattern.Signature" /></td>
+                                    <td><input class="cell-input" @bind="pattern.Difficulty" /></td>
+                                    <td><input class="cell-input" @bind="pattern.Level" /></td>
+                                    <td><button class="btn btn-secondary btn-small" @onclick="() => SavePattern(pattern)"
                                         disabled="@isBusy">Save</button></td>
                                 </tr>
                             }
@@ -183,10 +179,8 @@ else
     private bool isBusy;
     private string? editMessage;
     private string? addMessage;
-    private string editPreviewPath = string.Empty;
     private string editTitle = string.Empty;
     private string editDescription = string.Empty;
-    private string editItemName = string.Empty;
     private string newSongId = string.Empty;
     private string newProductId = string.Empty;
     private string newItemId = string.Empty;
@@ -197,20 +191,10 @@ else
     private string newPatternDifficulty = string.Empty;
     private bool showAddSong;
     private bool showAddPattern;
-    private Dictionary<string, string> pendingEdits = new(StringComparer.OrdinalIgnoreCase);
-    private Dictionary<string, Dictionary<string, string>> pendingPatternEdits = new(StringComparer.OrdinalIgnoreCase);
 
     private PatchPackage? _lastPackage;
     private IReadOnlyList<Song> _catalog = [];
     private IReadOnlyList<string> _cachedLanguages = [];
-
-    private static readonly string[] SongInfoFields =
-    [
-        "item_id", "name", "full_name", "genre", "artist_name", "original_bga_yn",
-        "loop_bga_yn", "composed_by", "singer", "feat_by", "arranged_by", "visualized_by",
-        "cost_game_point", "cost_game_cash", "flag", "status", "free_yn", "hidden_yn",
-        "open_yn", "track_id", "mod_date", "update"
-    ];
 
     private IReadOnlyList<Song> Catalog
     {
@@ -259,14 +243,10 @@ else
     {
         selectedSongId = songId;
         showAddPattern = false;
-        pendingEdits.Clear();
-        pendingPatternEdits.Clear();
         if (SelectedSong is not null)
         {
-            editPreviewPath = SelectedSong.PreviewPackageRelativePath ?? string.Empty;
             editTitle = SelectedSong.GetTitle(selectedLanguage);
             editDescription = SelectedSong.GetDescription(selectedLanguage);
-            editItemName = SelectedSong.GetItemName(selectedLanguage);
         }
         editMessage = null;
     }
@@ -277,19 +257,10 @@ else
         return string.IsNullOrWhiteSpace(title) ? song.Id : title;
     }
 
-    // ── Song Info edit helpers ──
-
-    private static string GetSourceField(Song song, string fieldName)
-        => song.SourceFields.TryGetValue(fieldName, out var v) ? v : string.Empty;
-
-    private void SetEditField(string fieldName, string value)
-        => pendingEdits[fieldName] = value;
-
-    private void OnSongFieldChanged(ChangeEventArgs args, string fieldName)
-        => pendingEdits[fieldName] = args.Value?.ToString() ?? string.Empty;
-
     private static string GetLocalized(Dictionary<string, string> dict, string lang)
         => dict.TryGetValue(lang, out var v) ? v : "";
+
+    // ── Save Song ──
 
     private async Task SaveSelectedSong()
     {
@@ -297,18 +268,12 @@ else
         isBusy = true;
         try
         {
-            foreach (var (key, value) in pendingEdits)
-                SelectedSong.SourceFields[key] = value;
-            if (!string.IsNullOrWhiteSpace(editPreviewPath))
-                SelectedSong.PreviewPackageRelativePath = editPreviewPath;
             SelectedSong.TitlesByLanguage[selectedLanguage] = editTitle;
             SelectedSong.DescriptionsByLanguage[selectedLanguage] = editDescription;
-            SelectedSong.ItemNamesByLanguage[selectedLanguage] = editItemName;
 
             SongEditor.UpdateSong(State.CurrentPackage, SelectedSong);
             await Workflow.SaveProjectAsync();
-            _lastPackage = null; // invalidate cache
-            pendingEdits.Clear();
+            _lastPackage = null;
             editMessage = "Song saved.";
             State.Diagnostics.Add($"Song edited: {SelectedSong.Id}");
         }
@@ -320,34 +285,19 @@ else
         finally { isBusy = false; }
     }
 
-    // ── Pattern edit helpers ──
+    // ── Save Pattern ──
 
-    private void UpdatePatternField(string patternId, string fieldName, string value)
-    {
-        if (!pendingPatternEdits.TryGetValue(patternId, out var fields))
-        {
-            fields = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-            pendingPatternEdits[patternId] = fields;
-        }
-        fields[fieldName] = value;
-    }
-
-    private void OnPatternFieldChanged(ChangeEventArgs args, string patternId, string fieldName)
-        => UpdatePatternField(patternId, fieldName, args.Value?.ToString() ?? string.Empty);
-
-    private async Task SavePattern(string patternId)
+    private async Task SavePattern(SongPattern pattern)
     {
         if (State.CurrentPackage is null || SelectedSong is null) return;
-        if (!pendingPatternEdits.TryGetValue(patternId, out var fields) || fields.Count == 0) return;
         isBusy = true;
         try
         {
-            SongEditor.UpdatePattern(State.CurrentPackage, SelectedSong.Id, patternId, fields);
+            SongEditor.UpdatePattern(State.CurrentPackage, SelectedSong.Id, pattern.PatternId, pattern);
             await Workflow.SaveProjectAsync();
             _lastPackage = null;
-            pendingPatternEdits.Remove(patternId);
-            editMessage = $"Pattern {patternId} saved.";
-            State.Diagnostics.Add($"Pattern edited: {patternId}");
+            editMessage = $"Pattern {pattern.PatternId} saved.";
+            State.Diagnostics.Add($"Pattern edited: {pattern.PatternId}");
         }
         catch (Exception ex)
         {
@@ -357,6 +307,8 @@ else
         finally { isBusy = false; }
     }
 
+    // ── Add Pattern ──
+
     private async Task AddPattern()
     {
         if (State.CurrentPackage is null || SelectedSong is null) return;
@@ -364,9 +316,9 @@ else
         try
         {
             var pattern = new SongPattern { PatternId = newPatternId, SongId = SelectedSong.Id };
-            if (!string.IsNullOrWhiteSpace(newPatternLine)) pattern.SourceFields["line"] = newPatternLine;
-            if (!string.IsNullOrWhiteSpace(newPatternSignature)) pattern.SourceFields["signature"] = newPatternSignature;
-            if (!string.IsNullOrWhiteSpace(newPatternDifficulty)) pattern.SourceFields["difficulty"] = newPatternDifficulty;
+            if (!string.IsNullOrWhiteSpace(newPatternLine)) pattern.Line = newPatternLine;
+            if (!string.IsNullOrWhiteSpace(newPatternSignature)) pattern.Signature = newPatternSignature;
+            if (!string.IsNullOrWhiteSpace(newPatternDifficulty)) pattern.Difficulty = newPatternDifficulty;
 
             SongEditor.AddPattern(State.CurrentPackage, SelectedSong.Id, pattern);
             await Workflow.SaveProjectAsync();

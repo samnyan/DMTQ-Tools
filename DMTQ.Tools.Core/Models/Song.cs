@@ -1,43 +1,56 @@
 namespace DMTQ.Tools.Core.Models;
 
 /// <summary>
-/// Unified song model used for both reading (projection from tables)
-/// and writing (editing back into tables).
+/// Project-domain song model with flat, strongly-typed fields.
+/// Used for editing in the UI; not tied to CSV column layout.
 /// </summary>
 public sealed class Song
 {
     public required string Id { get; init; }
 
-    /// <summary>All cells from song_song rows, keyed by column name.</summary>
-    public Dictionary<string, string> SourceFields { get; } = new(StringComparer.OrdinalIgnoreCase);
+    // ── song_song fields ──
+    public string ItemId { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public string FullName { get; set; } = string.Empty;
+    public string Genre { get; set; } = string.Empty;
+    public string ArtistName { get; set; } = string.Empty;
+    public string OriginalBgaYn { get; set; } = string.Empty;
+    public string LoopBgaYn { get; set; } = string.Empty;
+    public string ComposedBy { get; set; } = string.Empty;
+    public string Singer { get; set; } = string.Empty;
+    public string FeatBy { get; set; } = string.Empty;
+    public string ArrangedBy { get; set; } = string.Empty;
+    public string VisualizedBy { get; set; } = string.Empty;
+    public string CostGamePoint { get; set; } = string.Empty;
+    public string CostGameCash { get; set; } = string.Empty;
+    public string Flag { get; set; } = string.Empty;
+    public string Status { get; set; } = string.Empty;
+    public string FreeYn { get; set; } = string.Empty;
+    public string HiddenYn { get; set; } = string.Empty;
+    public string OpenYn { get; set; } = string.Empty;
+    public string TrackId { get; set; } = string.Empty;
+    public string ModDate { get; set; } = string.Empty;
+    public string Update { get; set; } = string.Empty;
 
-    /// <summary>Title by language code (from song_desc_&lt;lang&gt;).</summary>
-    public Dictionary<string, string> TitlesByLanguage { get; } = new(StringComparer.OrdinalIgnoreCase);
-
-    /// <summary>Description by language code (from song_desc_&lt;lang&gt;).</summary>
-    public Dictionary<string, string> DescriptionsByLanguage { get; } = new(StringComparer.OrdinalIgnoreCase);
-
-    /// <summary>Item name by language code (from item_desc_&lt;lang&gt;).</summary>
-    public Dictionary<string, string> ItemNamesByLanguage { get; } = new(StringComparer.OrdinalIgnoreCase);
-
-    /// <summary>Preview resource path, or null.</summary>
+    /// <summary>Preview resource path (from preview column or inferred).</summary>
     public string? PreviewPackageRelativePath { get; set; }
 
-    /// <summary>Product IDs linked to this song via product_product.</summary>
+    // ── Localized fields (from song_desc_&lt;lang&gt;, item_desc_&lt;lang&gt;) ──
+    public Dictionary<string, string> TitlesByLanguage { get; } = new(StringComparer.OrdinalIgnoreCase);
+    public Dictionary<string, string> DescriptionsByLanguage { get; } = new(StringComparer.OrdinalIgnoreCase);
+    public Dictionary<string, string> ItemNamesByLanguage { get; } = new(StringComparer.OrdinalIgnoreCase);
+
+    // ── Relationships ──
     public List<string> ProductIds { get; } = [];
-
-    /// <summary>Item IDs linked to this song via product_item.</summary>
     public List<string> ItemIds { get; } = [];
-
-    /// <summary>Category IDs linked to this song via category_categoryproduct.</summary>
     public List<string> CategoryIds { get; } = [];
 
-    /// <summary>Patterns linked to this song via song_songPattern.</summary>
+    // ── Patterns ──
     public List<SongPattern> Patterns { get; } = [];
 
+    // ── Computed ──
     public bool HasPreview => !string.IsNullOrWhiteSpace(PreviewPackageRelativePath);
 
-    /// <summary>Get title for a language, with fallback.</summary>
     public string GetTitle(string language)
     {
         if (TitlesByLanguage.TryGetValue(language, out var title) && !string.IsNullOrWhiteSpace(title))
@@ -65,31 +78,21 @@ public sealed class Song
 }
 
 /// <summary>
-/// A pattern (chart) belonging to a song, sourced from song_songPattern.
+/// Project-domain pattern model with flat, strongly-typed fields.
 /// </summary>
 public sealed class SongPattern
 {
     public required string PatternId { get; init; }
     public required string SongId { get; init; }
 
-    /// <summary>All cells from song_songPattern rows for this pattern.</summary>
-    public Dictionary<string, string> SourceFields { get; } = new(StringComparer.OrdinalIgnoreCase);
-
-    // Convenience accessors for commonly-used columns.
-    public string Name => GetField("name", "pattern_name");
-    public string Difficulty => GetField("difficulty", "difficulty_type", "diff");
-    public string Level => GetField("level", "level_text", "rating");
-    public string Line => GetField("line");
-    public string Signature => GetField("signature", "sig");
-
-    private string GetField(params string[] columnNames)
-    {
-        foreach (var name in columnNames)
-        {
-            if (SourceFields.TryGetValue(name, out var value) && !string.IsNullOrWhiteSpace(value))
-                return value;
-        }
-
-        return string.Empty;
-    }
+    // ── song_songPattern fields ──
+    public string Name { get; set; } = string.Empty;
+    public string Line { get; set; } = string.Empty;
+    public string Signature { get; set; } = string.Empty;
+    public string Difficulty { get; set; } = string.Empty;
+    public string Level { get; set; } = string.Empty;
+    public string PointType { get; set; } = string.Empty;
+    public string PointValue { get; set; } = string.Empty;
+    public string Flg { get; set; } = string.Empty;
+    public string Update { get; set; } = string.Empty;
 }

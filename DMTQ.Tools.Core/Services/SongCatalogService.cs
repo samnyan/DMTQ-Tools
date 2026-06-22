@@ -2,7 +2,7 @@ using DMTQ.Tools.Core.Models;
 
 namespace DMTQ.Tools.Core.Services;
 
-public sealed partial class SongCatalogService
+public sealed class SongCatalogService
 {
     public IReadOnlyList<Song> BuildCatalog(PatchPackage package)
     {
@@ -38,11 +38,37 @@ public sealed partial class SongCatalogService
             }
 
             var song = new Song { Id = songId };
-            CopyCells(row, song.SourceFields);
+            MapSongCells(row, song);
             result[songId] = song;
         }
 
         return result;
+    }
+
+    private static void MapSongCells(GameTableRow row, Song song)
+    {
+        song.ItemId = GetCell(row, "item_id");
+        song.Name = GetCell(row, "name");
+        song.FullName = GetCell(row, "full_name");
+        song.Genre = GetCell(row, "genre");
+        song.ArtistName = GetCell(row, "artist_name");
+        song.OriginalBgaYn = GetCell(row, "original_bga_yn");
+        song.LoopBgaYn = GetCell(row, "loop_bga_yn");
+        song.ComposedBy = GetCell(row, "composed_by");
+        song.Singer = GetCell(row, "singer");
+        song.FeatBy = GetCell(row, "feat_by");
+        song.ArrangedBy = GetCell(row, "arranged_by");
+        song.VisualizedBy = GetCell(row, "visualized_by");
+        song.CostGamePoint = GetCell(row, "cost_game_point");
+        song.CostGameCash = GetCell(row, "cost_game_cash");
+        song.Flag = GetCell(row, "flag");
+        song.Status = GetCell(row, "status");
+        song.FreeYn = GetCell(row, "free_yn");
+        song.HiddenYn = GetCell(row, "hidden_yn");
+        song.OpenYn = GetCell(row, "open_yn");
+        song.TrackId = GetCell(row, "track_id");
+        song.ModDate = GetCell(row, "mod_date");
+        song.Update = GetCell(row, "update");
     }
 
     private static void AddPatternRows(PatchPackage package, Dictionary<string, Song> songs)
@@ -68,7 +94,7 @@ public sealed partial class SongCatalogService
                     PatternId = patternId,
                     SongId = songId
                 };
-                CopyCells(row, pattern.SourceFields);
+                MapPatternCells(row, pattern);
                 song.Patterns.Add(pattern);
             }
         }
@@ -76,8 +102,25 @@ public sealed partial class SongCatalogService
         foreach (var song in songs.Values)
         {
             song.Patterns.Sort((left, right) =>
-                string.Compare(left.PatternId, right.PatternId, StringComparison.OrdinalIgnoreCase));
+            {
+                var lineCmp = string.Compare(left.Line, right.Line, StringComparison.OrdinalIgnoreCase);
+                return lineCmp != 0 ? lineCmp
+                    : string.Compare(left.Signature, right.Signature, StringComparison.OrdinalIgnoreCase);
+            });
         }
+    }
+
+    private static void MapPatternCells(GameTableRow row, SongPattern pattern)
+    {
+        pattern.Name = GetCell(row, "name", "pattern_name");
+        pattern.Line = GetCell(row, "line");
+        pattern.Signature = GetCell(row, "signature", "sig");
+        pattern.Difficulty = GetCell(row, "difficulty", "difficulty_type", "diff");
+        pattern.Level = GetCell(row, "level", "level_text", "rating");
+        pattern.PointType = GetCell(row, "point_type");
+        pattern.PointValue = GetCell(row, "point_value");
+        pattern.Flg = GetCell(row, "flg");
+        pattern.Update = GetCell(row, "update");
     }
 
     private static void AddSongDescriptions(PatchPackage package, Dictionary<string, Song> songs)
@@ -184,10 +227,9 @@ public sealed partial class SongCatalogService
 
         foreach (var song in songs.Values)
         {
-            var explicitPreview = GetSourceField(song, "preview", "preview_path", "preview_file");
-            if (!string.IsNullOrWhiteSpace(explicitPreview) && previewPaths.Contains(explicitPreview))
+            if (!string.IsNullOrWhiteSpace(song.Name) && previewPaths.Contains(song.Name))
             {
-                song.PreviewPackageRelativePath = explicitPreview;
+                song.PreviewPackageRelativePath = song.Name;
                 continue;
             }
 
@@ -220,27 +262,6 @@ public sealed partial class SongCatalogService
             var value = row.Cells.FirstOrDefault(cell =>
                 cell.ColumnName.Equals(columnName, StringComparison.OrdinalIgnoreCase))?.Value;
             if (!string.IsNullOrWhiteSpace(value))
-            {
-                return value;
-            }
-        }
-
-        return string.Empty;
-    }
-
-    private static void CopyCells(GameTableRow row, Dictionary<string, string> target)
-    {
-        foreach (var cell in row.Cells)
-        {
-            target[cell.ColumnName] = cell.Value;
-        }
-    }
-
-    private static string GetSourceField(Song song, params string[] fieldNames)
-    {
-        foreach (var fieldName in fieldNames)
-        {
-            if (song.SourceFields.TryGetValue(fieldName, out var value) && !string.IsNullOrWhiteSpace(value))
             {
                 return value;
             }

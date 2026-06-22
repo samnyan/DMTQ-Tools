@@ -21,45 +21,26 @@ public sealed class SongEditService
 
         foreach (var item in songRows)
         {
-            foreach (var field in song.SourceFields)
-            {
-                SetCell(item.Row!, field.Key, field.Value);
-            }
-
-            if (!string.IsNullOrWhiteSpace(song.PreviewPackageRelativePath))
-            {
-                SetCell(item.Row!, "preview", song.PreviewPackageRelativePath);
-            }
+            WriteSongCells(item.Row!, song);
         }
 
         foreach (var table in FindLocalizedTables(package, "song_desc"))
         {
             var language = table.LanguageCode ?? ExtractLanguage(table.TableName);
-            if (string.IsNullOrWhiteSpace(language))
-            {
-                continue;
-            }
+            if (string.IsNullOrWhiteSpace(language)) continue;
 
             var row = FindRow(table, "song_id", song.Id);
-            if (row is null)
-            {
-                continue;
-            }
+            if (row is null) continue;
 
             if (song.TitlesByLanguage.TryGetValue(language, out var title))
-            {
                 SetCell(row, "title", title);
-            }
-
             if (song.DescriptionsByLanguage.TryGetValue(language, out var description))
-            {
                 SetCell(row, "description", description);
-            }
         }
 
         foreach (var pattern in song.Patterns)
         {
-            UpdatePatternInternal(package, song.Id, pattern.PatternId, pattern.SourceFields);
+            WritePatternToAllTables(package, pattern);
         }
     }
 
@@ -70,9 +51,7 @@ public sealed class SongEditService
         ArgumentException.ThrowIfNullOrWhiteSpace(song.Id);
 
         if (FindTables(package, "song_song").Any(table => FindRow(table, "song_id", song.Id) is not null))
-        {
             throw new InvalidOperationException($"Song '{song.Id}' already exists.");
-        }
 
         AppendSongRows(package, song);
         AppendPatternRows(package, song);
@@ -83,34 +62,36 @@ public sealed class SongEditService
         AppendCategoryProductRows(package, song);
     }
 
-    public void UpdatePattern(
-        PatchPackage package,
-        string songId,
-        string patternId,
-        IReadOnlyDictionary<string, string> fields)
-    {
-        ArgumentNullException.ThrowIfNull(package);
-        ArgumentException.ThrowIfNullOrWhiteSpace(songId);
-        ArgumentException.ThrowIfNullOrWhiteSpace(patternId);
-        ArgumentNullException.ThrowIfNull(fields);
-
-        UpdatePatternInternal(package, songId, patternId, fields);
-    }
-
-    public void AddPattern(
-        PatchPackage package,
-        string songId,
+    public void UpdatePattern(PatchPackage package, string songId, string patternId,
         SongPattern pattern)
     {
         ArgumentNullException.ThrowIfNull(package);
-        ArgumentException.ThrowIfNullOrWhiteSpace(songId);
+        ArgumentNullException.ThrowIfNull(pattern);
+
+        var updated = false;
+        foreach (var table in FindTables(package, "song_songPattern"))
+        {
+            var row = table.Rows.FirstOrDefault(r =>
+                GetCell(r, "song_id").Equals(songId, StringComparison.OrdinalIgnoreCase)
+                && GetCell(r, "pattern_id").Equals(patternId, StringComparison.OrdinalIgnoreCase));
+            if (row is null) continue;
+
+            WritePatternCells(row, pattern);
+            updated = true;
+        }
+
+        if (!updated)
+            throw new InvalidOperationException($"Pattern '{patternId}' for song '{songId}' was not found.");
+    }
+
+    public void AddPattern(PatchPackage package, string songId, SongPattern pattern)
+    {
+        ArgumentNullException.ThrowIfNull(package);
         ArgumentNullException.ThrowIfNull(pattern);
 
         var songTables = FindTables(package, "song_song");
         if (!songTables.Any(table => FindRow(table, "song_id", songId) is not null))
-        {
-            throw new InvalidOperationException($"Song '{songId}' does not exist. Add the song first.");
-        }
+            throw new InvalidOperationException($"Song '{songId}' does not exist.");
 
         foreach (var table in FindTables(package, "song_songPattern"))
         {
@@ -118,53 +99,73 @@ public sealed class SongEditService
                     GetCell(row, "song_id").Equals(songId, StringComparison.OrdinalIgnoreCase)
                     && GetCell(row, "pattern_id").Equals(pattern.PatternId, StringComparison.OrdinalIgnoreCase)))
             {
-                throw new InvalidOperationException(
-                    $"Pattern '{pattern.PatternId}' already exists for song '{songId}'.");
+                throw new InvalidOperationException($"Pattern '{pattern.PatternId}' already exists for song '{songId}'.");
             }
 
             var row = CreateEmptyRow(table);
             SetCell(row, "pattern_id", pattern.PatternId);
             SetCell(row, "song_id", songId);
-            foreach (var field in pattern.SourceFields)
-            {
-                SetCell(row, field.Key, field.Value);
-            }
-
+            WritePatternCells(row, pattern);
             table.Rows.Add(row);
         }
     }
 
-    private static void UpdatePatternInternal(
-        PatchPackage package,
-        string songId,
-        string patternId,
-        IReadOnlyDictionary<string, string> fields)
+    // ── Cell mapping: Song → CSV cells ──
+
+    private static void WriteSongCells(GameTableRow row, Song song)
     {
-        var updated = false;
+        SetCell(row, "item_id", song.ItemId);
+        SetCell(row, "name", song.Name);
+        SetCell(row, "full_name", song.FullName);
+        SetCell(row, "genre", song.Genre);
+        SetCell(row, "artist_name", song.ArtistName);
+        SetCell(row, "original_bga_yn", song.OriginalBgaYn);
+        SetCell(row, "loop_bga_yn", song.LoopBgaYn);
+        SetCell(row, "composed_by", song.ComposedBy);
+        SetCell(row, "singer", song.Singer);
+        SetCell(row, "feat_by", song.FeatBy);
+        SetCell(row, "arranged_by", song.ArrangedBy);
+        SetCell(row, "visualized_by", song.VisualizedBy);
+        SetCell(row, "cost_game_point", song.CostGamePoint);
+        SetCell(row, "cost_game_cash", song.CostGameCash);
+        SetCell(row, "flag", song.Flag);
+        SetCell(row, "status", song.Status);
+        SetCell(row, "free_yn", song.FreeYn);
+        SetCell(row, "hidden_yn", song.HiddenYn);
+        SetCell(row, "open_yn", song.OpenYn);
+        SetCell(row, "track_id", song.TrackId);
+        SetCell(row, "mod_date", song.ModDate);
+        SetCell(row, "update", song.Update);
+        if (!string.IsNullOrWhiteSpace(song.PreviewPackageRelativePath))
+            SetCell(row, "preview", song.PreviewPackageRelativePath);
+    }
+
+    private static void WritePatternCells(GameTableRow row, SongPattern pattern)
+    {
+        if (!string.IsNullOrWhiteSpace(pattern.Name)) SetCell(row, "name", pattern.Name);
+        if (!string.IsNullOrWhiteSpace(pattern.Line)) SetCell(row, "line", pattern.Line);
+        if (!string.IsNullOrWhiteSpace(pattern.Signature)) SetCell(row, "signature", pattern.Signature);
+        if (!string.IsNullOrWhiteSpace(pattern.Difficulty)) SetCell(row, "difficulty", pattern.Difficulty);
+        if (!string.IsNullOrWhiteSpace(pattern.Level)) SetCell(row, "level", pattern.Level);
+        if (!string.IsNullOrWhiteSpace(pattern.PointType)) SetCell(row, "point_type", pattern.PointType);
+        if (!string.IsNullOrWhiteSpace(pattern.PointValue)) SetCell(row, "point_value", pattern.PointValue);
+        if (!string.IsNullOrWhiteSpace(pattern.Flg)) SetCell(row, "flg", pattern.Flg);
+        if (!string.IsNullOrWhiteSpace(pattern.Update)) SetCell(row, "update", pattern.Update);
+    }
+
+    private static void WritePatternToAllTables(PatchPackage package, SongPattern pattern)
+    {
         foreach (var table in FindTables(package, "song_songPattern"))
         {
             var row = table.Rows.FirstOrDefault(r =>
-                GetCell(r, "song_id").Equals(songId, StringComparison.OrdinalIgnoreCase)
-                && GetCell(r, "pattern_id").Equals(patternId, StringComparison.OrdinalIgnoreCase));
-            if (row is null)
-            {
-                continue;
-            }
-
-            foreach (var field in fields)
-            {
-                SetCell(row, field.Key, field.Value);
-            }
-
-            updated = true;
-        }
-
-        if (!updated)
-        {
-            throw new InvalidOperationException(
-                $"Pattern '{patternId}' for song '{songId}' was not found.");
+                GetCell(r, "song_id").Equals(pattern.SongId, StringComparison.OrdinalIgnoreCase)
+                && GetCell(r, "pattern_id").Equals(pattern.PatternId, StringComparison.OrdinalIgnoreCase));
+            if (row is null) continue;
+            WritePatternCells(row, pattern);
         }
     }
+
+    // ── Append helpers ──
 
     private static void AppendSongRows(PatchPackage package, Song song)
     {
@@ -172,16 +173,7 @@ public sealed class SongEditService
         {
             var row = CreateEmptyRow(table);
             SetCell(row, "song_id", song.Id);
-            foreach (var field in song.SourceFields)
-            {
-                SetCell(row, field.Key, field.Value);
-            }
-
-            if (!string.IsNullOrWhiteSpace(song.PreviewPackageRelativePath))
-            {
-                SetCell(row, "preview", song.PreviewPackageRelativePath);
-            }
-
+            WriteSongCells(row, song);
             table.Rows.Add(row);
         }
     }
@@ -195,11 +187,7 @@ public sealed class SongEditService
                 var row = CreateEmptyRow(table);
                 SetCell(row, "pattern_id", pattern.PatternId);
                 SetCell(row, "song_id", song.Id);
-                foreach (var field in pattern.SourceFields)
-                {
-                    SetCell(row, field.Key, field.Value);
-                }
-
+                WritePatternCells(row, pattern);
                 table.Rows.Add(row);
             }
         }
@@ -212,8 +200,8 @@ public sealed class SongEditService
             var language = table.LanguageCode ?? ExtractLanguage(table.TableName);
             var row = CreateEmptyRow(table);
             SetCell(row, "song_id", song.Id);
-            SetCell(row, "title", song.TitlesByLanguage.TryGetValue(language, out var title) ? title : string.Empty);
-            SetCell(row, "description", song.DescriptionsByLanguage.TryGetValue(language, out var description) ? description : string.Empty);
+            SetCell(row, "title", song.TitlesByLanguage.TryGetValue(language, out var t) ? t : string.Empty);
+            SetCell(row, "description", song.DescriptionsByLanguage.TryGetValue(language, out var d) ? d : string.Empty);
             table.Rows.Add(row);
         }
     }
@@ -225,8 +213,8 @@ public sealed class SongEditService
             var language = table.LanguageCode ?? ExtractLanguage(table.TableName);
             var row = CreateEmptyRow(table);
             SetCell(row, "item_id", song.ItemIds.FirstOrDefault() ?? song.Id);
-            SetCell(row, "name", song.ItemNamesByLanguage.TryGetValue(language, out var name) ? name : string.Empty);
-            SetCell(row, "description", song.DescriptionsByLanguage.TryGetValue(language, out var description) ? description : string.Empty);
+            SetCell(row, "name", song.ItemNamesByLanguage.TryGetValue(language, out var n) ? n : string.Empty);
+            SetCell(row, "description", song.DescriptionsByLanguage.TryGetValue(language, out var d) ? d : string.Empty);
             table.Rows.Add(row);
         }
     }
@@ -279,6 +267,8 @@ public sealed class SongEditService
         }
     }
 
+    // ── Table helpers ──
+
     private static IEnumerable<GameTable> FindTables(PatchPackage package, string tableName)
         => package.Tables.Tables.Where(table => table.TableName.Equals(tableName, StringComparison.OrdinalIgnoreCase));
 
@@ -301,7 +291,6 @@ public sealed class SongEditService
                 return;
             }
         }
-
         row.Cells.Add(new GameTableCell(columnName, value));
     }
 
@@ -317,12 +306,8 @@ public sealed class SongEditService
         {
             Order = table.Rows.Count == 0 ? 0 : table.Rows.Max(existing => existing.Order) + 1
         };
-
         foreach (var column in table.Columns.OrderBy(column => column.Order))
-        {
             row.Cells.Add(new GameTableCell(column.Name, string.Empty));
-        }
-
         return row;
     }
 }
