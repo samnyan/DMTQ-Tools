@@ -81,7 +81,7 @@ public sealed class PlatformPackageImporterTests
     }
 
     [TestMethod]
-    public async Task ImportPlatformAsync_ImportsSharedTablesOnlyOnceAcrossPlatforms()
+    public async Task ImportPlatformAsync_ExtractsSongsAsEntitiesAndDeduplicates()
     {
         var projectRoot = Path.Combine(Path.GetTempPath(), "dmtq-platform-tables-" + Guid.NewGuid().ToString("N"));
         var androidRoot = Path.Combine(Path.GetTempPath(), "dmtq-android-package-" + Guid.NewGuid().ToString("N"));
@@ -99,12 +99,13 @@ public sealed class PlatformPackageImporterTests
             await importer.ImportPlatformAsync(package, androidRoot, "android");
             await importer.ImportPlatformAsync(package, iosRoot, "ios");
 
-            package.Tables.Tables.Select(t => t.TableName).Distinct().Should().Equal(["song_song"]);
-            package.Tables.Tables.Should().HaveCount(2);
-            package.Tables.Tables.Should().Contain(t => t.LanguageCode == "us"
-                && t.Rows.Any(r => r.Cells.Any(c => c.ColumnName == "name" && c.Value == "android-song")));
-            package.Tables.Tables.Should().Contain(t => t.LanguageCode == "jp"
-                && t.Rows.Any(r => r.Cells.Any(c => c.ColumnName == "name" && c.Value == "ios-song-jp")));
+            // Song tables should be removed after entity extraction
+            package.Tables.Tables.Where(t => SongCatalogService.IsSongRelatedTable(t.TableName))
+                .Should().BeEmpty("song tables should be extracted into entities");
+            // Songs should be stored as entities
+            package.Songs.Should().ContainSingle();
+            package.Songs[0].Id.Should().Be("1");
+            package.Songs[0].Name.Should().Be("android-song", "first import wins");
             package.Platforms.Should().HaveCount(2);
         }
         finally
@@ -162,7 +163,8 @@ public sealed class PlatformPackageImporterTests
         => new(
             new Lz4CompressionService(),
             new PatchManifestReader(),
-            new CsvTableReader());
+            new CsvTableReader(),
+            new SongCatalogService());
 
     private static async Task WriteManifestAsync(
         string packageRoot,

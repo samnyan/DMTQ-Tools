@@ -4,9 +4,17 @@ namespace DMTQ.Tools.Core.Services;
 
 public sealed class SongCatalogService
 {
-    public IReadOnlyList<Song> BuildCatalog(PatchPackage package)
+    public IReadOnlyList<Song> BuildCatalog(PatchPackage package, bool forceFromTables = false)
     {
         ArgumentNullException.ThrowIfNull(package);
+
+        if (!forceFromTables && package.Songs.Count > 0)
+        {
+            return package.Songs
+                .OrderBy(song => song.GetTitle("us"), StringComparer.OrdinalIgnoreCase)
+                .ThenBy(song => song.Id, StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+        }
 
         var songTable = FindTable(package, "song_song");
         if (songTable is null)
@@ -291,4 +299,15 @@ public sealed class SongCatalogService
         var index = tableName.LastIndexOf('_');
         return index < 0 || index == tableName.Length - 1 ? null : tableName[(index + 1)..];
     }
+
+    /// <summary>Returns true when the table carries data that is owned by Song entities
+    /// and should be removed from raw GameTable storage after entity extraction.</summary>
+    public static bool IsSongRelatedTable(string tableName)
+        => tableName.Equals("song_song", StringComparison.OrdinalIgnoreCase)
+           || tableName.Equals("song_songPattern", StringComparison.OrdinalIgnoreCase)
+           || tableName.StartsWith("song_desc_", StringComparison.OrdinalIgnoreCase)
+           || tableName.StartsWith("item_desc_", StringComparison.OrdinalIgnoreCase)
+           || tableName.Equals("product_product", StringComparison.OrdinalIgnoreCase)
+           || tableName.Equals("product_item", StringComparison.OrdinalIgnoreCase)
+           || tableName.Equals("category_categoryproduct", StringComparison.OrdinalIgnoreCase);
 }

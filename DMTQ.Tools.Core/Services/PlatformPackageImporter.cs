@@ -5,7 +5,8 @@ namespace DMTQ.Tools.Core.Services;
 public sealed class PlatformPackageImporter(
     Lz4CompressionService compressionService,
     PatchManifestReader manifestReader,
-    CsvTableReader tableReader)
+    CsvTableReader tableReader,
+    SongCatalogService songCatalogService)
 {
     public async Task ImportPlatformAsync(
         PatchPackage package,
@@ -140,6 +141,8 @@ public sealed class PlatformPackageImporter(
             }
 
             package.Platforms.Add(record);
+
+            ExtractSongsFromTables(package);
         }
         finally
         {
@@ -147,6 +150,29 @@ public sealed class PlatformPackageImporter(
             {
                 Directory.Delete(tempRoot, recursive: true);
             }
+        }
+    }
+
+    private void ExtractSongsFromTables(PatchPackage package)
+    {
+        var songs = songCatalogService.BuildCatalog(package, forceFromTables: true);
+        if (songs.Count == 0) return;
+
+        var existingIds = package.Songs.Select(s => s.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        foreach (var song in songs)
+        {
+            if (!existingIds.Contains(song.Id))
+            {
+                package.Songs.Add(song);
+            }
+        }
+
+        var songRelatedTables = package.Tables.Tables
+            .Where(t => SongCatalogService.IsSongRelatedTable(t.TableName))
+            .ToArray();
+        foreach (var table in songRelatedTables)
+        {
+            package.Tables.Tables.Remove(table);
         }
     }
 
