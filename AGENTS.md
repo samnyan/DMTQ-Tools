@@ -4,7 +4,7 @@ A .NET 10 MAUI Blazor Hybrid app for managing game patch data tables (CSV import
 
 ## Project
 
-- **Stack:** .NET 10 + MAUI + Blazor Hybrid + FluentUI Blazor 4.11 + bUnit 2
+- **Stack:** .NET 10 + MAUI + Blazor Hybrid + FluentUI Blazor 4.14 + bUnit 2
 - **Entry:** `DMTQ-Tools/MauiProgram.cs` → `App.xaml` → `MainPage.xaml` (hosts BlazorWebView)
 - **Blazor root:** `DMTQ-Tools/Components/Routes.razor` — router scans MAUI assembly + RCL assembly
 
@@ -15,8 +15,8 @@ A .NET 10 MAUI Blazor Hybrid app for managing game patch data tables (CSV import
 | `DMTQ.Tools.Core/` | Models (Song, GameTable, PatchPackage…) + Services (import/export/edit/validation) |
 | `DMTQ.Tools.Components/` | Razor Class Library — all `.razor` pages + layouts + `app.css` + FluentUI |
 | `DMTQ-Tools/` | MAUI host — `MauiProgram.cs`, `App.xaml`, `MainPage.xaml`, thin DI registration |
-| `DMTQ.Tools.Core.Tests/` | 65 MSTest unit tests (service layer) |
-| `DMTQ.Tools.UITests/` | 10 bUnit Blazor component tests (UI render verification) |
+| `DMTQ.Tools.Core.Tests/` | 67 MSTest unit tests (service layer) |
+| `DMTQ.Tools.UITests/` | 13 bUnit Blazor component tests (UI render verification) |
 
 ## Commands
 
@@ -34,6 +34,37 @@ dotnet test DMTQ.Tools.UITests/DMTQ.Tools.UITests.csproj
 dotnet test DMTQ-Tools.sln
 ```
 
+## Manual UI Testing (CDP via DevFlow)
+
+Debug build → launch app → connect Chrome DevTools Protocol → inspect → close.
+
+```bash
+# 1. Build
+dotnet build DMTQ-Tools/DMTQ-Tools.csproj -f net10.0-windows10.0.19041.0
+
+# 2. Launch app in background (Windows)
+start "" "DMTQ-Tools\bin\Debug\net10.0-windows10.0.19041.0\win-x64\DMTQ-Tools.exe"
+
+# 3. Wait for CDP (poll until WebView initializes)
+maui devflow webview status --platform windows
+# First call may return "Agent connected but CDP not ready" — retry after 2–3s.
+# Once ready: "Connected: CDP ready (1 WebView)"
+
+# 4. Inspect the running page
+maui devflow webview source                                    # full page HTML
+maui devflow webview Runtime evaluate "document.title"          # run JS
+maui devflow webview Runtime evaluate "JSON.stringify(         # measure element widths
+  [...document.querySelectorAll('.fluent-grid,form')].map(
+    el => ({cls:el.className, w:el.offsetWidth})))"
+
+# 5. Close app
+powershell -Command "Stop-Process -Name 'DMTQ-Tools' -Force"
+```
+
+**Note:** CDP requires the DevFlow agent (`AddMauiDevFlowAgent()`) and Blazor bridge
+(`AddMauiBlazorDevFlowTools()`) registered in `MauiProgram.cs` — both already present
+in Debug builds.
+
 ## Architecture
 
 ```
@@ -50,7 +81,7 @@ CSV Models (GameTable, GameTableRow, GameTableCell) ← import/export boundary
 - **Song model is flat** — 22 string properties (Name, Genre, ArtistName…), no SourceFields dictionaries. SongPattern has 9 flat fields.
 - **CSV import/export** uses `GameTable`/`GameTableCell` models. Domain models (Song/SongPattern) are projected from CSV at service layer.
 - **Platform export** supports Delta (skip unchanged) and Full modes, MD5 checksums.
-- **FluentUI Blazor 4.11** integrated in RCL's `_Imports.razor`.
+- **FluentUI Blazor 4.14** integrated in RCL's `_Imports.razor`.
 
 ## Conventions
 
