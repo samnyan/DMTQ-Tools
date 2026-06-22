@@ -506,3 +506,61 @@ h1:focus {
         max-height: 18rem;
     }
 }
+
+.qa-summary {
+    margin-top: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 5px;
+    font-weight: 600;
+}
+
+.qa-summary.success {
+    background: #e6f4ea;
+    color: #1e7e34;
+}
+
+.qa-summary.warning {
+    background: #fff8e1;
+    color: #b8860b;
+}
+
+.qa-summary.error {
+    background: #fce4e4;
+    color: #b91c1c;
+}
+
+.qa-badge {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    border-radius: 3px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.qa-badge-error {
+    background: #fce4e4;
+    color: #b91c1c;
+}
+
+.qa-badge-warning {
+    background: #fff8e1;
+    color: #b8860b;
+}
+
+.qa-badge-info {
+    background: #e3f2fd;
+    color: #1565c0;
+}
+
+tr.qa-error td {
+    background: #fff5f5;
+}
+
+tr.qa-warning td {
+    background: #fffdf5;
+}
+
+tr.qa-info td {
+    background: #f8fcff;
+}

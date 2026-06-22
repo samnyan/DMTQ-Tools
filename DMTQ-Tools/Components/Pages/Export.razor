@@ -1,6 +1,7 @@
 @page "/export"
 @inject GameTableManagerState State
 @inject GameTableManagerWorkflow Workflow
+@inject PackageQaService QaService
 
 <h1>Export</h1>
 
@@ -36,6 +37,18 @@
     {
         <div class="status-message">Import a package before exporting.</div>
     }
+
+    @if (qaSummary is not null)
+    {
+        <div class="qa-summary @(qaSummary.IsClean ? "success" : qaSummary.HasErrors ? "error" : "warning")">
+            Pre-export QA: @qaSummary.Summary
+            @if (qaSummary.HasErrors)
+            {
+                <span> — Fix errors before exporting.</span>
+            }
+        </div>
+    }
+
     @if (!string.IsNullOrWhiteSpace(message))
     {
         <div class="status-message">@message</div>
@@ -89,6 +102,7 @@
     private string exportRoot = string.Empty;
     private string? message;
     private bool isBusy;
+    private QaReport? qaSummary;
 
     private string ValidationText => State.LastValidationResult is null
         ? "Not run"
@@ -97,9 +111,21 @@
     private async Task ExportPlatformPackage()
     {
         isBusy = true;
-        message = "Exporting platform package...";
+        message = "Running QA...";
         try
         {
+            if (State.CurrentPackage is not null)
+            {
+                qaSummary = QaService.Run(State.CurrentPackage);
+                if (qaSummary.HasErrors)
+                {
+                    message = $"QA found {qaSummary.ErrorCount} error(s). Fix them before exporting.";
+                    State.Diagnostics.Add($"Pre-export QA: {qaSummary.Summary}");
+                    return;
+                }
+            }
+
+            message = "Exporting platform package...";
             await Workflow.ExportPlatformPackageAsync(
                 exportRoot,
                 State.SelectedExportPlatform,

@@ -1,5 +1,6 @@
 @page "/diagnostics"
 @inject GameTableManagerState State
+@inject PackageQaService QaService
 
 <h1>Diagnostics</h1>
 
@@ -16,6 +17,43 @@
         <div class="status-message @(System.IO.File.Exists(projectFile) ? "success" : "")">
             @(System.IO.File.Exists(projectFile) ? "Project file exists." : "Project has not been saved yet.")
         </div>
+    }
+</section>
+
+<section class="toolbar-panel">
+    <div class="input-row">
+        <h2>QA Check</h2>
+        <button class="btn btn-primary" @onclick="RunQa" disabled="@(!State.HasPackage || isBusy)">Run QA</button>
+    </div>
+    @if (qaReport is not null)
+    {
+        <div class="qa-summary @(qaReport.IsClean ? "success" : qaReport.HasErrors ? "error" : "warning")">
+            @qaReport.Summary
+        </div>
+        @if (!qaReport.IsClean)
+        {
+            <div class="grid-scroll compact-grid-scroll">
+                <table class="data-grid">
+                    <thead>
+                        <tr>
+                            <th>Severity</th>
+                            <th>Category</th>
+                            <th>Message</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var issue in qaReport.Issues.OrderBy(i => i.Severity).ThenBy(i => i.Category))
+                        {
+                            <tr class="qa-@(issue.Severity.ToString().ToLowerInvariant())">
+                                <td><span class="qa-badge qa-badge-@(issue.Severity.ToString().ToLowerInvariant())">@issue.Severity</span></td>
+                                <td>@issue.Category</td>
+                                <td>@issue.Message@(issue.Detail is not null ? $" — {issue.Detail}" : "")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
     }
 </section>
 
@@ -56,3 +94,17 @@
         </ul>
     }
 </section>
+
+@code {
+    private bool isBusy;
+    private QaReport? qaReport;
+
+    private void RunQa()
+    {
+        if (State.CurrentPackage is null) return;
+        isBusy = true;
+        qaReport = QaService.Run(State.CurrentPackage);
+        State.Diagnostics.Add($"QA run: {qaReport.Summary}");
+        isBusy = false;
+    }
+}
