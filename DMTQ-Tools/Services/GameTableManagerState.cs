@@ -1,8 +1,9 @@
 using DMTQ.Tools.Core.Models;
+using DMTQ.Tools.Core.Services;
 
 namespace DMTQ_Tools.Services;
 
-public sealed class GameTableManagerState
+public sealed class GameTableManagerState : IProjectState
 {
     public string? ProjectRoot { get; private set; }
     public PatchPackage? CurrentPackage { get; private set; }

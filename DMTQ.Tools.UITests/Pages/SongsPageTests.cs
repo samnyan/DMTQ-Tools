@@ -1,5 +1,4 @@
 using DMTQ.Tools.Core.Models;
-using DMTQ_Tools.Services;
 
 namespace DMTQ.Tools.UITests.Pages;
 
@@ -9,7 +8,7 @@ public sealed class SongsPageTests : BlazorUITestBase
     [TestMethod]
     public void RendersSongListWhenPackageIsLoaded()
     {
-        var state = new GameTableManagerState();
+        var state = CreateStateWithEmptyPackage();
         state.SetPackage(CreateSamplePackage());
         state.SetProjectRoot("test-project");
         RegisterAllServices(state);
@@ -23,14 +22,13 @@ public sealed class SongsPageTests : BlazorUITestBase
     [TestMethod]
     public void ShowsFormFieldsWhenSongSelected()
     {
-        var state = new GameTableManagerState();
+        var state = CreateStateWithEmptyPackage();
         state.SetPackage(CreateSamplePackage());
         state.SetProjectRoot("test-project");
         RegisterAllServices(state);
 
         var cut = Render<Songs>();
 
-        // First song is auto-selected, form fields should be visible
         cut.Markup.Should().Contain("Item ID");
         cut.Markup.Should().Contain("Name");
         cut.Markup.Should().Contain("Genre");
@@ -40,15 +38,12 @@ public sealed class SongsPageTests : BlazorUITestBase
     [TestMethod]
     public void ShowsPatternsTableWhenSongSelected()
     {
-        var state = new GameTableManagerState();
+        var state = CreateStateWithEmptyPackage();
         state.SetPackage(CreateSamplePackage());
         state.SetProjectRoot("test-project");
         RegisterAllServices(state);
 
         var cut = Render<Songs>();
-
-        var songButton = cut.FindAll(".song-list-item").FirstOrDefault();
-        songButton!.Click();
 
         cut.Markup.Should().Contain("Song Patterns");
         cut.Markup.Should().Contain("9001");
@@ -61,12 +56,7 @@ public sealed class SongsPageTests : BlazorUITestBase
             ProjectInfo = new ProjectInfo("test-project", null, "1.0", null)
         };
 
-        var songTable = new GameTable
-        {
-            PackageRelativePath = "table/us/song_song.csv",
-            TableName = "song_song",
-            LanguageCode = "us"
-        };
+        var songTable = new GameTable { PackageRelativePath = "table/us/song_song.csv", TableName = "song_song", LanguageCode = "us" };
         songTable.Columns.Add(new GameTableColumn("song_id", 0));
         songTable.Columns.Add(new GameTableColumn("item_id", 1));
         songTable.Columns.Add(new GameTableColumn("name", 2));
@@ -81,12 +71,7 @@ public sealed class SongsPageTests : BlazorUITestBase
         songTable.Rows.Add(songRow);
         package.Tables.Tables.Add(songTable);
 
-        var patternTable = new GameTable
-        {
-            PackageRelativePath = "table/us/song_songPattern.csv",
-            TableName = "song_songPattern",
-            LanguageCode = "us"
-        };
+        var patternTable = new GameTable { PackageRelativePath = "table/us/song_songPattern.csv", TableName = "song_songPattern", LanguageCode = "us" };
         patternTable.Columns.Add(new GameTableColumn("pattern_id", 0));
         patternTable.Columns.Add(new GameTableColumn("song_id", 1));
         patternTable.Columns.Add(new GameTableColumn("signature", 2));

@@ -2,6 +2,7 @@
 using DMTQ.Tools.Core.Services;
 using DMTQ_Tools.Services;
 using Microsoft.Extensions.Logging;
+using Microsoft.FluentUI.AspNetCore.Components;
 
 namespace DMTQ_Tools
 {
@@ -19,6 +20,7 @@ namespace DMTQ_Tools
                 });
 
             builder.Services.AddMauiBlazorWebView();
+            builder.Services.AddFluentUIComponents();
 
             builder.Services.AddSingleton<Lz4CompressionService>();
             builder.Services.AddSingleton<PatchManifestReader>();
@@ -37,7 +39,11 @@ namespace DMTQ_Tools
             builder.Services.AddSingleton<PackageQaService>();
             builder.Services.AddSingleton<PlatformPackageImporter>();
             builder.Services.AddSingleton<PlatformPackageExporter>();
-            builder.Services.AddSingleton<GameTableManagerState>();
+
+            var state = new GameTableManagerState();
+            builder.Services.AddSingleton<IProjectState>(state);
+            builder.Services.AddSingleton(state);
+            builder.Services.AddSingleton<IProjectWorkflow, GameTableManagerWorkflow>();
             builder.Services.AddSingleton<GameTableManagerWorkflow>();
 
 #if DEBUG

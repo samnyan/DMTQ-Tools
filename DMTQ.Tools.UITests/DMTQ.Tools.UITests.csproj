@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Razor">
 
   <PropertyGroup>
-    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <LangVersion>latest</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
@@ -23,7 +23,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\DMTQ-Tools\DMTQ-Tools.csproj" ExcludeAssets="build;buildTransitive;contentFiles" />
+    <ProjectReference Include="..\DMTQ.Tools.Components\DMTQ.Tools.Components.csproj" />
+    <ProjectReference Include="..\DMTQ.Tools.Core\DMTQ.Tools.Core.csproj" />
   </ItemGroup>
 
 </Project>

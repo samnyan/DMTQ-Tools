@@ -1,44 +1,67 @@
 using DMTQ.Tools.Core.Models;
 using DMTQ.Tools.Core.Services;
-using DMTQ_Tools.Services;
 
 namespace DMTQ.Tools.UITests;
 
 /// <summary>
 /// Base class for Blazor UI tests that registers all services
-/// needed by MAUI pages (mirrors MauiProgram.cs registration).
+/// needed by the component pages.
 /// </summary>
 public abstract class BlazorUITestBase : Bunit.TestContext
 {
-    protected void RegisterAllServices(GameTableManagerState state)
+    protected void RegisterAllServices(GameTableManagerTestState state)
     {
-        Services.AddSingleton(state);
-        Services.AddSingleton<Lz4CompressionService>();
-        Services.AddSingleton<PatchManifestReader>();
-        Services.AddSingleton<CsvTableReader>();
-        Services.AddSingleton<CsvTableWriter>();
-        Services.AddSingleton<PatchManifestWriter>();
-        Services.AddSingleton<PatchChecksumService>();
-        Services.AddSingleton<PatchPackageImporter>();
-        Services.AddSingleton<PatchPackageExporter>();
-        Services.AddSingleton<PatchPackageValidator>();
+        Services.AddSingleton<IProjectState>(state);
+        Services.AddSingleton<IProjectWorkflow>(new FakeWorkflow(state));
         Services.AddSingleton<LogicalTableService>();
         Services.AddSingleton<SongCatalogService>();
         Services.AddSingleton<SongEditService>();
-        Services.AddSingleton<ResourceManagerService>();
-        Services.AddSingleton<PackageQaService>();
-        Services.AddSingleton<PlatformPackageImporter>();
-        Services.AddSingleton<PlatformPackageExporter>();
-        Services.AddSingleton<IPatchProjectRepository>(new FakeRepository());
-        Services.AddSingleton<GameTableManagerWorkflow>();
     }
 
-    private sealed class FakeRepository : IPatchProjectRepository
+    protected GameTableManagerTestState CreateStateWithEmptyPackage()
     {
-        public Task SaveAsync(PatchPackage package, string exportCompressionMode, PackageExportOptions exportOptions, string projectRoot, CancellationToken cancellationToken = default)
-            => Task.CompletedTask;
+        return new GameTableManagerTestState();
+    }
 
-        public Task<PatchProjectSnapshot> LoadAsync(string projectRoot, CancellationToken cancellationToken = default)
-            => throw new NotImplementedException();
+    protected sealed class GameTableManagerTestState : IProjectState
+    {
+        public string? ProjectRoot { get; set; }
+        public PatchPackage? CurrentPackage { get; set; }
+        public PatchManifest? LastExportManifest { get; set; }
+        public PatchValidationResult? LastValidationResult { get; set; }
+        public string ExportCompressionMode { get; set; } = "Keep";
+        public PackageExportOptions? RestoredExportOptions { get; set; }
+        public List<string> Diagnostics { get; } = [];
+        public PlatformExportResult? LastPlatformExportResult { get; set; }
+        public string SelectedExportPlatform { get; set; } = "android";
+        public PlatformExportMode PlatformExportMode { get; set; } = PlatformExportMode.Delta;
+        public IReadOnlyList<PlatformPackageRecord> Platforms => CurrentPackage?.Platforms ?? [];
+        public bool HasProject => !string.IsNullOrWhiteSpace(ProjectRoot);
+        public bool HasPackage => CurrentPackage is not null;
+
+        public PackageExportOptions CreateExportOptions() => new();
+
+        public void SetPackage(PatchPackage package)
+        {
+            CurrentPackage = package;
+        }
+
+        public void SetProjectRoot(string root)
+        {
+            ProjectRoot = root;
+        }
+    }
+
+    private sealed class FakeWorkflow(GameTableManagerTestState state) : IProjectWorkflow
+    {
+        public Task CreateProjectAsync(string projectRoot) { state.SetProjectRoot(projectRoot); return Task.CompletedTask; }
+        public Task ImportPlatformPackageAsync(string packageRoot, string platform, CancellationToken ct = default) => Task.CompletedTask;
+        public Task ExportPlatformPackageAsync(string exportRoot, string platform, PlatformExportMode mode, CancellationToken ct = default) => Task.CompletedTask;
+        public Task SaveProjectAsync(CancellationToken ct = default) => Task.CompletedTask;
+        public Task OpenProjectAsync(string projectRoot, CancellationToken ct = default) => Task.CompletedTask;
+        public Task AddOrReplaceResourceAsync(string s, string p, string? pl, IReadOnlyCollection<string> ip, bool c, CancellationToken ct = default) => Task.CompletedTask;
+        public Task RemoveResourceAsync(string p, string? pl, CancellationToken ct = default) => Task.CompletedTask;
+        public Task SetResourceCompressionAsync(string p, string? pl, bool c, CancellationToken ct = default) => Task.CompletedTask;
+        public Task SetPreviewIncludedPlatformsAsync(string p, IReadOnlyCollection<string> ip, CancellationToken ct = default) => Task.CompletedTask;
     }
 }

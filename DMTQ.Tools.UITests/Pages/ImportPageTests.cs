@@ -1,5 +1,3 @@
-using DMTQ_Tools.Services;
-
 namespace DMTQ.Tools.UITests.Pages;
 
 [TestClass]
@@ -8,7 +6,7 @@ public sealed class ImportPageTests : BlazorUITestBase
     [TestMethod]
     public void RendersPlatformSelectorAndImportButton()
     {
-        var state = new GameTableManagerState();
+        var state = CreateStateWithEmptyPackage();
         state.SetProjectRoot("test-project");
         RegisterAllServices(state);
 
@@ -22,23 +20,11 @@ public sealed class ImportPageTests : BlazorUITestBase
     [TestMethod]
     public void ShowsCreateOrOpenHint()
     {
-        var state = new GameTableManagerState();
+        var state = CreateStateWithEmptyPackage();
         RegisterAllServices(state);
 
         var cut = Render<Import>();
 
         cut.Markup.Should().Contain("Create or open a project");
-    }
-
-    [TestMethod]
-    public void BrowseButtonExists()
-    {
-        var state = new GameTableManagerState();
-        state.SetProjectRoot("test-project");
-        RegisterAllServices(state);
-
-        var cut = Render<Import>();
-
-        cut.Markup.Should().Contain("Browse...");
     }
 }

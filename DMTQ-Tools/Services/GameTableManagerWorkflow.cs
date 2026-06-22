@@ -3,16 +3,37 @@ using DMTQ.Tools.Core.Services;
 
 namespace DMTQ_Tools.Services;
 
-public sealed class GameTableManagerWorkflow(
-    GameTableManagerState state,
-    PatchPackageImporter importer,
-    PatchPackageExporter exporter,
-    PatchPackageValidator validator,
-    IPatchProjectRepository repository,
-    PlatformPackageImporter platformImporter,
-    PlatformPackageExporter platformExporter,
-    ResourceManagerService resourceManager)
+public sealed class GameTableManagerWorkflow : IProjectWorkflow
 {
+    private readonly GameTableManagerState _state;
+    private readonly PatchPackageImporter _importer;
+    private readonly PatchPackageExporter _exporter;
+    private readonly PatchPackageValidator _validator;
+    private readonly IPatchProjectRepository _repository;
+    private readonly PlatformPackageImporter _platformImporter;
+    private readonly PlatformPackageExporter _platformExporter;
+    private readonly ResourceManagerService _resourceManager;
+
+    public GameTableManagerWorkflow(
+        GameTableManagerState state,
+        PatchPackageImporter importer,
+        PatchPackageExporter exporter,
+        PatchPackageValidator validator,
+        IPatchProjectRepository repository,
+        PlatformPackageImporter platformImporter,
+        PlatformPackageExporter platformExporter,
+        ResourceManagerService resourceManager)
+    {
+        _state = state;
+        _importer = importer;
+        _exporter = exporter;
+        _validator = validator;
+        _repository = repository;
+        _platformImporter = platformImporter;
+        _platformExporter = platformExporter;
+        _resourceManager = resourceManager;
+    }
+
     public async Task CreateProjectAsync(string projectRoot)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(projectRoot);
@@ -21,88 +42,21 @@ public sealed class GameTableManagerWorkflow(
         Directory.CreateDirectory(Path.Combine(projectRoot, "resources"));
         Directory.CreateDirectory(Path.Combine(projectRoot, "exports"));
         Directory.CreateDirectory(Path.Combine(projectRoot, "temp"));
-        state.SetProjectRoot(projectRoot);
+        _state.SetProjectRoot(projectRoot);
 
-        // Immediately create an empty project file so it exists before any import.
         var package = new PatchPackage
         {
             ProjectInfo = new ProjectInfo(projectRoot, null, "0.0.0", null)
         };
-        state.SetPackage(package);
-        await repository.SaveAsync(
+        _state.SetPackage(package);
+        await _repository.SaveAsync(
                 package,
-                state.ExportCompressionMode,
-                state.CreateExportOptions(),
+                _state.ExportCompressionMode,
+                _state.CreateExportOptions(),
                 projectRoot,
                 CancellationToken.None)
             .ConfigureAwait(false);
-        state.Diagnostics.Add("Empty project created and saved.");
-    }
-
-    public async Task ImportPackageAsync(
-        string packageRoot,
-        CancellationToken cancellationToken = default)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(packageRoot);
-        if (string.IsNullOrWhiteSpace(state.ProjectRoot))
-        {
-            throw new InvalidOperationException("Create or open a project directory before importing a package.");
-        }
-
-        var package = await importer.ImportAsync(packageRoot, state.ProjectRoot, cancellationToken)
-            .ConfigureAwait(false);
-        state.SetPackage(package);
-    }
-
-    public async Task ExportPackageAsync(
-        string exportRoot,
-        CancellationToken cancellationToken = default)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(exportRoot);
-        if (state.CurrentPackage is null)
-        {
-            throw new InvalidOperationException("Import a package before exporting.");
-        }
-
-        var options = state.CreateExportOptions();
-        var manifest = await exporter.ExportAsync(state.CurrentPackage, exportRoot, options, cancellationToken)
-            .ConfigureAwait(false);
-        var validation = await validator.ValidateAsync(manifest, exportRoot, cancellationToken)
-            .ConfigureAwait(false);
-        state.SetExportResult(manifest, validation);
-    }
-
-    public async Task SaveProjectAsync(CancellationToken cancellationToken = default)
-    {
-        if (string.IsNullOrWhiteSpace(state.ProjectRoot))
-        {
-            throw new InvalidOperationException("Create or open a project directory before saving.");
-        }
-
-        if (state.CurrentPackage is null)
-        {
-            throw new InvalidOperationException("Import a package before saving.");
-        }
-
-        await repository.SaveAsync(
-                state.CurrentPackage,
-                state.ExportCompressionMode,
-                state.CreateExportOptions(),
-                state.ProjectRoot,
-                cancellationToken)
-            .ConfigureAwait(false);
-        state.Diagnostics.Add("Project saved.");
-    }
-
-    public async Task OpenProjectAsync(
-        string projectRoot,
-        CancellationToken cancellationToken = default)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(projectRoot);
-
-        var snapshot = await repository.LoadAsync(projectRoot, cancellationToken)
-            .ConfigureAwait(false);
-        state.RestoreProject(snapshot);
+        _state.Diagnostics.Add("Empty project created and saved.");
     }
 
     public async Task ImportPlatformPackageAsync(
@@ -112,32 +66,17 @@ public sealed class GameTableManagerWorkflow(
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(packageRoot);
         ArgumentException.ThrowIfNullOrWhiteSpace(platform);
-        if (string.IsNullOrWhiteSpace(state.ProjectRoot))
-        {
+        if (string.IsNullOrWhiteSpace(_state.ProjectRoot))
             throw new InvalidOperationException("Create or open a project directory before importing a platform package.");
-        }
 
-        if (state.CurrentPackage is null)
-        {
-            state.SetPackage(new DMTQ.Tools.Core.Models.PatchPackage
-            {
-                ProjectInfo = new DMTQ.Tools.Core.Models.ProjectInfo(state.ProjectRoot, null, null, null)
-            });
-        }
+        if (_state.CurrentPackage is null)
+            _state.SetPackage(new PatchPackage { ProjectInfo = new ProjectInfo(_state.ProjectRoot, null, null, null) });
 
-        await platformImporter.ImportPlatformAsync(state.CurrentPackage!, packageRoot, platform, cancellationToken)
-            .ConfigureAwait(false);
-        state.SetPlatformImportResult(platform);
+        await _platformImporter.ImportPlatformAsync(_state.CurrentPackage!, packageRoot, platform, cancellationToken).ConfigureAwait(false);
+        _state.SetPlatformImportResult(platform);
 
-        // Auto-save the project after import so data persists.
-        await repository.SaveAsync(
-                state.CurrentPackage!,
-                state.ExportCompressionMode,
-                state.CreateExportOptions(),
-                state.ProjectRoot!,
-                cancellationToken)
-            .ConfigureAwait(false);
-        state.Diagnostics.Add("Auto-saved after import.");
+        await _repository.SaveAsync(_state.CurrentPackage!, _state.ExportCompressionMode, _state.CreateExportOptions(), _state.ProjectRoot!, cancellationToken).ConfigureAwait(false);
+        _state.Diagnostics.Add("Auto-saved after import.");
     }
 
     public async Task ExportPlatformPackageAsync(
@@ -148,94 +87,59 @@ public sealed class GameTableManagerWorkflow(
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(exportRoot);
         ArgumentException.ThrowIfNullOrWhiteSpace(platform);
-        if (state.CurrentPackage is null)
-        {
-            throw new InvalidOperationException("Import a package before exporting.");
-        }
+        if (_state.CurrentPackage is null) throw new InvalidOperationException("Import a package before exporting.");
 
-        var result = await platformExporter.ExportPlatformAsync(
-                state.CurrentPackage,
-                exportRoot,
-                new DMTQ.Tools.Core.Models.PlatformExportOptions
-                {
-                    Platform = platform,
-                    Mode = exportMode,
-                    PackageOptions = state.CreateExportOptions()
-                },
-                cancellationToken)
-            .ConfigureAwait(false);
-        state.SetPlatformExportResult(result);
+        var result = await _platformExporter.ExportPlatformAsync(_state.CurrentPackage, exportRoot,
+            new PlatformExportOptions { Platform = platform, Mode = exportMode, PackageOptions = _state.CreateExportOptions() }, cancellationToken).ConfigureAwait(false);
+        _state.SetPlatformExportResult(result);
     }
 
-    public async Task AddOrReplaceResourceAsync(
-        string sourceFilePath,
-        string packageRelativePath,
-        string? platform,
-        IReadOnlyCollection<string> includedPlatforms,
-        bool compressed,
-        CancellationToken cancellationToken = default)
+    public async Task SaveProjectAsync(CancellationToken cancellationToken = default)
     {
-        if (state.CurrentPackage is null)
-        {
-            throw new InvalidOperationException("Import or open a project before managing resources.");
-        }
+        if (string.IsNullOrWhiteSpace(_state.ProjectRoot)) throw new InvalidOperationException("Create or open a project directory before saving.");
+        if (_state.CurrentPackage is null) throw new InvalidOperationException("Import a package before saving.");
 
-        await resourceManager.AddOrReplaceResourceAsync(
-                state.CurrentPackage,
-                sourceFilePath,
-                packageRelativePath,
-                platform,
-                includedPlatforms,
-                compressed,
-                cancellationToken)
-            .ConfigureAwait(false);
-        await SaveProjectAsync(cancellationToken).ConfigureAwait(false);
-        state.Diagnostics.Add($"Resource added or replaced: {packageRelativePath}");
+        await _repository.SaveAsync(_state.CurrentPackage, _state.ExportCompressionMode, _state.CreateExportOptions(), _state.ProjectRoot, cancellationToken).ConfigureAwait(false);
+        _state.Diagnostics.Add("Project saved.");
     }
 
-    public async Task RemoveResourceAsync(
-        string packageRelativePath,
-        string? platform,
-        CancellationToken cancellationToken = default)
+    public async Task OpenProjectAsync(string projectRoot, CancellationToken cancellationToken = default)
     {
-        if (state.CurrentPackage is null)
-        {
-            throw new InvalidOperationException("Import or open a project before managing resources.");
-        }
-
-        resourceManager.RemoveResource(state.CurrentPackage, packageRelativePath, platform);
-        await SaveProjectAsync(cancellationToken).ConfigureAwait(false);
-        state.Diagnostics.Add($"Resource removed from project: {packageRelativePath}");
+        ArgumentException.ThrowIfNullOrWhiteSpace(projectRoot);
+        var snapshot = await _repository.LoadAsync(projectRoot, cancellationToken).ConfigureAwait(false);
+        _state.RestoreProject(snapshot);
     }
 
-    public async Task SetResourceCompressionAsync(
-        string packageRelativePath,
-        string? platform,
-        bool compressed,
-        CancellationToken cancellationToken = default)
+    public async Task AddOrReplaceResourceAsync(string sourceFilePath, string packageRelativePath, string? platform,
+        IReadOnlyCollection<string> includedPlatforms, bool compressed, CancellationToken cancellationToken = default)
     {
-        if (state.CurrentPackage is null)
-        {
-            throw new InvalidOperationException("Import or open a project before managing resources.");
-        }
-
-        resourceManager.SetCompression(state.CurrentPackage, packageRelativePath, platform, compressed);
+        if (_state.CurrentPackage is null) throw new InvalidOperationException("Import or open a project before managing resources.");
+        await _resourceManager.AddOrReplaceResourceAsync(_state.CurrentPackage, sourceFilePath, packageRelativePath, platform, includedPlatforms, compressed, cancellationToken).ConfigureAwait(false);
         await SaveProjectAsync(cancellationToken).ConfigureAwait(false);
-        state.Diagnostics.Add($"Resource compression updated: {packageRelativePath} = {compressed}");
+        _state.Diagnostics.Add($"Resource added or replaced: {packageRelativePath}");
     }
 
-    public async Task SetPreviewIncludedPlatformsAsync(
-        string packageRelativePath,
-        IReadOnlyCollection<string> includedPlatforms,
-        CancellationToken cancellationToken = default)
+    public async Task RemoveResourceAsync(string packageRelativePath, string? platform, CancellationToken cancellationToken = default)
     {
-        if (state.CurrentPackage is null)
-        {
-            throw new InvalidOperationException("Import or open a project before managing resources.");
-        }
-
-        resourceManager.SetPreviewIncludedPlatforms(state.CurrentPackage, packageRelativePath, includedPlatforms);
+        if (_state.CurrentPackage is null) throw new InvalidOperationException("Import or open a project before managing resources.");
+        _resourceManager.RemoveResource(_state.CurrentPackage, packageRelativePath, platform);
         await SaveProjectAsync(cancellationToken).ConfigureAwait(false);
-        state.Diagnostics.Add($"Preview platform inclusion updated: {packageRelativePath}");
+        _state.Diagnostics.Add($"Resource removed from project: {packageRelativePath}");
+    }
+
+    public async Task SetResourceCompressionAsync(string packageRelativePath, string? platform, bool compressed, CancellationToken cancellationToken = default)
+    {
+        if (_state.CurrentPackage is null) throw new InvalidOperationException("Import or open a project before managing resources.");
+        _resourceManager.SetCompression(_state.CurrentPackage, packageRelativePath, platform, compressed);
+        await SaveProjectAsync(cancellationToken).ConfigureAwait(false);
+        _state.Diagnostics.Add($"Resource compression updated: {packageRelativePath} = {compressed}");
+    }
+
+    public async Task SetPreviewIncludedPlatformsAsync(string packageRelativePath, IReadOnlyCollection<string> includedPlatforms, CancellationToken cancellationToken = default)
+    {
+        if (_state.CurrentPackage is null) throw new InvalidOperationException("Import or open a project before managing resources.");
+        _resourceManager.SetPreviewIncludedPlatforms(_state.CurrentPackage, packageRelativePath, includedPlatforms);
+        await SaveProjectAsync(cancellationToken).ConfigureAwait(false);
+        _state.Diagnostics.Add($"Preview platform inclusion updated: {packageRelativePath}");
     }
 }

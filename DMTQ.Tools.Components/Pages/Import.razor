@@ -1,6 +1,6 @@
 @page "/import"
-@inject GameTableManagerState State
-@inject GameTableManagerWorkflow Workflow
+@inject IProjectState State
+@inject IProjectWorkflow Workflow
 
 <h1>Import</h1>
 
@@ -13,7 +13,6 @@
     <label class="form-label" for="packageRoot">Source package directory</label>
     <div class="input-row">
         <input id="packageRoot" class="form-control" @bind="packageRoot" placeholder="D:\GitHub\DMTQ-Tools\external\patch\phone_new\1.003.005\android" />
-        <button class="btn btn-secondary" @onclick="PickPackageFolder" disabled="@isBusy" type="button">Browse...</button>
         <button class="btn btn-primary" @onclick="ImportPlatformPackage" disabled="@isBusy">Import Platform</button>
     </div>
     <div class="hint">Create or open a project on the Project page before importing.</div>
@@ -90,22 +89,6 @@
             .Where(code => !string.IsNullOrWhiteSpace(code))
             .Distinct()
             .OrderBy(code => code));
-
-    private async Task PickPackageFolder()
-    {
-        try
-        {
-            var result = await CommunityToolkit.Maui.Storage.FolderPicker.Default.PickAsync(default);
-            if (result.IsSuccessful && result.Folder is not null)
-            {
-                packageRoot = result.Folder.Path;
-            }
-        }
-        catch (Exception ex)
-        {
-            message = ex.Message;
-        }
-    }
 
     private async Task ImportPlatformPackage()
     {
