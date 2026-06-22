@@ -7,7 +7,7 @@
 @inject SongCatalogService SongCatalog
 @inject IDialogService DialogService
 
-<FluentStack Orientation="Orientation.Vertical" VerticalGap="20">
+<FluentStack Orientation="Orientation.Vertical" VerticalGap="20" HorizontalAlignment="HorizontalAlignment.Stretch">
 
     @* ── Header ── *@
     <FluentBreadcrumb>
@@ -27,7 +27,7 @@
     else
     {
         <EditForm Model="@currentSong" OnValidSubmit="SaveAsync" FormName="song-editor">
-            <FluentStack Orientation="Orientation.Vertical" VerticalGap="24">
+            <FluentStack Orientation="Orientation.Vertical" VerticalGap="24" HorizontalAlignment="HorizontalAlignment.Stretch">
 
                 @* ════════════════════════════════════════════
                    Row 1: Basic Info | Gameplay Settings
