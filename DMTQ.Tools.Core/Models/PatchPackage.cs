@@ -6,4 +6,5 @@ public sealed class PatchPackage
     public PatchManifest Manifest { get; } = new();
     public GameTableSet Tables { get; } = new();
     public List<ResourceFile> Resources { get; } = [];
+    public List<PlatformPackageRecord> Platforms { get; } = [];
 }

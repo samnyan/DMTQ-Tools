@@ -5,4 +5,6 @@ public sealed record ResourceFile(
     string ProjectRelativePath,
     string Category,
     bool Compressed,
-    string? SourcePackagePath);
+    string? SourcePackagePath,
+    string? Platform = null,
+    List<string>? IncludedPlatforms = null);
