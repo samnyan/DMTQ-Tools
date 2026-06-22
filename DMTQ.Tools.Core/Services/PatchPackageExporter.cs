@@ -8,13 +8,21 @@ public sealed class PatchPackageExporter(
     Lz4CompressionService compressionService,
     PatchChecksumService checksumService)
 {
+    public Task<PatchManifest> ExportAsync(
+        PatchPackage package,
+        string exportRoot,
+        CancellationToken cancellationToken = default)
+        => ExportAsync(package, exportRoot, new PackageExportOptions(), cancellationToken);
+
     public async Task<PatchManifest> ExportAsync(
         PatchPackage package,
         string exportRoot,
+        PackageExportOptions options,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(package);
         ArgumentException.ThrowIfNullOrWhiteSpace(exportRoot);
+        ArgumentNullException.ThrowIfNull(options);
 
         Directory.CreateDirectory(exportRoot);
         var exportedManifest = new PatchManifest();

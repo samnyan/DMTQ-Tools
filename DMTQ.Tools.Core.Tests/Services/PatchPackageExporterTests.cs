@@ -1,3 +1,4 @@
+using DMTQ.Tools.Core.Models;
 using DMTQ.Tools.Core.Services;
 using FluentAssertions;
 
@@ -153,6 +154,54 @@ public sealed class PatchPackageExporterTests
             var originalBytes = await File.ReadAllBytesAsync(exportedPath);
             var decompressedBytes = await File.ReadAllBytesAsync(decompressedPath);
             decompressedBytes.Should().Equal(originalBytes);
+        }
+        finally
+        {
+            if (Directory.Exists(projectRoot))
+            {
+                Directory.Delete(projectRoot, recursive: true);
+            }
+
+            if (Directory.Exists(exportRoot))
+            {
+                Directory.Delete(exportRoot, recursive: true);
+            }
+        }
+    }
+
+    [TestMethod]
+    public async Task ExportAsync_UsesImportedCompressionFlagWhenNoOverrideExists()
+    {
+        var repoRoot = FindRepoRoot();
+        var packageRoot = Path.Combine(repoRoot, "external", "patch", "phone_new", "1.003.005", "android");
+        Directory.Exists(packageRoot).Should().BeTrue("the repository sample package is required for this integration test");
+
+        var projectRoot = Path.Combine(Path.GetTempPath(), "dmtq-default-compression-project-" + Guid.NewGuid().ToString("N"));
+        var exportRoot = Path.Combine(Path.GetTempPath(), "dmtq-default-compression-output-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var compression = new Lz4CompressionService();
+            var checksum = new PatchChecksumService();
+            var importer = new PatchPackageImporter(compression, new PatchManifestReader(), new CsvTableReader());
+            var package = await importer.ImportAsync(packageRoot, projectRoot);
+            var tableEntry = package.Manifest.Entries.Single(e => e.FileName == "table/us/song_song.csv");
+            tableEntry.Compressed.Should().BeTrue("the sample package imports this table as compressed");
+
+            var exporter = new PatchPackageExporter(
+                new CsvTableWriter(),
+                new PatchManifestWriter(),
+                compression,
+                checksum);
+
+            var exportedManifest = await exporter.ExportAsync(package, exportRoot, new PackageExportOptions());
+
+            var exportedEntry = exportedManifest.Entries.Single(e => e.FileName == "table/us/song_song.csv");
+            var tablePath = Path.Combine(exportRoot, "table", "us", "song_song.csv");
+            exportedEntry.Compressed.Should().BeTrue();
+            File.Exists(tablePath).Should().BeTrue();
+            File.Exists(tablePath + ".lz4").Should().BeTrue();
+            exportedEntry.CompressedFileSize.Should().BeGreaterThan(0);
+            exportedEntry.CompressedChecksum.Should().NotBeEmpty();
         }
         finally
         {
