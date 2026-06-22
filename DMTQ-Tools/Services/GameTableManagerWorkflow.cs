@@ -10,7 +10,8 @@ public sealed class GameTableManagerWorkflow(
     PatchPackageValidator validator,
     IPatchProjectRepository repository,
     PlatformPackageImporter platformImporter,
-    PlatformPackageExporter platformExporter)
+    PlatformPackageExporter platformExporter,
+    ResourceManagerService resourceManager)
 {
     public void CreateProject(string projectRoot)
     {
@@ -139,5 +140,77 @@ public sealed class GameTableManagerWorkflow(
                 cancellationToken)
             .ConfigureAwait(false);
         state.SetPlatformExportResult(result);
+    }
+
+    public async Task AddOrReplaceResourceAsync(
+        string sourceFilePath,
+        string packageRelativePath,
+        string? platform,
+        IReadOnlyCollection<string> includedPlatforms,
+        bool compressed,
+        CancellationToken cancellationToken = default)
+    {
+        if (state.CurrentPackage is null)
+        {
+            throw new InvalidOperationException("Import or open a project before managing resources.");
+        }
+
+        await resourceManager.AddOrReplaceResourceAsync(
+                state.CurrentPackage,
+                sourceFilePath,
+                packageRelativePath,
+                platform,
+                includedPlatforms,
+                compressed,
+                cancellationToken)
+            .ConfigureAwait(false);
+        await SaveProjectAsync(cancellationToken).ConfigureAwait(false);
+        state.Diagnostics.Add($"Resource added or replaced: {packageRelativePath}");
+    }
+
+    public async Task RemoveResourceAsync(
+        string packageRelativePath,
+        string? platform,
+        CancellationToken cancellationToken = default)
+    {
+        if (state.CurrentPackage is null)
+        {
+            throw new InvalidOperationException("Import or open a project before managing resources.");
+        }
+
+        resourceManager.RemoveResource(state.CurrentPackage, packageRelativePath, platform);
+        await SaveProjectAsync(cancellationToken).ConfigureAwait(false);
+        state.Diagnostics.Add($"Resource removed from project: {packageRelativePath}");
+    }
+
+    public async Task SetResourceCompressionAsync(
+        string packageRelativePath,
+        string? platform,
+        bool compressed,
+        CancellationToken cancellationToken = default)
+    {
+        if (state.CurrentPackage is null)
+        {
+            throw new InvalidOperationException("Import or open a project before managing resources.");
+        }
+
+        resourceManager.SetCompression(state.CurrentPackage, packageRelativePath, platform, compressed);
+        await SaveProjectAsync(cancellationToken).ConfigureAwait(false);
+        state.Diagnostics.Add($"Resource compression updated: {packageRelativePath} = {compressed}");
+    }
+
+    public async Task SetPreviewIncludedPlatformsAsync(
+        string packageRelativePath,
+        IReadOnlyCollection<string> includedPlatforms,
+        CancellationToken cancellationToken = default)
+    {
+        if (state.CurrentPackage is null)
+        {
+            throw new InvalidOperationException("Import or open a project before managing resources.");
+        }
+
+        resourceManager.SetPreviewIncludedPlatforms(state.CurrentPackage, packageRelativePath, includedPlatforms);
+        await SaveProjectAsync(cancellationToken).ConfigureAwait(false);
+        state.Diagnostics.Add($"Preview platform inclusion updated: {packageRelativePath}");
     }
 }

@@ -31,6 +31,7 @@ namespace DMTQ_Tools
             builder.Services.AddSingleton<LogicalTableService>();
             builder.Services.AddSingleton<SongCatalogService>();
             builder.Services.AddSingleton<SongEditService>();
+            builder.Services.AddSingleton<ResourceManagerService>();
             builder.Services.AddSingleton<PlatformPackageImporter>();
             builder.Services.AddSingleton<PlatformPackageExporter>();
             builder.Services.AddSingleton<GameTableManagerState>();
