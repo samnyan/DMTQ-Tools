@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using DMTQ.Tools.Core.Services;
+using DMTQ_Tools.Services;
+using Microsoft.Extensions.Logging;
 
 namespace DMTQ_Tools
 {
@@ -16,9 +18,21 @@ namespace DMTQ_Tools
 
             builder.Services.AddMauiBlazorWebView();
 
+            builder.Services.AddSingleton<Lz4CompressionService>();
+            builder.Services.AddSingleton<PatchManifestReader>();
+            builder.Services.AddSingleton<CsvTableReader>();
+            builder.Services.AddSingleton<CsvTableWriter>();
+            builder.Services.AddSingleton<PatchManifestWriter>();
+            builder.Services.AddSingleton<PatchChecksumService>();
+            builder.Services.AddSingleton<PatchPackageImporter>();
+            builder.Services.AddSingleton<PatchPackageExporter>();
+            builder.Services.AddSingleton<PatchPackageValidator>();
+            builder.Services.AddSingleton<GameTableManagerState>();
+            builder.Services.AddSingleton<GameTableManagerWorkflow>();
+
 #if DEBUG
-    		builder.Services.AddBlazorWebViewDeveloperTools();
-    		builder.Logging.AddDebug();
+            builder.Services.AddBlazorWebViewDeveloperTools();
+            builder.Logging.AddDebug();
 #endif
 
             return builder.Build();
