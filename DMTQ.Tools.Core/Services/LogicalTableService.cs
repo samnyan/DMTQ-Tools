@@ -147,4 +147,72 @@ public sealed partial class LogicalTableService
 
     [GeneratedRegex("^(?<base>.+_desc)_(?<lang>[^_]+)$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
     private static partial Regex LocalizedTableNameRegex();
+
+    [GeneratedRegex("^(?<column>.+):(?<lang>[^:]+)$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    private static partial Regex LocalizedColumnKeyRegex();
+
+    public void UpdateCell(
+        PatchPackage package,
+        string logicalTableKey,
+        string rowKey,
+        string columnKey,
+        string value)
+    {
+        ArgumentNullException.ThrowIfNull(package);
+        ArgumentException.ThrowIfNullOrWhiteSpace(logicalTableKey);
+        ArgumentException.ThrowIfNullOrWhiteSpace(rowKey);
+        ArgumentException.ThrowIfNullOrWhiteSpace(columnKey);
+
+        var localizedMatch = LocalizedColumnKeyRegex().Match(columnKey);
+        if (localizedMatch.Success)
+        {
+            var sourceColumn = localizedMatch.Groups["column"].Value;
+            var language = localizedMatch.Groups["lang"].Value;
+            var sourceTable = package.Tables.Tables.FirstOrDefault(table =>
+                table.TableName.Equals($"{logicalTableKey}_{language}", StringComparison.OrdinalIgnoreCase)
+                || (table.TableName.StartsWith(logicalTableKey + "_", StringComparison.OrdinalIgnoreCase)
+                    && string.Equals(table.LanguageCode, language, StringComparison.OrdinalIgnoreCase)));
+            if (sourceTable is null)
+            {
+                return;
+            }
+
+            UpdateSourceTableCell(sourceTable, rowKey, sourceColumn, value);
+            return;
+        }
+
+        var sourceTables = package.Tables.Tables
+            .Where(table => table.TableName.Equals(logicalTableKey, StringComparison.OrdinalIgnoreCase))
+            .ToArray();
+        foreach (var table in sourceTables)
+        {
+            UpdateSourceTableCell(table, rowKey, columnKey, value);
+        }
+    }
+
+    private static void UpdateSourceTableCell(
+        GameTable table,
+        string rowKey,
+        string columnName,
+        string value)
+    {
+        var keyColumn = table.Columns.OrderBy(column => column.Order).First();
+        var row = table.Rows.FirstOrDefault(candidate =>
+            GetCellValue(candidate, keyColumn.Name).Equals(rowKey, StringComparison.OrdinalIgnoreCase));
+        if (row is null)
+        {
+            return;
+        }
+
+        for (var i = 0; i < row.Cells.Count; i++)
+        {
+            if (row.Cells[i].ColumnName.Equals(columnName, StringComparison.OrdinalIgnoreCase))
+            {
+                row.Cells[i] = row.Cells[i] with { Value = value };
+                return;
+            }
+        }
+
+        row.Cells.Add(new GameTableCell(columnName, value));
+    }
 }

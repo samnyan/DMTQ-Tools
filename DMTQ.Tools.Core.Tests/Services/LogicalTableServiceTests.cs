@@ -53,6 +53,43 @@ public sealed class LogicalTableServiceTests
         descTable.Rows[0].Cells["title:jp"].Should().Be("Oblivion JP");
     }
 
+    [TestMethod]
+    public void UpdateCell_UpdatesSharedTableCopies()
+    {
+        var package = new PatchPackage
+        {
+            ProjectInfo = new ProjectInfo("project", "source", "1.0", "android")
+        };
+        package.Tables.Tables.Add(CreateTable("table/us/song_song.csv", "song_song", "us", "song_id", "name", ("1", "oblivion")));
+        package.Tables.Tables.Add(CreateTable("table/jp/song_song.csv", "song_song", "jp", "song_id", "name", ("1", "oblivion")));
+        var service = new LogicalTableService();
+
+        service.UpdateCell(package, "song_song", "1", "name", "new-name");
+
+        package.Tables.Tables.SelectMany(table => table.Rows)
+            .Select(row => row.Cells.Single(cell => cell.ColumnName == "name").Value)
+            .Should().OnlyContain(value => value == "new-name");
+    }
+
+    [TestMethod]
+    public void UpdateCell_UpdatesLocalizedLanguageCellOnly()
+    {
+        var package = new PatchPackage
+        {
+            ProjectInfo = new ProjectInfo("project", "source", "1.0", "android")
+        };
+        package.Tables.Tables.Add(CreateTable("table/us/song_desc_us.csv", "song_desc_us", "us", "song_id", "title", ("1", "Oblivion")));
+        package.Tables.Tables.Add(CreateTable("table/jp/song_desc_jp.csv", "song_desc_jp", "jp", "song_id", "title", ("1", "Oblivion JP")));
+        var service = new LogicalTableService();
+
+        service.UpdateCell(package, "song_desc", "1", "title:jp", "新タイトル");
+
+        var jp = package.Tables.Tables.Single(table => table.LanguageCode == "jp");
+        var us = package.Tables.Tables.Single(table => table.LanguageCode == "us");
+        jp.Rows[0].Cells.Single(cell => cell.ColumnName == "title").Value.Should().Be("新タイトル");
+        us.Rows[0].Cells.Single(cell => cell.ColumnName == "title").Value.Should().Be("Oblivion");
+    }
+
     private static GameTable CreateTable(
         string path,
         string tableName,
