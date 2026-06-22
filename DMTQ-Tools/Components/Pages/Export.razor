@@ -30,6 +30,7 @@
     <label class="form-label" for="exportRoot">Output directory</label>
     <div class="input-row">
         <input id="exportRoot" class="form-control" @bind="exportRoot" placeholder="D:\DMTQExports\android" />
+        <button class="btn btn-secondary" @onclick="PickExportFolder" disabled="@(!State.HasPackage || isBusy)" type="button">Browse...</button>
         <button class="btn btn-primary" @onclick="ExportPlatformPackage" disabled="@(!State.HasPackage || State.Platforms.Count == 0 || isBusy)">Export</button>
     </div>
 
@@ -107,6 +108,22 @@
     private string ValidationText => State.LastValidationResult is null
         ? "Not run"
         : State.LastValidationResult.IsValid ? "Passed" : $"{State.LastValidationResult.Errors.Count} errors";
+
+    private async Task PickExportFolder()
+    {
+        try
+        {
+            var result = await CommunityToolkit.Maui.Storage.FolderPicker.Default.PickAsync(default);
+            if (result.IsSuccessful && result.Folder is not null)
+            {
+                exportRoot = result.Folder.Path;
+            }
+        }
+        catch (Exception ex)
+        {
+            message = ex.Message;
+        }
+    }
 
     private async Task ExportPlatformPackage()
     {

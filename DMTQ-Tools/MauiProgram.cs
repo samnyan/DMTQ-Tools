@@ -1,4 +1,5 @@
-﻿using DMTQ.Tools.Core.Services;
+﻿using CommunityToolkit.Maui;
+using DMTQ.Tools.Core.Services;
 using DMTQ_Tools.Services;
 using Microsoft.Extensions.Logging;
 
@@ -11,6 +12,7 @@ namespace DMTQ_Tools
             var builder = MauiApp.CreateBuilder();
             builder
                 .UseMauiApp<App>()
+                .UseMauiCommunityToolkit()
                 .ConfigureFonts(fonts =>
                 {
                     fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");

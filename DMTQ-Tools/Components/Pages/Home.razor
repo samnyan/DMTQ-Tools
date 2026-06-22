@@ -8,6 +8,7 @@
     <label class="form-label" for="projectRoot">Project directory</label>
     <div class="input-row project-actions">
         <input id="projectRoot" class="form-control" @bind="projectRoot" placeholder="D:\DMTQProjects\MyPatch" />
+        <button class="btn btn-secondary" @onclick="PickProjectFolder" disabled="@isBusy" type="button">Browse...</button>
         <button class="btn btn-primary" @onclick="CreateProject" disabled="@isBusy">Create</button>
         <button class="btn btn-secondary" @onclick="OpenProject" disabled="@isBusy">Open Saved</button>
         <button class="btn btn-secondary" @onclick="SaveProject" disabled="@(!State.HasPackage || isBusy)">Save</button>
@@ -69,6 +70,22 @@
     private string ValidationText => State.LastValidationResult is null
         ? "Not run"
         : State.LastValidationResult.IsValid ? "Passed" : $"{State.LastValidationResult.Errors.Count} errors";
+
+    private async Task PickProjectFolder()
+    {
+        try
+        {
+            var result = await CommunityToolkit.Maui.Storage.FolderPicker.Default.PickAsync(default);
+            if (result.IsSuccessful && result.Folder is not null)
+            {
+                projectRoot = result.Folder.Path;
+            }
+        }
+        catch (Exception ex)
+        {
+            message = ex.Message;
+        }
+    }
 
     private async Task CreateProject()
     {
