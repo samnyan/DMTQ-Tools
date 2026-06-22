@@ -112,10 +112,25 @@ else
     private string? selectedLogicalTableKey;
     private string? message;
     private bool isSaving;
+    private PatchPackage? _lastPackage;
+    private IReadOnlyList<LogicalTable> _catalog = [];
 
-    private IReadOnlyList<LogicalTable> Catalog => State.CurrentPackage is null
-        ? []
-        : LogicalTables.BuildCatalog(State.CurrentPackage);
+    private IReadOnlyList<LogicalTable> Catalog
+    {
+        get
+        {
+            if (ReferenceEquals(State.CurrentPackage, _lastPackage))
+            {
+                return _catalog;
+            }
+
+            _lastPackage = State.CurrentPackage;
+            _catalog = State.CurrentPackage is null
+                ? []
+                : LogicalTables.BuildCatalog(State.CurrentPackage);
+            return _catalog;
+        }
+    }
 
     private IEnumerable<LogicalTable> FilteredLogicalTables
     {
@@ -151,6 +166,7 @@ else
         }
 
         LogicalTables.UpdateCell(State.CurrentPackage, SelectedLogicalTable.Key, rowKey, columnKey, value);
+        _lastPackage = null; // invalidate catalog cache so UI refreshes
         State.Diagnostics.Add($"Updated {SelectedLogicalTable.Key}/{rowKey}/{columnKey}.");
         message = "Unsaved changes.";
     }

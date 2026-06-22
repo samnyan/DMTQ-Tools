@@ -269,25 +269,42 @@ else
     private string newDescription = string.Empty;
     private string newItemName = string.Empty;
     private string newAssetId = string.Empty;
+    private PatchPackage? _lastPackage;
+    private IReadOnlyList<SongCatalogEntry> _catalog = [];
+    private IReadOnlyList<string> _cachedLanguages = [];
 
-    private IReadOnlyList<SongCatalogEntry> Catalog => State.CurrentPackage is null
-        ? []
-        : SongCatalog.BuildCatalog(State.CurrentPackage);
-
-    private IReadOnlyList<string> Languages
+    private IReadOnlyList<SongCatalogEntry> Catalog
     {
         get
         {
-            var languages = Catalog
+            if (ReferenceEquals(State.CurrentPackage, _lastPackage))
+            {
+                return _catalog;
+            }
+
+            _lastPackage = State.CurrentPackage;
+            _catalog = State.CurrentPackage is null
+                ? []
+                : SongCatalog.BuildCatalog(State.CurrentPackage);
+
+            _cachedLanguages = _catalog
                 .SelectMany(song => song.TitlesByLanguage.Keys
                     .Concat(song.DescriptionsByLanguage.Keys)
                     .Concat(song.ItemNamesByLanguage.Keys))
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .OrderBy(language => language, StringComparer.OrdinalIgnoreCase)
                 .ToArray();
-            return languages.Length == 0 ? ["us"] : languages;
+
+            if (_cachedLanguages.Count == 0)
+            {
+                _cachedLanguages = ["us"];
+            }
+
+            return _catalog;
         }
     }
+
+    private IReadOnlyList<string> Languages => _cachedLanguages;
 
     private IEnumerable<SongCatalogEntry> FilteredSongs
     {
@@ -354,6 +371,7 @@ else
             request.DescriptionsByLanguage[selectedLanguage] = editDescription;
             SongEditor.UpdateSong(State.CurrentPackage, request);
             await Workflow.SaveProjectAsync();
+            _lastPackage = null; // invalidate cache so UI refreshes
             editMessage = "Song saved.";
             State.Diagnostics.Add($"Song edited: {SelectedSong.SongId}");
         }
@@ -397,6 +415,7 @@ else
             });
             SongEditor.AddSong(State.CurrentPackage, request);
             await Workflow.SaveProjectAsync();
+            _lastPackage = null; // invalidate cache so UI refreshes
             selectedSongId = newSongId;
             addMessage = "Song added.";
             State.Diagnostics.Add($"Song added: {newSongId}");
