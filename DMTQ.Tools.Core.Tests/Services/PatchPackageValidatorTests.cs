@@ -111,4 +111,43 @@ public sealed class PatchPackageValidatorTests
             }
         }
     }
+
+    [TestMethod]
+    public async Task ValidateAsync_DoesNotRequireCompressedFileWhenEntryIsUncompressed()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "dmtq-validate-uncompressed-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            Directory.CreateDirectory(Path.Combine(root, "table", "us"));
+            var filePath = Path.Combine(root, "table", "us", "song_song.csv");
+            await File.WriteAllTextAsync(filePath, "id,name\r\n1,test\r\n");
+
+            var checksum = new PatchChecksumService();
+            var manifest = new PatchManifest();
+            manifest.Entries.Add(new PatchFileEntry(
+                "table/us/song_song.csv",
+                checksum.GetFileSize(filePath),
+                await checksum.ComputeMd5Async(filePath),
+                0,
+                string.Empty,
+                0,
+                false,
+                string.Empty,
+                string.Empty));
+
+            var validator = new PatchPackageValidator(checksum);
+
+            var result = await validator.ValidateAsync(manifest, root);
+
+            result.IsValid.Should().BeTrue();
+            result.Errors.Should().BeEmpty();
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+            {
+                Directory.Delete(root, recursive: true);
+            }
+        }
+    }
 }
