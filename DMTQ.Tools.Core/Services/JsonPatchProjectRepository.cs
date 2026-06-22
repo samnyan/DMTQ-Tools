@@ -71,6 +71,7 @@ public sealed class JsonPatchProjectRepository : IPatchProjectRepository
         public List<GameTableDto> Tables { get; set; } = [];
         public List<ResourceFileDto> Resources { get; set; } = [];
         public List<PlatformPackageRecordDto> Platforms { get; set; } = [];
+        public List<SongDto> Songs { get; set; } = [];
 
         public static ProjectDocument FromPackage(
             PatchPackage package,
@@ -85,7 +86,8 @@ public sealed class JsonPatchProjectRepository : IPatchProjectRepository
                 ManifestEntries = package.Manifest.Entries.Select(PatchFileEntryDto.FromModel).ToList(),
                 Tables = package.Tables.Tables.Select(GameTableDto.FromModel).ToList(),
                 Resources = package.Resources.Select(ResourceFileDto.FromModel).ToList(),
-                Platforms = package.Platforms.Select(PlatformPackageRecordDto.FromModel).ToList()
+                Platforms = package.Platforms.Select(PlatformPackageRecordDto.FromModel).ToList(),
+                Songs = package.Songs.Select(SongDto.FromModel).ToList()
             };
         }
 
@@ -100,6 +102,7 @@ public sealed class JsonPatchProjectRepository : IPatchProjectRepository
             package.Tables.Tables.AddRange(Tables.Select(table => table.ToModel()));
             package.Resources.AddRange(Resources.Select(resource => resource.ToModel()));
             package.Platforms.AddRange(Platforms.Select(platform => platform.ToModel()));
+            package.Songs.AddRange(Songs.Select(song => song.ToModel()));
 
             var options = new PackageExportOptions();
             foreach (var item in CompressionOverrides)
@@ -109,6 +112,204 @@ public sealed class JsonPatchProjectRepository : IPatchProjectRepository
 
             return new PatchProjectSnapshot(package, ExportCompressionMode, options);
         }
+    }
+
+    private sealed class SongDto
+    {
+        public string Id { get; set; } = string.Empty;
+        public string ItemId { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+        public string FullName { get; set; } = string.Empty;
+        public string Genre { get; set; } = string.Empty;
+        public string ArtistName { get; set; } = string.Empty;
+        public string OriginalBgaYn { get; set; } = string.Empty;
+        public string LoopBgaYn { get; set; } = string.Empty;
+        public string ComposedBy { get; set; } = string.Empty;
+        public string Singer { get; set; } = string.Empty;
+        public string FeatBy { get; set; } = string.Empty;
+        public string ArrangedBy { get; set; } = string.Empty;
+        public string VisualizedBy { get; set; } = string.Empty;
+        public string CostGamePoint { get; set; } = string.Empty;
+        public string CostGameCash { get; set; } = string.Empty;
+        public string Flag { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
+        public string FreeYn { get; set; } = string.Empty;
+        public string HiddenYn { get; set; } = string.Empty;
+        public string OpenYn { get; set; } = string.Empty;
+        public string TrackId { get; set; } = string.Empty;
+        public string ModDate { get; set; } = string.Empty;
+        public string Update { get; set; } = string.Empty;
+        public string? PreviewPackageRelativePath { get; set; }
+        public Dictionary<string, string> TitlesByLanguage { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+        public Dictionary<string, string> DescriptionsByLanguage { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+        public Dictionary<string, string> ItemNamesByLanguage { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+        public List<string> ProductIds { get; set; } = [];
+        public List<string> ItemIds { get; set; } = [];
+        public List<string> CategoryIds { get; set; } = [];
+        public Dictionary<string, SongLocalizationDto> Localizations { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+        public List<SongPatternDto> Patterns { get; set; } = [];
+
+        public static SongDto FromModel(Song model)
+            => new()
+            {
+                Id = model.Id,
+                ItemId = model.ItemId,
+                Name = model.Name,
+                FullName = model.FullName,
+                Genre = model.Genre,
+                ArtistName = model.ArtistName,
+                OriginalBgaYn = model.OriginalBgaYn,
+                LoopBgaYn = model.LoopBgaYn,
+                ComposedBy = model.ComposedBy,
+                Singer = model.Singer,
+                FeatBy = model.FeatBy,
+                ArrangedBy = model.ArrangedBy,
+                VisualizedBy = model.VisualizedBy,
+                CostGamePoint = model.CostGamePoint,
+                CostGameCash = model.CostGameCash,
+                Flag = model.Flag,
+                Status = model.Status,
+                FreeYn = model.FreeYn,
+                HiddenYn = model.HiddenYn,
+                OpenYn = model.OpenYn,
+                TrackId = model.TrackId,
+                ModDate = model.ModDate,
+                Update = model.Update,
+                PreviewPackageRelativePath = model.PreviewPackageRelativePath,
+                TitlesByLanguage = new Dictionary<string, string>(model.TitlesByLanguage, StringComparer.OrdinalIgnoreCase),
+                DescriptionsByLanguage = new Dictionary<string, string>(model.DescriptionsByLanguage, StringComparer.OrdinalIgnoreCase),
+                ItemNamesByLanguage = new Dictionary<string, string>(model.ItemNamesByLanguage, StringComparer.OrdinalIgnoreCase),
+                ProductIds = [..model.ProductIds],
+                ItemIds = [..model.ItemIds],
+                CategoryIds = [..model.CategoryIds],
+                Localizations = model.Localizations.ToDictionary(
+                    kvp => kvp.Key,
+                    kvp => SongLocalizationDto.FromModel(kvp.Value),
+                    StringComparer.OrdinalIgnoreCase),
+                Patterns = model.Patterns.Select(SongPatternDto.FromModel).ToList()
+            };
+
+        public Song ToModel()
+        {
+            var song = new Song { Id = Id };
+            song.ItemId = ItemId;
+            song.Name = Name;
+            song.FullName = FullName;
+            song.Genre = Genre;
+            song.ArtistName = ArtistName;
+            song.OriginalBgaYn = OriginalBgaYn;
+            song.LoopBgaYn = LoopBgaYn;
+            song.ComposedBy = ComposedBy;
+            song.Singer = Singer;
+            song.FeatBy = FeatBy;
+            song.ArrangedBy = ArrangedBy;
+            song.VisualizedBy = VisualizedBy;
+            song.CostGamePoint = CostGamePoint;
+            song.CostGameCash = CostGameCash;
+            song.Flag = Flag;
+            song.Status = Status;
+            song.FreeYn = FreeYn;
+            song.HiddenYn = HiddenYn;
+            song.OpenYn = OpenYn;
+            song.TrackId = TrackId;
+            song.ModDate = ModDate;
+            song.Update = Update;
+            song.PreviewPackageRelativePath = PreviewPackageRelativePath;
+            foreach (var kvp in TitlesByLanguage) song.TitlesByLanguage[kvp.Key] = kvp.Value;
+            foreach (var kvp in DescriptionsByLanguage) song.DescriptionsByLanguage[kvp.Key] = kvp.Value;
+            foreach (var kvp in ItemNamesByLanguage) song.ItemNamesByLanguage[kvp.Key] = kvp.Value;
+            song.ProductIds.AddRange(ProductIds);
+            song.ItemIds.AddRange(ItemIds);
+            song.CategoryIds.AddRange(CategoryIds);
+            foreach (var kvp in Localizations) song.Localizations[kvp.Key] = kvp.Value.ToModel();
+            song.Patterns.AddRange(Patterns.Select(p => p.ToModel()));
+            return song;
+        }
+    }
+
+    private sealed class SongPatternDto
+    {
+        public string PatternId { get; set; } = string.Empty;
+        public string SongId { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+        public string Line { get; set; } = string.Empty;
+        public string Signature { get; set; } = string.Empty;
+        public string Difficulty { get; set; } = string.Empty;
+        public string Level { get; set; } = string.Empty;
+        public string PointType { get; set; } = string.Empty;
+        public string PointValue { get; set; } = string.Empty;
+        public string Flg { get; set; } = string.Empty;
+        public string Update { get; set; } = string.Empty;
+
+        public static SongPatternDto FromModel(SongPattern model)
+            => new()
+            {
+                PatternId = model.PatternId,
+                SongId = model.SongId,
+                Name = model.Name,
+                Line = model.Line,
+                Signature = model.Signature,
+                Difficulty = model.Difficulty,
+                Level = model.Level,
+                PointType = model.PointType,
+                PointValue = model.PointValue,
+                Flg = model.Flg,
+                Update = model.Update
+            };
+
+        public SongPattern ToModel()
+            => new()
+            {
+                PatternId = PatternId,
+                SongId = SongId,
+                Name = Name,
+                Line = Line,
+                Signature = Signature,
+                Difficulty = Difficulty,
+                Level = Level,
+                PointType = PointType,
+                PointValue = PointValue,
+                Flg = Flg,
+                Update = Update
+            };
+    }
+
+    private sealed class SongLocalizationDto
+    {
+        public string FullName { get; set; } = string.Empty;
+        public string Genre { get; set; } = string.Empty;
+        public string ArtistName { get; set; } = string.Empty;
+        public string ComposedBy { get; set; } = string.Empty;
+        public string Singer { get; set; } = string.Empty;
+        public string FeatBy { get; set; } = string.Empty;
+        public string ArrangedBy { get; set; } = string.Empty;
+        public string VisualizedBy { get; set; } = string.Empty;
+
+        public static SongLocalizationDto FromModel(SongLocalization model)
+            => new()
+            {
+                FullName = model.FullName,
+                Genre = model.Genre,
+                ArtistName = model.ArtistName,
+                ComposedBy = model.ComposedBy,
+                Singer = model.Singer,
+                FeatBy = model.FeatBy,
+                ArrangedBy = model.ArrangedBy,
+                VisualizedBy = model.VisualizedBy
+            };
+
+        public SongLocalization ToModel()
+            => new()
+            {
+                FullName = FullName,
+                Genre = Genre,
+                ArtistName = ArtistName,
+                ComposedBy = ComposedBy,
+                Singer = Singer,
+                FeatBy = FeatBy,
+                ArrangedBy = ArrangedBy,
+                VisualizedBy = VisualizedBy
+            };
     }
 
     private sealed class ProjectInfoDto
