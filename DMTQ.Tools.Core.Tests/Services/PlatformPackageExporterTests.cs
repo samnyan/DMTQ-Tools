@@ -118,7 +118,7 @@ public sealed class PlatformPackageExporterTests
             await File.WriteAllTextAsync(Path.Combine(projectRoot, "resources", "android", "dlc", "android.bin"), "same-content");
 
             var checksum = Convert.ToHexString(
-                System.Security.Cryptography.SHA256.HashData(
+                System.Security.Cryptography.MD5.HashData(
                     await File.ReadAllBytesAsync(Path.Combine(projectRoot, "resources", "android", "dlc", "android.bin"))))
                 .ToLowerInvariant();
 
@@ -196,6 +196,73 @@ public sealed class PlatformPackageExporterTests
             entry.CompressedChecksum.Should().NotBeEmpty();
             File.Exists(Path.Combine(exportRoot, "dlc", "new.bundle")).Should().BeTrue();
             File.Exists(Path.Combine(exportRoot, "dlc", "new.bundle.lz4")).Should().BeTrue();
+        }
+        finally
+        {
+            DeleteDirectory(projectRoot);
+            DeleteDirectory(exportRoot);
+        }
+    }
+
+    [TestMethod]
+    public async Task ExportPlatformAsync_HonorsResourceCompressedOverBaselineEntry()
+    {
+        var projectRoot = Path.Combine(Path.GetTempPath(), "dmtq-compression-override-" + Guid.NewGuid().ToString("N"));
+        var exportRoot = Path.Combine(Path.GetTempPath(), "dmtq-compression-override-out-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            Directory.CreateDirectory(Path.Combine(projectRoot, "resources", "android", "dlc"));
+            await File.WriteAllTextAsync(Path.Combine(projectRoot, "resources", "android", "dlc", "android.bin"), "dlc-content");
+            var contentBytes = await File.ReadAllBytesAsync(Path.Combine(projectRoot, "resources", "android", "dlc", "android.bin"));
+            var baselineChecksum = Convert.ToHexString(System.Security.Cryptography.MD5.HashData(contentBytes)).ToLowerInvariant();
+
+            var package = CreateProjectWithPlatform(projectRoot, "android", [
+                Entry("dlc/android.bin", contentBytes.Length, baselineChecksum, compressed: true)
+            ]);
+            // User changes resource to uncompressed via Resource Manager
+            package.Resources.Add(new ResourceFile("dlc/android.bin", "resources/android/dlc/android.bin", "dlc", false, null, "android"));
+
+            var result = await CreateExporter().ExportPlatformAsync(
+                package,
+                exportRoot,
+                new PlatformExportOptions { Platform = "android", Mode = PlatformExportMode.Delta });
+
+            result.Validation.Errors.Should().BeEmpty();
+            var entry = result.Manifest.Entries.Single(e => e.FileName == "dlc/android.bin");
+            entry.Compressed.Should().BeFalse("resource.Compressed should override baseline.Compressed");
+            entry.CompressedFileSize.Should().Be(0);
+            entry.CompressedChecksum.Should().BeEmpty();
+            File.Exists(Path.Combine(exportRoot, "dlc", "android.bin.lz4")).Should().BeFalse();
+        }
+        finally
+        {
+            DeleteDirectory(projectRoot);
+            DeleteDirectory(exportRoot);
+        }
+    }
+
+    [TestMethod]
+    public async Task ExportPlatformAsync_ManifestChecksumsAreLowercaseMd5()
+    {
+        var projectRoot = Path.Combine(Path.GetTempPath(), "dmtq-md5-format-" + Guid.NewGuid().ToString("N"));
+        var exportRoot = Path.Combine(Path.GetTempPath(), "dmtq-md5-format-out-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            Directory.CreateDirectory(Path.Combine(projectRoot, "resources", "android", "dlc"));
+            await File.WriteAllTextAsync(Path.Combine(projectRoot, "resources", "android", "dlc", "android.bin"), "md5-test");
+            var package = CreateProjectWithPlatform(projectRoot, "android", [
+                Entry("dlc/android.bin", 8, "00000000000000000000000000000000", compressed: false)
+            ]);
+            package.Resources.Add(new ResourceFile("dlc/android.bin", "resources/android/dlc/android.bin", "dlc", false, null, "android"));
+
+            var result = await CreateExporter().ExportPlatformAsync(
+                package,
+                exportRoot,
+                new PlatformExportOptions { Platform = "android", Mode = PlatformExportMode.Full });
+
+            var entry = result.Manifest.Entries.Single(e => e.FileName == "dlc/android.bin");
+            entry.Checksum.Should().MatchRegex("^[0-9a-f]{32}$", "checksum must be 32-char lowercase hex MD5");
+            entry.Checksum.Should().NotContainAny("A", "B", "C", "D", "E", "F");
         }
         finally
         {
