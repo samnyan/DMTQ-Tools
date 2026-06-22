@@ -75,7 +75,8 @@ public sealed class JsonPatchProjectRepositoryTests
                 new CsvTableWriter(),
                 new PatchManifestWriter(),
                 compression,
-                checksum);
+                checksum,
+                new SongTableProjector());
             var exportedManifest = await exporter.ExportAsync(snapshot.Package, exportRoot, snapshot.ExportOptions);
             var validation = await new PatchPackageValidator(checksum).ValidateAsync(exportedManifest, exportRoot);
 

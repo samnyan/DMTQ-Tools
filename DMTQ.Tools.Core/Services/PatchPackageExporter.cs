@@ -6,7 +6,8 @@ public sealed class PatchPackageExporter(
     CsvTableWriter tableWriter,
     PatchManifestWriter manifestWriter,
     Lz4CompressionService compressionService,
-    PatchChecksumService checksumService)
+    PatchChecksumService checksumService,
+    SongTableProjector songTableProjector)
 {
     public Task<PatchManifest> ExportAsync(
         PatchPackage package,
@@ -27,7 +28,21 @@ public sealed class PatchPackageExporter(
         Directory.CreateDirectory(exportRoot);
         var exportedManifest = new PatchManifest();
 
-        foreach (var sourceEntry in package.Manifest.Entries)
+        // Project Song entities back to GameTables for export.
+        var existingPaths = package.Tables.Tables
+            .Select(t => t.PackageRelativePath)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var projectedTables = songTableProjector.ProjectTables(package)
+            .Where(t => !existingPaths.Contains(t.PackageRelativePath))
+            .ToArray();
+        foreach (var table in projectedTables)
+        {
+            package.Tables.Tables.Add(table);
+        }
+
+        try
+        {
+            foreach (var sourceEntry in package.Manifest.Entries)
         {
             cancellationToken.ThrowIfCancellationRequested();
             var relativePath = PathClassifier.NormalizePackageRelativePath(sourceEntry.FileName);
@@ -93,6 +108,14 @@ public sealed class PatchPackageExporter(
 
         await compressionService.CompressFileAsync(manifestPath, manifestPath + ".lz4", cancellationToken).ConfigureAwait(false);
         return exportedManifest;
+        }
+        finally
+        {
+            foreach (var table in projectedTables)
+            {
+                package.Tables.Tables.Remove(table);
+            }
+        }
     }
 
     private async Task<PatchFileEntry> CreateExportEntryAsync(

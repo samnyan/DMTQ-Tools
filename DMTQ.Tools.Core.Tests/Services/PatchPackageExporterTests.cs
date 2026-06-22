@@ -26,7 +26,8 @@ public sealed class PatchPackageExporterTests
                 new CsvTableWriter(),
                 new PatchManifestWriter(),
                 compression,
-                new PatchChecksumService());
+                new PatchChecksumService(),
+                new SongTableProjector());
 
             await exporter.ExportAsync(package, exportRoot);
 
@@ -72,7 +73,8 @@ public sealed class PatchPackageExporterTests
                 new CsvTableWriter(),
                 new PatchManifestWriter(),
                 compression,
-                checksum);
+                checksum,
+                new SongTableProjector());
             var exportedManifest = await exporter.ExportAsync(package, exportRoot);
 
             var validator = new PatchPackageValidator(checksum);
@@ -134,7 +136,8 @@ public sealed class PatchPackageExporterTests
                 new CsvTableWriter(),
                 new PatchManifestWriter(),
                 compression,
-                checksum);
+                checksum,
+                new SongTableProjector());
 
             var exportedManifest = await exporter.ExportAsync(package, exportRoot);
 
@@ -191,7 +194,8 @@ public sealed class PatchPackageExporterTests
                 new CsvTableWriter(),
                 new PatchManifestWriter(),
                 compression,
-                checksum);
+                checksum,
+                new SongTableProjector());
 
             var exportedManifest = await exporter.ExportAsync(package, exportRoot, new PackageExportOptions());
 
@@ -239,7 +243,8 @@ public sealed class PatchPackageExporterTests
                 new CsvTableWriter(),
                 new PatchManifestWriter(),
                 compression,
-                checksum);
+                checksum,
+                new SongTableProjector());
 
             var exportedManifest = await exporter.ExportAsync(package, exportRoot, options);
 
@@ -291,7 +296,8 @@ public sealed class PatchPackageExporterTests
                 new CsvTableWriter(),
                 new PatchManifestWriter(),
                 compression,
-                checksum);
+                checksum,
+                new SongTableProjector());
 
             var exportedManifest = await exporter.ExportAsync(package, exportRoot, options);
 
@@ -344,7 +350,8 @@ public sealed class PatchPackageExporterTests
                 new CsvTableWriter(),
                 new PatchManifestWriter(),
                 compression,
-                checksum);
+                checksum,
+                new SongTableProjector());
 
             var exportedManifest = await exporter.ExportAsync(package, exportRoot, options);
             var validator = new PatchPackageValidator(checksum);
