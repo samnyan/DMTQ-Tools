@@ -45,6 +45,10 @@ public sealed class Song
     public List<string> ItemIds { get; } = [];
     public List<string> CategoryIds { get; } = [];
 
+    /// <summary>Per‑language metadata overrides (CN, JP, KR, TW, US).
+    /// If a field is blank, the export falls back to the Basic Info value.</summary>
+    public Dictionary<string, SongLocalization> Localizations { get; } = new(StringComparer.OrdinalIgnoreCase);
+
     // ── Patterns ──
     public List<SongPattern> Patterns { get; } = [];
 
@@ -82,7 +86,7 @@ public sealed class Song
 /// </summary>
 public sealed class SongPattern
 {
-    public required string PatternId { get; init; }
+    public required string PatternId { get; set; }
     public required string SongId { get; init; }
 
     // ── song_songPattern fields ──
@@ -95,4 +99,20 @@ public sealed class SongPattern
     public string PointValue { get; set; } = string.Empty;
     public string Flg { get; set; } = string.Empty;
     public string Update { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Per-language metadata override for a song.  When fields are blank,
+/// the export falls back to the song's basic‑info values.
+/// </summary>
+public sealed class SongLocalization
+{
+    public string FullName { get; set; } = string.Empty;
+    public string Genre { get; set; } = string.Empty;
+    public string ArtistName { get; set; } = string.Empty;
+    public string ComposedBy { get; set; } = string.Empty;
+    public string Singer { get; set; } = string.Empty;
+    public string FeatBy { get; set; } = string.Empty;
+    public string ArrangedBy { get; set; } = string.Empty;
+    public string VisualizedBy { get; set; } = string.Empty;
 }

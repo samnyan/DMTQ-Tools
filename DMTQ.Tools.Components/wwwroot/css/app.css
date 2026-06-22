@@ -7,6 +7,22 @@ html, body {
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
+/* ── Form: ensure EditForm stretches to container width ── */
+form {
+    width: 100%;
+    min-width: 0;
+}
+
+/* ── FluentGrid: ensure grid fills parent width ── */
+.fluent-grid {
+    width: 100%;
+}
+
+/* ── FluentDataGrid: ensure full-width tables ── */
+fluent-data-grid {
+    width: 100%;
+}
+
 /* ── Error UI ── */
 #blazor-error-ui {
     background: lightyellow;
@@ -108,10 +124,23 @@ html, body {
     margin: 1rem 0 0.5rem;
 }
 
+/* ── Section hint text ── */
+.section-hint {
+    color: #5f6b7a;
+    font-size: 0.85rem;
+    margin: 0 0 0.5rem;
+}
+
+/* ── Section: prevent overflow ── */
+section {
+    min-width: 0;
+}
+
 /* ── Data grid (Tables editable grid, Songs tables) ── */
 .grid-scroll {
     overflow: auto;
     max-height: 34rem;
+    min-width: 0;
 }
 
 .compact-grid-scroll {
@@ -122,6 +151,7 @@ html, body {
     border-collapse: collapse;
     min-width: 100%;
     font-size: 0.85rem;
+    table-layout: auto;
 }
 
 .data-grid th,

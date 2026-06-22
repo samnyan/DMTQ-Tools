@@ -1,0 +1,57 @@
+@using Icons = Microsoft.FluentUI.AspNetCore.Components.Icons
+@using DMTQ.Tools.Core.Models
+@implements IDialogContentComponent<SongPattern>
+
+<FluentStack Orientation="Orientation.Vertical" VerticalGap="12" Style="min-width: 360px;">
+
+    <FluentGrid Spacing="3">
+        <FluentGridItem xs="12" sm="6">
+            <FluentTextField @bind-Value="Content.PatternId" Label="Pattern ID *"
+                             Disabled="@(originalId is not null)" Required />
+        </FluentGridItem>
+        <FluentGridItem xs="12" sm="6">
+            <FluentTextField @bind-Value="Content.Line" Label="Line" Placeholder="2Line/3Line/4Line" />
+        </FluentGridItem>
+        <FluentGridItem xs="12" sm="6">
+            <FluentTextField @bind-Value="Content.Signature" Label="Signature" Placeholder="1/2/3" />
+        </FluentGridItem>
+        <FluentGridItem xs="12" sm="6">
+            <FluentTextField @bind-Value="Content.Difficulty" Label="Difficulty" />
+        </FluentGridItem>
+        <FluentGridItem xs="12" sm="6">
+            <FluentTextField @bind-Value="Content.Level" Label="Level" />
+        </FluentGridItem>
+        <FluentGridItem xs="12" sm="6">
+            <FluentTextField @bind-Value="Content.PointType" Label="Point Type" />
+        </FluentGridItem>
+        <FluentGridItem xs="12" sm="6">
+            <FluentTextField @bind-Value="Content.PointValue" Label="Point Value" />
+        </FluentGridItem>
+        <FluentGridItem xs="12" sm="6">
+            <FluentTextField @bind-Value="Content.Name" Label="Pattern Name" />
+        </FluentGridItem>
+        <FluentGridItem xs="12">
+            <FluentSwitch @bind-Value="flgChecked" Label="Active (FLG)" />
+        </FluentGridItem>
+    </FluentGrid>
+
+</FluentStack>
+
+@code {
+    [Parameter] public SongPattern Content { get; set; } = default!;
+    [CascadingParameter] public FluentDialog Dialog { get; set; } = default!;
+
+    private string? originalId;
+
+    private bool flgChecked
+    {
+        get => Content.Flg == "Y";
+        set => Content.Flg = value ? "Y" : "N";
+    }
+
+    protected override void OnInitialized()
+    {
+        if (!string.IsNullOrWhiteSpace(Content.PatternId))
+            originalId = Content.PatternId;
+    }
+}
