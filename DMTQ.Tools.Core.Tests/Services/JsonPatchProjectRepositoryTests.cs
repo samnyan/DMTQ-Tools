@@ -44,6 +44,74 @@ public sealed class JsonPatchProjectRepositoryTests
         }
     }
 
+    [TestMethod]
+    public async Task SaveAndLoadAsync_PreservesImportedSamplePackageForExport()
+    {
+        var repoRoot = FindRepoRoot();
+        var packageRoot = Path.Combine(repoRoot, "external", "patch", "phone_new", "1.003.005", "android");
+        Directory.Exists(packageRoot).Should().BeTrue("the repository sample package is required for this integration test");
+
+        var projectRoot = Path.Combine(Path.GetTempPath(), "dmtq-json-import-project-" + Guid.NewGuid().ToString("N"));
+        var exportRoot = Path.Combine(Path.GetTempPath(), "dmtq-json-import-export-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var compression = new Lz4CompressionService();
+            var checksum = new PatchChecksumService();
+            var importer = new PatchPackageImporter(compression, new PatchManifestReader(), new CsvTableReader());
+            var package = await importer.ImportAsync(packageRoot, projectRoot);
+            var exportOptions = new PackageExportOptions();
+            exportOptions.SetCompression("table/us/song_song.csv", compressed: false);
+            var repository = new JsonPatchProjectRepository();
+
+            await repository.SaveAsync(package, "UncompressAll", exportOptions, projectRoot);
+            var snapshot = await repository.LoadAsync(projectRoot);
+
+            snapshot.Package.Manifest.Entries.Should().HaveCount(package.Manifest.Entries.Count);
+            snapshot.Package.Tables.Tables.Should().HaveCount(package.Tables.Tables.Count);
+            snapshot.Package.Resources.Should().HaveCount(package.Resources.Count);
+            snapshot.Package.Tables.Tables.Should().Contain(t => t.PackageRelativePath == "table/us/song_song.csv");
+
+            var exporter = new PatchPackageExporter(
+                new CsvTableWriter(),
+                new PatchManifestWriter(),
+                compression,
+                checksum);
+            var exportedManifest = await exporter.ExportAsync(snapshot.Package, exportRoot, snapshot.ExportOptions);
+            var validation = await new PatchPackageValidator(checksum).ValidateAsync(exportedManifest, exportRoot);
+
+            validation.Errors.Should().BeEmpty();
+            exportedManifest.Entries.Single(e => e.FileName == "table/us/song_song.csv").Compressed.Should().BeFalse();
+        }
+        finally
+        {
+            if (Directory.Exists(projectRoot))
+            {
+                Directory.Delete(projectRoot, recursive: true);
+            }
+
+            if (Directory.Exists(exportRoot))
+            {
+                Directory.Delete(exportRoot, recursive: true);
+            }
+        }
+    }
+
+    private static string FindRepoRoot()
+    {
+        var current = AppContext.BaseDirectory;
+        while (current is not null)
+        {
+            if (File.Exists(Path.Combine(current, "DMTQ-Tools.sln")))
+            {
+                return current;
+            }
+
+            current = Directory.GetParent(current)?.FullName;
+        }
+
+        throw new DirectoryNotFoundException("Could not locate repository root containing DMTQ-Tools.sln.");
+    }
+
     private static PatchPackage CreateMinimalPackage(string projectRoot)
     {
         var package = new PatchPackage
