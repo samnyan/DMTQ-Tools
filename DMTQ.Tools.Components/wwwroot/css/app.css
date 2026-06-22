@@ -3,8 +3,17 @@
    forms (FluentTextField, FluentSelect, FluentButton, FluentCheckbox),
    and navigation (FluentNavMenu, FluentNavLink). */
 
+/* ── Reset: fix MAUI WebView double-scroll + body margins ── */
 html, body {
+    margin: 0;
+    height: 100%;
+    overflow: hidden;
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+/* Blazor root must fill body height for flex layout chain */
+#app {
+    height: 100%;
 }
 
 /* ── Form: ensure EditForm stretches to container width ── */
