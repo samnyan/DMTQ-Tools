@@ -1,6 +1,8 @@
 @page "/songs"
 @inject GameTableManagerState State
+@inject GameTableManagerWorkflow Workflow
 @inject SongCatalogService SongCatalog
+@inject SongEditService SongEditor
 
 <h1>Songs</h1>
 
@@ -97,6 +99,37 @@ else
                     </div>
                 </div>
 
+                <section class="song-editor-panel">
+                    <div class="table-header">
+                        <h2 class="section-heading">Edit Selected Song</h2>
+                        <button class="btn btn-secondary" @onclick="LoadEditForm" disabled="@(SelectedSong is null)">Load</button>
+                    </div>
+                    <div class="song-form-grid">
+                        <label class="form-label">
+                            Preview path
+                            <input class="form-control" @bind="editPreviewPath" />
+                        </label>
+                        <label class="form-label">
+                            Asset ID
+                            <input class="form-control" @bind="editAssetId" />
+                        </label>
+                    </div>
+                    <div class="song-form-grid">
+                        <label class="form-label">
+                            Title (@selectedLanguage)
+                            <input class="form-control" @bind="editTitle" />
+                        </label>
+                        <label class="form-label">
+                            Description (@selectedLanguage)
+                            <input class="form-control" @bind="editDescription" />
+                        </label>
+                    </div>
+                    <div class="input-row">
+                        <button class="btn btn-primary" @onclick="SaveSelectedSong" disabled="@isBusy">Save Song</button>
+                        <span class="status-message">@editMessage</span>
+                    </div>
+                </section>
+
                 <h2 class="section-heading">Localized Titles</h2>
                 <div class="grid-scroll compact-grid-scroll">
                     <table class="data-grid">
@@ -149,12 +182,93 @@ else
             }
         </section>
     </section>
+
+    <section class="toolbar-panel song-editor-panel">
+        <h2 class="section-heading">Add Song</h2>
+        <div class="song-form-grid">
+            <label class="form-label">
+                Song ID
+                <input class="form-control" @bind="newSongId" />
+            </label>
+            <label class="form-label">
+                Product ID
+                <input class="form-control" @bind="newProductId" />
+            </label>
+            <label class="form-label">
+                Item ID
+                <input class="form-control" @bind="newItemId" />
+            </label>
+            <label class="form-label">
+                Category ID
+                <input class="form-control" @bind="newCategoryId" />
+            </label>
+        </div>
+        <div class="song-form-grid">
+            <label class="form-label">
+                Pattern ID
+                <input class="form-control" @bind="newPatternId" />
+            </label>
+            <label class="form-label">
+                Difficulty
+                <input class="form-control" @bind="newPatternDifficulty" />
+            </label>
+            <label class="form-label">
+                Level
+                <input class="form-control" @bind="newPatternLevel" />
+            </label>
+            <label class="form-label">
+                Preview path
+                <input class="form-control" @bind="newPreviewPath" />
+            </label>
+        </div>
+        <div class="song-form-grid">
+            <label class="form-label">
+                Title (@selectedLanguage)
+                <input class="form-control" @bind="newTitle" />
+            </label>
+            <label class="form-label">
+                Description (@selectedLanguage)
+                <input class="form-control" @bind="newDescription" />
+            </label>
+            <label class="form-label">
+                Item Name (@selectedLanguage)
+                <input class="form-control" @bind="newItemName" />
+            </label>
+            <label class="form-label">
+                Asset ID
+                <input class="form-control" @bind="newAssetId" />
+            </label>
+        </div>
+        <div class="input-row">
+            <button class="btn btn-primary" @onclick="AddSong" disabled="@isBusy">Add Song</button>
+            <span class="status-message">@addMessage</span>
+        </div>
+    </section>
 }
 
 @code {
     private string filter = string.Empty;
     private string selectedLanguage = "us";
     private string? selectedSongId;
+    private bool isBusy;
+    private string? editMessage;
+    private string? addMessage;
+    private string editPreviewPath = string.Empty;
+    private string editAssetId = string.Empty;
+    private string editTitle = string.Empty;
+    private string editDescription = string.Empty;
+    private string newSongId = string.Empty;
+    private string newProductId = string.Empty;
+    private string newItemId = string.Empty;
+    private string newCategoryId = string.Empty;
+    private string newPatternId = string.Empty;
+    private string newPatternDifficulty = string.Empty;
+    private string newPatternLevel = string.Empty;
+    private string newPreviewPath = string.Empty;
+    private string newTitle = string.Empty;
+    private string newDescription = string.Empty;
+    private string newItemName = string.Empty;
+    private string newAssetId = string.Empty;
 
     private IReadOnlyList<SongCatalogEntry> Catalog => State.CurrentPackage is null
         ? []
@@ -171,7 +285,6 @@ else
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .OrderBy(language => language, StringComparer.OrdinalIgnoreCase)
                 .ToArray();
-
             return languages.Length == 0 ? ["us"] : languages;
         }
     }
@@ -184,7 +297,6 @@ else
             {
                 return Catalog;
             }
-
             return Catalog.Where(song =>
                 song.SongId.Contains(filter, StringComparison.OrdinalIgnoreCase)
                 || song.GetTitle(selectedLanguage).Contains(filter, StringComparison.OrdinalIgnoreCase)
@@ -208,5 +320,112 @@ else
     {
         var title = song.GetTitle(selectedLanguage);
         return string.IsNullOrWhiteSpace(title) ? song.SongId : title;
+    }
+
+    private void LoadEditForm()
+    {
+        if (SelectedSong is null)
+        {
+            return;
+        }
+        editPreviewPath = SelectedSong.PreviewPackageRelativePath ?? string.Empty;
+        editAssetId = SelectedSong.SourceFields.TryGetValue("asset_id", out var assetId) ? assetId : string.Empty;
+        editTitle = SelectedSong.GetTitle(selectedLanguage);
+        editDescription = SelectedSong.GetDescription(selectedLanguage);
+        editMessage = null;
+    }
+
+    private async Task SaveSelectedSong()
+    {
+        if (State.CurrentPackage is null || SelectedSong is null)
+        {
+            return;
+        }
+        isBusy = true;
+        try
+        {
+            var request = new SongEditRequest
+            {
+                SongId = SelectedSong.SongId,
+                PreviewPackageRelativePath = string.IsNullOrWhiteSpace(editPreviewPath) ? null : editPreviewPath
+            };
+            request.SourceFields["asset_id"] = editAssetId;
+            request.TitlesByLanguage[selectedLanguage] = editTitle;
+            request.DescriptionsByLanguage[selectedLanguage] = editDescription;
+            SongEditor.UpdateSong(State.CurrentPackage, request);
+            await Workflow.SaveProjectAsync();
+            editMessage = "Song saved.";
+            State.Diagnostics.Add($"Song edited: {SelectedSong.SongId}");
+        }
+        catch (Exception ex)
+        {
+            editMessage = ex.Message;
+            State.Diagnostics.Add("Song edit error: " + ex.Message);
+        }
+        finally
+        {
+            isBusy = false;
+        }
+    }
+
+    private async Task AddSong()
+    {
+        if (State.CurrentPackage is null)
+        {
+            return;
+        }
+        isBusy = true;
+        try
+        {
+            var request = new AddSongRequest
+            {
+                SongId = newSongId,
+                ProductId = newProductId,
+                ItemId = newItemId,
+                CategoryId = newCategoryId,
+                PreviewPackageRelativePath = string.IsNullOrWhiteSpace(newPreviewPath) ? null : newPreviewPath
+            };
+            request.SongFields["asset_id"] = newAssetId;
+            request.TitlesByLanguage[selectedLanguage] = newTitle;
+            request.DescriptionsByLanguage[selectedLanguage] = newDescription;
+            request.ItemNamesByLanguage[selectedLanguage] = newItemName;
+            request.Patterns.Add(new AddSongPatternRequest
+            {
+                PatternId = newPatternId,
+                Difficulty = newPatternDifficulty,
+                Level = newPatternLevel
+            });
+            SongEditor.AddSong(State.CurrentPackage, request);
+            await Workflow.SaveProjectAsync();
+            selectedSongId = newSongId;
+            addMessage = "Song added.";
+            State.Diagnostics.Add($"Song added: {newSongId}");
+            ClearAddSongForm();
+        }
+        catch (Exception ex)
+        {
+            addMessage = ex.Message;
+            State.Diagnostics.Add("Add song error: " + ex.Message);
+        }
+        finally
+        {
+            isBusy = false;
+        }
+    }
+
+    private void ClearAddSongForm()
+    {
+        newSongId = string.Empty;
+        newProductId = string.Empty;
+        newItemId = string.Empty;
+        newCategoryId = string.Empty;
+        newPatternId = string.Empty;
+        newPatternDifficulty = string.Empty;
+        newPatternLevel = string.Empty;
+        newPreviewPath = string.Empty;
+        newTitle = string.Empty;
+        newDescription = string.Empty;
+        newItemName = string.Empty;
+        newAssetId = string.Empty;
     }
 }
