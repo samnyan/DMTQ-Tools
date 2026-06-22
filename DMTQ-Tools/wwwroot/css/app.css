@@ -278,3 +278,33 @@ h1:focus {
         grid-template-columns: 1fr;
     }
 }
+
+.editable-grid td {
+    padding: 0;
+}
+
+.cell-input {
+    width: 100%;
+    min-width: 10rem;
+    border: 0;
+    padding: 0.35rem 0.5rem;
+    background: transparent;
+    font: inherit;
+}
+
+.cell-input:focus {
+    outline: 2px solid #1b6ec2;
+    background: #fff;
+}
+
+.raw-table-panel {
+    margin-top: 1rem;
+}
+
+.raw-table-list {
+    display: grid;
+    gap: 0.35rem;
+    margin-top: 0.75rem;
+    color: #5f6b7a;
+    font-size: 0.9rem;
+}
