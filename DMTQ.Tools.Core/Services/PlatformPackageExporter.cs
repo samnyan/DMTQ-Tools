@@ -205,7 +205,7 @@ public sealed class PlatformPackageExporter
         CancellationToken cancellationToken)
     {
         // Resolve source path: try platform-specific path first, then generic
-        var sourcePath = ResolveResourceSourcePath(projectRoot, resource.FileName, options.Platform);
+        var sourcePath = ResolveResourceSourcePath(projectRoot, resource.FileName, resource.Category, options.Platform);
 
         if (!File.Exists(sourcePath))
         {
@@ -301,33 +301,14 @@ public sealed class PlatformPackageExporter
         result.Manifest.Entries.Add(manifestEntry);
     }
 
-    private static string ResolveResourceSourcePath(string projectRoot, string fileName, string? targetPlatform = null)
+    private static string ResolveResourceSourcePath(string projectRoot, string fileName, string category, string targetPlatform)
     {
-        var candidates = new List<string>();
+        // preview/slang: shared resources, no platform subfolder
+        if (category is "preview" or "slang")
+            return Path.Combine(projectRoot, "resources", fileName.Replace('/', Path.DirectorySeparatorChar));
 
-        // Platform-specific path first (if target platform is known)
-        if (!string.IsNullOrWhiteSpace(targetPlatform))
-            candidates.Add(Path.Combine(projectRoot, "resources", targetPlatform, fileName.Replace('/', Path.DirectorySeparatorChar)));
-
-        // Generic resources path
-        candidates.Add(Path.Combine(projectRoot, "resources", fileName.Replace('/', Path.DirectorySeparatorChar)));
-
-        // Other platform paths as fallback
-        if (!string.Equals(targetPlatform, "android", StringComparison.OrdinalIgnoreCase))
-            candidates.Add(Path.Combine(projectRoot, "resources", "android", fileName.Replace('/', Path.DirectorySeparatorChar)));
-        if (!string.Equals(targetPlatform, "ios", StringComparison.OrdinalIgnoreCase))
-            candidates.Add(Path.Combine(projectRoot, "resources", "ios", fileName.Replace('/', Path.DirectorySeparatorChar)));
-
-        // Raw project root path
-        candidates.Add(Path.Combine(projectRoot, fileName.Replace('/', Path.DirectorySeparatorChar)));
-
-        foreach (var candidate in candidates)
-        {
-            if (File.Exists(candidate))
-                return candidate;
-        }
-
-        return candidates[0];
+        // dlc/Fonts: platform-specific, no fallback
+        return Path.Combine(projectRoot, "resources", targetPlatform, fileName.Replace('/', Path.DirectorySeparatorChar));
     }
 
     private static string ComputeMd5(byte[] bytes)
