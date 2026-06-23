@@ -39,9 +39,6 @@ public sealed class SongEditServiceTests
         song.Name = "NewSong";
         song.ArtistName = "NewArtist";
         song.PreviewPackageRelativePath = "preview/new.p.opus";
-        song.ProductIds.Add("5002");
-        song.ItemIds.Add("7002");
-        song.CategoryIds.Add("3001");
         song.Patterns.Add(new SongPattern { PatternId = "9002", SongId = "1002" });
         song.Patterns[0].Difficulty = "expert";
         song.Patterns[0].Level = "13";
@@ -53,9 +50,6 @@ public sealed class SongEditServiceTests
         added.Name.Should().Be("NewSong");
         added.ArtistName.Should().Be("NewArtist");
         added.PreviewPackageRelativePath.Should().Be("preview/new.p.opus");
-        added.ProductIds.Should().Equal("5002");
-        added.ItemIds.Should().Equal("7002");
-        added.CategoryIds.Should().Equal("3001");
         added.Patterns.Should().ContainSingle();
         added.Patterns[0].PatternId.Should().Be("9002");
         added.Patterns[0].Level.Should().Be("13");

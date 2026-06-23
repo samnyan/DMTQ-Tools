@@ -39,16 +39,7 @@ public sealed class Song
     /// <summary>Preview resource path (from preview column or inferred).</summary>
     public string? PreviewPackageRelativePath { get; set; }
 
-    // ── Localized fields (from song_desc_&lt;lang&gt;, item_desc_&lt;lang&gt;) ──
-    public Dictionary<string, string> TitlesByLanguage { get; set; } = new(StringComparer.OrdinalIgnoreCase);
-    public Dictionary<string, string> DescriptionsByLanguage { get; set; } = new(StringComparer.OrdinalIgnoreCase);
-    public Dictionary<string, string> ItemNamesByLanguage { get; set; } = new(StringComparer.OrdinalIgnoreCase);
-
-    // ── Relationships ──
-    public List<string> ProductIds { get; set; } = [];
-    public List<string> ItemIds { get; set; } = [];
-    public List<string> CategoryIds { get; set; } = [];
-
+    // ── Localized metadata overrides (from song_desc_&lt;lang&gt;) ──
     /// <summary>Per‑language metadata overrides (CN, JP, KR, TW, US).
     /// If a field is blank, the export falls back to the Basic Info value.</summary>
     public Dictionary<string, SongLocalization> Localizations { get; set; } = new(StringComparer.OrdinalIgnoreCase);
@@ -62,31 +53,6 @@ public sealed class Song
 
     [SetsRequiredMembers]
     public Song() { Id = ""; }
-
-    public string GetTitle(string language)
-    {
-        if (TitlesByLanguage.TryGetValue(language, out var title) && !string.IsNullOrWhiteSpace(title))
-            return title;
-        if (TitlesByLanguage.TryGetValue("us", out var us) && !string.IsNullOrWhiteSpace(us))
-            return us;
-        if (TitlesByLanguage.TryGetValue("cn", out var cn) && !string.IsNullOrWhiteSpace(cn))
-            return cn;
-        return TitlesByLanguage.Values.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v)) ?? Id;
-    }
-
-    public string GetDescription(string language)
-    {
-        if (DescriptionsByLanguage.TryGetValue(language, out var desc) && !string.IsNullOrWhiteSpace(desc))
-            return desc;
-        return DescriptionsByLanguage.Values.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v)) ?? string.Empty;
-    }
-
-    public string GetItemName(string language)
-    {
-        if (ItemNamesByLanguage.TryGetValue(language, out var name) && !string.IsNullOrWhiteSpace(name))
-            return name;
-        return ItemNamesByLanguage.Values.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v)) ?? string.Empty;
-    }
 }
 
 /// <summary>

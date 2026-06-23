@@ -100,7 +100,6 @@ public sealed class PatchPackageImporter(
             ImportLookupTables(package, csvEntries, cancellationToken);
 
             // ── Phase 4: cross-entity links (song↔product, song↔item, previews) ──
-            BuildCrossEntityLinks(package, csvEntries, cancellationToken);
             BuildPreviewLinks(package);
 
             // ── Import any remaining non-entity tables as raw GameTables (for legacy/unknown tables) ──
@@ -376,108 +375,7 @@ public sealed class PatchPackageImporter(
         }
     }
 
-    // ── Phase 4: cross-entity links ──
-
-    private static void BuildCrossEntityLinks(
-        PatchPackage package,
-        List<CsvImportEntry> entries,
-        CancellationToken cancellationToken)
-    {
-        var songDict = package.Songs.ToDictionary(s => s.Id, StringComparer.OrdinalIgnoreCase);
-
-        var productToSong = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var entry in entries)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            if (entry.TableName != "product_product")
-                continue;
-
-            foreach (var row in ReadCsvRows(entry.FilePath))
-            {
-                var productId = GetField(row, "product_id", "id");
-                var songId = GetField(row, "song_id", "songId");
-                if (string.IsNullOrWhiteSpace(productId) || string.IsNullOrWhiteSpace(songId))
-                    continue;
-
-                productToSong[productId] = songId;
-                if (songDict.TryGetValue(songId, out var song))
-                    AddDistinct(song.ProductIds, productId);
-            }
-        }
-
-        var itemToSong = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var entry in entries)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            if (entry.TableName != "product_item")
-                continue;
-
-            foreach (var row in ReadCsvRows(entry.FilePath))
-            {
-                var productId = GetField(row, "product_id");
-                var itemId = GetField(row, "item_id", "itemId");
-                if (string.IsNullOrWhiteSpace(productId) || string.IsNullOrWhiteSpace(itemId))
-                    continue;
-
-                if (!productToSong.TryGetValue(productId, out var songId))
-                    continue;
-                if (!songDict.TryGetValue(songId, out var song))
-                    continue;
-
-                itemToSong[itemId] = songId;
-                AddDistinct(song.ItemIds, itemId);
-            }
-        }
-
-        foreach (var entry in entries)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            if (entry.TableName != "category_categoryproduct")
-                continue;
-
-            foreach (var row in ReadCsvRows(entry.FilePath))
-            {
-                var productId = GetField(row, "product_id");
-                var categoryId = GetField(row, "category_id");
-                if (string.IsNullOrWhiteSpace(productId) || string.IsNullOrWhiteSpace(categoryId))
-                    continue;
-
-                if (!productToSong.TryGetValue(productId, out var songId))
-                    continue;
-                if (!songDict.TryGetValue(songId, out var song))
-                    continue;
-
-                AddDistinct(song.CategoryIds, categoryId);
-            }
-        }
-
-        foreach (var entry in entries)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            if (!IsLocalizedTable(entry.TableName, "item_desc"))
-                continue;
-
-            var lang = entry.LanguageCode ?? ExtractLanguageSuffix(entry.TableName);
-            if (string.IsNullOrWhiteSpace(lang))
-                continue;
-
-            foreach (var row in ReadCsvRows(entry.FilePath))
-            {
-                var itemId = GetField(row, "item_id", "itemId", "id");
-                if (string.IsNullOrWhiteSpace(itemId))
-                    continue;
-
-                if (!itemToSong.TryGetValue(itemId, out var songId))
-                    continue;
-                if (!songDict.TryGetValue(songId, out var song))
-                    continue;
-
-                var itemName = GetField(row, "name", "title", "item_name");
-                if (!string.IsNullOrWhiteSpace(itemName))
-                    song.ItemNamesByLanguage[lang] = itemName;
-            }
-        }
-    }
+    // ── Preview links ──
 
     private static void BuildPreviewLinks(PatchPackage package)
     {
@@ -510,58 +408,6 @@ public sealed class PatchPackageImporter(
     {
         using var stream = File.OpenRead(filePath);
         return new TSchema().ReadCsv(stream, throwOnMissingColumn: false);
-    }
-
-    // ── Raw CSV helpers (for link tables) ──
-
-    private static List<IReadOnlyDictionary<string, string>> ReadCsvRows(string filePath)
-    {
-        using var stream = File.OpenRead(filePath);
-        using var reader = new StreamReader(stream);
-        using var csv = new CsvReader(reader, new CsvConfiguration(CultureInfo.InvariantCulture)
-        {
-            BadDataFound = null,
-            MissingFieldFound = null
-        });
-
-        if (!csv.Read())
-            return [];
-
-        csv.ReadHeader();
-        var headers = csv.HeaderRecord ?? [];
-        var result = new List<IReadOnlyDictionary<string, string>>();
-
-        while (csv.Read())
-        {
-            var row = new Dictionary<string, string>(headers.Length, StringComparer.OrdinalIgnoreCase);
-            for (var i = 0; i < headers.Length; i++)
-            {
-                row[headers[i]] = csv.GetField(i) ?? string.Empty;
-            }
-
-            result.Add(row);
-        }
-
-        return result;
-    }
-
-    private static string GetField(IReadOnlyDictionary<string, string> row, params string[] columnNames)
-    {
-        foreach (var columnName in columnNames)
-        {
-            if (row.TryGetValue(columnName, out var value) && !string.IsNullOrWhiteSpace(value))
-                return value;
-        }
-
-        return string.Empty;
-    }
-
-    private static void AddDistinct(List<string> values, string value)
-    {
-        if (!string.IsNullOrWhiteSpace(value) && !values.Contains(value, StringComparer.OrdinalIgnoreCase))
-        {
-            values.Add(value);
-        }
     }
 
     // ── Path helpers ──

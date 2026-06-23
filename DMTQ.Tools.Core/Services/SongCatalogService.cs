@@ -12,7 +12,7 @@ public sealed class SongCatalogService
         ArgumentNullException.ThrowIfNull(package);
 
         return package.Songs
-            .OrderBy(song => song.GetTitle("us"), StringComparer.OrdinalIgnoreCase)
+            .OrderBy(song => song.Name, StringComparer.OrdinalIgnoreCase)
             .ThenBy(song => song.Id, StringComparer.OrdinalIgnoreCase)
             .ToArray();
     }

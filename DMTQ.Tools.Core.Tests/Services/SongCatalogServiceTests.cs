@@ -18,11 +18,8 @@ public sealed class SongCatalogServiceTests
             ProjectInfo = new ProjectInfo("project", null, null, null)
         };
         var song1 = new Song { Id = "2", Name = "Beta" };
-        song1.TitlesByLanguage["us"] = "Beta";
         var song2 = new Song { Id = "1", Name = "Alpha" };
-        song2.TitlesByLanguage["us"] = "Alpha";
         var song3 = new Song { Id = "3", Name = "Alpha" };
-        song3.TitlesByLanguage["us"] = "Alpha";
         package.Songs.Add(song1);
         package.Songs.Add(song2);
         package.Songs.Add(song3);

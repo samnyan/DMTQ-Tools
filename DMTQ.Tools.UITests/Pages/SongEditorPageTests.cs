@@ -68,7 +68,6 @@ public sealed class SongEditorPageTests : BlazorUITestBase
 
         // Also add entity Song so BuildCatalog can find it
         var song = new Song { Id = "1001", Name = "T", Genre = "G", ArtistName = "A" };
-        song.TitlesByLanguage["us"] = "T";
         song.Patterns.Add(new SongPattern { PatternId = "9001", SongId = "1001", Line = "2Line", Difficulty = "easy" });
         package.Songs.Add(song);
 

@@ -112,7 +112,7 @@ else
 
 @code {
     private string filter = string.Empty;
-    private string selectedLanguage = "us";
+    private string selectedLanguage = "CN";
     private string? message;
     private string? errorMessage;
     private PaginationState pagination = new() { ItemsPerPage = 25 };
@@ -142,19 +142,17 @@ else
             if (string.IsNullOrWhiteSpace(filter)) return Catalog;
             return Catalog.Where(song =>
                 song.Id.Contains(filter, StringComparison.OrdinalIgnoreCase)
-                || song.GetTitle(selectedLanguage).Contains(filter, StringComparison.OrdinalIgnoreCase)
-                || song.GetItemName(selectedLanguage).Contains(filter, StringComparison.OrdinalIgnoreCase)
                 || song.Name.Contains(filter, StringComparison.OrdinalIgnoreCase)
                 || song.ArtistName.Contains(filter, StringComparison.OrdinalIgnoreCase)
-                || song.Genre.Contains(filter, StringComparison.OrdinalIgnoreCase)
-                || song.ProductIds.Any(id => id.Contains(filter, StringComparison.OrdinalIgnoreCase)));
+                || song.Genre.Contains(filter, StringComparison.OrdinalIgnoreCase));
         }
     }
 
     private string DisplayTitle(Song song)
     {
-        var title = song.GetTitle(selectedLanguage);
-        return string.IsNullOrWhiteSpace(title) ? song.Id : title;
+        if (song.Localizations.TryGetValue(selectedLanguage, out var loc) && !string.IsNullOrWhiteSpace(loc.FullName))
+            return loc.FullName;
+        return string.IsNullOrWhiteSpace(song.Name) ? song.Id : song.Name;
     }
 
     private void CreateNewSong() => Navigation.NavigateTo("/songs/editor/new");
@@ -192,10 +190,10 @@ else
     private static IReadOnlyList<string> ComputeLanguages(IReadOnlyList<Song> catalog)
     {
         var langs = catalog
-            .SelectMany(s => s.TitlesByLanguage.Keys.Concat(s.DescriptionsByLanguage.Keys).Concat(s.ItemNamesByLanguage.Keys))
+            .SelectMany(s => s.Localizations.Keys)
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .OrderBy(l => l, StringComparer.OrdinalIgnoreCase)
             .ToArray();
-        return langs.Length == 0 ? ["us"] : langs;
+        return langs.Length == 0 ? ["CN", "JP", "KR", "TW", "US"] : langs;
     }
 }
