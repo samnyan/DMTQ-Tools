@@ -15,7 +15,7 @@ A .NET 10 MAUI Blazor Hybrid app for managing game patch data tables (CSV import
 | `DMTQ.Tools.Core/` | Models (Song, GameTable, PatchPackage…) + Services (import/export/edit/validation) |
 | `DMTQ.Tools.Components/` | Razor Class Library — all `.razor` pages + layouts + `app.css` + FluentUI |
 | `DMTQ-Tools/` | MAUI host — `MauiProgram.cs`, `App.xaml`, `MainPage.xaml`, thin DI registration |
-| `DMTQ.Tools.Core.Tests/` | 67 MSTest unit tests (service layer) |
+| `DMTQ.Tools.Core.Tests/` | 100 MSTest unit tests (self-contained, no external data) |
 | `DMTQ.Tools.UITests/` | 13 bUnit Blazor component tests (UI render verification) |
 
 ## Commands
@@ -43,7 +43,7 @@ Debug build → launch app → connect Chrome DevTools Protocol → inspect → 
 dotnet build DMTQ-Tools/DMTQ-Tools.csproj -f net10.0-windows10.0.19041.0
 
 # 2. Launch app in background (Windows)
-start "" "DMTQ-Tools\bin\Debug\net10.0-windows10.0.19041.0\win-x64\DMTQ-Tools.exe"
+Start-Process -FilePath "DMTQ-Tools\bin\Debug\net10.0-windows10.0.19041.0\win-x64\DMTQ-Tools.exe" -WindowStyle Hidden
 
 # 3. Wait for CDP (poll until WebView initializes)
 maui devflow webview status --platform windows
@@ -80,8 +80,10 @@ CSV Models (GameTable, GameTableRow, GameTableCell) ← import/export boundary
 - **Pages inject interfaces** (`IProjectState`, `IProjectWorkflow`) — never concrete MAUI types. This allows bUnit UI tests without MAUI workloads.
 - **Song model is flat** — 22 string properties (Name, Genre, ArtistName…), no SourceFields dictionaries. SongPattern has 9 flat fields.
 - **CSV import/export** uses `GameTable`/`GameTableCell` models. Domain models (Song/SongPattern) are projected from CSV at service layer.
-- **Platform export** supports Delta (skip unchanged) and Full modes, MD5 checksums.
+- **Platform export** supports Full mode (all files written every time). Delta mode (skip unchanged) was removed — always rewrites manifest with computed checksums.
+- **Platform import** validates decompressed MD5 against `patch_new.csv` `checksum` on every file. Mismatched files are logged to `IntegrityErrors` and skipped.
 - **FluentUI Blazor 4.14** integrated in RCL's `_Imports.razor`.
+- **Dialog pattern:** Pages use `IDialogService.ShowDialogAsync<TComponent, TData>(...)` with `IDialogContentComponent<TData>`. Built-in footer (PrimaryAction/SecondaryAction) replaces custom buttons.
 
 ## Conventions
 
@@ -94,6 +96,7 @@ CSV Models (GameTable, GameTableRow, GameTableCell) ← import/export boundary
 
 ## Notes
 
-- FolderPicker (`CommunityToolkit.Maui.Storage`) was removed from RCL pages — can be re-added via an injected abstraction.
+- `IProjectFilePicker` and `IFolderPicker` are Core interfaces for file/folder selection — MAUI implementations in `DMTQ-Tools/Services/`, faked in bUnit tests.
+- Entity models (`Song`, `Achievement`, `Quest`, `Item`) use backing fields with `StringComparer.OrdinalIgnoreCase` setters so JSON deserialization preserves case-insensitive dictionary lookups.
 - `patch_table_builder/` is the legacy CSV tooling (separate project, not part of this solution).
-- `external/` may contain sample patch packages for manual testing.
+- `external/` may contain sample patch packages for manual testing — tests are self-contained and do not depend on this directory.
