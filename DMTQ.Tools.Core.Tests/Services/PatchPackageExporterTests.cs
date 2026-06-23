@@ -23,11 +23,9 @@ public sealed class PatchPackageExporterTests
             var package = await importer.ImportAsync(packageRoot, projectRoot);
 
             var exporter = new PatchPackageExporter(
-                new CsvTableWriter(),
                 new PatchManifestWriter(),
                 compression,
-                new PatchChecksumService(),
-                new SongTableProjector());
+                new PatchChecksumService());
 
             await exporter.ExportAsync(package, exportRoot);
 
@@ -70,11 +68,9 @@ public sealed class PatchPackageExporterTests
             var package = await importer.ImportAsync(packageRoot, projectRoot);
 
             var exporter = new PatchPackageExporter(
-                new CsvTableWriter(),
                 new PatchManifestWriter(),
                 compression,
-                checksum,
-                new SongTableProjector());
+                checksum);
             var exportedManifest = await exporter.ExportAsync(package, exportRoot);
 
             var validator = new PatchPackageValidator(checksum);
@@ -133,11 +129,9 @@ public sealed class PatchPackageExporterTests
                 e.Compressed && e.FileName.StartsWith("dlc/", StringComparison.Ordinal));
 
             var exporter = new PatchPackageExporter(
-                new CsvTableWriter(),
                 new PatchManifestWriter(),
                 compression,
-                checksum,
-                new SongTableProjector());
+                checksum);
 
             var exportedManifest = await exporter.ExportAsync(package, exportRoot);
 
@@ -191,11 +185,9 @@ public sealed class PatchPackageExporterTests
             tableEntry.Compressed.Should().BeTrue("the sample package imports this table as compressed");
 
             var exporter = new PatchPackageExporter(
-                new CsvTableWriter(),
                 new PatchManifestWriter(),
                 compression,
-                checksum,
-                new SongTableProjector());
+                checksum);
 
             var exportedManifest = await exporter.ExportAsync(package, exportRoot, new PackageExportOptions());
 
@@ -240,11 +232,9 @@ public sealed class PatchPackageExporterTests
             options.SetCompression("table/us/song_song.csv", compressed: false);
 
             var exporter = new PatchPackageExporter(
-                new CsvTableWriter(),
                 new PatchManifestWriter(),
                 compression,
-                checksum,
-                new SongTableProjector());
+                checksum);
 
             var exportedManifest = await exporter.ExportAsync(package, exportRoot, options);
 
@@ -293,11 +283,9 @@ public sealed class PatchPackageExporterTests
             options.SetCompression(resourceEntry.FileName, compressed: false);
 
             var exporter = new PatchPackageExporter(
-                new CsvTableWriter(),
                 new PatchManifestWriter(),
                 compression,
-                checksum,
-                new SongTableProjector());
+                checksum);
 
             var exportedManifest = await exporter.ExportAsync(package, exportRoot, options);
 
@@ -347,11 +335,9 @@ public sealed class PatchPackageExporterTests
             options.SetCompression(resourceEntry.FileName, compressed: false);
 
             var exporter = new PatchPackageExporter(
-                new CsvTableWriter(),
                 new PatchManifestWriter(),
                 compression,
-                checksum,
-                new SongTableProjector());
+                checksum);
 
             var exportedManifest = await exporter.ExportAsync(package, exportRoot, options);
             var validator = new PatchPackageValidator(checksum);

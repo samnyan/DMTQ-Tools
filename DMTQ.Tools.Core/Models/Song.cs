@@ -1,3 +1,6 @@
+using System.Diagnostics.CodeAnalysis;
+using System.Text.Json.Serialization;
+
 namespace DMTQ.Tools.Core.Models;
 
 /// <summary>
@@ -6,6 +9,7 @@ namespace DMTQ.Tools.Core.Models;
 /// </summary>
 public sealed class Song
 {
+    [JsonInclude]
     public required string Id { get; init; }
 
     // ── song_song fields ──
@@ -36,24 +40,28 @@ public sealed class Song
     public string? PreviewPackageRelativePath { get; set; }
 
     // ── Localized fields (from song_desc_&lt;lang&gt;, item_desc_&lt;lang&gt;) ──
-    public Dictionary<string, string> TitlesByLanguage { get; } = new(StringComparer.OrdinalIgnoreCase);
-    public Dictionary<string, string> DescriptionsByLanguage { get; } = new(StringComparer.OrdinalIgnoreCase);
-    public Dictionary<string, string> ItemNamesByLanguage { get; } = new(StringComparer.OrdinalIgnoreCase);
+    public Dictionary<string, string> TitlesByLanguage { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    public Dictionary<string, string> DescriptionsByLanguage { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    public Dictionary<string, string> ItemNamesByLanguage { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 
     // ── Relationships ──
-    public List<string> ProductIds { get; } = [];
-    public List<string> ItemIds { get; } = [];
-    public List<string> CategoryIds { get; } = [];
+    public List<string> ProductIds { get; set; } = [];
+    public List<string> ItemIds { get; set; } = [];
+    public List<string> CategoryIds { get; set; } = [];
 
     /// <summary>Per‑language metadata overrides (CN, JP, KR, TW, US).
     /// If a field is blank, the export falls back to the Basic Info value.</summary>
-    public Dictionary<string, SongLocalization> Localizations { get; } = new(StringComparer.OrdinalIgnoreCase);
+    public Dictionary<string, SongLocalization> Localizations { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 
     // ── Patterns ──
-    public List<SongPattern> Patterns { get; } = [];
+    public List<SongPattern> Patterns { get; set; } = [];
 
     // ── Computed ──
+    [JsonIgnore]
     public bool HasPreview => !string.IsNullOrWhiteSpace(PreviewPackageRelativePath);
+
+    [SetsRequiredMembers]
+    public Song() { Id = ""; }
 
     public string GetTitle(string language)
     {
@@ -87,7 +95,11 @@ public sealed class Song
 public sealed class SongPattern
 {
     public required string PatternId { get; set; }
+    [JsonInclude]
     public required string SongId { get; init; }
+
+    [SetsRequiredMembers]
+    public SongPattern() { SongId = ""; PatternId = ""; }
 
     // ── song_songPattern fields ──
     public string Name { get; set; } = string.Empty;

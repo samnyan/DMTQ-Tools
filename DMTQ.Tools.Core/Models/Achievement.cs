@@ -1,8 +1,12 @@
+using System.Diagnostics.CodeAnalysis;
+using System.Text.Json.Serialization;
+
 namespace DMTQ.Tools.Core.Models;
 
 /// <summary>Achievement entity built from quest_achievement (main) + acievement_desc_&lt;lang&gt; (localized).</summary>
 public sealed class Achievement
 {
+    [JsonInclude]
     public required string Id { get; init; }
 
     // ── quest_achievement fields ──
@@ -25,8 +29,11 @@ public sealed class Achievement
 
     public string Update { get; set; } = string.Empty;
 
+    [SetsRequiredMembers]
+    public Achievement() { Id = ""; }
+
     // ── acievement_desc_&lt;lang&gt; localized fields ──
-    public Dictionary<string, string> NamesByLanguage { get; } = new(StringComparer.OrdinalIgnoreCase);
-    public Dictionary<string, string> PreDescriptionsByLanguage { get; } = new(StringComparer.OrdinalIgnoreCase);
-    public Dictionary<string, string> AfterDescriptionsByLanguage { get; } = new(StringComparer.OrdinalIgnoreCase);
+    public Dictionary<string, string> NamesByLanguage { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    public Dictionary<string, string> PreDescriptionsByLanguage { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    public Dictionary<string, string> AfterDescriptionsByLanguage { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 }

@@ -32,7 +32,6 @@ namespace DMTQ_Tools
             builder.Services.AddSingleton<Lz4CompressionService>();
             builder.Services.AddSingleton<PatchManifestReader>();
             builder.Services.AddSingleton<CsvTableReader>();
-            builder.Services.AddSingleton<CsvTableWriter>();
             builder.Services.AddSingleton<PatchManifestWriter>();
             builder.Services.AddSingleton<PatchChecksumService>();
             builder.Services.AddSingleton<PatchPackageImporter>();
@@ -42,7 +41,7 @@ namespace DMTQ_Tools
             builder.Services.AddSingleton<LogicalTableService>();
             builder.Services.AddSingleton<SongCatalogService>();
             builder.Services.AddSingleton<SongEditService>();
-            builder.Services.AddSingleton<SongTableProjector>();
+
             builder.Services.AddSingleton<ResourceManagerService>();
             builder.Services.AddSingleton<PackageQaService>();
             builder.Services.AddSingleton<PlatformPackageImporter>();

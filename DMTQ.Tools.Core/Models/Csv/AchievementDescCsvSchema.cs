@@ -1,3 +1,7 @@
+using System.Globalization;
+using CsvHelper;
+using CsvHelper.Configuration;
+
 namespace DMTQ.Tools.Core.Models.Csv;
 
 /// <summary>CSV schema for the acievement_desc_&lt;lang&gt; localized tables.
@@ -34,5 +38,42 @@ public sealed class AchievementDescCsvSchema : CsvLookupSchema<Achievement>
             achievement.PreDescriptionsByLanguage[lang] = preDesc;
         if (fields.TryGetValue("after_description", out var afterDesc))
             achievement.AfterDescriptionsByLanguage[lang] = afterDesc;
+    }
+
+    /// <summary>Writes the localized achievement description rows for the schema's language.</summary>
+    public void WriteCsv(Stream stream, IEnumerable<Achievement> achievements)
+    {
+        ArgumentNullException.ThrowIfNull(stream);
+        ArgumentNullException.ThrowIfNull(achievements);
+
+        using var writer = new StreamWriter(stream, new System.Text.UTF8Encoding(false), leaveOpen: true);
+        using var csv = new CsvWriter(writer, new CsvConfiguration(CultureInfo.InvariantCulture)
+        {
+            NewLine = "\r\n"
+        });
+
+        // Header
+        csv.WriteField("achievement_id");
+        csv.WriteField("achievement_name");
+        csv.WriteField("pre_description");
+        csv.WriteField("after_description");
+        csv.NextRecord();
+
+        var lang = _languageCode;
+        foreach (var a in achievements)
+        {
+            var hasName = a.NamesByLanguage.TryGetValue(lang, out var name) && !string.IsNullOrWhiteSpace(name);
+            var hasPre = a.PreDescriptionsByLanguage.TryGetValue(lang, out var pre) && !string.IsNullOrWhiteSpace(pre);
+            var hasAfter = a.AfterDescriptionsByLanguage.TryGetValue(lang, out var after) && !string.IsNullOrWhiteSpace(after);
+            if (!hasName && !hasPre && !hasAfter) continue;
+
+            csv.WriteField(a.Id);
+            csv.WriteField(name ?? string.Empty);
+            csv.WriteField(pre ?? string.Empty);
+            csv.WriteField(after ?? string.Empty);
+            csv.NextRecord();
+        }
+
+        writer.Flush();
     }
 }

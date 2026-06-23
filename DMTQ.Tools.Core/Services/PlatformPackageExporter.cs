@@ -1,10 +1,12 @@
+using System.Globalization;
 using System.Security.Cryptography;
+using CsvHelper;
+using CsvHelper.Configuration;
 using DMTQ.Tools.Core.Models;
 
 namespace DMTQ.Tools.Core.Services;
 
 public sealed class PlatformPackageExporter(
-    CsvTableWriter tableWriter,
     PatchManifestWriter manifestWriter,
     Lz4CompressionService compressionService,
     PatchChecksumService checksumService)
@@ -55,6 +57,16 @@ public sealed class PlatformPackageExporter(
 
         if (PathClassifier.IsCsvTable(relativePath))
         {
+            // Try entity-backed schema first
+            await using var ms = new MemoryStream();
+            if (ExportSchemaRegistry.TryWriteTable(relativePath, package, ms))
+            {
+                await TryWriteTableFromStreamAsync(ms, baselineEntry, relativePath, exportRoot, options, result, cancellationToken)
+                    .ConfigureAwait(false);
+                return;
+            }
+
+            // Fallback: look for a raw GameTable
             var table = package.Tables.Tables.FirstOrDefault(t =>
                 t.PackageRelativePath.Equals(relativePath, StringComparison.OrdinalIgnoreCase));
 
@@ -90,6 +102,61 @@ public sealed class PlatformPackageExporter(
         await HandleMissingEntryAsync(baselineEntry, options, result).ConfigureAwait(false);
     }
 
+    private async Task TryWriteTableFromStreamAsync(
+        MemoryStream writtenStream,
+        PatchFileEntry baselineEntry,
+        string relativePath,
+        string exportRoot,
+        PlatformExportOptions options,
+        PlatformExportResult result,
+        CancellationToken cancellationToken)
+    {
+        var destinationPath = Path.Combine(exportRoot, relativePath.Replace('/', Path.DirectorySeparatorChar));
+        Directory.CreateDirectory(Path.GetDirectoryName(destinationPath) ?? exportRoot);
+
+        var bytes = writtenStream.ToArray();
+
+        var checksum = ComputeMd5(bytes);
+
+        if (ShouldSkipAsBaseline(options, baselineEntry, checksum))
+        {
+            result.Manifest.Entries.Add(baselineEntry);
+            result.FilesSkippedAsBaseline++;
+            result.Messages.Add($"Skipped unchanged baseline file: {relativePath}");
+            return;
+        }
+
+        await File.WriteAllBytesAsync(destinationPath, bytes, cancellationToken).ConfigureAwait(false);
+        result.FilesWritten++;
+
+        var manifestEntry = new PatchFileEntry(
+            relativePath,
+            bytes.Length,
+            checksum,
+            baselineEntry.Compressed ? 0 : 0,
+            string.Empty,
+            baselineEntry.AcquireOnDemand,
+            baselineEntry.Compressed,
+            baselineEntry.Platform,
+            baselineEntry.Tag);
+
+        if (baselineEntry.Compressed)
+        {
+            var compressedPath = destinationPath + ".lz4";
+            await compressionService.CompressFileAsync(destinationPath, compressedPath, cancellationToken).ConfigureAwait(false);
+            var compressedChecksum = await checksumService.ComputeMd5Async(compressedPath, cancellationToken).ConfigureAwait(false);
+            var compressedFileSize = checksumService.GetFileSize(compressedPath);
+            manifestEntry = manifestEntry with
+            {
+                CompressedFileSize = compressedFileSize,
+                CompressedChecksum = compressedChecksum
+            };
+            result.FilesWritten++;
+        }
+
+        result.Manifest.Entries.Add(manifestEntry);
+    }
+
     private async Task TryWriteTableAsync(
         GameTable table,
         PatchFileEntry baselineEntry,
@@ -103,7 +170,7 @@ public sealed class PlatformPackageExporter(
         Directory.CreateDirectory(Path.GetDirectoryName(destinationPath) ?? exportRoot);
 
         await using var ms = new MemoryStream();
-        await tableWriter.WriteAsync(table, ms, cancellationToken).ConfigureAwait(false);
+        WriteGameTableToStream(table, ms);
         var bytes = ms.ToArray();
 
         var checksum = ComputeMd5(bytes);
@@ -360,6 +427,33 @@ public sealed class PlatformPackageExporter(
 
     private static string ComputeMd5(byte[] bytes)
         => Convert.ToHexString(MD5.HashData(bytes)).ToLowerInvariant();
+
+    /// <summary>Minimal CSV writer for non-entity-backed GameTables (legacy fallback).</summary>
+    private static void WriteGameTableToStream(GameTable table, Stream stream)
+    {
+        using var writer = new StreamWriter(stream, new System.Text.UTF8Encoding(false), leaveOpen: true);
+        using var csv = new CsvWriter(writer, new CsvConfiguration(CultureInfo.InvariantCulture)
+        {
+            NewLine = "\r\n"
+        });
+
+        var columns = table.Columns.OrderBy(c => c.Order).ToArray();
+        foreach (var column in columns)
+            csv.WriteField(column.Name);
+        csv.NextRecord();
+
+        foreach (var row in table.Rows.OrderBy(r => r.Order))
+        {
+            foreach (var column in columns)
+            {
+                var cell = row.Cells.FirstOrDefault(c => c.ColumnName == column.Name);
+                csv.WriteField(cell?.Value ?? string.Empty);
+            }
+            csv.NextRecord();
+        }
+
+        writer.Flush();
+    }
 
     private async Task WriteManifestAsync(
         string exportRoot,

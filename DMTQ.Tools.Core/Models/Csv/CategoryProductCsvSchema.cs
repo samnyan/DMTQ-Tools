@@ -1,3 +1,7 @@
+using System.Globalization;
+using CsvHelper;
+using CsvHelper.Configuration;
+
 namespace DMTQ.Tools.Core.Models.Csv;
 
 /// <summary>CSV schema for the category_categoryproduct join table.
@@ -20,5 +24,35 @@ public sealed class CategoryProductCsvSchema : CsvLookupSchema<Product>
 
         if (fields.TryGetValue("category_id", out var categoryId) && !string.IsNullOrWhiteSpace(categoryId))
             product.CategoryIds.Add(categoryId);
+    }
+
+    /// <summary>Writes the category-product join rows from all products.</summary>
+    public void WriteCsv(Stream stream, IEnumerable<Product> products)
+    {
+        ArgumentNullException.ThrowIfNull(stream);
+        ArgumentNullException.ThrowIfNull(products);
+
+        using var writer = new StreamWriter(stream, new System.Text.UTF8Encoding(false), leaveOpen: true);
+        using var csv = new CsvWriter(writer, new CsvConfiguration(CultureInfo.InvariantCulture)
+        {
+            NewLine = "\r\n"
+        });
+
+        // Header
+        csv.WriteField("category_id");
+        csv.WriteField("product_id");
+        csv.NextRecord();
+
+        foreach (var product in products)
+        {
+            foreach (var categoryId in product.CategoryIds)
+            {
+                csv.WriteField(categoryId);
+                csv.WriteField(product.Id);
+                csv.NextRecord();
+            }
+        }
+
+        writer.Flush();
     }
 }

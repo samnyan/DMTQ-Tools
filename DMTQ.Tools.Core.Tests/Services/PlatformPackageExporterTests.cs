@@ -272,7 +272,7 @@ public sealed class PlatformPackageExporterTests
     }
 
     private static PlatformPackageExporter CreateExporter()
-        => new(new CsvTableWriter(), new PatchManifestWriter(), new Lz4CompressionService(), new PatchChecksumService());
+        => new(new PatchManifestWriter(), new Lz4CompressionService(), new PatchChecksumService());
 
     private static PatchPackage CreateProjectWithPlatform(string projectRoot, string platform, PatchFileEntry[] baselineEntries)
     {
@@ -296,19 +296,11 @@ public sealed class PlatformPackageExporterTests
 
     private static void AddSongTable(PatchPackage package, string songName)
     {
-        var table = new GameTable
+        package.Songs.Add(new Song
         {
-            PackageRelativePath = "table/us/song_song.csv",
-            TableName = "song_song",
-            LanguageCode = "us"
-        };
-        table.Columns.Add(new GameTableColumn("song_id", 0));
-        table.Columns.Add(new GameTableColumn("name", 1));
-        var row = new GameTableRow { Order = 0 };
-        row.Cells.Add(new GameTableCell("song_id", "1"));
-        row.Cells.Add(new GameTableCell("name", songName));
-        table.Rows.Add(row);
-        package.Tables.Tables.Add(table);
+            Id = "1",
+            Name = songName
+        });
     }
 
     private static void DeleteDirectory(string path)

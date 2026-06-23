@@ -3,11 +3,9 @@ using DMTQ.Tools.Core.Models;
 namespace DMTQ.Tools.Core.Services;
 
 public sealed class PatchPackageExporter(
-    CsvTableWriter tableWriter,
     PatchManifestWriter manifestWriter,
     Lz4CompressionService compressionService,
-    PatchChecksumService checksumService,
-    SongTableProjector songTableProjector)
+    PatchChecksumService checksumService)
 {
     public Task<PatchManifest> ExportAsync(
         PatchPackage package,
@@ -28,34 +26,24 @@ public sealed class PatchPackageExporter(
         Directory.CreateDirectory(exportRoot);
         var exportedManifest = new PatchManifest();
 
-        // Project Song entities back to GameTables for export.
-        var existingPaths = package.Tables.Tables
-            .Select(t => t.PackageRelativePath)
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
-        var projectedTables = songTableProjector.ProjectTables(package)
-            .Where(t => !existingPaths.Contains(t.PackageRelativePath))
-            .ToArray();
-        foreach (var table in projectedTables)
-        {
-            package.Tables.Tables.Add(table);
-        }
-
-        try
-        {
-            foreach (var sourceEntry in package.Manifest.Entries)
+        foreach (var sourceEntry in package.Manifest.Entries)
         {
             cancellationToken.ThrowIfCancellationRequested();
             var relativePath = PathClassifier.NormalizePackageRelativePath(sourceEntry.FileName);
 
             if (PathClassifier.IsCsvTable(relativePath))
             {
-                var table = package.Tables.Tables.Single(t => t.PackageRelativePath == relativePath);
                 var uncompressedPath = Path.Combine(exportRoot, relativePath.Replace('/', Path.DirectorySeparatorChar));
                 Directory.CreateDirectory(Path.GetDirectoryName(uncompressedPath) ?? exportRoot);
 
                 await using (var stream = File.Create(uncompressedPath))
                 {
-                    await tableWriter.WriteAsync(table, stream, cancellationToken).ConfigureAwait(false);
+                    if (!ExportSchemaRegistry.TryWriteTable(relativePath, package, stream))
+                    {
+                        // Fallback for non-entity tables that were imported as raw GameTables
+                        var table = package.Tables.Tables.Single(t => t.PackageRelativePath == relativePath);
+                        WriteGameTableToStream(table, stream);
+                    }
                 }
 
                 var shouldCompress = options.ShouldCompress(sourceEntry);
@@ -108,14 +96,6 @@ public sealed class PatchPackageExporter(
 
         await compressionService.CompressFileAsync(manifestPath, manifestPath + ".lz4", cancellationToken).ConfigureAwait(false);
         return exportedManifest;
-        }
-        finally
-        {
-            foreach (var table in projectedTables)
-            {
-                package.Tables.Tables.Remove(table);
-            }
-        }
     }
 
     private async Task<PatchFileEntry> CreateExportEntryAsync(
@@ -145,5 +125,33 @@ public sealed class PatchPackageExporter(
             compressed,
             sourceEntry.Platform,
             sourceEntry.Tag);
+    }
+
+    /// <summary>Minimal CSV writer for non-entity-backed GameTables (legacy fallback).</summary>
+    private static void WriteGameTableToStream(GameTable table, Stream stream)
+    {
+        using var writer = new StreamWriter(stream, new System.Text.UTF8Encoding(false), leaveOpen: true);
+        using var csv = new CsvHelper.CsvWriter(writer, new CsvHelper.Configuration.CsvConfiguration(
+            System.Globalization.CultureInfo.InvariantCulture)
+        {
+            NewLine = "\r\n"
+        });
+
+        var columns = table.Columns.OrderBy(c => c.Order).ToArray();
+        foreach (var column in columns)
+            csv.WriteField(column.Name);
+        csv.NextRecord();
+
+        foreach (var row in table.Rows.OrderBy(r => r.Order))
+        {
+            foreach (var column in columns)
+            {
+                var cell = row.Cells.FirstOrDefault(c => c.ColumnName == column.Name);
+                csv.WriteField(cell?.Value ?? string.Empty);
+            }
+            csv.NextRecord();
+        }
+
+        writer.Flush();
     }
 }

@@ -27,10 +27,8 @@ public sealed class PatchPackageImporterTests
             package.ProjectInfo.ProjectRoot.Should().Be(tempProjectRoot);
             package.ProjectInfo.SourcePackageRoot.Should().Be(packageRoot);
             package.Manifest.Entries.Should().HaveCount(382);
-            package.Tables.Tables.Should().Contain(t => t.PackageRelativePath == "table/us/song_song.csv");
-            package.Tables.Tables.Should().Contain(t => t.PackageRelativePath == "table/us/song_songPattern.csv");
-            package.Tables.Tables.Should().Contain(t => t.PackageRelativePath == "table/kr/song_desc_kr.csv");
-            package.Tables.Tables.Select(t => t.LanguageCode).Where(v => v is not null).Distinct()
+            package.Songs.Should().NotBeEmpty();
+            package.Songs.SelectMany(s => s.Localizations.Keys).Distinct()
                 .Should().Contain(["cn", "jp", "kr", "tw", "us"]);
             package.Resources.Should().Contain(r => r.PackageRelativePath.StartsWith("dlc/", StringComparison.Ordinal));
             package.Resources.Should().Contain(r => r.PackageRelativePath.StartsWith("preview/", StringComparison.Ordinal));

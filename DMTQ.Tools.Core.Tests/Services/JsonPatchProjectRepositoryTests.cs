@@ -67,16 +67,14 @@ public sealed class JsonPatchProjectRepositoryTests
             var snapshot = await repository.LoadAsync(projectRoot);
 
             snapshot.Package.Manifest.Entries.Should().HaveCount(package.Manifest.Entries.Count);
-            snapshot.Package.Tables.Tables.Should().HaveCount(package.Tables.Tables.Count);
+            snapshot.Package.Songs.Should().HaveCount(package.Songs.Count);
             snapshot.Package.Resources.Should().HaveCount(package.Resources.Count);
-            snapshot.Package.Tables.Tables.Should().Contain(t => t.PackageRelativePath == "table/us/song_song.csv");
+            snapshot.Package.Songs.Should().NotBeEmpty();
 
             var exporter = new PatchPackageExporter(
-                new CsvTableWriter(),
                 new PatchManifestWriter(),
                 compression,
-                checksum,
-                new SongTableProjector());
+                checksum);
             var exportedManifest = await exporter.ExportAsync(snapshot.Package, exportRoot, snapshot.ExportOptions);
             var validation = await new PatchPackageValidator(checksum).ValidateAsync(exportedManifest, exportRoot);
 
@@ -195,6 +193,13 @@ public sealed class JsonPatchProjectRepositoryTests
         row.Cells.Add(new GameTableCell("name", "oblivion"));
         table.Rows.Add(row);
         package.Tables.Tables.Add(table);
+
+        // Also add as entity for schema-based export
+        package.Songs.Add(new Song
+        {
+            Id = "1",
+            Name = "oblivion"
+        });
 
         package.Resources.Add(new ResourceFile(
             "preview/oblivion.p.opus",

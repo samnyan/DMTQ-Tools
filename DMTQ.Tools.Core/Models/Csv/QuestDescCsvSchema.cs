@@ -1,4 +1,7 @@
+using System.Globalization;
 using System.Reflection;
+using CsvHelper;
+using CsvHelper.Configuration;
 
 namespace DMTQ.Tools.Core.Models.Csv;
 
@@ -40,5 +43,39 @@ public sealed class QuestDescCsvSchema : CsvLookupSchema<Quest>
             quest.NamesByLanguage[lang] = name;
         if (fields.TryGetValue("description", out var desc))
             quest.DescriptionsByLanguage[lang] = desc;
+    }
+
+    /// <summary>Writes the localized quest description rows for the schema's language.</summary>
+    public void WriteCsv(Stream stream, IEnumerable<Quest> quests)
+    {
+        ArgumentNullException.ThrowIfNull(stream);
+        ArgumentNullException.ThrowIfNull(quests);
+
+        using var writer = new StreamWriter(stream, new System.Text.UTF8Encoding(false), leaveOpen: true);
+        using var csv = new CsvWriter(writer, new CsvConfiguration(CultureInfo.InvariantCulture)
+        {
+            NewLine = "\r\n"
+        });
+
+        // Header
+        csv.WriteField("quest_id");
+        csv.WriteField("quest_name");
+        csv.WriteField("description");
+        csv.NextRecord();
+
+        var lang = _languageCode;
+        foreach (var q in quests)
+        {
+            var hasName = q.NamesByLanguage.TryGetValue(lang, out var name) && !string.IsNullOrWhiteSpace(name);
+            var hasDesc = q.DescriptionsByLanguage.TryGetValue(lang, out var desc) && !string.IsNullOrWhiteSpace(desc);
+            if (!hasName && !hasDesc) continue;
+
+            csv.WriteField(q.Id);
+            csv.WriteField(name ?? string.Empty);
+            csv.WriteField(desc ?? string.Empty);
+            csv.NextRecord();
+        }
+
+        writer.Flush();
     }
 }

@@ -1,8 +1,12 @@
+using System.Diagnostics.CodeAnalysis;
+using System.Text.Json.Serialization;
+
 namespace DMTQ.Tools.Core.Models;
 
 /// <summary>Store product (SKU) entity built from product_product table.</summary>
 public sealed class Product
 {
+    [JsonInclude]
     public required string Id { get; init; }
 
     // ── product_product fields ──
@@ -18,5 +22,8 @@ public sealed class Product
     public string Update { get; set; } = string.Empty;
 
     // ── category_categoryproduct ──
-    public List<string> CategoryIds { get; } = [];
+    public List<string> CategoryIds { get; set; } = [];
+
+    [SetsRequiredMembers]
+    public Product() { Id = ""; }
 }

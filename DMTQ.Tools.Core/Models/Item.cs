@@ -1,8 +1,12 @@
+using System.Diagnostics.CodeAnalysis;
+using System.Text.Json.Serialization;
+
 namespace DMTQ.Tools.Core.Models;
 
 /// <summary>In-game item entity built from product_item + item_desc_&lt;lang&gt;.</summary>
 public sealed class Item
 {
+    [JsonInclude]
     public required string Id { get; init; }
 
     // ── product_item fields ──
@@ -21,7 +25,10 @@ public sealed class Item
     public string Update { get; set; } = string.Empty;
 
     // ── item_desc_&lt;lang&gt; localized fields ──
-    public Dictionary<string, string> NamesByLanguage { get; } = new(StringComparer.OrdinalIgnoreCase);
-    public Dictionary<string, string> DescriptionsByLanguage { get; } = new(StringComparer.OrdinalIgnoreCase);
-    public Dictionary<string, string> SummariesByLanguage { get; } = new(StringComparer.OrdinalIgnoreCase);
+    public Dictionary<string, string> NamesByLanguage { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    public Dictionary<string, string> DescriptionsByLanguage { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    public Dictionary<string, string> SummariesByLanguage { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+
+    [SetsRequiredMembers]
+    public Item() { Id = ""; }
 }
