@@ -30,9 +30,6 @@ namespace DMTQ_Tools
             builder.Services.AddFluentUIComponents();
 
             builder.Services.AddSingleton<CsvTableReader>();
-            builder.Services.AddSingleton<PatchPackageImporter>();
-            builder.Services.AddSingleton<PatchPackageExporter>();
-            builder.Services.AddSingleton<PatchPackageValidator>();
             builder.Services.AddSingleton<IPatchProjectRepository, JsonPatchProjectRepository>();
             builder.Services.AddSingleton<LogicalTableService>();
             builder.Services.AddSingleton<SongCatalogService>();

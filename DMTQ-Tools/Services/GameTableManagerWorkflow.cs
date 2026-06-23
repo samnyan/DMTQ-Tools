@@ -9,9 +9,6 @@ namespace DMTQ_Tools.Services;
 public sealed class GameTableManagerWorkflow : IProjectWorkflow
 {
     private readonly GameTableManagerState _state;
-    private readonly PatchPackageImporter _importer;
-    private readonly PatchPackageExporter _exporter;
-    private readonly PatchPackageValidator _validator;
     private readonly IPatchProjectRepository _repository;
     private readonly PlatformPackageImporter _platformImporter;
     private readonly PlatformPackageExporter _platformExporter;
@@ -19,18 +16,12 @@ public sealed class GameTableManagerWorkflow : IProjectWorkflow
 
     public GameTableManagerWorkflow(
         GameTableManagerState state,
-        PatchPackageImporter importer,
-        PatchPackageExporter exporter,
-        PatchPackageValidator validator,
         IPatchProjectRepository repository,
         PlatformPackageImporter platformImporter,
         PlatformPackageExporter platformExporter,
         ResourceManagerService resourceManager)
     {
         _state = state;
-        _importer = importer;
-        _exporter = exporter;
-        _validator = validator;
         _repository = repository;
         _platformImporter = platformImporter;
         _platformExporter = platformExporter;
