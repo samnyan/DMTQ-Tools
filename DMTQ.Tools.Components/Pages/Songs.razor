@@ -119,7 +119,7 @@ else
 
     private PatchPackage? _lastPackage;
     private IReadOnlyList<Song> _catalog = [];
-    private IReadOnlyList<string> _cachedLanguages = ["CN", "JP", "KR", "TW", "US"];
+    private static readonly IReadOnlyList<string> _languages = ["CN", "JP", "KR", "TW", "US"];
 
     private IReadOnlyList<Song> Catalog
     {
@@ -128,12 +128,11 @@ else
             if (ReferenceEquals(State.CurrentPackage, _lastPackage)) return _catalog;
             _lastPackage = State.CurrentPackage;
             _catalog = State.CurrentPackage is null ? [] : SongCatalog.BuildCatalog(State.CurrentPackage);
-            _cachedLanguages = ComputeLanguages(_catalog);
             return _catalog;
         }
     }
 
-    private IReadOnlyList<string> Languages => _cachedLanguages;
+    private IReadOnlyList<string> Languages => _languages;
 
     private IEnumerable<Song> FilteredSongs
     {
@@ -188,13 +187,4 @@ else
         }
     }
 
-    private static IReadOnlyList<string> ComputeLanguages(IReadOnlyList<Song> catalog)
-    {
-        var langs = catalog
-            .SelectMany(s => s.Localizations.Keys)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .OrderBy(l => l, StringComparer.OrdinalIgnoreCase)
-            .ToArray();
-        return langs.Length == 0 ? ["CN", "JP", "KR", "TW", "US"] : langs;
-    }
 }
