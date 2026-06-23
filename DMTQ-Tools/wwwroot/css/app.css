@@ -1,0 +1,231 @@
+﻿/* App-specific styles retained after FluentUI migration.
+   FluentUI handles layout (FluentMainLayout, FluentStack, FluentGrid),
+   forms (FluentTextField, FluentSelect, FluentButton, FluentCheckbox),
+   and navigation (FluentNavMenu, FluentNavLink). */
+
+html, body {
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+/* ── Error UI ── */
+#blazor-error-ui {
+    background: lightyellow;
+    bottom: 0;
+    box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
+    display: none;
+    left: 0;
+    padding: 0.6rem 1.25rem 0.7rem 1.25rem;
+    position: fixed;
+    width: 100%;
+    z-index: 1000;
+}
+
+#blazor-error-ui .dismiss {
+    cursor: pointer;
+    position: absolute;
+    right: 0.75rem;
+    top: 0.5rem;
+}
+
+/* ── iOS safe area ── */
+.status-bar-safe-area {
+    display: none;
+}
+
+@supports (-webkit-touch-callout: none) {
+    .status-bar-safe-area {
+        display: flex;
+        position: sticky;
+        top: 0;
+        height: env(safe-area-inset-top);
+        background-color: #f7f7f7;
+        width: 100%;
+        z-index: 1;
+    }
+}
+
+/* ── Status messages ── */
+.status-message {
+    margin-top: 0.75rem;
+    color: #293241;
+}
+
+.status-message.success {
+    color: #1d6f42;
+}
+
+/* ── QA summaries ── */
+.qa-summary {
+    margin-top: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 5px;
+    font-weight: 600;
+}
+
+.qa-summary.success {
+    background: #e6f4ea;
+    color: #1e7e34;
+}
+
+.qa-summary.warning {
+    background: #fff8e1;
+    color: #b8860b;
+}
+
+.qa-summary.error {
+    background: #fce4e4;
+    color: #b91c1c;
+}
+
+/* ── Diagnostic lists ── */
+.diagnostic-list {
+    margin: 0.75rem 0 0;
+    padding-left: 1.25rem;
+}
+
+.diagnostic-list li {
+    margin-bottom: 0.35rem;
+    overflow-wrap: anywhere;
+}
+
+/* ── Metric labels (used inside FluentCard) ── */
+.metric-label {
+    display: block;
+    color: #5f6b7a;
+    font-size: 0.8rem;
+    margin-bottom: 0.35rem;
+}
+
+/* ── Table counts ── */
+.table-counts {
+    color: #5f6b7a;
+    white-space: nowrap;
+}
+
+/* ── Section headings ── */
+.section-heading {
+    font-size: 1rem;
+    margin: 1rem 0 0.5rem;
+}
+
+/* ── Data grid (Tables editable grid, Songs tables) ── */
+.grid-scroll {
+    overflow: auto;
+    max-height: 34rem;
+}
+
+.compact-grid-scroll {
+    max-height: 18rem;
+}
+
+.data-grid {
+    border-collapse: collapse;
+    min-width: 100%;
+    font-size: 0.85rem;
+}
+
+.data-grid th,
+.data-grid td {
+    border: 1px solid #d8dee6;
+    padding: 0.35rem 0.5rem;
+    white-space: nowrap;
+    vertical-align: top;
+}
+
+.data-grid th {
+    background: #f4f7fb;
+    position: sticky;
+    top: 0;
+}
+
+.editable-grid td {
+    padding: 0;
+}
+
+.cell-input {
+    width: 100%;
+    min-width: 10rem;
+    border: 0;
+    padding: 0.35rem 0.5rem;
+    background: transparent;
+    font: inherit;
+}
+
+.cell-input:focus {
+    outline: 2px solid #1b6ec2;
+    background: #fff;
+}
+
+/* ── Songs page ── */
+.song-detail {
+    border: 1px solid var(--neutral-stroke-rest, #d8dee6);
+    border-radius: 6px;
+    padding: 1rem;
+    background: #fff;
+    min-width: 0;
+}
+
+.table-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: start;
+    margin-bottom: 0.75rem;
+}
+
+.song-id-badge {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    background: #eef6ff;
+    border: 1px solid #1b6ec2;
+    border-radius: 4px;
+    color: #1b6ec2;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.song-form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.song-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.song-summary-grid > div {
+    border: 1px solid var(--neutral-stroke-rest, #d8dee6);
+    border-radius: 6px;
+    padding: 0.75rem;
+    min-width: 0;
+}
+
+.song-summary-grid strong {
+    display: block;
+    overflow-wrap: anywhere;
+}
+
+.song-add-section {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--neutral-stroke-rest, #d8dee6);
+}
+
+.song-add-form {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+/* ── UI hints ── */
+.hint {
+    color: #5f6b7a;
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+}

@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="bunit" Version="2.0.66" />
+    <PackageReference Include="FluentAssertions" Version="8.10.0" />
+    <PackageReference Include="Microsoft.FluentUI.AspNetCore.Components" Version="4.14.2" />
+    <PackageReference Include="MSTest" Version="4.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Microsoft.VisualStudio.TestTools.UnitTesting" />
+    <Using Include="Microsoft.Extensions.DependencyInjection" />
+    <Using Include="Bunit" />
+    <Using Include="FluentAssertions" />
+    <Using Include="DMTQ_Tools.Components.Pages" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DMTQ.Tools.Components\DMTQ.Tools.Components.csproj" />
+    <ProjectReference Include="..\DMTQ.Tools.Core\DMTQ.Tools.Core.csproj" />
+  </ItemGroup>
+
+</Project>

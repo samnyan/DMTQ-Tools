@@ -1,0 +1,106 @@
+@page "/diagnostics"
+@inject IProjectState State
+@inject PackageQaService QaService
+
+<h1>Diagnostics</h1>
+
+<section class="toolbar-panel">
+    <h2>Project file</h2>
+    @if (string.IsNullOrWhiteSpace(State.ProjectRoot))
+    {
+        <div class="status-message">No project selected.</div>
+    }
+    else
+    {
+        var projectFile = System.IO.Path.Combine(State.ProjectRoot, "project.json");
+        <div class="status-message">@projectFile</div>
+        <div class="status-message @(System.IO.File.Exists(projectFile) ? "success" : "")">
+            @(System.IO.File.Exists(projectFile) ? "Project file exists." : "Project has not been saved yet.")
+        </div>
+    }
+</section>
+
+<section class="toolbar-panel">
+    <div class="input-row">
+        <h2>QA Check</h2>
+        <FluentButton Appearance="Appearance.Accent"
+                      OnClick="RunQa"
+                      Disabled="@(!State.HasPackage || isBusy)">Run QA</FluentButton>
+    </div>
+    @if (qaReport is not null)
+    {
+        <div class="qa-summary @(qaReport.IsClean ? "success" : qaReport.HasErrors ? "error" : "warning")">
+            @qaReport.Summary
+        </div>
+        @if (!qaReport.IsClean)
+        {
+            <div class="grid-scroll compact-grid-scroll">
+                <FluentDataGrid Items="@qaReport.Issues.OrderBy(i => i.Severity).ThenBy(i => i.Category).AsQueryable()"
+                                TGridItem="QaIssue">
+                    <TemplateColumn Title="Severity">
+                        <FluentBadge Appearance="Appearance.Accent"
+                                     Color="@(context.Severity == QaIssueSeverity.Error ? "error" : context.Severity == QaIssueSeverity.Warning ? "warning" : "info")">
+                            @context.Severity
+                        </FluentBadge>
+                    </TemplateColumn>
+                    <PropertyColumn Title="Category" Property="@(i => i.Category)" />
+                    <TemplateColumn Title="Message">
+                        @context.Message@(context.Detail is not null ? $" — {context.Detail}" : "")
+                    </TemplateColumn>
+                </FluentDataGrid>
+            </div>
+        }
+    }
+</section>
+
+<section class="toolbar-panel">
+    <h2>Workflow log</h2>
+    @if (State.Diagnostics.Count == 0)
+    {
+        <div class="status-message">No diagnostics yet.</div>
+    }
+    else
+    {
+        <ul class="diagnostic-list">
+            @foreach (var message in State.Diagnostics.AsEnumerable().Reverse())
+            {
+                <li>@message</li>
+            }
+        </ul>
+    }
+</section>
+
+<section class="toolbar-panel">
+    <h2>Last validation</h2>
+    @if (State.LastValidationResult is null)
+    {
+        <div class="status-message">Validation has not run.</div>
+    }
+    else if (State.LastValidationResult.IsValid)
+    {
+        <div class="status-message success">Validation passed.</div>
+    }
+    else
+    {
+        <ul class="diagnostic-list">
+            @foreach (var error in State.LastValidationResult.Errors)
+            {
+                <li>@error</li>
+            }
+        </ul>
+    }
+</section>
+
+@code {
+    private bool isBusy;
+    private QaReport? qaReport;
+
+    private void RunQa()
+    {
+        if (State.CurrentPackage is null) return;
+        isBusy = true;
+        qaReport = QaService.Run(State.CurrentPackage);
+        State.Diagnostics.Add($"QA run: {qaReport.Summary}");
+        isBusy = false;
+    }
+}

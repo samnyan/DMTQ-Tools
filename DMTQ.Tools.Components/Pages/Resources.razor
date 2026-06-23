@@ -1,0 +1,283 @@
+@page "/resources"
+@using DMTQ.Tools.Components.Models
+@inject IProjectState State
+@inject IProjectWorkflow Workflow
+@inject ResourceManagerService ResourceMgr
+@inject IDialogService DialogService
+
+<h1>Resources</h1>
+
+@if (State.CurrentPackage is null)
+{
+    <FluentStack Orientation="Orientation.Vertical" Style="margin-bottom: 1rem;">
+        <FluentMessageBar Title="Import or open a project before managing resources." Intent="MessageIntent.Warning" />
+    </FluentStack>
+}
+else
+{
+    <FluentStack Orientation="Orientation.Vertical" VerticalGap="16">
+
+        @* ── Toolbar ── *@
+        <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center">
+            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" VerticalAlignment="VerticalAlignment.Center">
+                <FluentSelect Items="@(new[] { "All", "dlc", "preview", "slang" })"
+                              OptionText="@(i => i == "All" ? "All Categories" : i)"
+                              OptionValue="@(i => i)"
+                              @bind-SelectedOption="categoryFilter"
+                              Label="Category"
+                              Style="min-width: 140px;" />
+                <FluentTextField @bind-Value="filter" Immediate="true" Placeholder="Filter by file name"
+                                 Style="min-width: 280px;" />
+            </FluentStack>
+            <FluentButton Appearance="Appearance.Accent"
+                          IconStart="@(new Icons.Regular.Size20.Add())"
+                          OnClick="AddNewResource">Add Resource</FluentButton>
+        </FluentStack>
+
+        @* ── Metrics ── *@
+        <FluentGrid Spacing="3" AdaptiveRendering="true">
+            <FluentGridItem xs="12" sm="6" md="3">
+                <FluentCard>
+                    <span class="metric-label">Total resources</span><strong>@Catalog.Count</strong>
+                </FluentCard>
+            </FluentGridItem>
+            <FluentGridItem xs="12" sm="6" md="3">
+                <FluentCard>
+                    <span class="metric-label">dlc</span><strong>@Catalog.Count(r => r.Category == "dlc")</strong>
+                </FluentCard>
+            </FluentGridItem>
+            <FluentGridItem xs="12" sm="6" md="3">
+                <FluentCard>
+                    <span class="metric-label">preview</span><strong>@Catalog.Count(r => r.Category == "preview")</strong>
+                </FluentCard>
+            </FluentGridItem>
+            <FluentGridItem xs="12" sm="6" md="3">
+                <FluentCard>
+                    <span class="metric-label">Others</span><strong>@Catalog.Count(r => r.Category != "dlc" && r.Category != "preview")</strong>
+                </FluentCard>
+            </FluentGridItem>
+        </FluentGrid>
+
+        @* ── DataGrid ── *@
+        @if (FilteredResources.Any())
+        {
+            <FluentDataGrid Items="@FilteredResources.AsQueryable()" TGridItem="ResourceCatalogEntry"
+                            ShowHover="true"
+                            Pagination="@pagination"
+                            ResizableColumns="true"
+                            HeaderCellAsButtonWithMenu="true">
+                <PropertyColumn Property="@(r => r.FileName)" Title="File Name" Sortable="true" />
+                <PropertyColumn Property="@(r => r.Category)" Title="Category" Sortable="true" />
+                <TemplateColumn Title="Platforms">
+                    @string.Join(", ", context.PlatformManifest.Select(m => $"{m.Platform} {(m.Exist ? "✓" : "✗")}"))
+                </TemplateColumn>
+                <TemplateColumn Title="Size">
+                    @FormatFileSize(context.PlatformManifest.FirstOrDefault()?.SourceFileSize ?? 0)
+                </TemplateColumn>
+                <TemplateColumn Title="Compressed">
+                    @(context.Compressed ? "Yes" : "No")
+                </TemplateColumn>
+                <TemplateColumn Title="Actions">
+                    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="4">
+                        <FluentButton IconStart="@(new Icons.Regular.Size20.Edit())"
+                                      Appearance="Appearance.Neutral"
+                                      OnClick="() => OpenEditDialog(context)"
+                                      Title="Edit" />
+                        <FluentButton IconStart="@(new Icons.Regular.Size20.Delete())"
+                                      Appearance="Appearance.Neutral"
+                                      OnClick="() => DeleteResourceAsync(context)"
+                                      Title="Delete" />
+                    </FluentStack>
+                </TemplateColumn>
+            </FluentDataGrid>
+            <FluentPaginator State="@pagination" />
+        }
+        else
+        {
+            <FluentMessageBar Title="No resources found." Intent="MessageIntent.Info" />
+        }
+
+        @if (!string.IsNullOrEmpty(message))
+        {
+            <FluentMessageBar Title="@message" Intent="MessageIntent.Info" />
+        }
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <FluentMessageBar Title="@errorMessage" Intent="MessageIntent.Error" />
+        }
+    </FluentStack>
+}
+
+@code {
+    private string filter = string.Empty;
+    private string categoryFilter = "All";
+    private string? message;
+    private string? errorMessage;
+    private PaginationState pagination = new() { ItemsPerPage = 25 };
+
+    private PatchPackage? _lastPackage;
+    private IReadOnlyList<ResourceCatalogEntry> _catalog = [];
+
+    private IReadOnlyList<ResourceCatalogEntry> Catalog
+    {
+        get
+        {
+            if (ReferenceEquals(State.CurrentPackage, _lastPackage)) return _catalog;
+            _lastPackage = State.CurrentPackage;
+            _catalog = State.CurrentPackage is null ? [] : ResourceMgr.BuildCatalog(State.CurrentPackage);
+            return _catalog;
+        }
+    }
+
+    private IEnumerable<ResourceCatalogEntry> FilteredResources
+    {
+        get
+        {
+            var query = Catalog.AsEnumerable();
+            if (!string.Equals(categoryFilter, "All", StringComparison.OrdinalIgnoreCase))
+            {
+                query = query.Where(r => r.Category.Equals(categoryFilter, StringComparison.OrdinalIgnoreCase));
+            }
+            if (!string.IsNullOrWhiteSpace(filter))
+            {
+                query = query.Where(r => r.FileName.Contains(filter, StringComparison.OrdinalIgnoreCase));
+            }
+            return query;
+        }
+    }
+
+    private static string FormatFileSize(long bytes)
+    {
+        if (bytes < 1024) return $"{bytes}B";
+        if (bytes < 1048576) return $"{bytes / 1024}KB";
+        return $"{bytes / 1048576}MB";
+    }
+
+    private static ResourceDialogData BuildDialogData(ResourceCatalogEntry entry)
+    {
+        return new ResourceDialogData
+        {
+            IsNew = false,
+            FileName = entry.FileName,
+            Category = entry.Category,
+            Compressed = entry.Compressed,
+            Platforms = entry.PlatformManifest.Select(m => new PlatformCardData
+            {
+                Platform = m.Platform,
+                Exist = m.Exist,
+                SourceFileSize = m.SourceFileSize,
+                SourceChecksum = m.SourceChecksum
+            }).ToList()
+        };
+    }
+
+    private async Task AddNewResource()
+    {
+        message = null;
+        errorMessage = null;
+        var data = new ResourceDialogData { IsNew = true };
+        var dialog = await DialogService.ShowDialogAsync<ResourceEditDialog, ResourceDialogData>(
+            data,
+            new DialogParameters
+            {
+                Title = "Add Resource",
+                PrimaryAction = "Save",
+                SecondaryAction = "Cancel",
+                Width = "640px",
+                PreventDismissOnOverlayClick = true
+            });
+        var result = await dialog.Result;
+        await ApplyDialogChanges(result, null);
+    }
+
+    private async Task OpenEditDialog(ResourceCatalogEntry entry)
+    {
+        message = null;
+        errorMessage = null;
+        var data = BuildDialogData(entry);
+        var dialog = await DialogService.ShowDialogAsync<ResourceEditDialog, ResourceDialogData>(
+            data,
+            new DialogParameters
+            {
+                Title = "Edit Resource",
+                PrimaryAction = "Save",
+                SecondaryAction = "Cancel",
+                Width = "640px",
+                PreventDismissOnOverlayClick = true
+            });
+        var result = await dialog.Result;
+        await ApplyDialogChanges(result, entry);
+    }
+
+    private async Task DeleteResourceAsync(ResourceCatalogEntry entry)
+    {
+        if (State.CurrentPackage is null) return;
+
+        message = null;
+        errorMessage = null;
+
+        var dialog = await DialogService.ShowConfirmationAsync(
+            $"Delete resource '{entry.FileName}'? This will remove it from the project.",
+            "Delete", "Cancel", "Delete Resource");
+
+        var result = await dialog.Result;
+        if (result.Cancelled) return;
+
+        try
+        {
+            await Workflow.RemoveResourceAsync(entry.FileName, null);
+            _lastPackage = null; // invalidate catalog cache
+            State.Diagnostics.Add($"Resource deleted: {entry.FileName}");
+            message = $"Resource '{entry.FileName}' deleted.";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+            State.Diagnostics.Add("Delete resource error: " + ex.Message);
+        }
+    }
+
+    private async Task ApplyDialogChanges(DialogResult result, ResourceCatalogEntry? original)
+    {
+        if (result.Cancelled || result.Data is not ResourceDialogData data) return;
+
+        try
+        {
+            foreach (var card in data.Platforms)
+            {
+                if (card.MarkedForDeletion)
+                {
+                    await Workflow.RemoveResourceAsync(data.FileName, card.Platform);
+                }
+                else if (card.IsNew || card.PendingFilePath is not null)
+                {
+                    var sourcePath = card.PendingFilePath ?? "";
+                    if (!string.IsNullOrEmpty(sourcePath))
+                    {
+                        await Workflow.AddOrReplaceResourceAsync(sourcePath, data.FileName, card.Platform, [], data.Compressed);
+                    }
+                }
+            }
+
+            // Update compression if changed
+            if (original is not null && original.Compressed != data.Compressed)
+            {
+                await Workflow.SetResourceCompressionAsync(data.FileName, null, data.Compressed);
+            }
+            else if (original is null)
+            {
+                await Workflow.SetResourceCompressionAsync(data.FileName, null, data.Compressed);
+            }
+
+            await Workflow.SaveProjectAsync();
+            _lastPackage = null; // invalidate catalog
+            State.Diagnostics.Add($"Resource updated: {data.FileName}");
+            message = $"Resource '{data.FileName}' saved.";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+            State.Diagnostics.Add("Resource edit error: " + ex.Message);
+        }
+    }
+}

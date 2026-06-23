@@ -1,0 +1,109 @@
+﻿@inherits LayoutComponentBase
+@inject IProjectState State
+@inject IProjectWorkflow Workflow
+@implements IDisposable
+
+<FluentDesignTheme Mode="DesignThemeModes.System"
+                   OfficeColor="OfficeColor.Teams"
+                   StorageName="dmtq-theme" />
+
+@* ────────────────────────────────────────────────────────────
+   Layout: plain HTML flex (no FluentLayout / FluentStack)
+   FluentUI components add hidden default gap/margin that
+   breaks precise height calculation. Plain divs guarantee
+   exact flex constraint chain: html→body→#app→wrapper.
+   ──────────────────────────────────────────────────────────── *@
+<div style="height: 100%; display: flex; flex-direction: column; overflow: hidden;">
+
+    @* ── Sticky Header ── *@
+    <FluentHeader Height="48" Style="border-bottom: 1px solid var(--neutral-stroke-rest); padding: 0 1.25rem;">
+        <div style="font-weight: 600; font-size: 1rem;">UpdatePatchManager</div>
+
+        <FluentSpacer />
+
+        @if (State.HasProject)
+        {
+            <div Style="display: flex; align-items: center; gap: 0.5rem;">
+                @if (State.IsDirty)
+                {
+                    <span style="color: var(--error); font-size: 0.85rem; font-weight: 500;" title="Unsaved changes">
+                        @ProjectDisplayName
+                    </span>
+                }
+                else
+                {
+                    <span style="font-size: 0.85rem; color: var(--neutral-foreground-rest); max-width: 20rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="@State.ProjectRoot">
+                        @ProjectDisplayName
+                    </span>
+                }
+                <FluentButton Appearance="@(State.IsDirty ? Appearance.Accent : Appearance.Neutral)"
+                              OnClick="SaveProjectAsync"
+                              Disabled="@(!State.HasPackage || _isSaving)"
+                              Style="font-size: 0.8rem; min-width: 4rem;">
+                    @(_isSaving ? "Saving..." : "Save")
+                </FluentButton>
+            </div>
+        }
+    </FluentHeader>
+
+    @* ── Sidebar + Content (row flex, constrained by parent column) ── *@
+    <div style="flex: 1; min-height: 0; display: flex; overflow: hidden;">
+        <FluentNavMenu Width="250" Collapsible="true" Title="DMTQ Tools"
+                       Style="flex-shrink: 0; border-right: 1px solid var(--neutral-stroke-rest);">
+            <FluentNavLink Href="" Icon="@(new Icons.Regular.Size20.Home())" Match="NavLinkMatch.All">Project</FluentNavLink>
+            <FluentNavLink Href="import" Icon="@(new Icons.Regular.Size20.ArrowDownload())">Import</FluentNavLink>
+            <FluentNavLink Href="songs" Icon="@(new Icons.Regular.Size20.MusicNote1())">Songs</FluentNavLink>
+            <FluentNavLink Href="resources" Icon="@(new Icons.Regular.Size20.Folder())">Resources</FluentNavLink>
+            <FluentNavLink Href="export" Icon="@(new Icons.Regular.Size20.ArrowUpload())">Export</FluentNavLink>
+            <FluentNavLink Href="diagnostics" Icon="@(new Icons.Regular.Size20.Wrench())">Diagnostics</FluentNavLink>
+        </FluentNavMenu>
+
+        <main style="flex: 1; min-width: 0; overflow-y: auto; padding: 1.25rem 1.5rem;">
+            @Body
+        </main>
+    </div>
+
+</div>
+
+@* FluentUI providers — must be after the layout *@
+<FluentToastProvider />
+<FluentDialogProvider />
+<FluentTooltipProvider />
+<FluentMenuProvider />
+<FluentKeyCodeProvider />
+
+@code {
+    private bool _isSaving;
+
+    private string ProjectDisplayName =>
+        State.ProjectRoot is { Length: > 0 } root
+            ? Path.GetFileName(root.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar))
+            : "";
+
+    protected override void OnInitialized()
+    {
+        State.StateChanged += OnStateChanged;
+    }
+
+    private void OnStateChanged() => InvokeAsync(StateHasChanged);
+
+    private async Task SaveProjectAsync()
+    {
+        _isSaving = true;
+        StateHasChanged();
+        try
+        {
+            await Workflow.SaveProjectAsync();
+        }
+        finally
+        {
+            _isSaving = false;
+            StateHasChanged();
+        }
+    }
+
+    public void Dispose()
+    {
+        State.StateChanged -= OnStateChanged;
+    }
+}

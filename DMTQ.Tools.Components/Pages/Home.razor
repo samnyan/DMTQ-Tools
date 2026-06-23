@@ -1,0 +1,208 @@
+﻿@page "/"
+@using Icons = Microsoft.FluentUI.AspNetCore.Components.Icons
+@inject IProjectState State
+@inject IProjectWorkflow Workflow
+@inject IFolderPicker FolderPicker
+@inject NavigationManager Navigation
+@inject IDialogService DialogService
+
+<h1>Project</h1>
+
+<FluentStack Orientation="Orientation.Vertical" VerticalGap="16" Style="margin-bottom: 1.25rem;">
+    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8">
+        <FluentTextField @bind-Value="projectRoot"
+                         Label="Project folder"
+                         Placeholder="Select or enter a project folder path..."
+                         Style="width: 100%;" />
+        <FluentButton Appearance="Appearance.Neutral"
+                      IconStart="@(new Icons.Regular.Size20.Folder())"
+                      OnClick="BrowseFolder">Browse</FluentButton>
+    </FluentStack>
+
+    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8">
+        <FluentButton Appearance="Appearance.Accent"
+                      OnClick="ConfirmProject"
+                      Disabled="@(string.IsNullOrWhiteSpace(projectRoot) || isBusy)">Confirm</FluentButton>
+        <FluentButton Appearance="Appearance.Neutral"
+                      OnClick="SaveProject"
+                      Disabled="@(!State.HasPackage || isBusy)">Save</FluentButton>
+    </FluentStack>
+
+    @if (!string.IsNullOrWhiteSpace(message))
+    {
+        <FluentMessageBar Title="@message" Intent="@messageIntent" />
+    }
+</FluentStack>
+
+<FluentGrid Spacing="3" Justify="JustifyContent.Center" AdaptiveRendering="true">
+    <FluentGridItem xs="12" sm="6" md="4" lg="3">
+        <FluentCard>
+            <span style="color: #5f6b7a; font-size: 0.8rem;">Project</span>
+            <p style="font-weight: 600; overflow-wrap: anywhere;">@(State.ProjectRoot ?? "Not selected")</p>
+        </FluentCard>
+    </FluentGridItem>
+    <FluentGridItem xs="12" sm="6" md="4" lg="3">
+        <FluentCard>
+            <span style="color: #5f6b7a; font-size: 0.8rem;">Source</span>
+            <p style="font-weight: 600; overflow-wrap: anywhere;">@(State.CurrentPackage?.ProjectInfo.SourcePackageRoot ?? "Not imported")</p>
+        </FluentCard>
+    </FluentGridItem>
+    <FluentGridItem xs="12" sm="6" md="4" lg="3">
+        <FluentCard>
+            <span style="color: #5f6b7a; font-size: 0.8rem;">Version</span>
+            <p style="font-weight: 600;">@(State.CurrentPackage?.ProjectInfo.Version ?? "-")</p>
+        </FluentCard>
+    </FluentGridItem>
+    <FluentGridItem xs="12" sm="6" md="4" lg="3">
+        <FluentCard>
+            <span style="color: #5f6b7a; font-size: 0.8rem;">Primary platform</span>
+            <p style="font-weight: 600;">@(State.CurrentPackage?.ProjectInfo.Platform ?? "-")</p>
+        </FluentCard>
+    </FluentGridItem>
+    <FluentGridItem xs="12" sm="6" md="4" lg="3">
+        <FluentCard>
+            <span style="color: #5f6b7a; font-size: 0.8rem;">Imported platforms</span>
+            <p style="font-weight: 600;">@PlatformSummary</p>
+        </FluentCard>
+    </FluentGridItem>
+    <FluentGridItem xs="12" sm="6" md="4" lg="3">
+        <FluentCard>
+            <span style="color: #5f6b7a; font-size: 0.8rem;">Songs</span>
+            <p style="font-weight: 600;">@(State.CurrentPackage?.Songs.Count ?? 0)</p>
+        </FluentCard>
+    </FluentGridItem>
+    <FluentGridItem xs="12" sm="6" md="4" lg="3">
+        <FluentCard>
+            <span style="color: #5f6b7a; font-size: 0.8rem;">Tables</span>
+            <p style="font-weight: 600;">@(State.CurrentPackage?.Tables.Tables.Count ?? 0)</p>
+        </FluentCard>
+    </FluentGridItem>
+    <FluentGridItem xs="12" sm="6" md="4" lg="3">
+        <FluentCard>
+            <span style="color: #5f6b7a; font-size: 0.8rem;">Resources</span>
+            <p style="font-weight: 600;">@(State.CurrentPackage?.Resources.Count ?? 0)</p>
+        </FluentCard>
+    </FluentGridItem>
+    <FluentGridItem xs="12" sm="6" md="4" lg="3">
+        <FluentCard>
+            <span style="color: #5f6b7a; font-size: 0.8rem;">Last validation</span>
+            <p style="font-weight: 600;">@ValidationText</p>
+        </FluentCard>
+    </FluentGridItem>
+</FluentGrid>
+
+@code {
+    private string projectRoot = string.Empty;
+    private string? message;
+    private MessageIntent messageIntent = MessageIntent.Info;
+    private bool isBusy;
+
+    private string PlatformSummary => State.CurrentPackage is null
+        ? "-"
+        : string.Join(", ", State.CurrentPackage.Resources
+            .SelectMany(r => r.PlatformManifest)
+            .Select(m => m.Platform)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(p => p));
+
+    private string ValidationText => State.LastValidationResult is null
+        ? "Not run"
+        : State.LastValidationResult.IsValid ? "Passed" : $"{State.LastValidationResult.Errors.Count} errors";
+
+    private async Task BrowseFolder()
+    {
+        var result = await FolderPicker.PickFolderAsync();
+        if (!string.IsNullOrWhiteSpace(result))
+            projectRoot = result;
+    }
+
+    private async Task ConfirmProject()
+    {
+        var root = projectRoot.Trim();
+        if (string.IsNullOrWhiteSpace(root))
+        {
+            ShowMessage("Please enter a project folder path.", MessageIntent.Warning);
+            return;
+        }
+
+        if (!Directory.Exists(root))
+        {
+            ShowMessage($"Folder '{root}' does not exist.", MessageIntent.Error);
+            return;
+        }
+
+        isBusy = true;
+        message = null;
+
+        try
+        {
+            bool hasProjectFile = File.Exists(Path.Combine(root, "project.json"));
+            bool isEmpty = !Directory.EnumerateFileSystemEntries(root).Any();
+
+            if (hasProjectFile)
+            {
+                // Existing project — load it
+                await Workflow.OpenProjectAsync(root);
+                ShowMessage("Project loaded.", MessageIntent.Info);
+            }
+            else if (isEmpty)
+            {
+                // Empty directory — ask to create
+                var dialog = await DialogService.ShowConfirmationAsync(
+                    "This folder is empty. Create a new project here?",
+                    "Create", "Cancel",
+                    "New project");
+                var result = await dialog.Result;
+                if (!result.Cancelled)
+                {
+                    await Workflow.CreateProjectAsync(root);
+                    ShowMessage("Project created. Go to the Import page to import a patch package.", MessageIntent.Info);
+                }
+            }
+            else
+            {
+                // Has files but no project.json
+                ShowMessage(
+                    $"This folder contains files but is not a DMTQ project. " +
+                    $"Please choose an empty folder, then go to the " +
+                    $"Import page to import an existing patch package.",
+                    MessageIntent.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowMessage(ex.Message, MessageIntent.Error);
+            State.Diagnostics.Add("Project error: " + ex.Message);
+        }
+        finally
+        {
+            isBusy = false;
+        }
+    }
+
+    private async Task SaveProject()
+    {
+        isBusy = true;
+        message = null;
+        try
+        {
+            await Workflow.SaveProjectAsync();
+            ShowMessage("Project saved.", MessageIntent.Info);
+        }
+        catch (Exception ex)
+        {
+            ShowMessage(ex.Message, MessageIntent.Error);
+            State.Diagnostics.Add("Save project error: " + ex.Message);
+        }
+        finally
+        {
+            isBusy = false;
+        }
+    }
+
+    private void ShowMessage(string? text, MessageIntent intent)
+    {
+        message = text;
+        messageIntent = intent;
+    }
+}

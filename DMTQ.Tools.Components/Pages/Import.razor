@@ -1,0 +1,99 @@
+@page "/import"
+@inject IProjectState State
+@inject IProjectWorkflow Workflow
+
+<h1>Import</h1>
+
+<FluentStack Orientation="Orientation.Vertical" Style="margin-bottom: 1rem;">
+    <FluentSelect Items="@(new[] { "android", "ios" })"
+                  OptionText="@(i => i)"
+                  OptionValue="@(i => i)"
+                  @bind-SelectedOption="platform"
+                  Label="Platform"
+                  Style="max-width: 20rem;" />
+
+    <FluentTextField @bind-Value="packageRoot"
+                     Label="Source package directory"
+                     Placeholder="D:\GitHub\DMTQ-Tools\external\patch\phone_new\1.003.005\android"
+                     Style="width: 100%;" />
+
+    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8">
+        <FluentButton Appearance="Appearance.Accent"
+                      OnClick="ImportPlatformPackage"
+                      Disabled="@isBusy">Import Platform</FluentButton>
+    </FluentStack>
+
+    <span style="color: #5f6b7a; font-size: 0.8rem;">Create or open a project on the Project page before importing.</span>
+
+    @if (!string.IsNullOrWhiteSpace(message))
+    {
+        <FluentMessageBar Title="@message" Intent="MessageIntent.Info" />
+    }
+</FluentStack>
+
+@if (State.CurrentPackage is not null)
+{
+    <FluentGrid Spacing="3" Justify="JustifyContent.Center" AdaptiveRendering="true">
+        <FluentGridItem xs="12" sm="6" md="4" lg="3">
+            <FluentCard>
+                <span style="color: #5f6b7a; font-size: 0.8rem;">Songs</span>
+                <p style="font-weight: 600;">@State.CurrentPackage.Songs.Count</p>
+            </FluentCard>
+        </FluentGridItem>
+        <FluentGridItem xs="12" sm="6" md="4" lg="3">
+            <FluentCard>
+                <span style="color: #5f6b7a; font-size: 0.8rem;">Tables</span>
+                <p style="font-weight: 600;">@State.CurrentPackage.Tables.Tables.Count</p>
+            </FluentCard>
+        </FluentGridItem>
+        <FluentGridItem xs="12" sm="6" md="4" lg="3">
+            <FluentCard>
+                <span style="color: #5f6b7a; font-size: 0.8rem;">Resources</span>
+                <p style="font-weight: 600;">@State.CurrentPackage.Resources.Count</p>
+            </FluentCard>
+        </FluentGridItem>
+        <FluentGridItem xs="12" sm="6" md="4" lg="3">
+            <FluentCard>
+                <span style="color: #5f6b7a; font-size: 0.8rem;">Languages</span>
+                <p style="font-weight: 600;">@LanguageSummary</p>
+            </FluentCard>
+        </FluentGridItem>
+    </FluentGrid>
+
+
+}
+
+@code {
+    private string packageRoot = string.Empty;
+    private string platform = "android";
+    private string? message;
+    private bool isBusy;
+
+    private string LanguageSummary => State.CurrentPackage is null
+        ? "-"
+        : string.Join(", ", State.CurrentPackage.Tables.Tables
+            .Select(t => t.LanguageCode)
+            .Where(code => !string.IsNullOrWhiteSpace(code))
+            .Distinct()
+            .OrderBy(code => code));
+
+    private async Task ImportPlatformPackage()
+    {
+        isBusy = true;
+        message = "Importing platform package...";
+        try
+        {
+            await Workflow.ImportPlatformPackageAsync(packageRoot, platform);
+            message = "Import completed.";
+        }
+        catch (Exception ex)
+        {
+            message = ex.Message;
+            State.Diagnostics.Add("Import error: " + ex.Message);
+        }
+        finally
+        {
+            isBusy = false;
+        }
+    }
+}

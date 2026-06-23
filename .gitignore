@@ -360,3 +360,11 @@ MigrationBackup/
 FodyWeavers.xsd
 
 pt_to_text/LoginInfo.cs
+
+/external
+/docs
+/.idea
+/.run
+/.reasonix
+/.playwright
+/.playwright-cli

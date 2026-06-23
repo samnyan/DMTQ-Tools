@@ -1,6 +1,6 @@
 ﻿using System;
 using System.IO;
-using LZ4;
+using K4os.Compression.LZ4.Legacy;
 
 namespace lz4_tool
 {
@@ -81,7 +81,7 @@ namespace lz4_tool
             Console.WriteLine("Decompressing " + file);
             using (var fileStream = new FileStream(file, FileMode.Open))
             using (var outFileStream = new FileStream(file.Replace(".lz4", ""), FileMode.Create))
-            using (var lz4Stream = new LZ4Stream(fileStream, LZ4StreamMode.Decompress))
+            using (var lz4Stream = LZ4Legacy.Decode(fileStream, leaveOpen: false))
             {
                 lz4Stream.CopyTo(outFileStream);
                 outFileStream.Flush();
@@ -93,7 +93,7 @@ namespace lz4_tool
             Console.WriteLine("Compressing " + file);
             using (var fileStream = new FileStream(file, FileMode.Open))
             using (var outFileStream = new FileStream(file + ".lz4", FileMode.Create))
-            using (var lz4Stream = new LZ4Stream(outFileStream, LZ4StreamMode.Compress))
+            using (var lz4Stream = LZ4Legacy.Encode(outFileStream, leaveOpen: false))
             {
                 fileStream.CopyTo(lz4Stream);
                 outFileStream.Flush();

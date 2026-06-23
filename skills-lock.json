@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "skills": {
+    "dotnet-best-practices": {
+      "source": "github/awesome-copilot",
+      "sourceType": "github",
+      "skillPath": "skills/dotnet-best-practices/SKILL.md",
+      "computedHash": "9ef94db7f06c167d544369817e5a4415eeb7886dcff0d47026837a1aada260e3"
+    },
+    "fluentui-blazor": {
+      "source": "github/awesome-copilot",
+      "sourceType": "github",
+      "skillPath": "skills/fluentui-blazor/SKILL.md",
+      "computedHash": "54d30fd8565a8787fa7dfe6bc13e10c4c9139a3d32343a84b49bba6d5f547caf"
+    },
+    "maui-app-lifecycle": {
+      "source": "dotnet/skills",
+      "sourceType": "github",
+      "skillPath": "plugins/dotnet-maui/skills/maui-app-lifecycle/SKILL.md",
+      "computedHash": "dc7bd92ede8a9612882d0c4b345154b885ccd14e86ee4efb69cb1ea67c5114c6"
+    }
+  }
+}

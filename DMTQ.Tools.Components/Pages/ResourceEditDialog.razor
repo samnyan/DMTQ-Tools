@@ -1,0 +1,184 @@
+@using DMTQ.Tools.Components.Models
+@using Icons = Microsoft.FluentUI.AspNetCore.Components.Icons
+@inject IProjectFilePicker FilePicker
+@implements IDialogContentComponent<DMTQ.Tools.Components.Models.ResourceDialogData>
+
+<FluentStack Orientation="Orientation.Vertical" VerticalGap="16" Style="min-width: 520px;">
+
+    @* Basic Info Section *@
+    <section>
+        <h2 class="section-heading">Basic Info</h2>
+        <FluentGrid Spacing="3">
+            <FluentGridItem xs="12" sm="8">
+                <FluentTextField @bind-Value="Content.FileName" Label="File Name"
+                                 ReadOnly="@(!Content.IsNew)" Style="width: 100%;" />
+            </FluentGridItem>
+            <FluentGridItem xs="12" sm="4">
+                <FluentSelect Items="@_categoryOptions" @bind-Value="Content.Category" Label="Category" />
+            </FluentGridItem>
+            <FluentGridItem xs="12">
+                <FluentSwitch @bind-Value="Content.Compressed" Label="Compressed" />
+            </FluentGridItem>
+        </FluentGrid>
+    </section>
+
+    @* Platform Files Section *@
+    <section>
+        <h2 class="section-heading">Platform Files</h2>
+        <FluentStack Orientation="Orientation.Vertical" VerticalGap="8">
+            @foreach (var card in Content.Platforms.Where(p => !p.MarkedForDeletion))
+            {
+                <FluentCard Style="border: 1px solid var(--neutral-stroke-rest);">
+                    <FluentStack Orientation="Orientation.Vertical" VerticalGap="4" Style="padding: 12px;">
+                        <div style="font-weight: 600; font-size: 1rem;">@card.Platform</div>
+                        <div style="font-size: 0.85rem; color: var(--neutral-foreground-rest);">
+                            Exist: @(card.Exist ? "✓" : "✗"), Size: @FormatSize(card.SourceFileSize), Checksum: @card.SourceChecksum
+                        </div>
+                        @if (!string.IsNullOrEmpty(card.SourceChecksum))
+                        {
+                            <div style="font-size: 0.85rem; color: var(--neutral-foreground-rest);">
+                                Source: @card.SourceChecksum
+                            </div>
+                        }
+                        @if (!string.IsNullOrEmpty(card.PendingFilePath))
+                        {
+                            <div style="font-size: 0.85rem; color: var(--accent-foreground-rest);">
+                                Will replace: @card.PendingFilePath
+                            </div>
+                        }
+                        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8" Style="margin-top: 8px;">
+                            <FluentButton Appearance="Appearance.Neutral" Size="FluentUI.AspNetCore.Components.Size.Small"
+                                          OnClick="() => PickAndReplaceFile(card)">Replace File</FluentButton>
+                            <FluentButton Appearance="Appearance.Neutral" Size="FluentUI.AspNetCore.Components.Size.Small"
+                                          OnClick="() => RemovePlatform(card)">Remove</FluentButton>
+                        </FluentStack>
+                    </FluentStack>
+                </FluentCard>
+            }
+
+            @if (!string.IsNullOrEmpty(_addPlatformMessage))
+            {
+                <FluentMessageBar Title="@_addPlatformMessage" Intent="MessageIntent.Warning" />
+            }
+
+            @if (_showPlatformChoices)
+            {
+                <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8" VerticalAlignment="VerticalAlignment.Center">
+                    <span style="font-weight: 500;">Select platform:</span>
+                    @foreach (var plat in _availablePlatforms)
+                    {
+                        <FluentButton Appearance="Appearance.Neutral" Size="FluentUI.AspNetCore.Components.Size.Small"
+                                      OnClick="() => AddPlatformFor(plat)">@plat</FluentButton>
+                    }
+                    <FluentButton Appearance="Appearance.Neutral" Size="FluentUI.AspNetCore.Components.Size.Small"
+                                  OnClick="CancelAddPlatform">Cancel</FluentButton>
+                </FluentStack>
+            }
+            else
+            {
+                <FluentButton Appearance="Appearance.Neutral" OnClick="ShowAddPlatformOptions"
+                              IconStart="@(new Icons.Regular.Size20.Add())">+ Add Platform</FluentButton>
+            }
+        </FluentStack>
+    </section>
+
+</FluentStack>
+
+@code {
+    [Parameter] public ResourceDialogData Content { get; set; } = default!;
+    [CascadingParameter] public FluentDialog Dialog { get; set; } = default!;
+
+    private static readonly List<string> _categoryOptions = ["dlc", "preview", "slang"];
+    private static readonly string[] _allPlatforms = ["android", "ios"];
+
+    private bool _showPlatformChoices;
+    private List<string> _availablePlatforms = [];
+    private string _addPlatformMessage = string.Empty;
+
+    private void ShowAddPlatformOptions()
+    {
+        _addPlatformMessage = string.Empty;
+        _availablePlatforms = _allPlatforms
+            .Where(p => !Content.Platforms.Any(c => c.Platform == p && !c.MarkedForDeletion))
+            .ToList();
+
+        if (_availablePlatforms.Count == 0)
+        {
+            _addPlatformMessage = "All platforms already added.";
+            return;
+        }
+
+        if (_availablePlatforms.Count == 1)
+        {
+            _ = AddPlatformFor(_availablePlatforms[0]);
+            return;
+        }
+
+        _showPlatformChoices = true;
+    }
+
+    private void CancelAddPlatform()
+    {
+        _showPlatformChoices = false;
+    }
+
+    private async Task AddPlatformFor(string platform)
+    {
+        _showPlatformChoices = false;
+
+        var path = await FilePicker.PickFileAsync();
+        if (path is null) return;
+
+        var md5 = ComputeMd5(path);
+        var fileInfo = new FileInfo(path);
+
+        var card = new PlatformCardData
+        {
+            Platform = platform,
+            IsNew = true,
+            PendingFilePath = path,
+            LocalChecksum = md5,
+            SourceFileSize = fileInfo.Length,
+            Exist = false,
+            SourceChecksum = "",
+        };
+
+        Content.Platforms.Add(card);
+    }
+
+    private async Task PickAndReplaceFile(PlatformCardData card)
+    {
+        var path = await FilePicker.PickFileAsync();
+        if (path is null) return;
+
+        card.PendingFilePath = path;
+        card.LocalChecksum = ComputeMd5(path);
+    }
+
+    private void RemovePlatform(PlatformCardData card)
+    {
+        if (card.IsNew)
+        {
+            Content.Platforms.Remove(card);
+        }
+        else
+        {
+            card.MarkedForDeletion = true;
+        }
+    }
+
+    private static string FormatSize(long bytes)
+    {
+        if (bytes < 1024) return $"{bytes} B";
+        if (bytes < 1024 * 1024) return $"{bytes / 1024.0:F1} KB";
+        return $"{bytes / (1024.0 * 1024.0):F1} MB";
+    }
+
+    private static string ComputeMd5(string path)
+    {
+        using var md5 = System.Security.Cryptography.MD5.Create();
+        using var stream = File.OpenRead(path);
+        var hash = md5.ComputeHash(stream);
+        return BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
+    }
+}

@@ -1,0 +1,190 @@
+@page "/songs"
+@inject NavigationManager Navigation
+@inject IProjectState State
+@inject IProjectWorkflow Workflow
+@inject SongEditService SongEditor
+@inject SongCatalogService SongCatalog
+@inject IDialogService DialogService
+
+<h1>Songs</h1>
+
+@if (State.CurrentPackage is null)
+{
+    <FluentStack Orientation="Orientation.Vertical" Style="margin-bottom: 1rem;">
+        <FluentMessageBar Title="Import or open a project before editing songs." Intent="MessageIntent.Warning" />
+    </FluentStack>
+}
+else
+{
+    <FluentStack Orientation="Orientation.Vertical" VerticalGap="16">
+
+        @* ── Toolbar ── *@
+        <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center">
+            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" VerticalAlignment="VerticalAlignment.Center">
+                <FluentTextField @bind-Value="filter" Immediate="true" Placeholder="Filter by song ID, title, item..."
+                                 Style="min-width: 280px;" />
+                <FluentSelect Items="Languages"
+                              OptionText="@(l => l)"
+                              OptionValue="@(l => l)"
+                              @bind-SelectedOption="selectedLanguage"
+                              Label="Language"
+                              Style="min-width: 100px;" />
+            </FluentStack>
+            <FluentButton Appearance="Appearance.Accent"
+                          IconStart="@(new Icons.Regular.Size20.Add())"
+                          OnClick="CreateNewSong">Add Song</FluentButton>
+        </FluentStack>
+
+        @* ── Metrics ── *@
+        <FluentGrid Spacing="3" AdaptiveRendering="true">
+            <FluentGridItem xs="12" sm="6" md="3">
+                <FluentCard>
+                    <span class="metric-label">Songs</span><strong>@Catalog.Count</strong>
+                </FluentCard>
+            </FluentGridItem>
+            <FluentGridItem xs="12" sm="6" md="3">
+                <FluentCard>
+                    <span class="metric-label">Patterns</span><strong>@Catalog.Sum(s => s.Patterns.Count)</strong>
+                </FluentCard>
+            </FluentGridItem>
+            <FluentGridItem xs="12" sm="6" md="3">
+                <FluentCard>
+                    <span class="metric-label">With preview</span><strong>@Catalog.Count(s => s.HasPreview)</strong>
+                </FluentCard>
+            </FluentGridItem>
+            <FluentGridItem xs="12" sm="6" md="3">
+                <FluentCard>
+                    <span class="metric-label">Languages</span><strong>@Languages.Count</strong>
+                </FluentCard>
+            </FluentGridItem>
+        </FluentGrid>
+
+        @* ── DataGrid ── *@
+        @if (Catalog.Count > 0)
+        {
+            <FluentDataGrid Items="@FilteredSongs.AsQueryable()" TGridItem="Song"
+                            ShowHover="true"
+                            Pagination="@pagination"
+                            ResizableColumns="true"
+                            HeaderCellAsButtonWithMenu="true">
+                <PropertyColumn Property="@(s => s.Id)" Title="Song ID" Sortable="true" />
+                <TemplateColumn Title="Name" Sortable="true" SortBy="@(GridSort<Song>.ByAscending(s => s.Name))">
+                    <strong>@DisplayTitle(context)</strong>
+                </TemplateColumn>
+                <PropertyColumn Property="@(s => s.Genre)" Title="Genre" Sortable="true" />
+                <PropertyColumn Property="@(s => s.ArtistName)" Title="Artist" Sortable="true" />
+                <TemplateColumn Title="Patterns">
+                    @context.Patterns.Count
+                </TemplateColumn>
+                <TemplateColumn Title="Preview">
+                    @(context.HasPreview ? "Yes" : "No")
+                </TemplateColumn>
+                <TemplateColumn Title="Actions">
+                    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="4">
+                        <FluentButton IconStart="@(new Icons.Regular.Size20.Edit())"
+                                      Appearance="Appearance.Neutral"
+                                      OnClick="() => EditSong(context.Id.ToString())"
+                                      Title="Edit" />
+                        <FluentButton IconStart="@(new Icons.Regular.Size20.Delete())"
+                                      Appearance="Appearance.Neutral"
+                                      OnClick="() => DeleteSongAsync(context)"
+                                      Title="Delete" />
+                    </FluentStack>
+                </TemplateColumn>
+            </FluentDataGrid>
+            <FluentPaginator State="@pagination" />
+        }
+        else
+        {
+            <FluentMessageBar Title="No songs found. Import CSV data or add a song." Intent="MessageIntent.Info" />
+        }
+
+        @if (!string.IsNullOrEmpty(message))
+        {
+            <FluentMessageBar Title="@message" Intent="MessageIntent.Info" />
+        }
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <FluentMessageBar Title="@errorMessage" Intent="MessageIntent.Error" />
+        }
+    </FluentStack>
+}
+
+@code {
+    private string filter = string.Empty;
+    private string selectedLanguage = "CN";
+    private string? message;
+    private string? errorMessage;
+    private PaginationState pagination = new() { ItemsPerPage = 25 };
+
+    private PatchPackage? _lastPackage;
+    private IReadOnlyList<Song> _catalog = [];
+    private static readonly IReadOnlyList<string> _languages = ["CN", "JP", "KR", "TW", "US"];
+
+    private IReadOnlyList<Song> Catalog
+    {
+        get
+        {
+            if (ReferenceEquals(State.CurrentPackage, _lastPackage)) return _catalog;
+            _lastPackage = State.CurrentPackage;
+            _catalog = State.CurrentPackage is null ? [] : SongCatalog.BuildCatalog(State.CurrentPackage);
+            return _catalog;
+        }
+    }
+
+    private IReadOnlyList<string> Languages => _languages;
+
+    private IEnumerable<Song> FilteredSongs
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(filter)) return Catalog;
+            return Catalog.Where(song =>
+                song.Id.ToString().Contains(filter, StringComparison.OrdinalIgnoreCase)
+                || song.Name.Contains(filter, StringComparison.OrdinalIgnoreCase)
+                || song.ArtistName.Contains(filter, StringComparison.OrdinalIgnoreCase)
+                || song.Genre.Contains(filter, StringComparison.OrdinalIgnoreCase));
+        }
+    }
+
+    private string DisplayTitle(Song song)
+    {
+        var lang = selectedLanguage ?? "CN";
+        if (song.Localizations.TryGetValue(lang, out var loc) && !string.IsNullOrWhiteSpace(loc.FullName))
+            return loc.FullName;
+        return string.IsNullOrWhiteSpace(song.Name) ? song.Id.ToString() : song.Name;
+    }
+
+    private void CreateNewSong() => Navigation.NavigateTo("/songs/editor/new");
+    private void EditSong(string songId) => Navigation.NavigateTo($"/songs/editor/{songId}");
+
+    private async Task DeleteSongAsync(Song song)
+    {
+        if (State.CurrentPackage is null) return;
+
+        message = null;
+        errorMessage = null;
+
+        var dialog = await DialogService.ShowConfirmationAsync(
+            $"Delete song '{DisplayTitle(song)}' ({song.Id})? This will remove the song and all its patterns.",
+            "Delete", "Cancel", "Delete Song");
+
+        var result = await dialog.Result;
+        if (result.Cancelled) return;
+
+        try
+        {
+            SongEditor.RemoveSong(State.CurrentPackage, song.Id);
+            await Workflow.SaveProjectAsync();
+            _lastPackage = null; // invalidate catalog cache
+            State.Diagnostics.Add($"Song deleted: {song.Id}");
+            message = $"Song {DisplayTitle(song)} deleted.";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+            State.Diagnostics.Add("Delete song error: " + ex.Message);
+        }
+    }
+
+}
