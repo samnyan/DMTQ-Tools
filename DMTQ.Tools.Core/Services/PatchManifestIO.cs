@@ -70,6 +70,7 @@ public static class PatchManifestIO
         csv.WriteField("compressed");
         csv.WriteField("platform");
         csv.WriteField("tag");
+        csv.WriteField(""); // trailing empty column (game client expects exact column count)
         await csv.NextRecordAsync().ConfigureAwait(false);
 
         foreach (var entry in manifest.Entries)
@@ -84,6 +85,7 @@ public static class PatchManifestIO
             csv.WriteField(entry.Compressed ? 1 : 0);
             csv.WriteField(entry.Platform);
             csv.WriteField(entry.Tag);
+            csv.WriteField(""); // trailing empty column
             await csv.NextRecordAsync().ConfigureAwait(false);
         }
 

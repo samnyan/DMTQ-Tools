@@ -1,4 +1,7 @@
 ﻿@inherits LayoutComponentBase
+@inject IProjectState State
+@inject IProjectWorkflow Workflow
+@implements IDisposable
 
 <FluentDesignTheme Mode="DesignThemeModes.System"
                    OfficeColor="OfficeColor.Teams"
@@ -13,8 +16,34 @@
 <div style="height: 100%; display: flex; flex-direction: column; overflow: hidden;">
 
     @* ── Sticky Header ── *@
-    <FluentHeader Height="48" Style="flex-shrink: 0; border-bottom: 1px solid var(--neutral-stroke-rest); padding: 0 1.25rem; display: flex; align-items: center;">
-        <span style="font-weight: 600; font-size: 1rem;">GameTableManager</span>
+    <FluentHeader Height="48" Style="flex-shrink: 0; border-bottom: 1px solid var(--neutral-stroke-rest); padding: 0 1.25rem; display: flex; align-items: center; gap: 1rem;">
+        <span style="font-weight: 600; font-size: 1rem;">UpdatePatchManager</span>
+
+        <div style="flex: 1;" />
+
+        @if (State.HasProject)
+        {
+            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="10" VerticalAlignment="VerticalAlignment.Center">
+                @if (State.IsDirty)
+                {
+                    <span style="color: var(--error); font-size: 0.85rem; font-weight: 500;" title="Unsaved changes">
+                        @ProjectDisplayName
+                    </span>
+                }
+                else
+                {
+                    <span style="font-size: 0.85rem; color: var(--neutral-foreground-rest); max-width: 20rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="@State.ProjectRoot">
+                        @ProjectDisplayName
+                    </span>
+                }
+                <FluentButton Appearance="@(State.IsDirty ? Appearance.Accent : Appearance.Neutral)"
+                              OnClick="SaveProjectAsync"
+                              Disabled="@(!State.HasPackage || _isSaving)"
+                              Style="font-size: 0.8rem; min-width: 4rem;">
+                    @(_isSaving ? "Saving..." : "Save")
+                </FluentButton>
+            </FluentStack>
+        }
     </FluentHeader>
 
     @* ── Sidebar + Content (row flex, constrained by parent column) ── *@
@@ -43,3 +72,39 @@
 <FluentTooltipProvider />
 <FluentMenuProvider />
 <FluentKeyCodeProvider />
+
+@code {
+    private bool _isSaving;
+
+    private string ProjectDisplayName =>
+        State.ProjectRoot is { Length: > 0 } root
+            ? Path.GetFileName(root.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar))
+            : "";
+
+    protected override void OnInitialized()
+    {
+        State.StateChanged += OnStateChanged;
+    }
+
+    private void OnStateChanged() => InvokeAsync(StateHasChanged);
+
+    private async Task SaveProjectAsync()
+    {
+        _isSaving = true;
+        StateHasChanged();
+        try
+        {
+            await Workflow.SaveProjectAsync();
+        }
+        finally
+        {
+            _isSaving = false;
+            StateHasChanged();
+        }
+    }
+
+    public void Dispose()
+    {
+        State.StateChanged -= OnStateChanged;
+    }
+}

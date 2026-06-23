@@ -103,6 +103,7 @@ public sealed class GameTableManagerWorkflow : IProjectWorkflow
         if (_state.CurrentPackage is null) throw new InvalidOperationException("Import a package before saving.");
 
         await _repository.SaveAsync(_state.CurrentPackage, _state.ExportCompressionMode, _state.CreateExportOptions(), _state.ProjectRoot, cancellationToken).ConfigureAwait(false);
+        _state.IsDirty = false;
         _state.Diagnostics.Add("Project saved.");
     }
 

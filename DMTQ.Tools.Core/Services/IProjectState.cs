@@ -23,6 +23,12 @@ public interface IProjectState
     PlatformExportMode PlatformExportMode { get; set; }
     bool HasProject { get; }
     bool HasPackage { get; }
+    bool IsDirty { get; set; }
     IReadOnlyList<string> ImportIntegrityErrors { get; }
     PackageExportOptions CreateExportOptions();
+
+    /// <summary>
+    /// Raised after any state mutation so Blazor layout can re-render.
+    /// </summary>
+    event Action? StateChanged;
 }

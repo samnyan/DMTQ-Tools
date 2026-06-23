@@ -21,13 +21,32 @@ public sealed class GameTableManagerState : IProjectState
     public PlatformExportMode PlatformExportMode { get; set; } = PlatformExportMode.Full;
     public bool HasProject => !string.IsNullOrWhiteSpace(ProjectRoot);
     public bool HasPackage => CurrentPackage is not null;
+
+    private bool _isDirty;
+    public bool IsDirty
+    {
+        get => _isDirty;
+        set
+        {
+            if (_isDirty == value) return;
+            _isDirty = value;
+            StateChanged?.Invoke();
+        }
+    }
     public IReadOnlyList<string> ImportIntegrityErrors => CurrentPackage?.IntegrityErrors ?? [];
+    public event Action? StateChanged;
+
+    private void MarkDirty()
+    {
+        IsDirty = true;
+    }
 
     public void SetProjectRoot(string projectRoot)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(projectRoot);
         ProjectRoot = projectRoot;
         Diagnostics.Add($"Project root set: {projectRoot}");
+        MarkDirty();
     }
 
     public void SetPackage(PatchPackage package)
@@ -39,6 +58,7 @@ public sealed class GameTableManagerState : IProjectState
         LastPlatformExportResult = null;
         RestoredExportOptions = null;
         Diagnostics.Add($"Imported package: {package.Resources.Count} resources, {package.Tables.Tables.Count} tables.");
+        MarkDirty();
     }
 
     public void SetExportResult(PatchManifest manifest, PatchValidationResult validation)
@@ -111,6 +131,7 @@ public sealed class GameTableManagerState : IProjectState
         ArgumentException.ThrowIfNullOrWhiteSpace(exportCompressionMode);
         ExportCompressionMode = exportCompressionMode;
         Diagnostics.Add($"Export compression mode set: {exportCompressionMode}");
+        MarkDirty();
     }
 
     public void RestoreProject(PatchProjectSnapshot snapshot)
@@ -125,5 +146,6 @@ public sealed class GameTableManagerState : IProjectState
         LastPlatformExportResult = null;
         Diagnostics.Add($"Opened project: {ProjectRoot}");
         Diagnostics.Add($"Loaded package: {snapshot.Package.Resources.Count} resources, {snapshot.Package.Tables.Tables.Count} tables.");
+        StateChanged?.Invoke();
     }
 }

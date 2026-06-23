@@ -173,6 +173,7 @@ else
         LogicalTables.UpdateCell(State.CurrentPackage, SelectedLogicalTable.Key, rowKey, columnKey, value);
         _lastPackage = null; // invalidate catalog cache so UI refreshes
         State.Diagnostics.Add($"Updated {SelectedLogicalTable.Key}/{rowKey}/{columnKey}.");
+        State.IsDirty = true;
         message = "Unsaved changes.";
     }
 

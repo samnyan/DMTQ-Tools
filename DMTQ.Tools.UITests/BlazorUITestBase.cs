@@ -68,6 +68,8 @@ public abstract class BlazorUITestBase : Bunit.TestContext
         public PlatformExportMode PlatformExportMode { get; set; } = PlatformExportMode.Full;
         public bool HasProject => !string.IsNullOrWhiteSpace(ProjectRoot);
         public bool HasPackage => CurrentPackage is not null;
+        public bool IsDirty { get; set; }
+        public event Action? StateChanged;
         public IReadOnlyList<string> ImportIntegrityErrors => [];
 
         public PackageExportOptions CreateExportOptions() => new();
