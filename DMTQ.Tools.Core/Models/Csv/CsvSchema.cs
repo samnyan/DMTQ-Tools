@@ -5,11 +5,21 @@ using CsvHelper.Configuration;
 
 namespace DMTQ.Tools.Core.Models.Csv;
 
-public abstract class CsvSchema<T> where T : new()
+/// <summary>
+/// Base class for CSV schemas that produce entities of type <typeparamref name="T"/>.
+/// Subclasses define column mappings via the <see cref="Columns"/> property.
+/// </summary>
+public abstract class CsvSchema<T>
 {
     public abstract string TableName { get; }
     public virtual string? LanguageCode => null;
     public abstract IReadOnlyList<CsvColumn<T>> Columns { get; }
+
+    /// <summary>
+    /// Called after all column setters have been applied to a newly read entity.
+    /// Override to perform post-processing such as computing composite keys.
+    /// </summary>
+    protected virtual void OnAfterRead(T entity) { }
 
     public List<T> ReadCsv(Stream stream)
     {
@@ -63,13 +73,15 @@ public abstract class CsvSchema<T> where T : new()
 
         while (csv.Read())
         {
-            var entity = new T();
+            var entity = Activator.CreateInstance<T>();
 
             foreach (var (column, csvIndex) in columnMappings)
             {
                 var value = csv.GetField(csvIndex) ?? string.Empty;
                 column.Setter(entity, value);
             }
+
+            OnAfterRead(entity);
 
             if (idProperty is not null && seenIds is not null)
             {
@@ -121,4 +133,65 @@ public abstract class CsvSchema<T> where T : new()
 
         writer.Flush();
     }
+}
+
+/// <summary>
+/// Base class for CSV schemas that mutate existing entities in a lookup dictionary
+/// rather than producing new entity instances. Used for localized description tables
+/// and join tables that enrich previously read entities.
+/// </summary>
+public abstract class CsvLookupSchema<TTarget>
+{
+    public abstract string TableName { get; }
+    public virtual string? LanguageCode => null;
+
+    /// <summary>
+    /// Reads CSV rows from <paramref name="stream"/> and applies each row
+    /// to the <paramref name="lookup"/> dictionary via <see cref="ApplyRow"/>.
+    /// </summary>
+    public void ReadCsv(Stream stream, Dictionary<string, TTarget> lookup)
+    {
+        ArgumentNullException.ThrowIfNull(stream);
+        ArgumentNullException.ThrowIfNull(lookup);
+
+        using var reader = new StreamReader(stream, leaveOpen: true);
+        using var csv = new CsvReader(reader, new CsvConfiguration(CultureInfo.InvariantCulture)
+        {
+            BadDataFound = null,
+            MissingFieldFound = null
+        });
+
+        if (!csv.Read())
+        {
+            throw new InvalidDataException($"CSV table '{TableName}' is empty.");
+        }
+
+        csv.ReadHeader();
+        var headers = csv.HeaderRecord
+            ?? throw new InvalidDataException($"CSV table '{TableName}' has no header.");
+
+        var rowIndex = 0;
+        while (csv.Read())
+        {
+            var fields = new Dictionary<string, string>(headers.Length, StringComparer.OrdinalIgnoreCase);
+            for (var i = 0; i < headers.Length; i++)
+            {
+                fields[headers[i]] = csv.GetField(i) ?? string.Empty;
+            }
+
+            ApplyRow(lookup, fields, rowIndex++);
+        }
+    }
+
+    /// <summary>
+    /// Called for each CSV row. Implementations look up the target entity
+    /// from <paramref name="lookup"/> (or create it) and apply the field values.
+    /// </summary>
+    /// <param name="lookup">The entity dictionary keyed by entity Id.</param>
+    /// <param name="fields">Field values keyed by header name (case-insensitive).</param>
+    /// <param name="rowIndex">Zero-based row index within the CSV.</param>
+    protected abstract void ApplyRow(
+        Dictionary<string, TTarget> lookup,
+        IReadOnlyDictionary<string, string> fields,
+        int rowIndex);
 }

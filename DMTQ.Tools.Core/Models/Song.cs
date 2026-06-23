@@ -107,6 +107,9 @@ public sealed class SongPattern
 /// </summary>
 public sealed class SongLocalization
 {
+    /// <summary>The song this localization belongs to.</summary>
+    public string SongId { get; set; } = string.Empty;
+
     public string FullName { get; set; } = string.Empty;
     public string Genre { get; set; } = string.Empty;
     public string ArtistName { get; set; } = string.Empty;
