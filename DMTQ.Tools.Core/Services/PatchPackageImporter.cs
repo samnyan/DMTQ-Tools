@@ -53,6 +53,13 @@ public sealed class PatchPackageImporter(
 
                 if (FileUtility.IsCsvTable(relativePath))
                 {
+                    // slang is a shared resource, not an entity-backed table
+                    if (relativePath.Equals("table/slang/slang.csv", StringComparison.OrdinalIgnoreCase))
+                    {
+                        ImportSharedResource(package, projectRoot, relativePath, entry, sourcePath, cancellationToken);
+                        continue;
+                    }
+
                     var csvPath = await EnsureCsvFileAsync(sourcePath, tempRoot, relativePath, entry.Compressed, cancellationToken)
                         .ConfigureAwait(false);
 
@@ -494,6 +501,69 @@ public sealed class PatchPackageImporter(
         }
 
         throw new FileNotFoundException($"Could not find package file '{relativePath}'.", uncompressedPath);
+    }
+
+    // ── Shared resource import (slang etc.) ──
+
+    private static void ImportSharedResource(
+        PatchPackage package,
+        string projectRoot,
+        string relativePath,
+        PatchFileEntry entry,
+        string? sourcePath,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var archivedPath = Path.Combine(projectRoot, "resources", relativePath.Replace('/', Path.DirectorySeparatorChar));
+        Directory.CreateDirectory(Path.GetDirectoryName(archivedPath) ?? projectRoot);
+
+        if (sourcePath is not null)
+        {
+            if (entry.Compressed)
+            {
+                FileUtility.DecompressFileAsync(sourcePath, archivedPath, cancellationToken)
+                    .GetAwaiter().GetResult();
+            }
+            else
+            {
+                using var source = File.OpenRead(sourcePath);
+                using var dest = File.Create(archivedPath);
+                source.CopyTo(dest);
+            }
+        }
+
+        var resourceFile = package.Resources.FirstOrDefault(r =>
+            r.FileName.Equals(relativePath, StringComparison.OrdinalIgnoreCase));
+
+        if (resourceFile is null)
+        {
+            resourceFile = new ResourceFile
+            {
+                FileName = relativePath,
+                Category = "slang",
+                Compressed = entry.Compressed,
+                AcquireOnDemand = entry.AcquireOnDemand
+            };
+            package.Resources.Add(resourceFile);
+        }
+
+        var existing = resourceFile.PlatformManifest
+            .FirstOrDefault(m => m.Platform.Equals("share", StringComparison.OrdinalIgnoreCase));
+
+        if (existing is null)
+        {
+            resourceFile.PlatformManifest.Add(new PlatformManifestEntry
+            {
+                Platform = "share",
+                Exist = sourcePath is not null,
+                SourceFileSize = entry.FileSize,
+                SourceChecksum = entry.Checksum,
+                SourceCompressedFileSize = entry.CompressedFileSize,
+                SourceCompressedChecksum = entry.CompressedChecksum,
+                Checksum = string.Empty
+            });
+        }
     }
 
     private static string? TryGetVersion(string packageRoot)

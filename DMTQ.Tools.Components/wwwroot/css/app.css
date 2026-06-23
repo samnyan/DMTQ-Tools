@@ -14,6 +14,7 @@ html, body {
 /* Blazor root must fill body height for flex layout chain */
 #app {
     height: 100%;
+    overflow: hidden;
 }
 
 /* ── Form: ensure EditForm stretches to container width ── */

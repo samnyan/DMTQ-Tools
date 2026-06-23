@@ -4,7 +4,7 @@
                    OfficeColor="OfficeColor.Teams"
                    StorageName="dmtq-theme" />
 
-<FluentLayout Style="height: 100vh; display: flex; flex-direction: column;">
+<FluentLayout Style="height: 100vh; display: flex; flex-direction: column; overflow: hidden;">
 
     @* ── Sticky Header ── *@
     <FluentHeader Height="48" Style="flex-shrink: 0; border-bottom: 1px solid var(--neutral-stroke-rest); padding: 0 1.25rem; display: flex; align-items: center;">
@@ -12,7 +12,7 @@
     </FluentHeader>
 
     @* ── Sidebar + Content ── *@
-    <FluentStack Orientation="Orientation.Horizontal" Width="100%" Style="flex: 1; min-height: 0;">
+    <FluentStack Orientation="Orientation.Horizontal" Width="100%" Style="flex: 1; min-height: 0; overflow: hidden;">
         <FluentNavMenu Width="250" Collapsible="true" Title="DMTQ Tools"
                        Style="flex-shrink: 0; border-right: 1px solid var(--neutral-stroke-rest);">
             <FluentNavLink Href="" Icon="@(new Icons.Regular.Size20.Home())" Match="NavLinkMatch.All">Project</FluentNavLink>
@@ -24,7 +24,7 @@
             <FluentNavLink Href="diagnostics" Icon="@(new Icons.Regular.Size20.Wrench())">Diagnostics</FluentNavLink>
         </FluentNavMenu>
 
-        <FluentBodyContent Style="flex: 1; min-width: 0; overflow-y: auto; padding: 1.25rem 1.5rem;">
+        <FluentBodyContent Style="flex: 1; min-width: 0; min-height: 0; overflow-y: auto; padding: 1.25rem 1.5rem;">
             @Body
         </FluentBodyContent>
     </FluentStack>

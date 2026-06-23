@@ -87,8 +87,6 @@ public sealed class PlatformPackageExporter
     {
         // Always export tables for all 5 languages
         var languages = new[] { "cn", "jp", "kr", "tw", "us" };
-        // Extra shared path
-        var sharedPaths = new[] { "table/slang/slang.csv" };
 
         foreach (var lang in languages)
         {
@@ -118,22 +116,6 @@ public sealed class PlatformPackageExporter
                     await WriteTableBytesAsync(ms, relativePath, exportRoot, null, options, result, cancellationToken)
                         .ConfigureAwait(false);
                 }
-            }
-        }
-
-        // Export shared/slang tables
-        foreach (var relativePath in sharedPaths)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            var table = package.Tables.Tables.FirstOrDefault(t =>
-                t.PackageRelativePath.Equals(relativePath, StringComparison.OrdinalIgnoreCase));
-            if (table is not null)
-            {
-                await using var ms = new MemoryStream();
-                WriteGameTableToStream(table, ms);
-                ms.Position = 0;
-                await WriteTableBytesAsync(ms, relativePath, exportRoot, null, options, result, cancellationToken)
-                    .ConfigureAwait(false);
             }
         }
     }
@@ -327,6 +309,8 @@ public sealed class PlatformPackageExporter
             Path.Combine(projectRoot, "resources", fileName.Replace('/', Path.DirectorySeparatorChar)),
             Path.Combine(projectRoot, "resources", "android", fileName.Replace('/', Path.DirectorySeparatorChar)),
             Path.Combine(projectRoot, "resources", "ios", fileName.Replace('/', Path.DirectorySeparatorChar)),
+            // Also try without resources prefix (raw fileName)
+            Path.Combine(projectRoot, fileName.Replace('/', Path.DirectorySeparatorChar)),
         };
 
         foreach (var candidate in candidates)
@@ -335,7 +319,7 @@ public sealed class PlatformPackageExporter
                 return candidate;
         }
 
-        // Return the first candidate as default (won't exist)
+        // Return the first candidate as default (used for error reporting)
         return candidates[0];
     }
 

@@ -198,8 +198,7 @@ public sealed class PatchPackageExporter
             }
         }
 
-        // Shared tables
-        tablePaths.Add("table/slang/slang.csv");
+        // Shared non-entity tables (now handled as shared resources) are not added here.
     }
 
     private async Task<PatchFileEntry> CreateExportEntryAsync(
