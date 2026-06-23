@@ -25,9 +25,32 @@ public sealed class Item
     public string Update { get; set; } = string.Empty;
 
     // ── item_desc_&lt;lang&gt; localized fields ──
-    public Dictionary<string, string> NamesByLanguage { get; set; } = new(StringComparer.OrdinalIgnoreCase);
-    public Dictionary<string, string> DescriptionsByLanguage { get; set; } = new(StringComparer.OrdinalIgnoreCase);
-    public Dictionary<string, string> SummariesByLanguage { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    private Dictionary<string, string> _namesByLanguage = new(StringComparer.OrdinalIgnoreCase);
+    public Dictionary<string, string> NamesByLanguage
+    {
+        get => _namesByLanguage;
+        set => _namesByLanguage = value is not null
+            ? new Dictionary<string, string>(value, StringComparer.OrdinalIgnoreCase)
+            : new(StringComparer.OrdinalIgnoreCase);
+    }
+
+    private Dictionary<string, string> _descriptionsByLanguage = new(StringComparer.OrdinalIgnoreCase);
+    public Dictionary<string, string> DescriptionsByLanguage
+    {
+        get => _descriptionsByLanguage;
+        set => _descriptionsByLanguage = value is not null
+            ? new Dictionary<string, string>(value, StringComparer.OrdinalIgnoreCase)
+            : new(StringComparer.OrdinalIgnoreCase);
+    }
+
+    private Dictionary<string, string> _summariesByLanguage = new(StringComparer.OrdinalIgnoreCase);
+    public Dictionary<string, string> SummariesByLanguage
+    {
+        get => _summariesByLanguage;
+        set => _summariesByLanguage = value is not null
+            ? new Dictionary<string, string>(value, StringComparer.OrdinalIgnoreCase)
+            : new(StringComparer.OrdinalIgnoreCase);
+    }
 
     [SetsRequiredMembers]
     public Item() { Id = ""; }

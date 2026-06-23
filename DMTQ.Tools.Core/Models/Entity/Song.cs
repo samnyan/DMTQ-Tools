@@ -42,7 +42,14 @@ public sealed class Song
     // ── Localized metadata overrides (from song_desc_&lt;lang&gt;) ──
     /// <summary>Per‑language metadata overrides (CN, JP, KR, TW, US).
     /// If a field is blank, the export falls back to the Basic Info value.</summary>
-    public Dictionary<string, SongLocalization> Localizations { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    private Dictionary<string, SongLocalization> _localizations = new(StringComparer.OrdinalIgnoreCase);
+    public Dictionary<string, SongLocalization> Localizations
+    {
+        get => _localizations;
+        set => _localizations = value is not null
+            ? new Dictionary<string, SongLocalization>(value, StringComparer.OrdinalIgnoreCase)
+            : new(StringComparer.OrdinalIgnoreCase);
+    }
 
     // ── Patterns ──
     public List<SongPattern> Patterns { get; set; } = [];

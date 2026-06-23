@@ -33,7 +33,30 @@ public sealed class Achievement
     public Achievement() { Id = ""; }
 
     // ── acievement_desc_&lt;lang&gt; localized fields ──
-    public Dictionary<string, string> NamesByLanguage { get; set; } = new(StringComparer.OrdinalIgnoreCase);
-    public Dictionary<string, string> PreDescriptionsByLanguage { get; set; } = new(StringComparer.OrdinalIgnoreCase);
-    public Dictionary<string, string> AfterDescriptionsByLanguage { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    private Dictionary<string, string> _namesByLanguage = new(StringComparer.OrdinalIgnoreCase);
+    public Dictionary<string, string> NamesByLanguage
+    {
+        get => _namesByLanguage;
+        set => _namesByLanguage = value is not null
+            ? new Dictionary<string, string>(value, StringComparer.OrdinalIgnoreCase)
+            : new(StringComparer.OrdinalIgnoreCase);
+    }
+
+    private Dictionary<string, string> _preDescriptionsByLanguage = new(StringComparer.OrdinalIgnoreCase);
+    public Dictionary<string, string> PreDescriptionsByLanguage
+    {
+        get => _preDescriptionsByLanguage;
+        set => _preDescriptionsByLanguage = value is not null
+            ? new Dictionary<string, string>(value, StringComparer.OrdinalIgnoreCase)
+            : new(StringComparer.OrdinalIgnoreCase);
+    }
+
+    private Dictionary<string, string> _afterDescriptionsByLanguage = new(StringComparer.OrdinalIgnoreCase);
+    public Dictionary<string, string> AfterDescriptionsByLanguage
+    {
+        get => _afterDescriptionsByLanguage;
+        set => _afterDescriptionsByLanguage = value is not null
+            ? new Dictionary<string, string>(value, StringComparer.OrdinalIgnoreCase)
+            : new(StringComparer.OrdinalIgnoreCase);
+    }
 }

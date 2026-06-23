@@ -10,8 +10,23 @@ public sealed class Quest
     public required string Id { get; init; }
 
     // ── quest_desc_&lt;lang&gt; localized fields ──
-    public Dictionary<string, string> NamesByLanguage { get; set; } = new(StringComparer.OrdinalIgnoreCase);
-    public Dictionary<string, string> DescriptionsByLanguage { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    private Dictionary<string, string> _namesByLanguage = new(StringComparer.OrdinalIgnoreCase);
+    public Dictionary<string, string> NamesByLanguage
+    {
+        get => _namesByLanguage;
+        set => _namesByLanguage = value is not null
+            ? new Dictionary<string, string>(value, StringComparer.OrdinalIgnoreCase)
+            : new(StringComparer.OrdinalIgnoreCase);
+    }
+
+    private Dictionary<string, string> _descriptionsByLanguage = new(StringComparer.OrdinalIgnoreCase);
+    public Dictionary<string, string> DescriptionsByLanguage
+    {
+        get => _descriptionsByLanguage;
+        set => _descriptionsByLanguage = value is not null
+            ? new Dictionary<string, string>(value, StringComparer.OrdinalIgnoreCase)
+            : new(StringComparer.OrdinalIgnoreCase);
+    }
 
     // ── quest_mission_desc_&lt;lang&gt; — ordered child rows ──
     public List<QuestMission> Missions { get; set; } = [];
@@ -28,5 +43,12 @@ public sealed class QuestMission
     public int Index { get; set; }
 
     /// <summary>Per-language mission description text.</summary>
-    public Dictionary<string, string> DescriptionsByLanguage { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    private Dictionary<string, string> _descriptionsByLanguage = new(StringComparer.OrdinalIgnoreCase);
+    public Dictionary<string, string> DescriptionsByLanguage
+    {
+        get => _descriptionsByLanguage;
+        set => _descriptionsByLanguage = value is not null
+            ? new Dictionary<string, string>(value, StringComparer.OrdinalIgnoreCase)
+            : new(StringComparer.OrdinalIgnoreCase);
+    }
 }
