@@ -72,6 +72,8 @@ public sealed class JsonPatchProjectRepository : IPatchProjectRepository
         public List<ResourceFileDto> Resources { get; set; } = [];
         public List<PlatformPackageRecordDto> Platforms { get; set; } = [];
         public List<SongDto> Songs { get; set; } = [];
+        public List<AchievementDto> Achievements { get; set; } = [];
+        public List<QuestDto> Quests { get; set; } = [];
 
         public static ProjectDocument FromPackage(
             PatchPackage package,
@@ -87,7 +89,9 @@ public sealed class JsonPatchProjectRepository : IPatchProjectRepository
                 Tables = package.Tables.Tables.Select(GameTableDto.FromModel).ToList(),
                 Resources = package.Resources.Select(ResourceFileDto.FromModel).ToList(),
                 Platforms = package.Platforms.Select(PlatformPackageRecordDto.FromModel).ToList(),
-                Songs = package.Songs.Select(SongDto.FromModel).ToList()
+                Songs = package.Songs.Select(SongDto.FromModel).ToList(),
+                Achievements = package.Achievements.Select(AchievementDto.FromModel).ToList(),
+                Quests = package.Quests.Select(QuestDto.FromModel).ToList()
             };
         }
 
@@ -103,6 +107,8 @@ public sealed class JsonPatchProjectRepository : IPatchProjectRepository
             package.Resources.AddRange(Resources.Select(resource => resource.ToModel()));
             package.Platforms.AddRange(Platforms.Select(platform => platform.ToModel()));
             package.Songs.AddRange(Songs.Select(song => song.ToModel()));
+            package.Achievements.AddRange(Achievements.Select(a => a.ToModel()));
+            package.Quests.AddRange(Quests.Select(q => q.ToModel()));
 
             var options = new PackageExportOptions();
             foreach (var item in CompressionOverrides)
@@ -310,6 +316,109 @@ public sealed class JsonPatchProjectRepository : IPatchProjectRepository
                 ArrangedBy = ArrangedBy,
                 VisualizedBy = VisualizedBy
             };
+    }
+
+    private sealed class AchievementDto
+    {
+        public string Id { get; set; } = string.Empty;
+        public string ConditionType { get; set; } = string.Empty;
+        public string ConditionValue { get; set; } = string.Empty;
+        public string ConditionCount { get; set; } = string.Empty;
+        public string ConditionSpecial { get; set; } = string.Empty;
+        public string ImgUrl { get; set; } = string.Empty;
+        public string AchievementTier { get; set; } = string.Empty;
+        public string ObtainPoint { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+        public string PreDescription { get; set; } = string.Empty;
+        public string AfterDescription { get; set; } = string.Empty;
+        public string Update { get; set; } = string.Empty;
+        public Dictionary<string, string> NamesByLanguage { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+        public Dictionary<string, string> PreDescriptionsByLanguage { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+        public Dictionary<string, string> AfterDescriptionsByLanguage { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+
+        public static AchievementDto FromModel(Achievement model)
+            => new()
+            {
+                Id = model.Id,
+                ConditionType = model.ConditionType,
+                ConditionValue = model.ConditionValue,
+                ConditionCount = model.ConditionCount,
+                ConditionSpecial = model.ConditionSpecial,
+                ImgUrl = model.ImgUrl,
+                AchievementTier = model.AchievementTier,
+                ObtainPoint = model.ObtainPoint,
+                Name = model.Name,
+                PreDescription = model.PreDescription,
+                AfterDescription = model.AfterDescription,
+                Update = model.Update,
+                NamesByLanguage = new Dictionary<string, string>(model.NamesByLanguage, StringComparer.OrdinalIgnoreCase),
+                PreDescriptionsByLanguage = new Dictionary<string, string>(model.PreDescriptionsByLanguage, StringComparer.OrdinalIgnoreCase),
+                AfterDescriptionsByLanguage = new Dictionary<string, string>(model.AfterDescriptionsByLanguage, StringComparer.OrdinalIgnoreCase),
+            };
+
+        public Achievement ToModel()
+        {
+            var achievement = new Achievement { Id = Id };
+            achievement.ConditionType = ConditionType;
+            achievement.ConditionValue = ConditionValue;
+            achievement.ConditionCount = ConditionCount;
+            achievement.ConditionSpecial = ConditionSpecial;
+            achievement.ImgUrl = ImgUrl;
+            achievement.AchievementTier = AchievementTier;
+            achievement.ObtainPoint = ObtainPoint;
+            achievement.Name = Name;
+            achievement.PreDescription = PreDescription;
+            achievement.AfterDescription = AfterDescription;
+            achievement.Update = Update;
+            foreach (var kvp in NamesByLanguage) achievement.NamesByLanguage[kvp.Key] = kvp.Value;
+            foreach (var kvp in PreDescriptionsByLanguage) achievement.PreDescriptionsByLanguage[kvp.Key] = kvp.Value;
+            foreach (var kvp in AfterDescriptionsByLanguage) achievement.AfterDescriptionsByLanguage[kvp.Key] = kvp.Value;
+            return achievement;
+        }
+    }
+
+    private sealed class QuestDto
+    {
+        public string Id { get; set; } = string.Empty;
+        public Dictionary<string, string> NamesByLanguage { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+        public Dictionary<string, string> DescriptionsByLanguage { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+        public List<QuestMissionDto> Missions { get; set; } = [];
+
+        public static QuestDto FromModel(Quest model)
+            => new()
+            {
+                Id = model.Id,
+                NamesByLanguage = new Dictionary<string, string>(model.NamesByLanguage, StringComparer.OrdinalIgnoreCase),
+                DescriptionsByLanguage = new Dictionary<string, string>(model.DescriptionsByLanguage, StringComparer.OrdinalIgnoreCase),
+                Missions = model.Missions.Select(QuestMissionDto.FromModel).ToList(),
+            };
+
+        public Quest ToModel()
+        {
+            var quest = new Quest { Id = Id };
+            foreach (var kvp in NamesByLanguage) quest.NamesByLanguage[kvp.Key] = kvp.Value;
+            foreach (var kvp in DescriptionsByLanguage) quest.DescriptionsByLanguage[kvp.Key] = kvp.Value;
+            quest.Missions.AddRange(Missions.Select(m => m.ToModel()));
+            return quest;
+        }
+    }
+
+    private sealed class QuestMissionDto
+    {
+        public Dictionary<string, string> DescriptionsByLanguage { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+
+        public static QuestMissionDto FromModel(QuestMission model)
+            => new()
+            {
+                DescriptionsByLanguage = new Dictionary<string, string>(model.DescriptionsByLanguage, StringComparer.OrdinalIgnoreCase),
+            };
+
+        public QuestMission ToModel()
+        {
+            var mission = new QuestMission();
+            foreach (var kvp in DescriptionsByLanguage) mission.DescriptionsByLanguage[kvp.Key] = kvp.Value;
+            return mission;
+        }
     }
 
     private sealed class ProjectInfoDto

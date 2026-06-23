@@ -310,4 +310,153 @@ public sealed class SongCatalogService
            || tableName.Equals("product_product", StringComparison.OrdinalIgnoreCase)
            || tableName.Equals("product_item", StringComparison.OrdinalIgnoreCase)
            || tableName.Equals("category_categoryproduct", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>Returns true when the table carries Achievement data
+    /// (quest_achievement + acievement_desc_&lt;lang&gt;).</summary>
+    public static bool IsAchievementRelatedTable(string tableName)
+        => tableName.Equals("quest_achievement", StringComparison.OrdinalIgnoreCase)
+           || tableName.StartsWith("acievement_desc_", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>Returns true when the table carries Quest data
+    /// (quest_desc_&lt;lang&gt; + quest_mission_desc_&lt;lang&gt;).</summary>
+    public static bool IsQuestRelatedTable(string tableName)
+        => tableName.StartsWith("quest_desc_", StringComparison.OrdinalIgnoreCase)
+           || tableName.StartsWith("quest_mission_desc_", StringComparison.OrdinalIgnoreCase);
+
+    // ── Achievement catalog building ──
+
+    public IReadOnlyList<Achievement> BuildAchievementCatalog(PatchPackage package)
+    {
+        if (package.Achievements.Count > 0)
+            return package.Achievements.OrderBy(a => a.Id, StringComparer.OrdinalIgnoreCase).ToArray();
+
+        var mainTable = package.Tables.Tables.FirstOrDefault(
+            t => t.TableName.Equals("quest_achievement", StringComparison.OrdinalIgnoreCase));
+        if (mainTable is null) return [];
+
+        var achievements = new Dictionary<string, Achievement>(StringComparer.OrdinalIgnoreCase);
+        foreach (var row in mainTable.Rows.OrderBy(r => r.Order))
+        {
+            var id = GetCell(row, "achievement_id", "id");
+            if (string.IsNullOrWhiteSpace(id) || achievements.ContainsKey(id)) continue;
+
+            var achievement = new Achievement { Id = id };
+            achievement.ConditionType = GetCell(row, "condition_type");
+            achievement.ConditionValue = GetCell(row, "condition_value");
+            achievement.ConditionCount = GetCell(row, "condition_count");
+            achievement.ConditionSpecial = GetCell(row, "condition_special");
+            achievement.ImgUrl = GetCell(row, "img_url");
+            achievement.AchievementTier = GetCell(row, "achievement_tier");
+            achievement.ObtainPoint = GetCell(row, "obtain_point");
+            achievement.Name = GetCell(row, "name");
+            achievement.PreDescription = GetCell(row, "pre_description");
+            achievement.AfterDescription = GetCell(row, "after_description");
+            achievement.Update = GetCell(row, "update");
+            achievements[id] = achievement;
+        }
+
+        // Localized descriptions from acievement_desc_<lang>
+        foreach (var table in package.Tables.Tables.Where(
+            t => t.TableName.StartsWith("acievement_desc_", StringComparison.OrdinalIgnoreCase)))
+        {
+            var language = table.LanguageCode ?? ExtractLanguage(table.TableName);
+            if (string.IsNullOrWhiteSpace(language)) continue;
+
+            foreach (var row in table.Rows)
+            {
+                var id = GetCell(row, "achievement_id", "id");
+                if (!achievements.TryGetValue(id, out var achievement)) continue;
+
+                var name = GetCell(row, "achievement_name", "name");
+                var preDesc = GetCell(row, "pre_description");
+                var afterDesc = GetCell(row, "after_description");
+
+                if (!string.IsNullOrWhiteSpace(name)) achievement.NamesByLanguage[language] = name;
+                if (!string.IsNullOrWhiteSpace(preDesc)) achievement.PreDescriptionsByLanguage[language] = preDesc;
+                if (!string.IsNullOrWhiteSpace(afterDesc)) achievement.AfterDescriptionsByLanguage[language] = afterDesc;
+            }
+        }
+
+        return achievements.Values.OrderBy(a => a.Id, StringComparer.OrdinalIgnoreCase).ToArray();
+    }
+
+    // ── Quest catalog building ──
+
+    public IReadOnlyList<Quest> BuildQuestCatalog(PatchPackage package)
+    {
+        if (package.Quests.Count > 0)
+            return package.Quests.OrderBy(q => q.Id, StringComparer.OrdinalIgnoreCase).ToArray();
+
+        // Localized quest names / descriptions from quest_desc_<lang>
+        var quests = new Dictionary<string, Quest>(StringComparer.OrdinalIgnoreCase);
+        foreach (var table in package.Tables.Tables.Where(
+            t => t.TableName.StartsWith("quest_desc_", StringComparison.OrdinalIgnoreCase)))
+        {
+            var language = table.LanguageCode ?? ExtractLanguage(table.TableName);
+            if (string.IsNullOrWhiteSpace(language)) continue;
+
+            foreach (var row in table.Rows)
+            {
+                var id = GetCell(row, "quest_id", "id");
+                if (string.IsNullOrWhiteSpace(id)) continue;
+
+                if (!quests.TryGetValue(id, out var quest))
+                {
+                    quest = new Quest { Id = id };
+                    quests[id] = quest;
+                }
+
+                var name = GetCell(row, "quest_name", "name");
+                var desc = GetCell(row, "description", "desc");
+                if (!string.IsNullOrWhiteSpace(name)) quest.NamesByLanguage[language] = name;
+                if (!string.IsNullOrWhiteSpace(desc)) quest.DescriptionsByLanguage[language] = desc;
+            }
+        }
+
+        // Mission descriptions from quest_mission_desc_<lang>
+        var missionRowsByQuest = new Dictionary<string, List<(string Language, string Description)>>(StringComparer.OrdinalIgnoreCase);
+        foreach (var table in package.Tables.Tables.Where(
+            t => t.TableName.StartsWith("quest_mission_desc_", StringComparison.OrdinalIgnoreCase)))
+        {
+            var language = table.LanguageCode ?? ExtractLanguage(table.TableName);
+            if (string.IsNullOrWhiteSpace(language)) continue;
+
+            foreach (var row in table.Rows.OrderBy(r => r.Order))
+            {
+                var questId = GetCell(row, "quest_mission_id", "quest_id", "id");
+                if (string.IsNullOrWhiteSpace(questId)) continue;
+
+                var desc = GetCell(row, "description", "desc");
+                if (string.IsNullOrWhiteSpace(desc)) continue;
+
+                if (!missionRowsByQuest.ContainsKey(questId))
+                    missionRowsByQuest[questId] = [];
+                missionRowsByQuest[questId].Add((language, desc));
+            }
+        }
+
+        // Align missions across languages by position
+        foreach (var (questId, rows) in missionRowsByQuest)
+        {
+            if (!quests.TryGetValue(questId, out var quest)) continue;
+
+            var missionsByLang = rows.GroupBy(r => r.Language).ToDictionary(g => g.Key, g => g.ToArray(), StringComparer.OrdinalIgnoreCase);
+            var primaryLang = missionsByLang.Keys.FirstOrDefault() ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(primaryLang)) continue;
+
+            var count = missionsByLang[primaryLang].Length;
+            for (var i = 0; i < count; i++)
+            {
+                var mission = new QuestMission();
+                foreach (var (lang, langRows) in missionsByLang)
+                {
+                    if (i < langRows.Length)
+                        mission.DescriptionsByLanguage[lang] = langRows[i].Description;
+                }
+                quest.Missions.Add(mission);
+            }
+        }
+
+        return quests.Values.OrderBy(q => q.Id, StringComparer.OrdinalIgnoreCase).ToArray();
+    }
 }

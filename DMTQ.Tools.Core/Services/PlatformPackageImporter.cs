@@ -142,7 +142,7 @@ public sealed class PlatformPackageImporter(
 
             package.Platforms.Add(record);
 
-            ExtractSongsFromTables(package);
+            ExtractEntitiesFromTables(package);
         }
         finally
         {
@@ -153,27 +153,51 @@ public sealed class PlatformPackageImporter(
         }
     }
 
-    private void ExtractSongsFromTables(PatchPackage package)
+    private void ExtractEntitiesFromTables(PatchPackage package)
     {
-        var songs = songCatalogService.BuildCatalog(package, forceFromTables: true);
-        if (songs.Count == 0) return;
+        ExtractEntityType(package,
+            songCatalogService.BuildCatalog(package, forceFromTables: true),
+            package.Songs,
+            s => s.Id,
+            SongCatalogService.IsSongRelatedTable);
 
-        var existingIds = package.Songs.Select(s => s.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        foreach (var song in songs)
+        ExtractEntityType(package,
+            songCatalogService.BuildAchievementCatalog(package),
+            package.Achievements,
+            a => a.Id,
+            SongCatalogService.IsAchievementRelatedTable);
+
+        ExtractEntityType(package,
+            songCatalogService.BuildQuestCatalog(package),
+            package.Quests,
+            q => q.Id,
+            SongCatalogService.IsQuestRelatedTable);
+    }
+
+    private static void ExtractEntityType<T>(
+        PatchPackage package,
+        IReadOnlyList<T> built,
+        List<T> target,
+        Func<T, string> idSelector,
+        Func<string, bool> isRelatedTable) where T : notnull
+    {
+        if (built.Count == 0) return;
+
+        var existingIds = target.Select(idSelector)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        foreach (var entity in built)
         {
-            if (!existingIds.Contains(song.Id))
+            if (!existingIds.Contains(idSelector(entity)))
             {
-                package.Songs.Add(song);
+                target.Add(entity);
             }
         }
 
-        var songRelatedTables = package.Tables.Tables
-            .Where(t => SongCatalogService.IsSongRelatedTable(t.TableName))
+        var related = package.Tables.Tables
+            .Where(t => isRelatedTable(t.TableName))
             .ToArray();
-        foreach (var table in songRelatedTables)
-        {
+        foreach (var table in related)
             package.Tables.Tables.Remove(table);
-        }
     }
 
     private async Task<string> EnsureCsvFileAsync(

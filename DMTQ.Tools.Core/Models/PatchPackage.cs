@@ -11,4 +11,10 @@ public sealed class PatchPackage
     /// <summary>Song entities with their patterns and localizations.
     /// Populated during import; used for editing and exported back to CSV tables.</summary>
     public List<Song> Songs { get; } = [];
+
+    /// <summary>Achievement entities from quest_achievement + acievement_desc_&lt;lang&gt;.</summary>
+    public List<Achievement> Achievements { get; } = [];
+
+    /// <summary>Quest entities from quest_desc_&lt;lang&gt; + quest_mission_desc_&lt;lang&gt;.</summary>
+    public List<Quest> Quests { get; } = [];
 }

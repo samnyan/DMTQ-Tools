@@ -11,37 +11,63 @@ public sealed class SongTableProjector
         ArgumentNullException.ThrowIfNull(package);
 
         var tables = new List<GameTable>();
-        var songRelatedPaths = package.Manifest.Entries
+
+        ProjectEntityTables(package, tables, SongCatalogService.IsSongRelatedTable,
+            (path, lang, name) => name switch
+            {
+                "song_song" => BuildSongTable(path, lang, package.Songs),
+                "song_songPattern" => BuildPatternTable(path, lang, package.Songs),
+                _ when name.StartsWith("song_desc_", StringComparison.OrdinalIgnoreCase)
+                    => BuildSongDescTable(path, lang, name, package.Songs),
+                _ when name.StartsWith("item_desc_", StringComparison.OrdinalIgnoreCase)
+                    => BuildItemDescTable(path, lang, name, package.Songs),
+                "product_product" => BuildProductProductTable(path, lang, package.Songs),
+                "product_item" => BuildProductItemTable(path, lang, package.Songs),
+                "category_categoryproduct" => BuildCategoryProductTable(path, lang, package.Songs),
+                _ => null
+            });
+
+        ProjectEntityTables(package, tables, SongCatalogService.IsAchievementRelatedTable,
+            (path, lang, name) => name switch
+            {
+                "quest_achievement" => BuildAchievementTable(path, lang, package.Achievements),
+                _ when name.StartsWith("acievement_desc_", StringComparison.OrdinalIgnoreCase)
+                    => BuildAchievementDescTable(path, lang, name, package.Achievements),
+                _ => null
+            });
+
+        ProjectEntityTables(package, tables, SongCatalogService.IsQuestRelatedTable,
+            (path, lang, name) => name switch
+            {
+                _ when name.StartsWith("quest_desc_", StringComparison.OrdinalIgnoreCase)
+                    => BuildQuestDescTable(path, lang, name, package.Quests),
+                _ when name.StartsWith("quest_mission_desc_", StringComparison.OrdinalIgnoreCase)
+                    => BuildQuestMissionDescTable(path, lang, name, package.Quests),
+                _ => null
+            });
+
+        return tables;
+    }
+
+    private static void ProjectEntityTables(
+        PatchPackage package,
+        List<GameTable> tables,
+        Func<string, bool> isRelated,
+        Func<string, string?, string, GameTable?> build)
+    {
+        var paths = package.Manifest.Entries
             .Select(e => PathClassifier.NormalizePackageRelativePath(e.FileName))
-            .Where(p => PathClassifier.IsCsvTable(p) && SongCatalogService.IsSongRelatedTable(GetTableName(p)))
+            .Where(p => PathClassifier.IsCsvTable(p) && isRelated(GetTableName(p)))
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-        foreach (var path in songRelatedPaths)
+        foreach (var path in paths)
         {
             var tableName = GetTableName(path);
             var languageCode = GetLanguageCode(path);
-
-            var table = tableName switch
-            {
-                "song_song" => BuildSongTable(path, languageCode, package.Songs),
-                "song_songPattern" => BuildPatternTable(path, languageCode, package.Songs),
-                _ when tableName.StartsWith("song_desc_", StringComparison.OrdinalIgnoreCase)
-                    => BuildSongDescTable(path, languageCode, tableName, package.Songs),
-                _ when tableName.StartsWith("item_desc_", StringComparison.OrdinalIgnoreCase)
-                    => BuildItemDescTable(path, languageCode, tableName, package.Songs),
-                "product_product" => BuildProductProductTable(path, languageCode, package.Songs),
-                "product_item" => BuildProductItemTable(path, languageCode, package.Songs),
-                "category_categoryproduct" => BuildCategoryProductTable(path, languageCode, package.Songs),
-                _ => null
-            };
-
+            var table = build(path, languageCode, tableName);
             if (table is not null)
-            {
                 tables.Add(table);
-            }
         }
-
-        return tables;
     }
 
     private static GameTable BuildSongTable(string path, string? languageCode, List<Song> songs)
@@ -234,6 +260,115 @@ public sealed class SongTableProjector
                     SetCell(row, "product_id", productId);
                     table.Rows.Add(row);
                 }
+            }
+        }
+
+        return table;
+    }
+
+    // ── Achievement projection ──
+
+    private static GameTable BuildAchievementTable(string path, string? languageCode, List<Achievement> achievements)
+    {
+        var columns = new[] { "achievement_id", "condition_type", "condition_value",
+            "condition_count", "condition_special", "img_url", "achievement_tier",
+            "obtain_point", "name", "pre_description", "after_description", "update" };
+
+        var table = CreateEmptyTable(path, "quest_achievement", languageCode, columns);
+
+        for (var i = 0; i < achievements.Count; i++)
+        {
+            var a = achievements[i];
+            var row = NewRow(table, i);
+            SetCell(row, "achievement_id", a.Id);
+            SetCell(row, "condition_type", a.ConditionType);
+            SetCell(row, "condition_value", a.ConditionValue);
+            SetCell(row, "condition_count", a.ConditionCount);
+            SetCell(row, "condition_special", a.ConditionSpecial);
+            SetCell(row, "img_url", a.ImgUrl);
+            SetCell(row, "achievement_tier", a.AchievementTier);
+            SetCell(row, "obtain_point", a.ObtainPoint);
+            SetCell(row, "name", a.Name);
+            SetCell(row, "pre_description", a.PreDescription);
+            SetCell(row, "after_description", a.AfterDescription);
+            SetCell(row, "update", a.Update);
+            table.Rows.Add(row);
+        }
+
+        return table;
+    }
+
+    private static GameTable BuildAchievementDescTable(string path, string? languageCode, string tableName, List<Achievement> achievements)
+    {
+        var language = languageCode ?? ExtractLanguageSuffix(tableName);
+        var columns = new[] { "achievement_id", "achievement_name", "pre_description", "after_description" };
+
+        var table = CreateEmptyTable(path, tableName, languageCode, columns);
+        var rowIndex = 0;
+
+        foreach (var a in achievements)
+        {
+            var hasName = a.NamesByLanguage.TryGetValue(language, out var name) && !string.IsNullOrWhiteSpace(name);
+            var hasPre = a.PreDescriptionsByLanguage.TryGetValue(language, out var pre) && !string.IsNullOrWhiteSpace(pre);
+            var hasAfter = a.AfterDescriptionsByLanguage.TryGetValue(language, out var after) && !string.IsNullOrWhiteSpace(after);
+            if (!hasName && !hasPre && !hasAfter) continue;
+
+            var row = NewRow(table, rowIndex++);
+            SetCell(row, "achievement_id", a.Id);
+            SetCell(row, "achievement_name", name ?? string.Empty);
+            SetCell(row, "pre_description", pre ?? string.Empty);
+            SetCell(row, "after_description", after ?? string.Empty);
+            table.Rows.Add(row);
+        }
+
+        return table;
+    }
+
+    // ── Quest projection ──
+
+    private static GameTable BuildQuestDescTable(string path, string? languageCode, string tableName, List<Quest> quests)
+    {
+        var language = languageCode ?? ExtractLanguageSuffix(tableName);
+        var columns = new[] { "quest_id", "quest_name", "description" };
+
+        var table = CreateEmptyTable(path, tableName, languageCode, columns);
+        var rowIndex = 0;
+
+        foreach (var q in quests)
+        {
+            var hasName = q.NamesByLanguage.TryGetValue(language, out var name) && !string.IsNullOrWhiteSpace(name);
+            var hasDesc = q.DescriptionsByLanguage.TryGetValue(language, out var desc) && !string.IsNullOrWhiteSpace(desc);
+            if (!hasName && !hasDesc) continue;
+
+            var row = NewRow(table, rowIndex++);
+            SetCell(row, "quest_id", q.Id);
+            SetCell(row, "quest_name", name ?? string.Empty);
+            SetCell(row, "description", desc ?? string.Empty);
+            table.Rows.Add(row);
+        }
+
+        return table;
+    }
+
+    private static GameTable BuildQuestMissionDescTable(string path, string? languageCode, string tableName, List<Quest> quests)
+    {
+        var language = languageCode ?? ExtractLanguageSuffix(tableName);
+        var columns = new[] { "quest_mission_id", "description" };
+
+        var table = CreateEmptyTable(path, tableName, languageCode, columns);
+        var rowIndex = 0;
+
+        foreach (var q in quests)
+        {
+            for (var mi = 0; mi < q.Missions.Count; mi++)
+            {
+                if (!q.Missions[mi].DescriptionsByLanguage.TryGetValue(language, out var desc) || string.IsNullOrWhiteSpace(desc))
+                    continue;
+
+                var row = NewRow(table, rowIndex++);
+                SetCell(row, "quest_mission_id", q.Id);
+                SetCell(row, "description", desc);
+                table.Rows.Add(row);
             }
         }
 

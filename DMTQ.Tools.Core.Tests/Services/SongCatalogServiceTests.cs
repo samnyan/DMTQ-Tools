@@ -104,6 +104,87 @@ public sealed class SongCatalogServiceTests
         song.Patterns[0].PatternId.Should().Be("9001");
     }
 
+    [TestMethod]
+    public void BuildAchievementCatalog_MapsQuestAchievementAndLocalizedDescs()
+    {
+        var package = CreatePackage();
+        package.Tables.Tables.Add(CreateTable(
+            "table/us/quest_achievement.csv", "quest_achievement", "us",
+            ["achievement_id", "condition_type", "condition_value", "condition_count", "condition_special", "img_url", "achievement_tier", "obtain_point", "name", "pre_description", "after_description", "update"],
+            ["1", "QUEST", "10", "1", "", "a0_lv10", "1", "10", "Default DJ", "Reach Lv.10", "Done Lv.10", "0"]));
+        package.Tables.Tables.Add(CreateTable(
+            "table/cn/acievement_desc_cn.csv", "acievement_desc_cn", "cn",
+            ["achievement_id", "achievement_name", "pre_description", "after_description"],
+            ["1", "见习DJ", "达成Lv.10", "完成Lv.10"]));
+
+        var catalog = new SongCatalogService().BuildAchievementCatalog(package);
+
+        catalog.Should().ContainSingle();
+        var a = catalog[0];
+        a.Id.Should().Be("1");
+        a.ConditionType.Should().Be("QUEST");
+        a.Name.Should().Be("Default DJ");
+        a.NamesByLanguage["cn"].Should().Be("见习DJ");
+        a.PreDescriptionsByLanguage["cn"].Should().Be("达成Lv.10");
+    }
+
+    [TestMethod]
+    public void BuildAchievementCatalog_ReturnsEmptyWhenNoTable()
+    {
+        var package = CreatePackage();
+        new SongCatalogService().BuildAchievementCatalog(package).Should().BeEmpty();
+    }
+
+    [TestMethod]
+    public void BuildQuestCatalog_MapsQuestsAndMissionsAcrossLanguages()
+    {
+        var package = CreatePackage();
+        package.Tables.Tables.Add(CreateTable(
+            "table/us/quest_desc_us.csv", "quest_desc_us", "us",
+            ["quest_id", "quest_name", "description"],
+            ["1", "Weekly Quest", "Challenge weekly!"],
+            ["2", "Game Basics", "Welcome!"]));
+        package.Tables.Tables.Add(CreateTable(
+            "table/cn/quest_desc_cn.csv", "quest_desc_cn", "cn",
+            ["quest_id", "quest_name", "description"],
+            ["1", "每周任务", "挑战每周更新的任务!"]));
+        package.Tables.Tables.Add(CreateTable(
+            "table/us/quest_mission_desc_us.csv", "quest_mission_desc_us", "us",
+            ["quest_mission_id", "description"],
+            ["1", "Mission A"],
+            ["1", "Mission B"],
+            ["2", "Mission X"]));
+        package.Tables.Tables.Add(CreateTable(
+            "table/cn/quest_mission_desc_cn.csv", "quest_mission_desc_cn", "cn",
+            ["quest_mission_id", "description"],
+            ["1", "课题 A"],
+            ["1", "课题 B"],
+            ["2", "课题 X"]));
+
+        var catalog = new SongCatalogService().BuildQuestCatalog(package);
+
+        catalog.Should().HaveCount(2);
+        var q1 = catalog.Single(q => q.Id == "1");
+        q1.NamesByLanguage["us"].Should().Be("Weekly Quest");
+        q1.NamesByLanguage["cn"].Should().Be("每周任务");
+        q1.Missions.Should().HaveCount(2);
+        q1.Missions[0].DescriptionsByLanguage["us"].Should().Be("Mission A");
+        q1.Missions[0].DescriptionsByLanguage["cn"].Should().Be("课题 A");
+        q1.Missions[1].DescriptionsByLanguage["us"].Should().Be("Mission B");
+        q1.Missions[1].DescriptionsByLanguage["cn"].Should().Be("课题 B");
+
+        var q2 = catalog.Single(q => q.Id == "2");
+        q2.Missions.Should().HaveCount(1);
+        q2.Missions[0].DescriptionsByLanguage["us"].Should().Be("Mission X");
+    }
+
+    [TestMethod]
+    public void BuildQuestCatalog_ReturnsEmptyWhenNoTables()
+    {
+        var package = CreatePackage();
+        new SongCatalogService().BuildQuestCatalog(package).Should().BeEmpty();
+    }
+
     private static PatchPackage CreatePackage()
         => new() { ProjectInfo = new ProjectInfo("project", null, "1.003.005", null) };
 
