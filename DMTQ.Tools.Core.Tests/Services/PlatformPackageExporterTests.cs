@@ -318,62 +318,56 @@ public sealed class PlatformPackageExporterTests
         => new();
 
     [TestMethod]
-    public async Task FullWorkflow_ImportAndroidAndIos_ThenExport_ProducesCorrectManifest()
+    public async Task FullWorkflow_ImportThenExport_ProducesCorrectManifest()
     {
-        // Resolve external data root
-        var externalRoot = Path.GetFullPath(Path.Combine(
-            AppContext.BaseDirectory, "..", "..", "..", "..",
-            "external", "patch", "phone_new", "1.003.005"));
-        var androidRoot = Path.Combine(externalRoot, "android");
-        var iosRoot = Path.Combine(externalRoot, "ios");
-
-        if (!Directory.Exists(androidRoot) || !Directory.Exists(iosRoot))
-        {
-            Assert.Inconclusive($"External test data not found at {externalRoot}. Skipping integration test.");
-            return;
-        }
-
+        // Self-contained: generates all test data in temp directories — no external dependencies.
         var tempProjectRoot = Path.Combine(Path.GetTempPath(), "dmtq-full-workflow-" + Guid.NewGuid().ToString("N"));
         var tempExportRoot = Path.Combine(Path.GetTempPath(), "dmtq-full-export-" + Guid.NewGuid().ToString("N"));
+        var tempAndroidRoot = Path.Combine(Path.GetTempPath(), "dmtq-full-android-" + Guid.NewGuid().ToString("N"));
+        var tempIosRoot = Path.Combine(Path.GetTempPath(), "dmtq-full-ios-" + Guid.NewGuid().ToString("N"));
         try
         {
             Directory.CreateDirectory(tempProjectRoot);
+            Directory.CreateDirectory(tempAndroidRoot);
+            Directory.CreateDirectory(tempIosRoot);
 
-            // Step 2: Create empty PatchPackage
+            GenerateTestPatchPackage(tempAndroidRoot, "android", tempProjectRoot);
+            GenerateTestPatchPackage(tempIosRoot, "ios", tempProjectRoot);
+
+            // Step 1: Create empty PatchPackage
             var package = CreateEmptyProject(tempProjectRoot);
 
-            // Step 3: Import android platform
+            // Step 2: Import android platform
             var importer = new PlatformPackageImporter();
-            await importer.ImportPlatformAsync(package, androidRoot, "android");
+            await importer.ImportPlatformAsync(package, tempAndroidRoot, "android");
 
-            // Step 4: Import ios platform
-            await importer.ImportPlatformAsync(package, iosRoot, "ios");
+            // Step 3: Import ios platform
+            await importer.ImportPlatformAsync(package, tempIosRoot, "ios");
 
-            // Step 5: Verify Songs and Resources populated
-            package.Songs.Count.Should().BeGreaterThan(0);
-            package.Resources.Count.Should().BeGreaterThan(0);
+            // Step 4: Verify Songs and Resources populated
+            package.Songs.Count.Should().BeGreaterThan(0, "songs imported from song_song.csv");
+            package.Resources.Count.Should().BeGreaterThan(0, "dlc + preview resources");
 
-            // Step 6: Export for ios in Full mode
+            // Step 5: Export for ios in Full mode
             var exporter = new PlatformPackageExporter();
             var result = await exporter.ExportPlatformAsync(
                 package,
                 tempExportRoot,
                 new PlatformExportOptions { Platform = "ios", Mode = PlatformExportMode.Full });
 
-            // Step 7: Verify patch_new.csv exists and manifest has entries
+            // Step 6: Verify patch_new.csv exists and manifest has entries
             result.Validation.Errors.Should().BeEmpty();
             File.Exists(Path.Combine(tempExportRoot, "patch_new.csv")).Should().BeTrue();
             result.Manifest.Entries.Should().NotBeEmpty();
 
-            // Step 8: Verify at least one resource/table file exists in export dir
-            // (exclude the manifest files themselves)
+            // Step 7: Verify at least one resource/table file exists in export dir
             var exportedFiles = Directory.GetFiles(tempExportRoot, "*", SearchOption.AllDirectories)
                 .Select(f => Path.GetRelativePath(tempExportRoot, f).Replace('\\', '/'))
                 .Where(f => f != "patch_new.csv" && f != "patch_new.csv.lz4")
                 .ToArray();
             exportedFiles.Should().NotBeEmpty("at least one resource or table file should be exported");
 
-            // Step 9: Verify LZ4 compression — .lz4 files exist for compressed entries
+            // Step 8: Verify LZ4 compression — .lz4 files exist for compressed entries
             var lz4Files = Directory.GetFiles(tempExportRoot, "*.lz4", SearchOption.AllDirectories);
             lz4Files.Should().NotBeEmpty("compressed files should produce .lz4 artifacts");
         }
@@ -381,7 +375,98 @@ public sealed class PlatformPackageExporterTests
         {
             DeleteDirectory(tempProjectRoot);
             DeleteDirectory(tempExportRoot);
+            DeleteDirectory(tempAndroidRoot);
+            DeleteDirectory(tempIosRoot);
         }
+    }
+
+    /// <summary>
+    /// Generates a minimal self-contained patch package:
+    ///   - patch_new.csv.lz4 (manifest with checksums)
+    ///   - dlc/*.lz4 resource files
+    ///   - preview/*.lz4 resource files
+    ///   - table/us/song_song.csv (2 songs)
+    ///   - table/us/song_songPattern.csv (3 patterns)
+    /// </summary>
+    private static void GenerateTestPatchPackage(string packageRoot, string platform, string tempProjectRoot)
+    {
+        // Resource files
+        var dlcDir = Path.Combine(packageRoot, "dlc");
+        var previewDir = Path.Combine(packageRoot, "preview");
+        var tableDir = Path.Combine(packageRoot, "table", "us");
+        Directory.CreateDirectory(dlcDir);
+        Directory.CreateDirectory(previewDir);
+        Directory.CreateDirectory(tableDir);
+
+        var dlcBytes = System.Text.Encoding.UTF8.GetBytes($"dlc-file-for-{platform}-1234567890");
+        var dlcPath = Path.Combine(dlcDir, $"{platform}_test.bin");
+        File.WriteAllBytes(dlcPath, dlcBytes);
+
+        var previewBytes = System.Text.Encoding.UTF8.GetBytes($"preview-opus-for-{platform}-abcdef");
+        var previewPath = Path.Combine(previewDir, "song_test.p.opus");
+        File.WriteAllBytes(previewPath, previewBytes);
+
+        // LZ4 compress resource files
+        var dlcLz4Path = dlcPath + ".lz4";
+        var previewLz4Path = previewPath + ".lz4";
+        FileUtility.CompressFileAsync(dlcPath, dlcLz4Path).GetAwaiter().GetResult();
+        FileUtility.CompressFileAsync(previewPath, previewLz4Path).GetAwaiter().GetResult();
+
+        // Delete uncompressed originals (only .lz4 stays, simulating a real patch package)
+        File.Delete(dlcPath);
+        File.Delete(previewPath);
+
+        // Song CSV table (entity-backed, uncompressed)
+        var songCsv = "id,name,fullname,genre,artistname,originalbgayn,loopbgayn,composedby,singer,featby,arrangedby,visualizedby,costgamepoint,costgamecash,flag,status,freeyn,hiddenyn,openyn,trackid,moddate,update\n"
+            + $"1,TestSong1,Song1Full,Pop,Artist1,Y,N,Composer1,Singer1,,Arranger1,,0,0,0,,Y,N,Y,1,2024-01-01,\n"
+            + $"2,TestSong2,Song2Full,Rock,Artist2,Y,N,Composer2,Singer2,,Arranger2,,0,0,0,,Y,N,Y,2,2024-01-01,";
+        File.WriteAllText(Path.Combine(packageRoot, "table", "us", "song_song.csv"), songCsv);
+
+        // Pattern CSV table
+        var patternCsv = "patternid,songid,name,line,signature,difficulty,pointtype,pointvalue,flg,update\n"
+            + "1,1,4K NM,4,4,1,1,100,,\n"
+            + "2,1,5K NM,5,5,1,1,100,,\n"
+            + "3,2,4K NM,4,4,1,1,100,,";
+        File.WriteAllText(Path.Combine(packageRoot, "table", "us", "song_songPattern.csv"), patternCsv);
+
+        // Compute all checksums
+        var dlcChecksum = ComputeMd5FromBytes(dlcBytes);
+        var dlcCompressedChecksum = FileUtility.ComputeMd5Async(dlcLz4Path).GetAwaiter().GetResult();
+        var dlcCompressedSize = FileUtility.GetFileSize(dlcLz4Path);
+
+        var previewChecksum = ComputeMd5FromBytes(previewBytes);
+        var previewCompressedChecksum = FileUtility.ComputeMd5Async(previewLz4Path).GetAwaiter().GetResult();
+        var previewCompressedSize = FileUtility.GetFileSize(previewLz4Path);
+
+        var songCsvPath = Path.Combine(packageRoot, "table", "us", "song_song.csv");
+        var songCsvSize = FileUtility.GetFileSize(songCsvPath);
+        var songCsvMd5 = FileUtility.ComputeMd5Async(songCsvPath).GetAwaiter().GetResult();
+
+        var patternCsvPath = Path.Combine(packageRoot, "table", "us", "song_songPattern.csv");
+        var patternCsvSize = FileUtility.GetFileSize(patternCsvPath);
+        var patternCsvMd5 = FileUtility.ComputeMd5Async(patternCsvPath).GetAwaiter().GetResult();
+
+        // Build manifest CSV
+        var manifestRows = new List<string>
+        {
+            "file_name,file_size,checksum,compressed_file_size,compressed_checksum,acquire_on_demand,compressed,platform,tag,",
+            $"dlc/{platform}_test.bin,{dlcBytes.Length},{dlcChecksum},{dlcCompressedSize},{dlcCompressedChecksum},0,1,,,",
+            $"preview/song_test.p.opus,{previewBytes.Length},{previewChecksum},{previewCompressedSize},{previewCompressedChecksum},0,1,,,",
+            $"table/us/song_song.csv,{songCsvSize},{songCsvMd5},0,,0,0,,,",
+            $"table/us/song_songPattern.csv,{patternCsvSize},{patternCsvMd5},0,,0,0,,,",
+        };
+        var manifestPath = Path.Combine(packageRoot, "patch_new.csv");
+        File.WriteAllText(manifestPath, string.Join("\n", manifestRows));
+
+        // LZ4 compress manifest → patch_new.csv.lz4
+        var manifestLz4Path = Path.Combine(packageRoot, "patch_new.csv.lz4");
+        FileUtility.CompressFileAsync(manifestPath, manifestLz4Path).GetAwaiter().GetResult();
+    }
+
+    private static string ComputeMd5FromBytes(byte[] bytes)
+    {
+        var hash = System.Security.Cryptography.MD5.HashData(bytes);
+        return Convert.ToHexString(hash).ToLowerInvariant();
     }
 
     private static PatchPackage CreateEmptyProject(string projectRoot)

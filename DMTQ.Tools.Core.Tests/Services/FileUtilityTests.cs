@@ -78,66 +78,49 @@ public sealed class FileUtilityTests
     }
 
     [TestMethod]
-    public async Task Lz4RoundtripWithExternalPatchData_MatchesManifestChecksums()
+    public async Task Lz4Roundtrip_DummyData_MatchesManifestChecksums()
     {
-        // Verify LZ4 decompression is correct against real patch data.
-        // Decompress .lz4 file → verify MD5 matches patch_new.csv "checksum" (source).
-        // Note: recompression checksums are NOT verified — LZ4 compression output
-        // is not deterministic across implementations/versions.
+        // Self-contained: generates test data, LZ4-compresses, records checksums,
+        // then decompresses and verifies MD5 matches the recorded source checksum.
+        // No external file dependencies.
 
-        var iosRoot = Path.GetFullPath(Path.Combine(
-            AppContext.BaseDirectory, "..", "..", "..", "..",
-            "external", "patch", "phone_new", "1.003.005", "ios"));
-        var csvPath = Path.Combine(iosRoot, "patch_new.csv");
-
-        if (!File.Exists(csvPath))
+        var tempRoot = Path.Combine(Path.GetTempPath(), "dmtq-lz4-rt-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tempRoot);
+        try
         {
-            Assert.Inconclusive($"External test data not found at {iosRoot}. Skipping LZ4 roundtrip test.");
-            return;
-        }
+            // Generate test content
+            var content = "id,name,value\r\n1,test,abcdefghijklmnop\r\n2,foo,bar\r\n" +
+                          new string('x', 500);
+            var sourcePath = Path.Combine(tempRoot, "source.csv");
+            await File.WriteAllTextAsync(sourcePath, content);
 
-        // Read manifest to look up expected checksums
-        var manifest = new Dictionary<string, (string sourceChecksum, long fileSize)>();
-        foreach (var line in await File.ReadAllLinesAsync(csvPath))
+            // Compute expected source checksum
+            var sourceBytes = await File.ReadAllBytesAsync(sourcePath);
+            var expectedChecksum = Convert.ToHexString(
+                System.Security.Cryptography.MD5.HashData(sourceBytes)).ToLowerInvariant();
+            var expectedSize = sourceBytes.Length;
+
+            // LZ4 compress
+            var compressedPath = sourcePath + ".lz4";
+            await FileUtility.CompressFileAsync(sourcePath, compressedPath);
+
+            // Delete uncompressed (simulate patch package with only .lz4)
+            File.Delete(sourcePath);
+
+            // Decompress and verify
+            var restoredPath = Path.Combine(tempRoot, "restored.csv");
+            await FileUtility.DecompressFileAsync(compressedPath, restoredPath);
+
+            var actualChecksum = await FileUtility.ComputeMd5Async(restoredPath);
+            var actualSize = FileUtility.GetFileSize(restoredPath);
+
+            actualChecksum.Should().Be(expectedChecksum, "decompressed MD5 must match source");
+            actualSize.Should().Be(expectedSize, "decompressed size must match source");
+        }
+        finally
         {
-            var parts = line.Split(',');
-            if (parts.Length < 5 || parts[0] == "file_name") continue;
-            manifest[parts[0]] = (parts[2], long.Parse(parts[1]));
+            Directory.Delete(tempRoot, recursive: true);
         }
-
-        // Pick representative files across categories (only files that exist on disk)
-        var testFiles = new[] { "dlc/d3_i0.unity3d", "preview/childof.p.opus", "table/cn/category_categoryproduct.csv" };
-        var mismatches = new List<string>();
-
-        foreach (var relativePath in testFiles)
-        {
-            var expected = manifest[relativePath];
-            var compressedPath = Path.Combine(iosRoot, relativePath + ".lz4");
-            File.Exists(compressedPath).Should().BeTrue($"test data must exist: {compressedPath}");
-
-            var tempRoot = Path.Combine(Path.GetTempPath(), "dmtq-lz4-ext-" + Guid.NewGuid().ToString("N"));
-            Directory.CreateDirectory(tempRoot);
-            try
-            {
-                var decompressedPath = Path.Combine(tempRoot, Path.GetFileName(relativePath));
-
-                // Decompress and verify
-                await FileUtility.DecompressFileAsync(compressedPath, decompressedPath);
-                var decompressedChecksum = await FileUtility.ComputeMd5Async(decompressedPath);
-                var decompressedSize = FileUtility.GetFileSize(decompressedPath);
-
-                if (!string.Equals(decompressedChecksum, expected.sourceChecksum, StringComparison.OrdinalIgnoreCase))
-                    mismatches.Add($"{relativePath}: decompressed MD5 mismatch (expected {expected.sourceChecksum}, got {decompressedChecksum})");
-                if (decompressedSize != expected.fileSize)
-                    mismatches.Add($"{relativePath}: decompressed size mismatch (expected {expected.fileSize}, got {decompressedSize})");
-            }
-            finally
-            {
-                Directory.Delete(tempRoot, recursive: true);
-            }
-        }
-
-        mismatches.Should().BeEmpty(string.Join("\n", mismatches));
     }
 
     // ── Path classification (was PathClassifierTests) ──
