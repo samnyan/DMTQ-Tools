@@ -305,11 +305,19 @@ public sealed class SongCatalogService
     public static bool IsSongRelatedTable(string tableName)
         => tableName.Equals("song_song", StringComparison.OrdinalIgnoreCase)
            || tableName.Equals("song_songPattern", StringComparison.OrdinalIgnoreCase)
-           || tableName.StartsWith("song_desc_", StringComparison.OrdinalIgnoreCase)
-           || tableName.StartsWith("item_desc_", StringComparison.OrdinalIgnoreCase)
-           || tableName.Equals("product_product", StringComparison.OrdinalIgnoreCase)
-           || tableName.Equals("product_item", StringComparison.OrdinalIgnoreCase)
+           || tableName.StartsWith("song_desc_", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>Returns true when the table carries Product data
+    /// (product_product + category_categoryproduct).</summary>
+    public static bool IsProductRelatedTable(string tableName)
+        => tableName.Equals("product_product", StringComparison.OrdinalIgnoreCase)
            || tableName.Equals("category_categoryproduct", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>Returns true when the table carries Item data
+    /// (product_item + item_desc_&lt;lang&gt;).</summary>
+    public static bool IsItemRelatedTable(string tableName)
+        => tableName.Equals("product_item", StringComparison.OrdinalIgnoreCase)
+           || tableName.StartsWith("item_desc_", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>Returns true when the table carries Achievement data
     /// (quest_achievement + acievement_desc_&lt;lang&gt;).</summary>
@@ -458,5 +466,120 @@ public sealed class SongCatalogService
         }
 
         return quests.Values.OrderBy(q => q.Id, StringComparer.OrdinalIgnoreCase).ToArray();
+    }
+
+    // ── Product catalog building ──
+
+    public IReadOnlyList<Product> BuildProductCatalog(PatchPackage package)
+    {
+        if (package.Products.Count > 0)
+            return package.Products.OrderBy(p => p.Id, StringComparer.OrdinalIgnoreCase).ToArray();
+
+        var productTable = package.Tables.Tables.FirstOrDefault(
+            t => t.TableName.Equals("product_product", StringComparison.OrdinalIgnoreCase));
+        if (productTable is null) return [];
+
+        var products = new Dictionary<string, Product>(StringComparer.OrdinalIgnoreCase);
+        foreach (var row in productTable.Rows.OrderBy(r => r.Order))
+        {
+            var id = GetCell(row, "product_id", "id");
+            if (string.IsNullOrWhiteSpace(id) || products.ContainsKey(id)) continue;
+
+            products[id] = new Product
+            {
+                Id = id,
+                ItemId = GetCell(row, "item_id"),
+                PlatformProductId = GetCell(row, "platform_product_id"),
+                StoreProductId = GetCell(row, "store_product_id"),
+                ProductType = GetCell(row, "product_type"),
+                CostGamePoint = GetCell(row, "cost_game_point"),
+                CostGameCash = GetCell(row, "cost_game_cash"),
+                Status = GetCell(row, "status"),
+                SaleStartDate = GetCell(row, "sale_start_date"),
+                SaleEndDate = GetCell(row, "sale_end_date"),
+                Update = GetCell(row, "update"),
+            };
+        }
+
+        // category_categoryproduct → CategoryIds
+        var categoryTable = package.Tables.Tables.FirstOrDefault(
+            t => t.TableName.Equals("category_categoryproduct", StringComparison.OrdinalIgnoreCase));
+        if (categoryTable is not null)
+        {
+            foreach (var row in categoryTable.Rows)
+            {
+                var productId = GetCell(row, "product_id");
+                var categoryId = GetCell(row, "category_id");
+                if (!string.IsNullOrWhiteSpace(productId) && !string.IsNullOrWhiteSpace(categoryId)
+                    && products.TryGetValue(productId, out var product))
+                {
+                    if (!product.CategoryIds.Contains(categoryId, StringComparer.OrdinalIgnoreCase))
+                        product.CategoryIds.Add(categoryId);
+                }
+            }
+        }
+
+        return products.Values.OrderBy(p => p.Id, StringComparer.OrdinalIgnoreCase).ToArray();
+    }
+
+    // ── Item catalog building ──
+
+    public IReadOnlyList<Item> BuildItemCatalog(PatchPackage package)
+    {
+        if (package.Items.Count > 0)
+            return package.Items.OrderBy(i => i.Id, StringComparer.OrdinalIgnoreCase).ToArray();
+
+        var itemTable = package.Tables.Tables.FirstOrDefault(
+            t => t.TableName.Equals("product_item", StringComparison.OrdinalIgnoreCase));
+        if (itemTable is null) return [];
+
+        var items = new Dictionary<string, Item>(StringComparer.OrdinalIgnoreCase);
+        foreach (var row in itemTable.Rows.OrderBy(r => r.Order))
+        {
+            var id = GetCell(row, "item_id", "id");
+            if (string.IsNullOrWhiteSpace(id) || items.ContainsKey(id)) continue;
+
+            items[id] = new Item
+            {
+                Id = id,
+                ItemName = GetCell(row, "item_name"),
+                ImgUrl1 = GetCell(row, "img_url_1"),
+                ImgUrl2 = GetCell(row, "img_url_2"),
+                Description = GetCell(row, "description"),
+                RepeatCount = GetCell(row, "repeat_count"),
+                ItemType = GetCell(row, "item_type"),
+                LimitMinute = GetCell(row, "limit_minute"),
+                Status = GetCell(row, "status"),
+                BuyLevel = GetCell(row, "buy_level"),
+                BuyLimitCount = GetCell(row, "buy_limit_count"),
+                BuyLimitType = GetCell(row, "buy_limit_type"),
+                Summary = GetCell(row, "summary"),
+                Update = GetCell(row, "update"),
+            };
+        }
+
+        // item_desc_<lang> localization
+        foreach (var table in package.Tables.Tables.Where(
+            t => t.TableName.StartsWith("item_desc_", StringComparison.OrdinalIgnoreCase)))
+        {
+            var language = table.LanguageCode ?? ExtractLanguage(table.TableName);
+            if (string.IsNullOrWhiteSpace(language)) continue;
+
+            foreach (var row in table.Rows)
+            {
+                var id = GetCell(row, "item_id", "id");
+                if (!items.TryGetValue(id, out var item)) continue;
+
+                var name = GetCell(row, "name");
+                var desc = GetCell(row, "description", "desc");
+                var summary = GetCell(row, "summary");
+
+                if (!string.IsNullOrWhiteSpace(name)) item.NamesByLanguage[language] = name;
+                if (!string.IsNullOrWhiteSpace(desc)) item.DescriptionsByLanguage[language] = desc;
+                if (!string.IsNullOrWhiteSpace(summary)) item.SummariesByLanguage[language] = summary;
+            }
+        }
+
+        return items.Values.OrderBy(i => i.Id, StringComparer.OrdinalIgnoreCase).ToArray();
     }
 }

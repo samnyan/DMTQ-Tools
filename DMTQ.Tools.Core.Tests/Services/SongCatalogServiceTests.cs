@@ -185,6 +185,60 @@ public sealed class SongCatalogServiceTests
         new SongCatalogService().BuildQuestCatalog(package).Should().BeEmpty();
     }
 
+    [TestMethod]
+    public void BuildProductCatalog_MapsProductsAndCategories()
+    {
+        var package = CreatePackage();
+        package.Tables.Tables.Add(CreateTable(
+            "table/us/product_product.csv", "product_product", "us",
+            ["product_id", "item_id", "platform_product_id", "product_type", "cost_game_cash", "status"],
+            ["1", "8", "781", "I", "20", "N"],
+            ["2", "9", "782", "I", "25", "N"]));
+        package.Tables.Tables.Add(CreateTable(
+            "table/us/category_categoryproduct.csv", "category_categoryproduct", "us",
+            ["category_id", "product_id", "display_order"],
+            ["1", "1", "1"],
+            ["2", "1", "0"],
+            ["1", "2", "1"]));
+
+        var catalog = new SongCatalogService().BuildProductCatalog(package);
+
+        catalog.Should().HaveCount(2);
+        var p1 = catalog.Single(p => p.Id == "1");
+        p1.ItemId.Should().Be("8");
+        p1.PlatformProductId.Should().Be("781");
+        p1.CostGameCash.Should().Be("20");
+        p1.CategoryIds.Should().Equal("1", "2");
+
+        var p2 = catalog.Single(p => p.Id == "2");
+        p2.CategoryIds.Should().Equal("1");
+    }
+
+    [TestMethod]
+    public void BuildItemCatalog_MapsItemsAndLocalizedDescs()
+    {
+        var package = CreatePackage();
+        package.Tables.Tables.Add(CreateTable(
+            "table/us/product_item.csv", "product_item", "us",
+            ["item_id", "item_name", "item_type", "buy_limit_type", "summary"],
+            ["1", "oblivion", "S", "F", "기본곡"],
+            ["2", "raisemeup", "S", "F", "기본곡"]));
+        package.Tables.Tables.Add(CreateTable(
+            "table/cn/item_desc_cn.csv", "item_desc_cn", "cn",
+            ["item_id", "name", "description", "summary"],
+            ["1", "OBLIVION", "Dramatic Trance", "韩国原曲"]));
+
+        var catalog = new SongCatalogService().BuildItemCatalog(package);
+
+        catalog.Should().HaveCount(2);
+        var i1 = catalog.Single(i => i.Id == "1");
+        i1.ItemName.Should().Be("oblivion");
+        i1.ItemType.Should().Be("S");
+        i1.Summary.Should().Be("기본곡");
+        i1.NamesByLanguage["cn"].Should().Be("OBLIVION");
+        i1.DescriptionsByLanguage["cn"].Should().Be("Dramatic Trance");
+    }
+
     private static PatchPackage CreatePackage()
         => new() { ProjectInfo = new ProjectInfo("project", null, "1.003.005", null) };
 

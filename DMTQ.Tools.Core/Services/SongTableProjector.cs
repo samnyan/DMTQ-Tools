@@ -19,11 +19,6 @@ public sealed class SongTableProjector
                 "song_songPattern" => BuildPatternTable(path, lang, package.Songs),
                 _ when name.StartsWith("song_desc_", StringComparison.OrdinalIgnoreCase)
                     => BuildSongDescTable(path, lang, name, package.Songs),
-                _ when name.StartsWith("item_desc_", StringComparison.OrdinalIgnoreCase)
-                    => BuildItemDescTable(path, lang, name, package.Songs),
-                "product_product" => BuildProductProductTable(path, lang, package.Songs),
-                "product_item" => BuildProductItemTable(path, lang, package.Songs),
-                "category_categoryproduct" => BuildCategoryProductTable(path, lang, package.Songs),
                 _ => null
             });
 
@@ -43,6 +38,23 @@ public sealed class SongTableProjector
                     => BuildQuestDescTable(path, lang, name, package.Quests),
                 _ when name.StartsWith("quest_mission_desc_", StringComparison.OrdinalIgnoreCase)
                     => BuildQuestMissionDescTable(path, lang, name, package.Quests),
+                _ => null
+            });
+
+        ProjectEntityTables(package, tables, SongCatalogService.IsProductRelatedTable,
+            (path, lang, name) => name switch
+            {
+                "product_product" => BuildProductTable(path, lang, package.Products),
+                "category_categoryproduct" => BuildCategoryProductTable(path, lang, package.Products),
+                _ => null
+            });
+
+        ProjectEntityTables(package, tables, SongCatalogService.IsItemRelatedTable,
+            (path, lang, name) => name switch
+            {
+                "product_item" => BuildProductItemTable(path, lang, package.Items),
+                _ when name.StartsWith("item_desc_", StringComparison.OrdinalIgnoreCase)
+                    => BuildItemDescTable(path, lang, name, package.Items),
                 _ => null
             });
 
@@ -170,97 +182,112 @@ public sealed class SongTableProjector
         return table;
     }
 
-    private static GameTable BuildItemDescTable(string path, string? languageCode, string tableName, List<Song> songs)
+    // ── Product projection ──
+
+    private static GameTable BuildProductTable(string path, string? languageCode, List<Product> products)
     {
-        var language = languageCode ?? ExtractLanguageSuffix(tableName);
-        var columns = new[] { "item_id", "name", "description" };
+        var columns = new[] { "product_id", "item_id", "platform_product_id",
+            "store_product_id", "product_type", "cost_game_point", "cost_game_cash",
+            "status", "sale_start_date", "sale_end_date", "update" };
 
-        var table = CreateEmptyTable(path, tableName, languageCode, columns);
-        var rowIndex = 0;
-        var emitted = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-        foreach (var song in songs)
-        {
-            foreach (var itemId in song.ItemIds)
-            {
-                if (!emitted.Add(itemId)) continue;
-
-                var hasName = song.ItemNamesByLanguage.TryGetValue(language, out var name) && !string.IsNullOrWhiteSpace(name);
-                var hasDesc = song.DescriptionsByLanguage.TryGetValue(language, out var description) && !string.IsNullOrWhiteSpace(description);
-                if (!hasName && !hasDesc) continue;
-
-                var row = NewRow(table, rowIndex++);
-                SetCell(row, "item_id", itemId);
-                SetCell(row, "name", name ?? string.Empty);
-                SetCell(row, "description", description ?? string.Empty);
-                table.Rows.Add(row);
-            }
-        }
-
-        return table;
-    }
-
-    private static GameTable BuildProductProductTable(string path, string? languageCode, List<Song> songs)
-    {
-        var columns = new[] { "product_id", "song_id" };
         var table = CreateEmptyTable(path, "product_product", languageCode, columns);
-        var rowIndex = 0;
 
-        foreach (var song in songs)
+        for (var i = 0; i < products.Count; i++)
         {
-            foreach (var productId in song.ProductIds)
-            {
-                var row = NewRow(table, rowIndex++);
-                SetCell(row, "product_id", productId);
-                SetCell(row, "song_id", song.Id);
-                table.Rows.Add(row);
-            }
+            var p = products[i];
+            var row = NewRow(table, i);
+            SetCell(row, "product_id", p.Id);
+            SetCell(row, "item_id", p.ItemId);
+            SetCell(row, "platform_product_id", p.PlatformProductId);
+            SetCell(row, "store_product_id", p.StoreProductId);
+            SetCell(row, "product_type", p.ProductType);
+            SetCell(row, "cost_game_point", p.CostGamePoint);
+            SetCell(row, "cost_game_cash", p.CostGameCash);
+            SetCell(row, "status", p.Status);
+            SetCell(row, "sale_start_date", p.SaleStartDate);
+            SetCell(row, "sale_end_date", p.SaleEndDate);
+            SetCell(row, "update", p.Update);
+            table.Rows.Add(row);
         }
 
         return table;
     }
 
-    private static GameTable BuildProductItemTable(string path, string? languageCode, List<Song> songs)
-    {
-        var columns = new[] { "product_id", "item_id" };
-        var table = CreateEmptyTable(path, "product_item", languageCode, columns);
-        var rowIndex = 0;
-
-        foreach (var song in songs)
-        {
-            foreach (var productId in song.ProductIds)
-            {
-                foreach (var itemId in song.ItemIds)
-                {
-                    var row = NewRow(table, rowIndex++);
-                    SetCell(row, "product_id", productId);
-                    SetCell(row, "item_id", itemId);
-                    table.Rows.Add(row);
-                }
-            }
-        }
-
-        return table;
-    }
-
-    private static GameTable BuildCategoryProductTable(string path, string? languageCode, List<Song> songs)
+    private static GameTable BuildCategoryProductTable(string path, string? languageCode, List<Product> products)
     {
         var columns = new[] { "category_id", "product_id" };
         var table = CreateEmptyTable(path, "category_categoryproduct", languageCode, columns);
         var rowIndex = 0;
 
-        foreach (var song in songs)
+        foreach (var product in products)
         {
-            foreach (var categoryId in song.CategoryIds)
+            foreach (var categoryId in product.CategoryIds)
             {
-                foreach (var productId in song.ProductIds)
-                {
-                    var row = NewRow(table, rowIndex++);
-                    SetCell(row, "category_id", categoryId);
-                    SetCell(row, "product_id", productId);
-                    table.Rows.Add(row);
-                }
+                var row = NewRow(table, rowIndex++);
+                SetCell(row, "category_id", categoryId);
+                SetCell(row, "product_id", product.Id);
+                table.Rows.Add(row);
             }
+        }
+
+        return table;
+    }
+
+    // ── Item projection ──
+
+    private static GameTable BuildProductItemTable(string path, string? languageCode, List<Item> items)
+    {
+        var columns = new[] { "item_id", "item_name", "img_url_1", "img_url_2",
+            "description", "repeat_count", "item_type", "limit_minute",
+            "status", "buy_level", "buy_limit_count", "buy_limit_type", "summary", "update" };
+
+        var table = CreateEmptyTable(path, "product_item", languageCode, columns);
+
+        for (var i = 0; i < items.Count; i++)
+        {
+            var item = items[i];
+            var row = NewRow(table, i);
+            SetCell(row, "item_id", item.Id);
+            SetCell(row, "item_name", item.ItemName);
+            SetCell(row, "img_url_1", item.ImgUrl1);
+            SetCell(row, "img_url_2", item.ImgUrl2);
+            SetCell(row, "description", item.Description);
+            SetCell(row, "repeat_count", item.RepeatCount);
+            SetCell(row, "item_type", item.ItemType);
+            SetCell(row, "limit_minute", item.LimitMinute);
+            SetCell(row, "status", item.Status);
+            SetCell(row, "buy_level", item.BuyLevel);
+            SetCell(row, "buy_limit_count", item.BuyLimitCount);
+            SetCell(row, "buy_limit_type", item.BuyLimitType);
+            SetCell(row, "summary", item.Summary);
+            SetCell(row, "update", item.Update);
+            table.Rows.Add(row);
+        }
+
+        return table;
+    }
+
+    private static GameTable BuildItemDescTable(string path, string? languageCode, string tableName, List<Item> items)
+    {
+        var language = languageCode ?? ExtractLanguageSuffix(tableName);
+        var columns = new[] { "item_id", "name", "description", "summary" };
+
+        var table = CreateEmptyTable(path, tableName, languageCode, columns);
+        var rowIndex = 0;
+
+        foreach (var item in items)
+        {
+            var hasName = item.NamesByLanguage.TryGetValue(language, out var name) && !string.IsNullOrWhiteSpace(name);
+            var hasDesc = item.DescriptionsByLanguage.TryGetValue(language, out var desc) && !string.IsNullOrWhiteSpace(desc);
+            var hasSummary = item.SummariesByLanguage.TryGetValue(language, out var summary) && !string.IsNullOrWhiteSpace(summary);
+            if (!hasName && !hasDesc && !hasSummary) continue;
+
+            var row = NewRow(table, rowIndex++);
+            SetCell(row, "item_id", item.Id);
+            SetCell(row, "name", name ?? string.Empty);
+            SetCell(row, "description", desc ?? string.Empty);
+            SetCell(row, "summary", summary ?? string.Empty);
+            table.Rows.Add(row);
         }
 
         return table;

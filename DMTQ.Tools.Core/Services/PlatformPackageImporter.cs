@@ -172,6 +172,18 @@ public sealed class PlatformPackageImporter(
             package.Quests,
             q => q.Id,
             SongCatalogService.IsQuestRelatedTable);
+
+        ExtractEntityType(package,
+            songCatalogService.BuildProductCatalog(package),
+            package.Products,
+            p => p.Id,
+            SongCatalogService.IsProductRelatedTable);
+
+        ExtractEntityType(package,
+            songCatalogService.BuildItemCatalog(package),
+            package.Items,
+            i => i.Id,
+            SongCatalogService.IsItemRelatedTable);
     }
 
     private static void ExtractEntityType<T>(

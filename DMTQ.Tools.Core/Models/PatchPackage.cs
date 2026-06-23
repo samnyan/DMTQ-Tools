@@ -17,4 +17,10 @@ public sealed class PatchPackage
 
     /// <summary>Quest entities from quest_desc_&lt;lang&gt; + quest_mission_desc_&lt;lang&gt;.</summary>
     public List<Quest> Quests { get; } = [];
+
+    /// <summary>Store product entities from product_product + category_categoryproduct.</summary>
+    public List<Product> Products { get; } = [];
+
+    /// <summary>In-game item entities from product_item + item_desc_&lt;lang&gt;.</summary>
+    public List<Item> Items { get; } = [];
 }

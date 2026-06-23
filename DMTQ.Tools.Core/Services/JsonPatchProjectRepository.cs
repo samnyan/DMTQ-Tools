@@ -74,6 +74,8 @@ public sealed class JsonPatchProjectRepository : IPatchProjectRepository
         public List<SongDto> Songs { get; set; } = [];
         public List<AchievementDto> Achievements { get; set; } = [];
         public List<QuestDto> Quests { get; set; } = [];
+        public List<ProductDto> Products { get; set; } = [];
+        public List<ItemDto> Items { get; set; } = [];
 
         public static ProjectDocument FromPackage(
             PatchPackage package,
@@ -91,7 +93,9 @@ public sealed class JsonPatchProjectRepository : IPatchProjectRepository
                 Platforms = package.Platforms.Select(PlatformPackageRecordDto.FromModel).ToList(),
                 Songs = package.Songs.Select(SongDto.FromModel).ToList(),
                 Achievements = package.Achievements.Select(AchievementDto.FromModel).ToList(),
-                Quests = package.Quests.Select(QuestDto.FromModel).ToList()
+                Quests = package.Quests.Select(QuestDto.FromModel).ToList(),
+                Products = package.Products.Select(ProductDto.FromModel).ToList(),
+                Items = package.Items.Select(ItemDto.FromModel).ToList()
             };
         }
 
@@ -109,6 +113,8 @@ public sealed class JsonPatchProjectRepository : IPatchProjectRepository
             package.Songs.AddRange(Songs.Select(song => song.ToModel()));
             package.Achievements.AddRange(Achievements.Select(a => a.ToModel()));
             package.Quests.AddRange(Quests.Select(q => q.ToModel()));
+            package.Products.AddRange(Products.Select(p => p.ToModel()));
+            package.Items.AddRange(Items.Select(i => i.ToModel()));
 
             var options = new PackageExportOptions();
             foreach (var item in CompressionOverrides)
@@ -418,6 +424,121 @@ public sealed class JsonPatchProjectRepository : IPatchProjectRepository
             var mission = new QuestMission();
             foreach (var kvp in DescriptionsByLanguage) mission.DescriptionsByLanguage[kvp.Key] = kvp.Value;
             return mission;
+        }
+    }
+
+    private sealed class ProductDto
+    {
+        public string Id { get; set; } = string.Empty;
+        public string ItemId { get; set; } = string.Empty;
+        public string PlatformProductId { get; set; } = string.Empty;
+        public string StoreProductId { get; set; } = string.Empty;
+        public string ProductType { get; set; } = string.Empty;
+        public string CostGamePoint { get; set; } = string.Empty;
+        public string CostGameCash { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
+        public string SaleStartDate { get; set; } = string.Empty;
+        public string SaleEndDate { get; set; } = string.Empty;
+        public string Update { get; set; } = string.Empty;
+        public List<string> CategoryIds { get; set; } = [];
+
+        public static ProductDto FromModel(Product model)
+            => new()
+            {
+                Id = model.Id,
+                ItemId = model.ItemId,
+                PlatformProductId = model.PlatformProductId,
+                StoreProductId = model.StoreProductId,
+                ProductType = model.ProductType,
+                CostGamePoint = model.CostGamePoint,
+                CostGameCash = model.CostGameCash,
+                Status = model.Status,
+                SaleStartDate = model.SaleStartDate,
+                SaleEndDate = model.SaleEndDate,
+                Update = model.Update,
+                CategoryIds = [..model.CategoryIds],
+            };
+
+        public Product ToModel()
+        {
+            var product = new Product { Id = Id };
+            product.ItemId = ItemId;
+            product.PlatformProductId = PlatformProductId;
+            product.StoreProductId = StoreProductId;
+            product.ProductType = ProductType;
+            product.CostGamePoint = CostGamePoint;
+            product.CostGameCash = CostGameCash;
+            product.Status = Status;
+            product.SaleStartDate = SaleStartDate;
+            product.SaleEndDate = SaleEndDate;
+            product.Update = Update;
+            product.CategoryIds.AddRange(CategoryIds);
+            return product;
+        }
+    }
+
+    private sealed class ItemDto
+    {
+        public string Id { get; set; } = string.Empty;
+        public string ItemName { get; set; } = string.Empty;
+        public string ImgUrl1 { get; set; } = string.Empty;
+        public string ImgUrl2 { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public string RepeatCount { get; set; } = string.Empty;
+        public string ItemType { get; set; } = string.Empty;
+        public string LimitMinute { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
+        public string BuyLevel { get; set; } = string.Empty;
+        public string BuyLimitCount { get; set; } = string.Empty;
+        public string BuyLimitType { get; set; } = string.Empty;
+        public string Summary { get; set; } = string.Empty;
+        public string Update { get; set; } = string.Empty;
+        public Dictionary<string, string> NamesByLanguage { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+        public Dictionary<string, string> DescriptionsByLanguage { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+        public Dictionary<string, string> SummariesByLanguage { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+
+        public static ItemDto FromModel(Item model)
+            => new()
+            {
+                Id = model.Id,
+                ItemName = model.ItemName,
+                ImgUrl1 = model.ImgUrl1,
+                ImgUrl2 = model.ImgUrl2,
+                Description = model.Description,
+                RepeatCount = model.RepeatCount,
+                ItemType = model.ItemType,
+                LimitMinute = model.LimitMinute,
+                Status = model.Status,
+                BuyLevel = model.BuyLevel,
+                BuyLimitCount = model.BuyLimitCount,
+                BuyLimitType = model.BuyLimitType,
+                Summary = model.Summary,
+                Update = model.Update,
+                NamesByLanguage = new Dictionary<string, string>(model.NamesByLanguage, StringComparer.OrdinalIgnoreCase),
+                DescriptionsByLanguage = new Dictionary<string, string>(model.DescriptionsByLanguage, StringComparer.OrdinalIgnoreCase),
+                SummariesByLanguage = new Dictionary<string, string>(model.SummariesByLanguage, StringComparer.OrdinalIgnoreCase),
+            };
+
+        public Item ToModel()
+        {
+            var item = new Item { Id = Id };
+            item.ItemName = ItemName;
+            item.ImgUrl1 = ImgUrl1;
+            item.ImgUrl2 = ImgUrl2;
+            item.Description = Description;
+            item.RepeatCount = RepeatCount;
+            item.ItemType = ItemType;
+            item.LimitMinute = LimitMinute;
+            item.Status = Status;
+            item.BuyLevel = BuyLevel;
+            item.BuyLimitCount = BuyLimitCount;
+            item.BuyLimitType = BuyLimitType;
+            item.Summary = Summary;
+            item.Update = Update;
+            foreach (var kvp in NamesByLanguage) item.NamesByLanguage[kvp.Key] = kvp.Value;
+            foreach (var kvp in DescriptionsByLanguage) item.DescriptionsByLanguage[kvp.Key] = kvp.Value;
+            foreach (var kvp in SummariesByLanguage) item.SummariesByLanguage[kvp.Key] = kvp.Value;
+            return item;
         }
     }
 
