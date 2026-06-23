@@ -8,9 +8,14 @@ using DMTQ.Tools.Core.Models.Project;
 
 namespace DMTQ.Tools.Core.Services;
 
-public sealed class PatchManifestReader
+/// <summary>
+/// Reads and writes patch_new.csv manifest files (the compact CSV format
+/// used by every platform-specific patch package).
+/// </summary>
+public static class PatchManifestIO
 {
-    public async Task<PatchManifest> ReadAsync(
+    /// <summary>Read a <see cref="PatchManifest"/> from a CSV stream.</summary>
+    public static async Task<PatchManifest> ReadAsync(
         Stream stream,
         CancellationToken cancellationToken = default)
     {
@@ -39,6 +44,50 @@ public sealed class PatchManifestReader
         }
 
         return manifest;
+    }
+
+    /// <summary>Write a <see cref="PatchManifest"/> to a CSV stream.</summary>
+    public static async Task WriteAsync(
+        PatchManifest manifest,
+        Stream stream,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(manifest);
+        ArgumentNullException.ThrowIfNull(stream);
+
+        await using var textWriter = new StreamWriter(stream, new System.Text.UTF8Encoding(false), leaveOpen: true);
+        await using var csv = new CsvWriter(textWriter, new CsvConfiguration(CultureInfo.InvariantCulture)
+        {
+            NewLine = "\r\n"
+        });
+
+        csv.WriteField("file_name");
+        csv.WriteField("file_size");
+        csv.WriteField("checksum");
+        csv.WriteField("compressed_file_size");
+        csv.WriteField("compressed_checksum");
+        csv.WriteField("acquire_on_demand");
+        csv.WriteField("compressed");
+        csv.WriteField("platform");
+        csv.WriteField("tag");
+        await csv.NextRecordAsync().ConfigureAwait(false);
+
+        foreach (var entry in manifest.Entries)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            csv.WriteField(entry.FileName);
+            csv.WriteField(entry.FileSize);
+            csv.WriteField(entry.Checksum);
+            csv.WriteField(entry.CompressedFileSize);
+            csv.WriteField(entry.CompressedChecksum);
+            csv.WriteField(entry.AcquireOnDemand);
+            csv.WriteField(entry.Compressed ? 1 : 0);
+            csv.WriteField(entry.Platform);
+            csv.WriteField(entry.Tag);
+            await csv.NextRecordAsync().ConfigureAwait(false);
+        }
+
+        await textWriter.FlushAsync(cancellationToken).ConfigureAwait(false);
     }
 
     private static string NormalizePath(string path)

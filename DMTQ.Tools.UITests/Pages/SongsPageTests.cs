@@ -84,6 +84,12 @@ public sealed class SongsPageTests : BlazorUITestBase
         patternTable.Rows.Add(patternRow);
         package.Tables.Tables.Add(patternTable);
 
+        // Also add entity Song so BuildCatalog can find it
+        var song = new Song { Id = "1001", Name = "TestSong", Genre = "Electronic", ArtistName = "TestArtist" };
+        song.TitlesByLanguage["us"] = "TestSong";
+        song.Patterns.Add(new SongPattern { PatternId = "9001", SongId = "1001", Line = "2Line", Difficulty = "easy" });
+        package.Songs.Add(song);
+
         return package;
     }
 }

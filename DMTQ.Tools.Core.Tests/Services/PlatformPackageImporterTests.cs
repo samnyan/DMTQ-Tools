@@ -163,11 +163,7 @@ public sealed class PlatformPackageImporterTests
         };
 
     private static PlatformPackageImporter CreateImporter()
-        => new(
-            new Lz4CompressionService(),
-            new PatchManifestReader(),
-            new CsvTableReader(),
-            new SongCatalogService());
+        => new();
 
     private static async Task WriteManifestAsync(
         string packageRoot,

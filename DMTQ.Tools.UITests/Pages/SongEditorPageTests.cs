@@ -66,6 +66,12 @@ public sealed class SongEditorPageTests : BlazorUITestBase
         var pr = new GameTableRow { Order = 0 }; pr.Cells.Add(new GameTableCell("pattern_id", "9001")); pr.Cells.Add(new GameTableCell("song_id", "1001")); pr.Cells.Add(new GameTableCell("line", "2Line")); pr.Cells.Add(new GameTableCell("difficulty", "easy"));
         pt.Rows.Add(pr); package.Tables.Tables.Add(pt);
 
+        // Also add entity Song so BuildCatalog can find it
+        var song = new Song { Id = "1001", Name = "T", Genre = "G", ArtistName = "A" };
+        song.TitlesByLanguage["us"] = "T";
+        song.Patterns.Add(new SongPattern { PatternId = "9001", SongId = "1001", Line = "2Line", Difficulty = "easy" });
+        package.Songs.Add(song);
+
         return package;
     }
 }

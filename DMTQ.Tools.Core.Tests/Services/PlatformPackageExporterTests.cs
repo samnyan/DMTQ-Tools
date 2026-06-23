@@ -275,7 +275,7 @@ public sealed class PlatformPackageExporterTests
     }
 
     private static PlatformPackageExporter CreateExporter()
-        => new(new PatchManifestWriter(), new Lz4CompressionService(), new PatchChecksumService());
+        => new();
 
     private static PatchPackage CreateProjectWithPlatform(string projectRoot, string platform, PatchFileEntry[] baselineEntries)
     {

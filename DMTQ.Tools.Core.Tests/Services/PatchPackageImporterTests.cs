@@ -18,8 +18,6 @@ public sealed class PatchPackageImporterTests
         try
         {
             var importer = new PatchPackageImporter(
-                new Lz4CompressionService(),
-                new PatchManifestReader(),
                 new CsvTableReader());
 
             var package = await importer.ImportAsync(packageRoot, tempProjectRoot);
@@ -64,11 +62,7 @@ public sealed class PatchPackageImporterTests
         Directory.CreateDirectory(tempProjectRoot);
         try
         {
-            var checksum = new PatchChecksumService();
-            var importer = new PatchPackageImporter(
-                new Lz4CompressionService(),
-                new PatchManifestReader(),
-                new CsvTableReader());
+            var importer = new PatchPackageImporter(new CsvTableReader());
 
             var package = await importer.ImportAsync(packageRoot, tempProjectRoot);
             var entry = package.Manifest.Entries.First(e =>
@@ -78,8 +72,8 @@ public sealed class PatchPackageImporterTests
                 tempProjectRoot,
                 resource.ProjectRelativePath.Replace('/', Path.DirectorySeparatorChar));
 
-            checksum.GetFileSize(archivedPath).Should().Be(entry.FileSize);
-            var archivedChecksum = await checksum.ComputeMd5Async(archivedPath);
+            FileUtility.GetFileSize(archivedPath).Should().Be(entry.FileSize);
+            var archivedChecksum = await FileUtility.ComputeMd5Async(archivedPath);
             archivedChecksum.Should().Be(entry.Checksum);
         }
         finally

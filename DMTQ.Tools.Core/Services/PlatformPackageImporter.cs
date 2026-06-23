@@ -7,17 +7,9 @@ using DMTQ.Tools.Core.Models.Export;
 using DMTQ.Tools.Core.Models.Project;
 using DMTQ.Tools.Core.Models.Csv;
 
-// Backward-compat constructor parameters no longer used for import
-#pragma warning disable CS9113
-#pragma warning disable IDE0060
-
 namespace DMTQ.Tools.Core.Services;
 
-public sealed class PlatformPackageImporter(
-    Lz4CompressionService compressionService,
-    PatchManifestReader manifestReader,
-    CsvTableReader tableReader,          // Kept for DI backward compat; no longer used for import
-    SongCatalogService songCatalogService) // Kept for DI backward compat; no longer used for import
+public sealed class PlatformPackageImporter
 {
     public async Task ImportPlatformAsync(
         PatchPackage package,
@@ -42,10 +34,10 @@ public sealed class PlatformPackageImporter(
         try
         {
             var manifestCsvPath = Path.Combine(tempRoot, "patch_new.csv");
-            await compressionService.DecompressFileAsync(manifestPath, manifestCsvPath, cancellationToken).ConfigureAwait(false);
+            await FileUtility.DecompressFileAsync(manifestPath, manifestCsvPath, cancellationToken).ConfigureAwait(false);
 
             await using var manifestStream = File.OpenRead(manifestCsvPath);
-            var manifest = await manifestReader.ReadAsync(manifestStream, cancellationToken).ConfigureAwait(false);
+            var manifest = await PatchManifestIO.ReadAsync(manifestStream, cancellationToken).ConfigureAwait(false);
 
             var record = new PlatformPackageRecord
             {
@@ -65,7 +57,7 @@ public sealed class PlatformPackageImporter(
             foreach (var entry in manifest.Entries)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                var relativePath = PathClassifier.NormalizePackageRelativePath(entry.FileName);
+                var relativePath = FileUtility.NormalizePackageRelativePath(entry.FileName);
                 var sourcePath = TryResolveSourcePath(packageRoot, relativePath, entry.Compressed);
 
                 if (sourcePath is null)
@@ -74,7 +66,7 @@ public sealed class PlatformPackageImporter(
                     continue;
                 }
 
-                if (PathClassifier.IsCsvTable(relativePath))
+                if (FileUtility.IsCsvTable(relativePath))
                 {
                     if (importedPaths.Contains(relativePath))
                     {
@@ -96,7 +88,7 @@ public sealed class PlatformPackageImporter(
                 }
                 else
                 {
-                    var category = PathClassifier.ResourceCategory(relativePath);
+                    var category = FileUtility.ResourceCategory(relativePath);
                     var projectRelativePath = category switch
                     {
                         "preview" => Path.Combine("resources", relativePath).Replace('\\', '/'),
@@ -108,7 +100,7 @@ public sealed class PlatformPackageImporter(
 
                     if (entry.Compressed)
                     {
-                        await compressionService.DecompressFileAsync(sourcePath, archivedPath, cancellationToken)
+                        await FileUtility.DecompressFileAsync(sourcePath, archivedPath, cancellationToken)
                             .ConfigureAwait(false);
                     }
                     else
@@ -663,7 +655,7 @@ public sealed class PlatformPackageImporter(
 
         var destinationPath = Path.Combine(tempRoot, relativePath.Replace('/', Path.DirectorySeparatorChar));
         Directory.CreateDirectory(Path.GetDirectoryName(destinationPath) ?? tempRoot);
-        await compressionService.DecompressFileAsync(sourcePath, destinationPath, cancellationToken).ConfigureAwait(false);
+        await FileUtility.DecompressFileAsync(sourcePath, destinationPath, cancellationToken).ConfigureAwait(false);
         return destinationPath;
     }
 

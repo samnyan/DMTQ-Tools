@@ -9,10 +9,7 @@ using DMTQ.Tools.Core.Models.Project;
 
 namespace DMTQ.Tools.Core.Services;
 
-public sealed class PlatformPackageExporter(
-    PatchManifestWriter manifestWriter,
-    Lz4CompressionService compressionService,
-    PatchChecksumService checksumService)
+public sealed class PlatformPackageExporter
 {
     public async Task<PlatformExportResult> ExportPlatformAsync(
         PatchPackage package,
@@ -56,9 +53,9 @@ public sealed class PlatformPackageExporter(
         PlatformExportResult result,
         CancellationToken cancellationToken)
     {
-        var relativePath = PathClassifier.NormalizePackageRelativePath(baselineEntry.FileName);
+        var relativePath = FileUtility.NormalizePackageRelativePath(baselineEntry.FileName);
 
-        if (PathClassifier.IsCsvTable(relativePath))
+        if (FileUtility.IsCsvTable(relativePath))
         {
             // Try entity-backed schema first
             await using var ms = new MemoryStream();
@@ -146,9 +143,9 @@ public sealed class PlatformPackageExporter(
         if (baselineEntry.Compressed)
         {
             var compressedPath = destinationPath + ".lz4";
-            await compressionService.CompressFileAsync(destinationPath, compressedPath, cancellationToken).ConfigureAwait(false);
-            var compressedChecksum = await checksumService.ComputeMd5Async(compressedPath, cancellationToken).ConfigureAwait(false);
-            var compressedFileSize = checksumService.GetFileSize(compressedPath);
+            await FileUtility.CompressFileAsync(destinationPath, compressedPath, cancellationToken).ConfigureAwait(false);
+            var compressedChecksum = await FileUtility.ComputeMd5Async(compressedPath, cancellationToken).ConfigureAwait(false);
+            var compressedFileSize = FileUtility.GetFileSize(compressedPath);
             manifestEntry = manifestEntry with
             {
                 CompressedFileSize = compressedFileSize,
@@ -203,9 +200,9 @@ public sealed class PlatformPackageExporter(
         if (baselineEntry.Compressed)
         {
             var compressedPath = destinationPath + ".lz4";
-            await compressionService.CompressFileAsync(destinationPath, compressedPath, cancellationToken).ConfigureAwait(false);
-            var compressedChecksum = await checksumService.ComputeMd5Async(compressedPath, cancellationToken).ConfigureAwait(false);
-            var compressedFileSize = checksumService.GetFileSize(compressedPath);
+            await FileUtility.CompressFileAsync(destinationPath, compressedPath, cancellationToken).ConfigureAwait(false);
+            var compressedChecksum = await FileUtility.ComputeMd5Async(compressedPath, cancellationToken).ConfigureAwait(false);
+            var compressedFileSize = FileUtility.GetFileSize(compressedPath);
             manifestEntry = manifestEntry with
             {
                 CompressedFileSize = compressedFileSize,
@@ -250,7 +247,7 @@ public sealed class PlatformPackageExporter(
             // Compression flag changed — write resource with new compression, same content
         }
 
-        var relativePath = PathClassifier.NormalizePackageRelativePath(resource.PackageRelativePath);
+        var relativePath = FileUtility.NormalizePackageRelativePath(resource.PackageRelativePath);
         await WriteResourceFileAsync(exportRoot, relativePath, bytes, resource.Compressed, baselineEntry, result, cancellationToken)
             .ConfigureAwait(false);
     }
@@ -263,12 +260,12 @@ public sealed class PlatformPackageExporter(
         CancellationToken cancellationToken)
     {
         var exportedPaths = result.Manifest.Entries
-            .Select(entry => PathClassifier.NormalizePackageRelativePath(entry.FileName))
+            .Select(entry => FileUtility.NormalizePackageRelativePath(entry.FileName))
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         var resources = package.Resources
             .Where(resource => BelongsToPlatform(resource, options.Platform))
-            .Where(resource => !exportedPaths.Contains(PathClassifier.NormalizePackageRelativePath(resource.PackageRelativePath)))
+            .Where(resource => !exportedPaths.Contains(FileUtility.NormalizePackageRelativePath(resource.PackageRelativePath)))
             .OrderBy(resource => resource.PackageRelativePath, StringComparer.OrdinalIgnoreCase)
             .ToArray();
 
@@ -314,21 +311,21 @@ public sealed class PlatformPackageExporter(
         }
 
         var bytes = await File.ReadAllBytesAsync(sourcePath, cancellationToken).ConfigureAwait(false);
-        var relativePath = PathClassifier.NormalizePackageRelativePath(resource.PackageRelativePath);
+        var relativePath = FileUtility.NormalizePackageRelativePath(resource.PackageRelativePath);
 
         await WriteResourceFileAsync(exportRoot, relativePath, bytes, compressed, baselineEntry: null, result, cancellationToken)
             .ConfigureAwait(false);
 
         var destinationPath = Path.Combine(exportRoot, relativePath.Replace('/', Path.DirectorySeparatorChar));
-        var fileSize = checksumService.GetFileSize(destinationPath);
-        var checksum = await checksumService.ComputeMd5Async(destinationPath, cancellationToken).ConfigureAwait(false);
+        var fileSize = FileUtility.GetFileSize(destinationPath);
+        var checksum = await FileUtility.ComputeMd5Async(destinationPath, cancellationToken).ConfigureAwait(false);
         var compressedFileSize = 0L;
         var compressedChecksum = string.Empty;
         if (compressed)
         {
             var compressedPath = destinationPath + ".lz4";
-            compressedFileSize = checksumService.GetFileSize(compressedPath);
-            compressedChecksum = await checksumService.ComputeMd5Async(compressedPath, cancellationToken).ConfigureAwait(false);
+            compressedFileSize = FileUtility.GetFileSize(compressedPath);
+            compressedChecksum = await FileUtility.ComputeMd5Async(compressedPath, cancellationToken).ConfigureAwait(false);
             // File was already written and compressed by WriteResourceFileAsync
         }
 
@@ -361,14 +358,14 @@ public sealed class PlatformPackageExporter(
         if (compressed)
         {
             var compressedPath = destinationPath + ".lz4";
-            await compressionService.CompressFileAsync(destinationPath, compressedPath, cancellationToken).ConfigureAwait(false);
+            await FileUtility.CompressFileAsync(destinationPath, compressedPath, cancellationToken).ConfigureAwait(false);
             result.FilesWritten++;
         }
 
         if (baselineEntry is not null)
         {
-            var fileSize = checksumService.GetFileSize(destinationPath);
-            var checksum = await checksumService.ComputeMd5Async(destinationPath, cancellationToken).ConfigureAwait(false);
+            var fileSize = FileUtility.GetFileSize(destinationPath);
+            var checksum = await FileUtility.ComputeMd5Async(destinationPath, cancellationToken).ConfigureAwait(false);
             var manifestEntry = new PatchFileEntry(
                 relativePath,
                 fileSize,
@@ -383,8 +380,8 @@ public sealed class PlatformPackageExporter(
             if (compressed)
             {
                 var compressedPath = destinationPath + ".lz4";
-                var compressedFileSize = checksumService.GetFileSize(compressedPath);
-                var compressedChecksum = await checksumService.ComputeMd5Async(compressedPath, cancellationToken).ConfigureAwait(false);
+                var compressedFileSize = FileUtility.GetFileSize(compressedPath);
+                var compressedChecksum = await FileUtility.ComputeMd5Async(compressedPath, cancellationToken).ConfigureAwait(false);
                 manifestEntry = manifestEntry with
                 {
                     CompressedFileSize = compressedFileSize,
@@ -466,13 +463,13 @@ public sealed class PlatformPackageExporter(
         var csvPath = Path.Combine(exportRoot, "patch_new.csv");
         await using (var csvStream = File.Create(csvPath))
         {
-            await manifestWriter.WriteAsync(result.Manifest, csvStream, cancellationToken).ConfigureAwait(false);
+            await PatchManifestIO.WriteAsync(result.Manifest, csvStream, cancellationToken).ConfigureAwait(false);
         }
 
         result.FilesWritten++;
 
         var lz4Path = Path.Combine(exportRoot, "patch_new.csv.lz4");
-        await compressionService.CompressFileAsync(csvPath, lz4Path, cancellationToken).ConfigureAwait(false);
+        await FileUtility.CompressFileAsync(csvPath, lz4Path, cancellationToken).ConfigureAwait(false);
         result.FilesWritten++;
     }
 }

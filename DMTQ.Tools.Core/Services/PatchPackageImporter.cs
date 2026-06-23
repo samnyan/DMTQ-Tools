@@ -10,8 +10,6 @@ using DMTQ.Tools.Core.Models.Csv;
 namespace DMTQ.Tools.Core.Services;
 
 public sealed class PatchPackageImporter(
-    Lz4CompressionService compressionService,
-    PatchManifestReader manifestReader,
     CsvTableReader tableReader)
 {
     public async Task<PatchPackage> ImportAsync(
@@ -35,10 +33,10 @@ public sealed class PatchPackageImporter(
         try
         {
             var manifestCsvPath = Path.Combine(tempRoot, "patch_new.csv");
-            await compressionService.DecompressFileAsync(manifestPath, manifestCsvPath, cancellationToken).ConfigureAwait(false);
+            await FileUtility.DecompressFileAsync(manifestPath, manifestCsvPath, cancellationToken).ConfigureAwait(false);
 
             await using var manifestStream = File.OpenRead(manifestCsvPath);
-            var manifest = await manifestReader.ReadAsync(manifestStream, cancellationToken).ConfigureAwait(false);
+            var manifest = await PatchManifestIO.ReadAsync(manifestStream, cancellationToken).ConfigureAwait(false);
 
             var package = new PatchPackage
             {
@@ -51,10 +49,10 @@ public sealed class PatchPackageImporter(
             foreach (var entry in manifest.Entries)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                var relativePath = PathClassifier.NormalizePackageRelativePath(entry.FileName);
+                var relativePath = FileUtility.NormalizePackageRelativePath(entry.FileName);
                 var sourcePath = ResolveSourcePath(packageRoot, relativePath, entry.Compressed);
 
-                if (PathClassifier.IsCsvTable(relativePath))
+                if (FileUtility.IsCsvTable(relativePath))
                 {
                     var csvPath = await EnsureCsvFileAsync(sourcePath, tempRoot, relativePath, entry.Compressed, cancellationToken)
                         .ConfigureAwait(false);
@@ -73,7 +71,7 @@ public sealed class PatchPackageImporter(
 
                     if (entry.Compressed)
                     {
-                        await compressionService.DecompressFileAsync(sourcePath, archivedPath, cancellationToken)
+                        await FileUtility.DecompressFileAsync(sourcePath, archivedPath, cancellationToken)
                             .ConfigureAwait(false);
                     }
                     else
@@ -86,7 +84,7 @@ public sealed class PatchPackageImporter(
                     package.Resources.Add(new ResourceFile(
                         relativePath,
                         projectRelativePath,
-                        PathClassifier.ResourceCategory(relativePath),
+                        FileUtility.ResourceCategory(relativePath),
                         entry.Compressed,
                         sourcePath));
                 }
@@ -610,7 +608,7 @@ public sealed class PatchPackageImporter(
 
         var destinationPath = Path.Combine(tempRoot, relativePath.Replace('/', Path.DirectorySeparatorChar));
         Directory.CreateDirectory(Path.GetDirectoryName(destinationPath) ?? tempRoot);
-        await compressionService.DecompressFileAsync(sourcePath, destinationPath, cancellationToken).ConfigureAwait(false);
+        await FileUtility.DecompressFileAsync(sourcePath, destinationPath, cancellationToken).ConfigureAwait(false);
         return destinationPath;
     }
 

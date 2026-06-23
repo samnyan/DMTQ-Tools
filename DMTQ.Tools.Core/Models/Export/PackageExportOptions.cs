@@ -12,7 +12,7 @@ public sealed class PackageExportOptions
     {
         ArgumentNullException.ThrowIfNull(entry);
 
-        var normalizedPath = PathClassifier.NormalizePackageRelativePath(entry.FileName);
+        var normalizedPath = FileUtility.NormalizePackageRelativePath(entry.FileName);
         return CompressionOverrides.TryGetValue(normalizedPath, out var compressed)
             ? compressed
             : entry.Compressed;
@@ -20,7 +20,7 @@ public sealed class PackageExportOptions
 
     public void SetCompression(string packageRelativePath, bool compressed)
     {
-        var normalizedPath = PathClassifier.NormalizePackageRelativePath(packageRelativePath);
+        var normalizedPath = FileUtility.NormalizePackageRelativePath(packageRelativePath);
         CompressionOverrides[normalizedPath] = compressed;
     }
 }

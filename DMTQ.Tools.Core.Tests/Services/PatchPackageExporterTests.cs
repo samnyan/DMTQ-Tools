@@ -21,14 +21,10 @@ public sealed class PatchPackageExporterTests
         var exportRoot = Path.Combine(Path.GetTempPath(), "dmtq-export-output-" + Guid.NewGuid().ToString("N"));
         try
         {
-            var compression = new Lz4CompressionService();
-            var importer = new PatchPackageImporter(compression, new PatchManifestReader(), new CsvTableReader());
+            var importer = new PatchPackageImporter(new CsvTableReader());
             var package = await importer.ImportAsync(packageRoot, projectRoot);
 
-            var exporter = new PatchPackageExporter(
-                new PatchManifestWriter(),
-                compression,
-                new PatchChecksumService());
+            var exporter = new PatchPackageExporter();
 
             await exporter.ExportAsync(package, exportRoot);
 
@@ -65,18 +61,13 @@ public sealed class PatchPackageExporterTests
         var exportRoot = Path.Combine(Path.GetTempPath(), "dmtq-roundtrip-output-" + Guid.NewGuid().ToString("N"));
         try
         {
-            var compression = new Lz4CompressionService();
-            var checksum = new PatchChecksumService();
-            var importer = new PatchPackageImporter(compression, new PatchManifestReader(), new CsvTableReader());
+            var importer = new PatchPackageImporter(new CsvTableReader());
             var package = await importer.ImportAsync(packageRoot, projectRoot);
 
-            var exporter = new PatchPackageExporter(
-                new PatchManifestWriter(),
-                compression,
-                checksum);
+            var exporter = new PatchPackageExporter();
             var exportedManifest = await exporter.ExportAsync(package, exportRoot);
 
-            var validator = new PatchPackageValidator(checksum);
+            var validator = new PatchPackageValidator();
             var validation = await validator.ValidateAsync(exportedManifest, exportRoot);
 
             validation.Errors.Should().BeEmpty();
@@ -91,10 +82,10 @@ public sealed class PatchPackageExporterTests
 
             File.Exists(resourcePath).Should().BeTrue();
             File.Exists(compressedResourcePath).Should().BeTrue();
-            checksum.GetFileSize(resourcePath).Should().Be(resourceEntry.FileSize);
-            (await checksum.ComputeMd5Async(resourcePath)).Should().Be(resourceEntry.Checksum);
+            FileUtility.GetFileSize(resourcePath).Should().Be(resourceEntry.FileSize);
+            (await FileUtility.ComputeMd5Async(resourcePath)).Should().Be(resourceEntry.Checksum);
 
-            await compression.DecompressFileAsync(compressedResourcePath, decompressedResourcePath);
+            await FileUtility.DecompressFileAsync(compressedResourcePath, decompressedResourcePath);
             var exportedBytes = await File.ReadAllBytesAsync(resourcePath);
             var decompressedBytes = await File.ReadAllBytesAsync(decompressedResourcePath);
             decompressedBytes.Should().Equal(exportedBytes);
@@ -124,17 +115,12 @@ public sealed class PatchPackageExporterTests
         var exportRoot = Path.Combine(Path.GetTempPath(), "dmtq-export-resource-output-" + Guid.NewGuid().ToString("N"));
         try
         {
-            var compression = new Lz4CompressionService();
-            var checksum = new PatchChecksumService();
-            var importer = new PatchPackageImporter(compression, new PatchManifestReader(), new CsvTableReader());
+            var importer = new PatchPackageImporter(new CsvTableReader());
             var package = await importer.ImportAsync(packageRoot, projectRoot);
             var sourceEntry = package.Manifest.Entries.First(e =>
                 e.Compressed && e.FileName.StartsWith("dlc/", StringComparison.Ordinal));
 
-            var exporter = new PatchPackageExporter(
-                new PatchManifestWriter(),
-                compression,
-                checksum);
+            var exporter = new PatchPackageExporter();
 
             var exportedManifest = await exporter.ExportAsync(package, exportRoot);
 
@@ -145,12 +131,12 @@ public sealed class PatchPackageExporterTests
 
             File.Exists(exportedPath).Should().BeTrue();
             File.Exists(compressedPath).Should().BeTrue();
-            checksum.GetFileSize(exportedPath).Should().Be(exportedEntry.FileSize);
-            (await checksum.ComputeMd5Async(exportedPath)).Should().Be(exportedEntry.Checksum);
-            checksum.GetFileSize(compressedPath).Should().Be(exportedEntry.CompressedFileSize);
-            (await checksum.ComputeMd5Async(compressedPath)).Should().Be(exportedEntry.CompressedChecksum);
+            FileUtility.GetFileSize(exportedPath).Should().Be(exportedEntry.FileSize);
+            (await FileUtility.ComputeMd5Async(exportedPath)).Should().Be(exportedEntry.Checksum);
+            FileUtility.GetFileSize(compressedPath).Should().Be(exportedEntry.CompressedFileSize);
+            (await FileUtility.ComputeMd5Async(compressedPath)).Should().Be(exportedEntry.CompressedChecksum);
 
-            await compression.DecompressFileAsync(compressedPath, decompressedPath);
+            await FileUtility.DecompressFileAsync(compressedPath, decompressedPath);
             var originalBytes = await File.ReadAllBytesAsync(exportedPath);
             var decompressedBytes = await File.ReadAllBytesAsync(decompressedPath);
             decompressedBytes.Should().Equal(originalBytes);
@@ -180,17 +166,12 @@ public sealed class PatchPackageExporterTests
         var exportRoot = Path.Combine(Path.GetTempPath(), "dmtq-default-compression-output-" + Guid.NewGuid().ToString("N"));
         try
         {
-            var compression = new Lz4CompressionService();
-            var checksum = new PatchChecksumService();
-            var importer = new PatchPackageImporter(compression, new PatchManifestReader(), new CsvTableReader());
+            var importer = new PatchPackageImporter(new CsvTableReader());
             var package = await importer.ImportAsync(packageRoot, projectRoot);
             var tableEntry = package.Manifest.Entries.Single(e => e.FileName == "table/us/song_song.csv");
             tableEntry.Compressed.Should().BeTrue("the sample package imports this table as compressed");
 
-            var exporter = new PatchPackageExporter(
-                new PatchManifestWriter(),
-                compression,
-                checksum);
+            var exporter = new PatchPackageExporter();
 
             var exportedManifest = await exporter.ExportAsync(package, exportRoot, new PackageExportOptions());
 
@@ -227,17 +208,12 @@ public sealed class PatchPackageExporterTests
         var exportRoot = Path.Combine(Path.GetTempPath(), "dmtq-table-uncompressed-output-" + Guid.NewGuid().ToString("N"));
         try
         {
-            var compression = new Lz4CompressionService();
-            var checksum = new PatchChecksumService();
-            var importer = new PatchPackageImporter(compression, new PatchManifestReader(), new CsvTableReader());
+            var importer = new PatchPackageImporter(new CsvTableReader());
             var package = await importer.ImportAsync(packageRoot, projectRoot);
             var options = new PackageExportOptions();
             options.SetCompression("table/us/song_song.csv", compressed: false);
 
-            var exporter = new PatchPackageExporter(
-                new PatchManifestWriter(),
-                compression,
-                checksum);
+            var exporter = new PatchPackageExporter();
 
             var exportedManifest = await exporter.ExportAsync(package, exportRoot, options);
 
@@ -248,8 +224,8 @@ public sealed class PatchPackageExporterTests
             exportedEntry.CompressedChecksum.Should().BeEmpty();
             File.Exists(tablePath).Should().BeTrue();
             File.Exists(tablePath + ".lz4").Should().BeFalse();
-            checksum.GetFileSize(tablePath).Should().Be(exportedEntry.FileSize);
-            (await checksum.ComputeMd5Async(tablePath)).Should().Be(exportedEntry.Checksum);
+            FileUtility.GetFileSize(tablePath).Should().Be(exportedEntry.FileSize);
+            (await FileUtility.ComputeMd5Async(tablePath)).Should().Be(exportedEntry.Checksum);
         }
         finally
         {
@@ -276,19 +252,14 @@ public sealed class PatchPackageExporterTests
         var exportRoot = Path.Combine(Path.GetTempPath(), "dmtq-resource-uncompressed-output-" + Guid.NewGuid().ToString("N"));
         try
         {
-            var compression = new Lz4CompressionService();
-            var checksum = new PatchChecksumService();
-            var importer = new PatchPackageImporter(compression, new PatchManifestReader(), new CsvTableReader());
+            var importer = new PatchPackageImporter(new CsvTableReader());
             var package = await importer.ImportAsync(packageRoot, projectRoot);
             var resourceEntry = package.Manifest.Entries.First(e =>
                 e.Compressed && e.FileName.StartsWith("preview/", StringComparison.Ordinal));
             var options = new PackageExportOptions();
             options.SetCompression(resourceEntry.FileName, compressed: false);
 
-            var exporter = new PatchPackageExporter(
-                new PatchManifestWriter(),
-                compression,
-                checksum);
+            var exporter = new PatchPackageExporter();
 
             var exportedManifest = await exporter.ExportAsync(package, exportRoot, options);
 
@@ -299,8 +270,8 @@ public sealed class PatchPackageExporterTests
             exportedEntry.CompressedChecksum.Should().BeEmpty();
             File.Exists(resourcePath).Should().BeTrue();
             File.Exists(resourcePath + ".lz4").Should().BeFalse();
-            checksum.GetFileSize(resourcePath).Should().Be(exportedEntry.FileSize);
-            (await checksum.ComputeMd5Async(resourcePath)).Should().Be(exportedEntry.Checksum);
+            FileUtility.GetFileSize(resourcePath).Should().Be(exportedEntry.FileSize);
+            (await FileUtility.ComputeMd5Async(resourcePath)).Should().Be(exportedEntry.Checksum);
         }
         finally
         {
@@ -327,9 +298,7 @@ public sealed class PatchPackageExporterTests
         var exportRoot = Path.Combine(Path.GetTempPath(), "dmtq-mixed-compression-output-" + Guid.NewGuid().ToString("N"));
         try
         {
-            var compression = new Lz4CompressionService();
-            var checksum = new PatchChecksumService();
-            var importer = new PatchPackageImporter(compression, new PatchManifestReader(), new CsvTableReader());
+            var importer = new PatchPackageImporter(new CsvTableReader());
             var package = await importer.ImportAsync(packageRoot, projectRoot);
             var resourceEntry = package.Manifest.Entries.First(e =>
                 e.Compressed && e.FileName.StartsWith("preview/", StringComparison.Ordinal));
@@ -337,13 +306,10 @@ public sealed class PatchPackageExporterTests
             options.SetCompression("table/us/song_song.csv", compressed: false);
             options.SetCompression(resourceEntry.FileName, compressed: false);
 
-            var exporter = new PatchPackageExporter(
-                new PatchManifestWriter(),
-                compression,
-                checksum);
+            var exporter = new PatchPackageExporter();
 
             var exportedManifest = await exporter.ExportAsync(package, exportRoot, options);
-            var validator = new PatchPackageValidator(checksum);
+            var validator = new PatchPackageValidator();
             var validation = await validator.ValidateAsync(exportedManifest, exportRoot);
 
             validation.Errors.Should().BeEmpty();

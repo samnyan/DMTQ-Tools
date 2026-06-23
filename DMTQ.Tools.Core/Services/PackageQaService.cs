@@ -47,7 +47,7 @@ public sealed partial class PackageQaService
         foreach (var platform in package.Platforms)
         {
             var baselineLanguages = platform.BaselineManifestEntries
-                .Where(entry => PathClassifier.IsCsvTable(entry.FileName))
+                .Where(entry => FileUtility.IsCsvTable(entry.FileName))
                 .Select(entry => ExtractLanguageFromPath(entry.FileName))
                 .Where(lang => lang is not null)
                 .Select(lang => lang!)
@@ -80,7 +80,7 @@ public sealed partial class PackageQaService
                 .Where(code => !string.IsNullOrWhiteSpace(code))
                 .Select(code => code!)
                 .Concat(package.Platforms.SelectMany(p => p.BaselineManifestEntries)
-                    .Where(entry => PathClassifier.IsCsvTable(entry.FileName))
+                    .Where(entry => FileUtility.IsCsvTable(entry.FileName))
                     .Select(entry => ExtractLanguageFromPath(entry.FileName))
                     .Where(lang => lang is not null)
                     .Select(lang => lang!))

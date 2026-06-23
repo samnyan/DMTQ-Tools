@@ -58,9 +58,7 @@ public sealed class JsonPatchProjectRepositoryTests
         var exportRoot = Path.Combine(Path.GetTempPath(), "dmtq-json-import-export-" + Guid.NewGuid().ToString("N"));
         try
         {
-            var compression = new Lz4CompressionService();
-            var checksum = new PatchChecksumService();
-            var importer = new PatchPackageImporter(compression, new PatchManifestReader(), new CsvTableReader());
+            var importer = new PatchPackageImporter(new CsvTableReader());
             var package = await importer.ImportAsync(packageRoot, projectRoot);
             var exportOptions = new PackageExportOptions();
             exportOptions.SetCompression("table/us/song_song.csv", compressed: false);
@@ -74,12 +72,9 @@ public sealed class JsonPatchProjectRepositoryTests
             snapshot.Package.Resources.Should().HaveCount(package.Resources.Count);
             snapshot.Package.Songs.Should().NotBeEmpty();
 
-            var exporter = new PatchPackageExporter(
-                new PatchManifestWriter(),
-                compression,
-                checksum);
+            var exporter = new PatchPackageExporter();
             var exportedManifest = await exporter.ExportAsync(snapshot.Package, exportRoot, snapshot.ExportOptions);
-            var validation = await new PatchPackageValidator(checksum).ValidateAsync(exportedManifest, exportRoot);
+            var validation = await new PatchPackageValidator().ValidateAsync(exportedManifest, exportRoot);
 
             validation.Errors.Should().BeEmpty();
             exportedManifest.Entries.Single(e => e.FileName == "table/us/song_song.csv").Compressed.Should().BeFalse();

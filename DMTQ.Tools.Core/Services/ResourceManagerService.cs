@@ -45,8 +45,8 @@ public sealed class ResourceManagerService
             throw new FileNotFoundException("Resource source file was not found.", sourceFilePath);
         }
 
-        var normalizedPath = PathClassifier.NormalizePackageRelativePath(packageRelativePath);
-        var category = PathClassifier.ResourceCategory(normalizedPath);
+        var normalizedPath = FileUtility.NormalizePackageRelativePath(packageRelativePath);
+        var category = FileUtility.ResourceCategory(normalizedPath);
         var isPreview = category.Equals("preview", StringComparison.OrdinalIgnoreCase);
         if (!isPreview && string.IsNullOrWhiteSpace(platform))
         {
@@ -77,7 +77,7 @@ public sealed class ResourceManagerService
         ArgumentNullException.ThrowIfNull(package);
         ArgumentException.ThrowIfNullOrWhiteSpace(packageRelativePath);
 
-        var normalizedPath = PathClassifier.NormalizePackageRelativePath(packageRelativePath);
+        var normalizedPath = FileUtility.NormalizePackageRelativePath(packageRelativePath);
         package.Resources.RemoveAll(resource =>
             resource.PackageRelativePath.Equals(normalizedPath, StringComparison.OrdinalIgnoreCase)
             && string.Equals(resource.Platform, platform, StringComparison.OrdinalIgnoreCase));
@@ -109,7 +109,7 @@ public sealed class ResourceManagerService
 
     private static ResourceFile FindResource(PatchPackage package, string packageRelativePath, string? platform)
     {
-        var normalizedPath = PathClassifier.NormalizePackageRelativePath(packageRelativePath);
+        var normalizedPath = FileUtility.NormalizePackageRelativePath(packageRelativePath);
         return package.Resources.FirstOrDefault(resource =>
                 resource.PackageRelativePath.Equals(normalizedPath, StringComparison.OrdinalIgnoreCase)
                 && string.Equals(resource.Platform, platform, StringComparison.OrdinalIgnoreCase))

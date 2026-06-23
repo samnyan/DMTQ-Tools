@@ -5,10 +5,7 @@ using DMTQ.Tools.Core.Models.Project;
 
 namespace DMTQ.Tools.Core.Services;
 
-public sealed class PatchPackageExporter(
-    PatchManifestWriter manifestWriter,
-    Lz4CompressionService compressionService,
-    PatchChecksumService checksumService)
+public sealed class PatchPackageExporter
 {
     public Task<PatchManifest> ExportAsync(
         PatchPackage package,
@@ -32,9 +29,9 @@ public sealed class PatchPackageExporter(
         foreach (var sourceEntry in package.Manifest.Entries)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var relativePath = PathClassifier.NormalizePackageRelativePath(sourceEntry.FileName);
+            var relativePath = FileUtility.NormalizePackageRelativePath(sourceEntry.FileName);
 
-            if (PathClassifier.IsCsvTable(relativePath))
+            if (FileUtility.IsCsvTable(relativePath))
             {
                 var uncompressedPath = Path.Combine(exportRoot, relativePath.Replace('/', Path.DirectorySeparatorChar));
                 Directory.CreateDirectory(Path.GetDirectoryName(uncompressedPath) ?? exportRoot);
@@ -53,7 +50,7 @@ public sealed class PatchPackageExporter(
                 var compressedPath = shouldCompress ? uncompressedPath + ".lz4" : null;
                 if (compressedPath is not null)
                 {
-                    await compressionService.CompressFileAsync(uncompressedPath, compressedPath, cancellationToken)
+                    await FileUtility.CompressFileAsync(uncompressedPath, compressedPath, cancellationToken)
                         .ConfigureAwait(false);
                 }
 
@@ -77,7 +74,7 @@ public sealed class PatchPackageExporter(
                 var compressedPath = shouldCompress ? exportPath + ".lz4" : null;
                 if (compressedPath is not null)
                 {
-                    await compressionService.CompressFileAsync(exportPath, compressedPath, cancellationToken)
+                    await FileUtility.CompressFileAsync(exportPath, compressedPath, cancellationToken)
                         .ConfigureAwait(false);
                 }
 
@@ -94,10 +91,10 @@ public sealed class PatchPackageExporter(
         var manifestPath = Path.Combine(exportRoot, "patch_new.csv");
         await using (var manifestStream = File.Create(manifestPath))
         {
-            await manifestWriter.WriteAsync(exportedManifest, manifestStream, cancellationToken).ConfigureAwait(false);
+            await PatchManifestIO.WriteAsync(exportedManifest, manifestStream, cancellationToken).ConfigureAwait(false);
         }
 
-        await compressionService.CompressFileAsync(manifestPath, manifestPath + ".lz4", cancellationToken).ConfigureAwait(false);
+        await FileUtility.CompressFileAsync(manifestPath, manifestPath + ".lz4", cancellationToken).ConfigureAwait(false);
         return exportedManifest;
     }
 
@@ -109,14 +106,14 @@ public sealed class PatchPackageExporter(
         bool compressed,
         CancellationToken cancellationToken)
     {
-        var fileSize = checksumService.GetFileSize(filePath);
-        var checksum = await checksumService.ComputeMd5Async(filePath, cancellationToken).ConfigureAwait(false);
+        var fileSize = FileUtility.GetFileSize(filePath);
+        var checksum = await FileUtility.ComputeMd5Async(filePath, cancellationToken).ConfigureAwait(false);
         var compressedFileSize = compressedPath is null
             ? 0
-            : checksumService.GetFileSize(compressedPath);
+            : FileUtility.GetFileSize(compressedPath);
         var compressedChecksum = compressedPath is null
             ? string.Empty
-            : await checksumService.ComputeMd5Async(compressedPath, cancellationToken).ConfigureAwait(false);
+            : await FileUtility.ComputeMd5Async(compressedPath, cancellationToken).ConfigureAwait(false);
 
         return new PatchFileEntry(
             relativePath,

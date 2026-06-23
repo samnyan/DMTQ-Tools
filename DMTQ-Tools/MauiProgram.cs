@@ -29,11 +29,7 @@ namespace DMTQ_Tools
             // DO NOT change to ServiceLifetime.Singleton.
             builder.Services.AddFluentUIComponents();
 
-            builder.Services.AddSingleton<Lz4CompressionService>();
-            builder.Services.AddSingleton<PatchManifestReader>();
             builder.Services.AddSingleton<CsvTableReader>();
-            builder.Services.AddSingleton<PatchManifestWriter>();
-            builder.Services.AddSingleton<PatchChecksumService>();
             builder.Services.AddSingleton<PatchPackageImporter>();
             builder.Services.AddSingleton<PatchPackageExporter>();
             builder.Services.AddSingleton<PatchPackageValidator>();

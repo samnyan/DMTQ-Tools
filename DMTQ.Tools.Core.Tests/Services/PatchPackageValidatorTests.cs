@@ -20,20 +20,19 @@ public sealed class PatchPackageValidatorTests
             var filePath = Path.Combine(root, "table", "us", "song_song.csv");
             await File.WriteAllTextAsync(filePath, "abc");
 
-            var checksum = new PatchChecksumService();
             var manifest = new PatchManifest();
             manifest.Entries.Add(new PatchFileEntry(
                 "table/us/song_song.csv",
-                checksum.GetFileSize(filePath),
-                await checksum.ComputeMd5Async(filePath),
-                checksum.GetFileSize(filePath),
-                await checksum.ComputeMd5Async(filePath),
+                FileUtility.GetFileSize(filePath),
+                await FileUtility.ComputeMd5Async(filePath),
+                FileUtility.GetFileSize(filePath),
+                await FileUtility.ComputeMd5Async(filePath),
                 0,
                 false,
                 string.Empty,
                 string.Empty));
 
-            var validator = new PatchPackageValidator(checksum);
+            var validator = new PatchPackageValidator();
 
             var result = await validator.ValidateAsync(manifest, root);
 
@@ -58,7 +57,7 @@ public sealed class PatchPackageValidatorTests
             Directory.CreateDirectory(root);
             var manifest = new PatchManifest();
             manifest.Entries.Add(new PatchFileEntry("missing.bin", 1, "abc", 1, "abc", 0, false, string.Empty, string.Empty));
-            var validator = new PatchPackageValidator(new PatchChecksumService());
+            var validator = new PatchPackageValidator();
 
             var result = await validator.ValidateAsync(manifest, root);
 
@@ -86,20 +85,19 @@ public sealed class PatchPackageValidatorTests
             await File.WriteAllTextAsync(filePath, "uncompressed");
             await File.WriteAllTextAsync(compressedPath, "compressed");
 
-            var checksum = new PatchChecksumService();
             var manifest = new PatchManifest();
             manifest.Entries.Add(new PatchFileEntry(
                 "dlc/sample.unity3d",
-                checksum.GetFileSize(filePath),
-                await checksum.ComputeMd5Async(filePath),
-                checksum.GetFileSize(compressedPath),
-                await checksum.ComputeMd5Async(compressedPath),
+                FileUtility.GetFileSize(filePath),
+                await FileUtility.ComputeMd5Async(filePath),
+                FileUtility.GetFileSize(compressedPath),
+                await FileUtility.ComputeMd5Async(compressedPath),
                 0,
                 true,
                 string.Empty,
                 string.Empty));
 
-            var validator = new PatchPackageValidator(checksum);
+            var validator = new PatchPackageValidator();
 
             var result = await validator.ValidateAsync(manifest, root);
 
@@ -125,12 +123,11 @@ public sealed class PatchPackageValidatorTests
             var filePath = Path.Combine(root, "table", "us", "song_song.csv");
             await File.WriteAllTextAsync(filePath, "id,name\r\n1,test\r\n");
 
-            var checksum = new PatchChecksumService();
             var manifest = new PatchManifest();
             manifest.Entries.Add(new PatchFileEntry(
                 "table/us/song_song.csv",
-                checksum.GetFileSize(filePath),
-                await checksum.ComputeMd5Async(filePath),
+                FileUtility.GetFileSize(filePath),
+                await FileUtility.ComputeMd5Async(filePath),
                 0,
                 string.Empty,
                 0,
@@ -138,7 +135,7 @@ public sealed class PatchPackageValidatorTests
                 string.Empty,
                 string.Empty));
 
-            var validator = new PatchPackageValidator(checksum);
+            var validator = new PatchPackageValidator();
 
             var result = await validator.ValidateAsync(manifest, root);
 
