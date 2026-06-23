@@ -14,9 +14,9 @@ public sealed class SongEditServiceTests
     public void UpdateSong_ValidatesSongExistsInSongsCollection()
     {
         var package = CreatePackage();
-        package.Songs.Add(new Song { Id = "1001" });
+        package.Songs.Add(new Song { Id = 1001 });
 
-        var action = () => new SongEditService().UpdateSong(package, new Song { Id = "1001" });
+        var action = () => new SongEditService().UpdateSong(package, new Song { Id = 1001 });
         action.Should().NotThrow();
     }
 
@@ -25,41 +25,41 @@ public sealed class SongEditServiceTests
     {
         var package = CreatePackage();
 
-        var action = () => new SongEditService().UpdateSong(package, new Song { Id = "missing" });
-        action.Should().Throw<InvalidOperationException>().WithMessage("Song 'missing' was not found.");
+        var action = () => new SongEditService().UpdateSong(package, new Song { Id = 9999 });
+        action.Should().Throw<InvalidOperationException>().WithMessage("Song '9999' was not found.");
     }
 
     [TestMethod]
     public void AddSong_AppendsToSongsCollection()
     {
         var package = CreatePackage();
-        package.Songs.Add(new Song { Id = "1001" });
+        package.Songs.Add(new Song { Id = 1001 });
 
-        var song = new Song { Id = "1002" };
+        var song = new Song { Id = 1002 };
         song.Name = "NewSong";
         song.ArtistName = "NewArtist";
         song.PreviewPackageRelativePath = "preview/new.p.opus";
-        song.Patterns.Add(new SongPattern { PatternId = "9002", SongId = "1002" });
-        song.Patterns[0].Difficulty = "expert";
+        song.Patterns.Add(new SongPattern { PatternId = 9002, SongId = 1002 });
+        song.Patterns[0].Difficulty = 3;
 
         new SongEditService().AddSong(package, song);
 
         package.Songs.Should().HaveCount(2);
-        var added = package.Songs.Single(s => s.Id == "1002");
+        var added = package.Songs.Single(s => s.Id == 1002);
         added.Name.Should().Be("NewSong");
         added.ArtistName.Should().Be("NewArtist");
         added.PreviewPackageRelativePath.Should().Be("preview/new.p.opus");
         added.Patterns.Should().ContainSingle();
-        added.Patterns[0].PatternId.Should().Be("9002");
+        added.Patterns[0].PatternId.Should().Be(9002);
     }
 
     [TestMethod]
     public void AddSong_ThrowsWhenSongAlreadyExists()
     {
         var package = CreatePackage();
-        package.Songs.Add(new Song { Id = "1001" });
+        package.Songs.Add(new Song { Id = 1001 });
 
-        var action = () => new SongEditService().AddSong(package, new Song { Id = "1001" });
+        var action = () => new SongEditService().AddSong(package, new Song { Id = 1001 });
         action.Should().Throw<InvalidOperationException>().WithMessage("Song '1001' already exists.");
     }
 
@@ -67,30 +67,30 @@ public sealed class SongEditServiceTests
     public void AddPattern_AppendsToSongPatternsList()
     {
         var package = CreatePackage();
-        package.Songs.Add(new Song { Id = "1001" });
-        package.Songs[0].Patterns.Add(new SongPattern { PatternId = "9001", SongId = "1001" });
+        package.Songs.Add(new Song { Id = 1001 });
+        package.Songs[0].Patterns.Add(new SongPattern { PatternId = 9001, SongId = 1001 });
 
-        var pattern = new SongPattern { PatternId = "9002", SongId = "1001" };
-        pattern.Signature = "3";
-        pattern.Line = "4Line";
+        var pattern = new SongPattern { PatternId = 9002, SongId = 1001 };
+        pattern.Signature = 3;
+        pattern.Line = 4;
 
-        new SongEditService().AddPattern(package, "1001", pattern);
+        new SongEditService().AddPattern(package, 1001, pattern);
 
         package.Songs[0].Patterns.Should().HaveCount(2);
-        var added = package.Songs[0].Patterns.Single(p => p.PatternId == "9002");
-        added.Signature.Should().Be("3");
-        added.Line.Should().Be("4Line");
+        var added = package.Songs[0].Patterns.Single(p => p.PatternId == 9002);
+        added.Signature.Should().Be(3);
+        added.Line.Should().Be(4);
     }
 
     [TestMethod]
     public void AddPattern_ThrowsWhenPatternAlreadyExists()
     {
         var package = CreatePackage();
-        package.Songs.Add(new Song { Id = "1001" });
-        package.Songs[0].Patterns.Add(new SongPattern { PatternId = "9001", SongId = "1001" });
+        package.Songs.Add(new Song { Id = 1001 });
+        package.Songs[0].Patterns.Add(new SongPattern { PatternId = 9001, SongId = 1001 });
 
-        var action = () => new SongEditService().AddPattern(package, "1001",
-            new SongPattern { PatternId = "9001", SongId = "1001" });
+        var action = () => new SongEditService().AddPattern(package, 1001,
+            new SongPattern { PatternId = 9001, SongId = 1001 });
 
         action.Should().Throw<InvalidOperationException>()
             .WithMessage("Pattern '9001' already exists for song '1001'.");
@@ -101,24 +101,24 @@ public sealed class SongEditServiceTests
     {
         var package = CreatePackage();
 
-        var action = () => new SongEditService().AddPattern(package, "nonexistent",
-            new SongPattern { PatternId = "9001", SongId = "nonexistent" });
+        var action = () => new SongEditService().AddPattern(package, 9999,
+            new SongPattern { PatternId = 9001, SongId = 9999 });
 
         action.Should().Throw<InvalidOperationException>()
-            .WithMessage("Song 'nonexistent' does not exist.");
+            .WithMessage("Song '9999' does not exist.");
     }
 
     [TestMethod]
     public void UpdatePattern_ValidatesPatternExists()
     {
         var package = CreatePackage();
-        package.Songs.Add(new Song { Id = "1001" });
-        package.Songs[0].Patterns.Add(new SongPattern { PatternId = "9001", SongId = "1001" });
+        package.Songs.Add(new Song { Id = 1001 });
+        package.Songs[0].Patterns.Add(new SongPattern { PatternId = 9001, SongId = 1001 });
 
-        var updated = new SongPattern { PatternId = "9001", SongId = "1001" };
-        updated.Difficulty = "expert";
+        var updated = new SongPattern { PatternId = 9001, SongId = 1001 };
+        updated.Difficulty = 3;
 
-        var action = () => new SongEditService().UpdatePattern(package, "1001", "9001", updated);
+        var action = () => new SongEditService().UpdatePattern(package, 1001, 9001, updated);
         action.Should().NotThrow();
     }
 
@@ -126,10 +126,10 @@ public sealed class SongEditServiceTests
     public void UpdatePattern_ThrowsWhenPatternNotFound()
     {
         var package = CreatePackage();
-        package.Songs.Add(new Song { Id = "1001" });
+        package.Songs.Add(new Song { Id = 1001 });
 
-        var action = () => new SongEditService().UpdatePattern(package, "1001", "9001",
-            new SongPattern { PatternId = "9001", SongId = "1001" });
+        var action = () => new SongEditService().UpdatePattern(package, 1001, 9001,
+            new SongPattern { PatternId = 9001, SongId = 1001 });
 
         action.Should().Throw<InvalidOperationException>()
             .WithMessage("Pattern '9001' for song '1001' was not found.");
@@ -139,13 +139,13 @@ public sealed class SongEditServiceTests
     public void RemoveSong_RemovesFromSongsCollection()
     {
         var package = CreatePackage();
-        package.Songs.Add(new Song { Id = "1001" });
-        package.Songs.Add(new Song { Id = "1002" });
+        package.Songs.Add(new Song { Id = 1001 });
+        package.Songs.Add(new Song { Id = 1002 });
 
-        new SongEditService().RemoveSong(package, "1001");
+        new SongEditService().RemoveSong(package, 1001);
 
         package.Songs.Should().HaveCount(1);
-        package.Songs[0].Id.Should().Be("1002");
+        package.Songs[0].Id.Should().Be(1002);
     }
 
     [TestMethod]
@@ -153,7 +153,7 @@ public sealed class SongEditServiceTests
     {
         var package = CreatePackage();
 
-        var action = () => new SongEditService().RemoveSong(package, "9999");
+        var action = () => new SongEditService().RemoveSong(package, 9999);
         action.Should().Throw<InvalidOperationException>().WithMessage("Song '9999' was not found.");
     }
 

@@ -195,7 +195,7 @@ public sealed class JsonPatchProjectRepositoryTests
         // Also add as entity for schema-based export
         package.Songs.Add(new Song
         {
-            Id = "1",
+            Id = 1,
             Name = "oblivion"
         });
 

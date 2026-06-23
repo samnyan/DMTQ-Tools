@@ -10,10 +10,10 @@ namespace DMTQ.Tools.Core.Models.Entity;
 public sealed class Song
 {
     [JsonInclude]
-    public required string Id { get; init; }
+    public required int Id { get; init; }
 
     // ── song_song fields ──
-    public string ItemId { get; set; } = string.Empty;
+    public int ItemId { get; set; }
     public string Name { get; set; } = string.Empty;
     public string FullName { get; set; } = string.Empty;
     public string Genre { get; set; } = string.Empty;
@@ -25,14 +25,14 @@ public sealed class Song
     public string FeatBy { get; set; } = string.Empty;
     public string ArrangedBy { get; set; } = string.Empty;
     public string VisualizedBy { get; set; } = string.Empty;
-    public string CostGamePoint { get; set; } = string.Empty;
-    public string CostGameCash { get; set; } = string.Empty;
-    public string Flag { get; set; } = string.Empty;
+    public int CostGamePoint { get; set; }
+    public int CostGameCash { get; set; }
+    public int Flag { get; set; }
     public string Status { get; set; } = string.Empty;
     public string FreeYn { get; set; } = string.Empty;
     public string HiddenYn { get; set; } = string.Empty;
     public string OpenYn { get; set; } = string.Empty;
-    public string TrackId { get; set; } = string.Empty;
+    public int TrackId { get; set; }
     public string ModDate { get; set; } = string.Empty;
     public string Update { get; set; } = string.Empty;
 
@@ -52,7 +52,7 @@ public sealed class Song
     public bool HasPreview => !string.IsNullOrWhiteSpace(PreviewPackageRelativePath);
 
     [SetsRequiredMembers]
-    public Song() { Id = ""; }
+    public Song() { Id = 0; }
 }
 
 /// <summary>
@@ -60,20 +60,20 @@ public sealed class Song
 /// </summary>
 public sealed class SongPattern
 {
-    public required string PatternId { get; set; }
+    public required int PatternId { get; set; }
     [JsonInclude]
-    public required string SongId { get; init; }
+    public required int SongId { get; init; }
 
     [SetsRequiredMembers]
-    public SongPattern() { SongId = ""; PatternId = ""; }
+    public SongPattern() { SongId = 0; PatternId = 0; }
 
     // ── song_songPattern fields ──
     public string Name { get; set; } = string.Empty;
-    public string Line { get; set; } = string.Empty;
-    public string Signature { get; set; } = string.Empty;
-    public string Difficulty { get; set; } = string.Empty;
-    public string PointType { get; set; } = string.Empty;
-    public string PointValue { get; set; } = string.Empty;
+    public int Line { get; set; }
+    public int Signature { get; set; }
+    public int Difficulty { get; set; }
+    public int PointType { get; set; }
+    public int PointValue { get; set; }
     public string Flg { get; set; } = string.Empty;
     public string Update { get; set; } = string.Empty;
 }
@@ -85,7 +85,7 @@ public sealed class SongPattern
 public sealed class SongLocalization
 {
     /// <summary>The song this localization belongs to.</summary>
-    public string SongId { get; set; } = string.Empty;
+    public int SongId { get; set; }
 
     public string FullName { get; set; } = string.Empty;
     public string Genre { get; set; } = string.Empty;

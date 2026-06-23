@@ -83,7 +83,7 @@ else
                     <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="4">
                         <FluentButton IconStart="@(new Icons.Regular.Size20.Edit())"
                                       Appearance="Appearance.Neutral"
-                                      OnClick="() => EditSong(context.Id)"
+                                      OnClick="() => EditSong(context.Id.ToString())"
                                       Title="Edit" />
                         <FluentButton IconStart="@(new Icons.Regular.Size20.Delete())"
                                       Appearance="Appearance.Neutral"
@@ -141,7 +141,7 @@ else
         {
             if (string.IsNullOrWhiteSpace(filter)) return Catalog;
             return Catalog.Where(song =>
-                song.Id.Contains(filter, StringComparison.OrdinalIgnoreCase)
+                song.Id.ToString().Contains(filter, StringComparison.OrdinalIgnoreCase)
                 || song.Name.Contains(filter, StringComparison.OrdinalIgnoreCase)
                 || song.ArtistName.Contains(filter, StringComparison.OrdinalIgnoreCase)
                 || song.Genre.Contains(filter, StringComparison.OrdinalIgnoreCase));
@@ -153,7 +153,7 @@ else
         var lang = selectedLanguage ?? "CN";
         if (song.Localizations.TryGetValue(lang, out var loc) && !string.IsNullOrWhiteSpace(loc.FullName))
             return loc.FullName;
-        return string.IsNullOrWhiteSpace(song.Name) ? song.Id : song.Name;
+        return string.IsNullOrWhiteSpace(song.Name) ? song.Id.ToString() : song.Name;
     }
 
     private void CreateNewSong() => Navigation.NavigateTo("/songs/editor/new");

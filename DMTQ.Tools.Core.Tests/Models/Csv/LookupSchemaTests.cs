@@ -238,7 +238,7 @@ public sealed class LookupSchemaTests
     {
         var schema = new SongDescCsvSchema("kr");
         var csv = "song_id,fullname,genre,artist,composed_by,singer,feat_by,arranged_by,visualized_by\r\n" +
-                  "SONG_001,풀네임,장르,아티스트,작곡가,가수,피처링,편곡가,비주얼\r\n";
+                  "1001,풀네임,장르,아티스트,작곡가,가수,피처링,편곡가,비주얼\r\n";
 
         using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(csv));
 
@@ -247,7 +247,7 @@ public sealed class LookupSchemaTests
 
         // Assert
         result.Should().HaveCount(1);
-        result[0].SongId.Should().Be("SONG_001");
+        result[0].SongId.Should().Be(1001);
         result[0].FullName.Should().Be("풀네임");
         result[0].Genre.Should().Be("장르");
         result[0].ArtistName.Should().Be("아티스트");

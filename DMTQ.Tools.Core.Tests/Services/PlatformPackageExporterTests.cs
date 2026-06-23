@@ -301,7 +301,7 @@ public sealed class PlatformPackageExporterTests
     {
         package.Songs.Add(new Song
         {
-            Id = "1",
+            Id = 1,
             Name = songName
         });
     }

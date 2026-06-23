@@ -41,7 +41,7 @@
     [Parameter] public SongPattern Content { get; set; } = default!;
     [CascadingParameter] public FluentDialog Dialog { get; set; } = default!;
 
-    private string? originalId;
+    private int? originalId;
 
     private bool flgChecked
     {
@@ -51,7 +51,7 @@
 
     protected override void OnInitialized()
     {
-        if (!string.IsNullOrWhiteSpace(Content.PatternId))
+        if (Content.PatternId > 0)
             originalId = Content.PatternId;
     }
 }

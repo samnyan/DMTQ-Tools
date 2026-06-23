@@ -13,7 +13,7 @@ public sealed class SongCatalogService
 
         return package.Songs
             .OrderBy(song => song.Name, StringComparer.OrdinalIgnoreCase)
-            .ThenBy(song => song.Id, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(song => song.Id)
             .ToArray();
     }
 

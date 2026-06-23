@@ -107,7 +107,7 @@ public sealed class PlatformPackageImporterTests
                 .Should().BeEmpty("song tables should be extracted into entities");
             // Songs should be stored as entities
             package.Songs.Should().ContainSingle();
-            package.Songs[0].Id.Should().Be("1");
+            package.Songs[0].Id.Should().Be(1);
             package.Songs[0].Name.Should().Be("android-song", "first import wins");
             package.Platforms.Should().HaveCount(2);
         }

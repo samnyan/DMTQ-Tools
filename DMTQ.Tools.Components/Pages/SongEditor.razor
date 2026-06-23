@@ -43,7 +43,7 @@
                                 }
                                 else
                                 {
-                                    <FluentTextField style="width: 100%;" Value="@(currentSong?.Id ?? "")" Label="Song ID" ReadOnly="true" />
+                                    <FluentTextField style="width: 100%;" Value="@(currentSong?.Id.ToString() ?? "")" Label="Song ID" ReadOnly="true" />
                                 }
                                 <FluentTextField style="width: 100%;" @bind-Value="currentSong!.Name" Label="Name" />
                                 <FluentTextField style="width: 100%;" @bind-Value="currentSong!.FullName" Label="Full Name" />
@@ -66,12 +66,12 @@
                                 <FluentSwitch @bind-Value="bgaLoop" Label="Loop BGA" />
                                 <FluentNumberField @bind-Value="costPoint" Label="Cost (Game Point)" />
                                 <FluentNumberField @bind-Value="costCash" Label="Cost (Game Cash)" />
-                                <FluentTextField style="width: 100%;" @bind-Value="currentSong!.Flag" Label="Flag" />
+                                <FluentNumberField @bind-Value="currentSong!.Flag" Label="Flag" />
                                 <FluentTextField style="width: 100%;" @bind-Value="currentSong!.Status" Label="Status" />
                                 <FluentSwitch @bind-Value="freeYn" Label="Free" />
                                 <FluentSwitch @bind-Value="hiddenYn" Label="Hidden" />
                                 <FluentSwitch @bind-Value="openYn" Label="Open" />
-                                <FluentTextField style="width: 100%;" @bind-Value="currentSong!.TrackId" Label="Track ID" />
+                                <FluentNumberField @bind-Value="currentSong!.TrackId" Label="Track ID" />
                                 <FluentTextField style="width: 100%;" @bind-Value="currentSong!.ModDate" Label="Mod Date" />
                                 <FluentTextField style="width: 100%;" @bind-Value="currentSong!.Update" Label="Update" />
                             </FluentStack>
@@ -84,7 +84,7 @@
                    ════════════════════════════════════════════ *@
                 <section>
                     <h2 class="section-heading">Link ID</h2>
-                    <FluentTextField style="width: 100%;" @bind-Value="currentSong!.ItemId" Label="Item ID" />
+                    <FluentNumberField style="width: 100%;" @bind-Value="currentSong!.ItemId" Label="Item ID" />
                 </section>
 
                 @* ════════════════════════════════════════════
@@ -210,11 +210,9 @@
     private bool hiddenYn { get => currentSong?.HiddenYn == "Y"; set => currentSong!.HiddenYn = value ? "Y" : "N"; }
     private bool openYn { get => currentSong?.OpenYn == "Y"; set => currentSong!.OpenYn = value ? "Y" : "N"; }
 
-    // Numeric wrappers (string ↔ int)
-    private int? costPoint { get => ParseInt(currentSong?.CostGamePoint); set => currentSong!.CostGamePoint = value?.ToString() ?? ""; }
-    private int? costCash { get => ParseInt(currentSong?.CostGameCash); set => currentSong!.CostGameCash = value?.ToString() ?? ""; }
-
-    private static int? ParseInt(string? s) => int.TryParse(s, out var v) ? v : null;
+    // Numeric wrappers (int? ↔ int)
+    private int? costPoint { get => currentSong?.CostGamePoint; set { if (currentSong is not null && value.HasValue) currentSong.CostGamePoint = value.Value; } }
+    private int? costCash { get => currentSong?.CostGameCash; set { if (currentSong is not null && value.HasValue) currentSong.CostGameCash = value.Value; } }
 
     private PatchPackage? _lastPackage;
     private IReadOnlyList<Song> _catalog = [];
@@ -236,8 +234,8 @@
         {
             if (currentSong is null) return [];
             return currentSong.Patterns
-                .OrderBy(p => p.Line.Length).ThenBy(p => p.Line)
-                .ThenBy(p => p.Signature.Length).ThenBy(p => p.Signature);
+                .OrderBy(p => p.Line)
+                .ThenBy(p => p.Signature);
         }
     }
 
@@ -245,11 +243,11 @@
     {
         if (IsCreate)
         {
-            currentSong ??= new Song { Id = songIdInput };
+            currentSong ??= new Song { Id = 0 };
         }
-        else if (currentSong?.Id != SongId)
+        else if (int.TryParse(SongId, out var id) && currentSong?.Id != id)
         {
-            currentSong = Catalog.FirstOrDefault(s => s.Id == SongId);
+            currentSong = Catalog.FirstOrDefault(s => s.Id == id);
         }
     }
 
@@ -279,12 +277,12 @@
         {
             if (IsCreate)
             {
-                if (string.IsNullOrWhiteSpace(songIdInput))
+                if (string.IsNullOrWhiteSpace(songIdInput) || !int.TryParse(songIdInput, out var newId))
                 {
-                    errorMessage = "Song ID is required.";
+                    errorMessage = "Song ID is required and must be a number.";
                     return;
                 }
-                var song = new Song { Id = songIdInput };
+                var song = new Song { Id = newId };
                 CopyLocalizations(currentSong!, song);
                 CopyFormFields(currentSong!, song);
                 SongEditSvc.AddSong(State.CurrentPackage, song);
@@ -358,7 +356,7 @@
     {
         if (currentSong is null) return;
 
-        var pattern = new SongPattern { PatternId = "", SongId = currentSong.Id };
+        var pattern = new SongPattern { PatternId = 0, SongId = currentSong.Id };
 
         var dialog = await DialogService.ShowDialogAsync<PatternDialog, SongPattern>(
             pattern,
@@ -372,7 +370,7 @@
             });
 
         var result = await dialog.Result;
-        if (result.Cancelled || string.IsNullOrWhiteSpace(pattern.PatternId))
+        if (result.Cancelled || pattern.PatternId == 0)
             return;
 
         try

@@ -146,7 +146,7 @@ public sealed class PatchPackageImporter(
         CancellationToken cancellationToken)
     {
         var existingSongIds = package.Songs.Select(s => s.Id)
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            .ToHashSet();
         var existingAchievementIds = package.Achievements.Select(a => a.Id)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
         var existingProductIds = package.Products.Select(p => p.Id)
@@ -235,7 +235,7 @@ public sealed class PatchPackageImporter(
         List<CsvImportEntry> entries,
         CancellationToken cancellationToken)
     {
-        var songDict = package.Songs.ToDictionary(s => s.Id, StringComparer.OrdinalIgnoreCase);
+        var songDict = package.Songs.ToDictionary(s => s.Id);
         var hasPatterns = false;
 
         foreach (var entry in entries)
@@ -251,7 +251,7 @@ public sealed class PatchPackageImporter(
                     if (!songDict.TryGetValue(pattern.SongId, out var song))
                         continue;
 
-                    var key = pattern.SongId + "::" + pattern.PatternId;
+                    var key = $"{pattern.SongId}::{pattern.PatternId}";
                     if (!seen.Add(key))
                         continue;
 
@@ -295,10 +295,10 @@ public sealed class PatchPackageImporter(
             {
                 song.Patterns.Sort((left, right) =>
                 {
-                    var lineCmp = string.Compare(left.Line, right.Line, StringComparison.OrdinalIgnoreCase);
+                    var lineCmp = left.Line.CompareTo(right.Line);
                     return lineCmp != 0
                         ? lineCmp
-                        : string.Compare(left.Signature, right.Signature, StringComparison.OrdinalIgnoreCase);
+                        : left.Signature.CompareTo(right.Signature);
                 });
             }
         }
@@ -393,7 +393,7 @@ public sealed class PatchPackageImporter(
             }
 
             var songIdMatch = previewPaths.FirstOrDefault(path =>
-                path.Contains(song.Id, StringComparison.OrdinalIgnoreCase));
+                path.Contains(song.Id.ToString(), StringComparison.OrdinalIgnoreCase));
             if (!string.IsNullOrWhiteSpace(songIdMatch))
             {
                 song.PreviewPackageRelativePath = songIdMatch;

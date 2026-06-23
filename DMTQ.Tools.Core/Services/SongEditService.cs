@@ -12,9 +12,8 @@ public sealed class SongEditService
     {
         ArgumentNullException.ThrowIfNull(package);
         ArgumentNullException.ThrowIfNull(song);
-        ArgumentException.ThrowIfNullOrWhiteSpace(song.Id);
 
-        if (!package.Songs.Any(s => s.Id.Equals(song.Id, StringComparison.OrdinalIgnoreCase)))
+        if (!package.Songs.Any(s => s.Id == song.Id))
             throw new InvalidOperationException($"Song '{song.Id}' was not found.");
     }
 
@@ -22,53 +21,51 @@ public sealed class SongEditService
     {
         ArgumentNullException.ThrowIfNull(package);
         ArgumentNullException.ThrowIfNull(song);
-        ArgumentException.ThrowIfNullOrWhiteSpace(song.Id);
 
-        if (package.Songs.Any(s => s.Id.Equals(song.Id, StringComparison.OrdinalIgnoreCase)))
+        if (package.Songs.Any(s => s.Id == song.Id))
             throw new InvalidOperationException($"Song '{song.Id}' already exists.");
 
         package.Songs.Add(song);
     }
 
-    public void UpdatePattern(PatchPackage package, string songId, string patternId,
+    public void UpdatePattern(PatchPackage package, int songId, int patternId,
         SongPattern pattern)
     {
         ArgumentNullException.ThrowIfNull(package);
         ArgumentNullException.ThrowIfNull(pattern);
 
         var song = package.Songs.FirstOrDefault(
-            s => s.Id.Equals(songId, StringComparison.OrdinalIgnoreCase))
+            s => s.Id == songId)
             ?? throw new InvalidOperationException($"Song '{songId}' was not found.");
 
-        if (!song.Patterns.Any(p => p.PatternId.Equals(patternId, StringComparison.OrdinalIgnoreCase)))
+        if (!song.Patterns.Any(p => p.PatternId == patternId))
             throw new InvalidOperationException(
                 $"Pattern '{patternId}' for song '{songId}' was not found.");
     }
 
-    public void AddPattern(PatchPackage package, string songId, SongPattern pattern)
+    public void AddPattern(PatchPackage package, int songId, SongPattern pattern)
     {
         ArgumentNullException.ThrowIfNull(package);
         ArgumentNullException.ThrowIfNull(pattern);
 
         var song = package.Songs.FirstOrDefault(
-            s => s.Id.Equals(songId, StringComparison.OrdinalIgnoreCase))
+            s => s.Id == songId)
             ?? throw new InvalidOperationException($"Song '{songId}' does not exist.");
 
         if (song.Patterns.Any(p =>
-                p.PatternId.Equals(pattern.PatternId, StringComparison.OrdinalIgnoreCase)))
+                p.PatternId == pattern.PatternId))
             throw new InvalidOperationException(
                 $"Pattern '{pattern.PatternId}' already exists for song '{songId}'.");
 
         song.Patterns.Add(pattern);
     }
 
-    public void RemoveSong(PatchPackage package, string songId)
+    public void RemoveSong(PatchPackage package, int songId)
     {
         ArgumentNullException.ThrowIfNull(package);
-        ArgumentException.ThrowIfNullOrWhiteSpace(songId);
 
         var song = package.Songs.FirstOrDefault(
-            s => s.Id.Equals(songId, StringComparison.OrdinalIgnoreCase))
+            s => s.Id == songId)
             ?? throw new InvalidOperationException($"Song '{songId}' was not found.");
 
         package.Songs.Remove(song);

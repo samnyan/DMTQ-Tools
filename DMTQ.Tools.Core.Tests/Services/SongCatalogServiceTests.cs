@@ -17,9 +17,9 @@ public sealed class SongCatalogServiceTests
         {
             ProjectInfo = new ProjectInfo("project", null, null, null)
         };
-        var song1 = new Song { Id = "2", Name = "Beta" };
-        var song2 = new Song { Id = "1", Name = "Alpha" };
-        var song3 = new Song { Id = "3", Name = "Alpha" };
+        var song1 = new Song { Id = 2, Name = "Beta" };
+        var song2 = new Song { Id = 1, Name = "Alpha" };
+        var song3 = new Song { Id = 3, Name = "Alpha" };
         package.Songs.Add(song1);
         package.Songs.Add(song2);
         package.Songs.Add(song3);
@@ -27,9 +27,9 @@ public sealed class SongCatalogServiceTests
         var catalog = new SongCatalogService().BuildCatalog(package);
 
         catalog.Should().HaveCount(3);
-        catalog[0].Id.Should().Be("1"); // Alpha, id=1
-        catalog[1].Id.Should().Be("3"); // Alpha, id=3
-        catalog[2].Id.Should().Be("2"); // Beta
+        catalog[0].Id.Should().Be(1); // Alpha, id=1
+        catalog[1].Id.Should().Be(3); // Alpha, id=3
+        catalog[2].Id.Should().Be(2); // Beta
     }
 
     [TestMethod]

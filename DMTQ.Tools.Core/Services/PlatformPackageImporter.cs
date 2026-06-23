@@ -182,7 +182,7 @@ public sealed class PlatformPackageImporter
         CancellationToken cancellationToken)
     {
         var existingSongIds = package.Songs.Select(s => s.Id)
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            .ToHashSet();
         var existingAchievementIds = package.Achievements.Select(a => a.Id)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
         var existingProductIds = package.Products.Select(p => p.Id)
@@ -271,11 +271,11 @@ public sealed class PlatformPackageImporter
         List<CsvImportEntry> entries,
         CancellationToken cancellationToken)
     {
-        var songDict = package.Songs.ToDictionary(s => s.Id, StringComparer.OrdinalIgnoreCase);
+        var songDict = package.Songs.ToDictionary(s => s.Id);
         var hasPatterns = false;
 
         // Collect all patterns from every language table into per-song groups
-        var patternsBySong = new Dictionary<string, List<SongPattern>>(StringComparer.OrdinalIgnoreCase);
+        var patternsBySong = new Dictionary<int, List<SongPattern>>();
 
         foreach (var entry in entries)
         {
@@ -333,7 +333,7 @@ public sealed class PlatformPackageImporter
             var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             foreach (var pattern in patterns)
             {
-                var key = pattern.Signature + "::" + pattern.Line;
+                var key = $"{pattern.Signature}::{pattern.Line}";
                 if (!seen.Add(key))
                     continue;
 
@@ -349,10 +349,10 @@ public sealed class PlatformPackageImporter
             {
                 song.Patterns.Sort((left, right) =>
                 {
-                    var lineCmp = string.Compare(left.Line, right.Line, StringComparison.OrdinalIgnoreCase);
+                    var lineCmp = left.Line.CompareTo(right.Line);
                     return lineCmp != 0
                         ? lineCmp
-                        : string.Compare(left.Signature, right.Signature, StringComparison.OrdinalIgnoreCase);
+                        : left.Signature.CompareTo(right.Signature);
                 });
             }
         }
@@ -450,7 +450,7 @@ public sealed class PlatformPackageImporter
             }
 
             var songIdMatch = previewPaths.FirstOrDefault(path =>
-                path.Contains(song.Id, StringComparison.OrdinalIgnoreCase));
+                path.Contains(song.Id.ToString(), StringComparison.OrdinalIgnoreCase));
             if (!string.IsNullOrWhiteSpace(songIdMatch))
             {
                 song.PreviewPackageRelativePath = songIdMatch;
