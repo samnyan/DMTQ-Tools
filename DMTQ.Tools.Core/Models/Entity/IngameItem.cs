@@ -1,7 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 
-namespace DMTQ.Tools.Core.Models;
+namespace DMTQ.Tools.Core.Models.Entity;
 
 /// <summary>In-game power-up item entity built from ingameitem_ingameitem.
 /// Key is the composite of item_type + "_" + item_level.</summary>

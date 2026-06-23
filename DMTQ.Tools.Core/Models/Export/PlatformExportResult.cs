@@ -1,4 +1,6 @@
-namespace DMTQ.Tools.Core.Models;
+using DMTQ.Tools.Core.Models.Project;
+
+namespace DMTQ.Tools.Core.Models.Export;
 
 public sealed class PlatformExportResult
 {

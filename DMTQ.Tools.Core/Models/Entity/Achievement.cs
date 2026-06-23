@@ -1,7 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 
-namespace DMTQ.Tools.Core.Models;
+namespace DMTQ.Tools.Core.Models.Entity;
 
 /// <summary>Achievement entity built from quest_achievement (main) + acievement_desc_&lt;lang&gt; (localized).</summary>
 public sealed class Achievement

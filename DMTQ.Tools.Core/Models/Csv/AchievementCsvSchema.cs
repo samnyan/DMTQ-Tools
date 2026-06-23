@@ -1,5 +1,7 @@
 using System.Reflection;
 
+using DMTQ.Tools.Core.Models.Entity;
+
 namespace DMTQ.Tools.Core.Models.Csv;
 
 /// <summary>CSV schema for the quest_achievement table.</summary>

@@ -1,7 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 
-namespace DMTQ.Tools.Core.Models;
+namespace DMTQ.Tools.Core.Models.Entity;
 
 /// <summary>
 /// Project-domain song model with flat, strongly-typed fields.

@@ -1,7 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 
-namespace DMTQ.Tools.Core.Models;
+namespace DMTQ.Tools.Core.Models.Entity;
 
 /// <summary>Store product (SKU) entity built from product_product table.</summary>
 public sealed class Product

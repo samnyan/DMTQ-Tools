@@ -1,4 +1,7 @@
 using DMTQ.Tools.Core.Models;
+using DMTQ.Tools.Core.Models.Entity;
+using DMTQ.Tools.Core.Models.Export;
+using DMTQ.Tools.Core.Models.Project;
 using DMTQ.Tools.Core.Models.Csv;
 using FluentAssertions;
 

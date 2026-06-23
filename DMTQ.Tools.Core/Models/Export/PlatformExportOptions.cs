@@ -1,4 +1,4 @@
-namespace DMTQ.Tools.Core.Models;
+namespace DMTQ.Tools.Core.Models.Export;
 
 public sealed class PlatformExportOptions
 {

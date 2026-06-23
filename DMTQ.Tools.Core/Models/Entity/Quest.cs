@@ -1,7 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 
-namespace DMTQ.Tools.Core.Models;
+namespace DMTQ.Tools.Core.Models.Entity;
 
 /// <summary>Quest entity built from quest_desc_&lt;lang&gt; (main) + quest_mission_desc_&lt;lang&gt; (missions).</summary>
 public sealed class Quest

@@ -1,4 +1,4 @@
-namespace DMTQ.Tools.Core.Models;
+namespace DMTQ.Tools.Core.Models.Project;
 
 public sealed record ProjectInfo(
     string ProjectRoot,

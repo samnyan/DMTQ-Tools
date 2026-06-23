@@ -2,6 +2,8 @@ using System.Globalization;
 using CsvHelper;
 using CsvHelper.Configuration;
 
+using DMTQ.Tools.Core.Models.Entity;
+
 namespace DMTQ.Tools.Core.Models.Csv;
 
 /// <summary>CSV schema for the quest_mission_desc_&lt;lang&gt; localized tables.

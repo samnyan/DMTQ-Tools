@@ -1,4 +1,7 @@
-namespace DMTQ.Tools.Core.Models;
+using DMTQ.Tools.Core.Models.Entity;
+using DMTQ.Tools.Core.Models.Export;
+
+namespace DMTQ.Tools.Core.Models.Project;
 
 public sealed class PatchPackage
 {
