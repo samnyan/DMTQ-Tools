@@ -69,6 +69,15 @@ public sealed class GameTableManagerWorkflow : IProjectWorkflow
         await _platformImporter.ImportPlatformAsync(_state.CurrentPackage!, packageRoot, platform, cancellationToken).ConfigureAwait(false);
         _state.SetPlatformImportResult(platform);
 
+        // Report integrity errors found during import
+        if (_state.CurrentPackage!.IntegrityErrors.Count > 0)
+        {
+            foreach (var error in _state.CurrentPackage.IntegrityErrors)
+            {
+                _state.Diagnostics.Add(error);
+            }
+        }
+
         await _repository.SaveAsync(_state.CurrentPackage!, _state.ExportCompressionMode, _state.CreateExportOptions(), _state.ProjectRoot!, cancellationToken).ConfigureAwait(false);
         _state.Diagnostics.Add("Auto-saved after import.");
     }

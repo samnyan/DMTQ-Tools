@@ -23,5 +23,6 @@ public interface IProjectState
     PlatformExportMode PlatformExportMode { get; set; }
     bool HasProject { get; }
     bool HasPackage { get; }
+    IReadOnlyList<string> ImportIntegrityErrors { get; }
     PackageExportOptions CreateExportOptions();
 }

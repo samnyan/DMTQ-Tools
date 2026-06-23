@@ -12,12 +12,6 @@
                   @bind-SelectedOption="State.SelectedExportPlatform"
                   Label="Platform" />
 
-    <FluentSelect Items="@(new[] { DMTQ.Tools.Core.Models.Export.PlatformExportMode.Delta, DMTQ.Tools.Core.Models.Export.PlatformExportMode.Full })"
-                  OptionText="@(mode => mode == DMTQ.Tools.Core.Models.Export.PlatformExportMode.Delta ? "Delta: skip unchanged baseline files" : "Full: write every current file")"
-                  OptionValue="@(mode => mode.ToString())"
-                  @bind-SelectedOption="State.PlatformExportMode"
-                  Label="Package output" />
-
     <FluentSelect Items="@(new[] { "Keep", "CompressAll", "UncompressAll" })"
                   OptionText="@(i => i)"
                   OptionValue="@(i => i)"

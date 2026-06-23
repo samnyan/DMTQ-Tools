@@ -74,6 +74,13 @@ public sealed class PlatformPackageImporter
                     var csvPath = await EnsureCsvFileAsync(sourcePath, tempRoot, relativePath, entry.Compressed, cancellationToken)
                         .ConfigureAwait(false);
 
+                    // Validate decompressed checksum against manifest
+                    if (!await ValidateDecompressedChecksumAsync(csvPath, entry, package.IntegrityErrors, relativePath, cancellationToken)
+                            .ConfigureAwait(false))
+                    {
+                        continue;
+                    }
+
                     importedPaths.Add(relativePath);
 
                     var tableName = GetTableName(relativePath);
@@ -108,6 +115,13 @@ public sealed class PlatformPackageImporter
                             await using var source = File.OpenRead(sourcePath!);
                             await using var destination = File.Create(archivedPath);
                             await source.CopyToAsync(destination, cancellationToken).ConfigureAwait(false);
+                        }
+
+                        // Validate decompressed checksum against manifest
+                        if (!await ValidateDecompressedChecksumAsync(archivedPath, entry, package.IntegrityErrors, relativePath, cancellationToken)
+                                .ConfigureAwait(false))
+                        {
+                            fileExists = false;
                         }
                     }
 
@@ -611,4 +625,21 @@ public sealed class PlatformPackageImporter
     // ── Nested types ──
 
     private sealed record CsvImportEntry(string FilePath, string TableName, string? LanguageCode);
+
+    private static async Task<bool> ValidateDecompressedChecksumAsync(
+        string decompressedPath,
+        PatchFileEntry entry,
+        List<string> errors,
+        string relativePath,
+        CancellationToken ct)
+    {
+        var actual = await FileUtility.ComputeMd5Async(decompressedPath, ct).ConfigureAwait(false);
+        if (string.Equals(actual, entry.Checksum, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        errors.Add($"[INTEGRITY] {relativePath}: decompressed checksum mismatch (expected {entry.Checksum}, got {actual})");
+        // Delete the invalid file so it doesn't pollute the project
+        try { File.Delete(decompressedPath); } catch { /* best effort */ }
+        return false;
+    }
 }

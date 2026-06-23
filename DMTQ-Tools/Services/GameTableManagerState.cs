@@ -18,9 +18,10 @@ public sealed class GameTableManagerState : IProjectState
 
     public PlatformExportResult? LastPlatformExportResult { get; private set; }
     public string SelectedExportPlatform { get; set; } = "android";
-    public PlatformExportMode PlatformExportMode { get; set; } = PlatformExportMode.Delta;
+    public PlatformExportMode PlatformExportMode { get; set; } = PlatformExportMode.Full;
     public bool HasProject => !string.IsNullOrWhiteSpace(ProjectRoot);
     public bool HasPackage => CurrentPackage is not null;
+    public IReadOnlyList<string> ImportIntegrityErrors => CurrentPackage?.IntegrityErrors ?? [];
 
     public void SetProjectRoot(string projectRoot)
     {

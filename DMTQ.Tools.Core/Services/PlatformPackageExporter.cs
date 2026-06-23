@@ -135,32 +135,6 @@ public sealed class PlatformPackageExporter
         var bytes = writtenStream.ToArray();
         var checksum = ComputeMd5(bytes);
 
-        // Find the platform manifest entry for checksum comparison (only when resource exists)
-        var platformEntry = resource?.PlatformManifest.FirstOrDefault(m =>
-            m.Platform.Equals(options.Platform, StringComparison.OrdinalIgnoreCase)
-            || m.Platform.Equals("share", StringComparison.OrdinalIgnoreCase));
-
-        if (options.Mode == PlatformExportMode.Delta
-            && platformEntry is not null
-            && !string.IsNullOrWhiteSpace(platformEntry.SourceChecksum)
-            && string.Equals(checksum, platformEntry.SourceChecksum, StringComparison.OrdinalIgnoreCase))
-        {
-            // Unchanged — add baseline entry to manifest
-            result.Manifest.Entries.Add(new PatchFileEntry(
-                relativePath,
-                platformEntry.SourceFileSize,
-                platformEntry.SourceChecksum,
-                platformEntry.SourceCompressedFileSize,
-                platformEntry.SourceCompressedChecksum,
-                resource.AcquireOnDemand,
-                resource.Compressed,
-                string.Empty,
-                string.Empty));
-            result.FilesSkippedAsBaseline++;
-            result.Messages.Add($"Skipped unchanged baseline file: {relativePath}");
-            return;
-        }
-
         await File.WriteAllBytesAsync(destinationPath, bytes, cancellationToken).ConfigureAwait(false);
         result.FilesWritten++;
 
@@ -209,64 +183,36 @@ public sealed class PlatformPackageExporter
 
         if (!File.Exists(sourcePath))
         {
-            if (options.Mode == PlatformExportMode.Delta)
+            // Add manifest entry from platform manifest even if file missing on disk
+            // (file may be built into IPA/APK — client needs manifest entry for checksum)
+            var platformEntry = resource.PlatformManifest.FirstOrDefault(m =>
+                m.Platform.Equals(options.Platform, StringComparison.OrdinalIgnoreCase)
+                || m.Platform.Equals("share", StringComparison.OrdinalIgnoreCase));
+            if (platformEntry is not null)
             {
-                // Add baseline entry for missing file
-                var platformEntry = resource.PlatformManifest.FirstOrDefault(m =>
-                    m.Platform.Equals(options.Platform, StringComparison.OrdinalIgnoreCase)
-                    || m.Platform.Equals("share", StringComparison.OrdinalIgnoreCase));
-                if (platformEntry is not null)
-                {
-                    result.Manifest.Entries.Add(new PatchFileEntry(
-                        relativePath,
-                        platformEntry.SourceFileSize,
-                        platformEntry.SourceChecksum,
-                        platformEntry.SourceCompressedFileSize,
-                        platformEntry.SourceCompressedChecksum,
-                        resource.AcquireOnDemand,
-                        resource.Compressed,
-                        string.Empty,
-                        string.Empty));
-                    result.FilesSkippedAsBaseline++;
-                    result.Messages.Add($"Skipped baseline-only file: {relativePath}");
-                }
+                result.Manifest.Entries.Add(new PatchFileEntry(
+                    relativePath,
+                    platformEntry.SourceFileSize,
+                    platformEntry.SourceChecksum,
+                    platformEntry.SourceCompressedFileSize,
+                    platformEntry.SourceCompressedChecksum,
+                    resource.AcquireOnDemand,
+                    resource.Compressed,
+                    string.Empty,
+                    string.Empty));
+                result.FilesSkippedAsBaseline++;
+                result.Messages.Add($"Missing-on-disk file (manifest baseline): {relativePath}");
             }
             else
             {
                 result.MissingCurrentFiles++;
-                result.Validation.Errors.Add($"Missing current file for full export: {relativePath}");
+                result.Validation.Errors.Add($"Missing current file for export: {relativePath}");
             }
             return;
         }
 
         var bytes = await File.ReadAllBytesAsync(sourcePath, cancellationToken).ConfigureAwait(false);
         var checksum = ComputeMd5(bytes);
-
-        // Check for delta skip
-        var platformEntry2 = resource.PlatformManifest.FirstOrDefault(m =>
-            m.Platform.Equals(options.Platform, StringComparison.OrdinalIgnoreCase)
-            || m.Platform.Equals("share", StringComparison.OrdinalIgnoreCase));
-
-        if (options.Mode == PlatformExportMode.Delta
-            && platformEntry2 is not null
-            && !string.IsNullOrWhiteSpace(platformEntry2.SourceChecksum)
-            && string.Equals(checksum, platformEntry2.SourceChecksum, StringComparison.OrdinalIgnoreCase)
-            && resource.Compressed == platformEntry2.SourceCompressedFileSize > 0)
-        {
-            result.Manifest.Entries.Add(new PatchFileEntry(
-                relativePath,
-                platformEntry2.SourceFileSize,
-                platformEntry2.SourceChecksum,
-                platformEntry2.SourceCompressedFileSize,
-                platformEntry2.SourceCompressedChecksum,
-                resource.AcquireOnDemand,
-                resource.Compressed,
-                string.Empty,
-                string.Empty));
-            result.FilesSkippedAsBaseline++;
-            result.Messages.Add($"Skipped unchanged baseline file: {relativePath}");
-            return;
-        }
 
         var destinationPath = Path.Combine(exportRoot, relativePath.Replace('/', Path.DirectorySeparatorChar));
         Directory.CreateDirectory(Path.GetDirectoryName(destinationPath) ?? exportRoot);

@@ -11,7 +11,7 @@ namespace DMTQ.Tools.Core.Tests.Services;
 public sealed class PlatformPackageExporterTests
 {
     [TestMethod]
-    public async Task ExportPlatformAsync_DeltaKeepsBaselineManifestAndSkipsMissingUnchangedFile()
+    public async Task ExportPlatformAsync_WritesManifestForMissingOnDiskFileWithPlatformEntry()
     {
         var projectRoot = Path.Combine(Path.GetTempPath(), "dmtq-platform-export-" + Guid.NewGuid().ToString("N"));
         var exportRoot = Path.Combine(Path.GetTempPath(), "dmtq-platform-output-" + Guid.NewGuid().ToString("N"));
@@ -25,7 +25,7 @@ public sealed class PlatformPackageExporterTests
             var result = await exporter.ExportPlatformAsync(
                 package,
                 exportRoot,
-                new PlatformExportOptions { Platform = "ios", Mode = PlatformExportMode.Delta });
+                new PlatformExportOptions { Platform = "ios", Mode = PlatformExportMode.Full });
 
             result.Validation.Errors.Should().BeEmpty();
             result.Manifest.Entries.Should().ContainSingle(e => e.FileName == "dlc/built-in-only.bin");
@@ -43,7 +43,7 @@ public sealed class PlatformPackageExporterTests
     }
 
     [TestMethod]
-    public async Task ExportPlatformAsync_WritesChangedSharedTableInDeltaMode()
+    public async Task ExportPlatformAsync_WritesChangedSharedTable()
     {
         var projectRoot = Path.Combine(Path.GetTempPath(), "dmtq-platform-table-export-" + Guid.NewGuid().ToString("N"));
         var exportRoot = Path.Combine(Path.GetTempPath(), "dmtq-platform-table-output-" + Guid.NewGuid().ToString("N"));
@@ -58,7 +58,7 @@ public sealed class PlatformPackageExporterTests
             var result = await exporter.ExportPlatformAsync(
                 package,
                 exportRoot,
-                new PlatformExportOptions { Platform = "android", Mode = PlatformExportMode.Delta });
+                new PlatformExportOptions { Platform = "android", Mode = PlatformExportMode.Full });
 
             result.Validation.Errors.Should().BeEmpty();
             result.FilesWritten.Should().BeGreaterThan(2);
@@ -122,62 +122,11 @@ public sealed class PlatformPackageExporterTests
             var result = await CreateExporter().ExportPlatformAsync(
                 package,
                 exportRoot,
-                new PlatformExportOptions { Platform = "android", Mode = PlatformExportMode.Delta });
+                new PlatformExportOptions { Platform = "android", Mode = PlatformExportMode.Full });
 
             result.Validation.Errors.Should().BeEmpty();
             File.Exists(Path.Combine(exportRoot, "dlc", "android.bin")).Should().BeTrue();
             File.Exists(Path.Combine(exportRoot, "preview", "song.p.opus")).Should().BeTrue();
-        }
-        finally
-        {
-            DeleteDirectory(projectRoot);
-            DeleteDirectory(exportRoot);
-        }
-    }
-
-    [TestMethod]
-    public async Task ExportPlatformAsync_SkipsUnchangedBaselineFileInDeltaMode()
-    {
-        var projectRoot = Path.Combine(Path.GetTempPath(), "dmtq-platform-dlta-skip-" + Guid.NewGuid().ToString("N"));
-        var exportRoot = Path.Combine(Path.GetTempPath(), "dmtq-platform-dlta-output-" + Guid.NewGuid().ToString("N"));
-        try
-        {
-            Directory.CreateDirectory(Path.Combine(projectRoot, "resources", "android", "dlc"));
-            var content = "same-content";
-            await File.WriteAllTextAsync(Path.Combine(projectRoot, "resources", "android", "dlc", "android.bin"), content);
-
-            var checksum = Convert.ToHexString(
-                System.Security.Cryptography.MD5.HashData(
-                    await File.ReadAllBytesAsync(Path.Combine(projectRoot, "resources", "android", "dlc", "android.bin"))))
-                .ToLowerInvariant();
-
-            var package = CreateEmptyProject(projectRoot);
-            package.Resources.Add(new ResourceFile
-            {
-                FileName = "dlc/android.bin",
-                Category = "dlc",
-                Compressed = false,
-                PlatformManifest =
-                {
-                    new PlatformManifestEntry
-                    {
-                        Platform = "android",
-                        Exist = true,
-                        SourceFileSize = content.Length,
-                        SourceChecksum = checksum
-                    }
-                }
-            });
-
-            var result = await CreateExporter().ExportPlatformAsync(
-                package,
-                exportRoot,
-                new PlatformExportOptions { Platform = "android", Mode = PlatformExportMode.Delta });
-
-            result.Validation.Errors.Should().BeEmpty();
-            result.FilesSkippedAsBaseline.Should().Be(1);
-            File.Exists(Path.Combine(exportRoot, "dlc", "android.bin")).Should().BeFalse();
-            result.Manifest.Entries.Should().ContainSingle(e => e.FileName == "dlc/android.bin" && e.Checksum == checksum);
         }
         finally
         {
@@ -214,7 +163,7 @@ public sealed class PlatformPackageExporterTests
             var result = await CreateExporter().ExportPlatformAsync(
                 package,
                 exportRoot,
-                new PlatformExportOptions { Platform = "android", Mode = PlatformExportMode.Delta });
+                new PlatformExportOptions { Platform = "android", Mode = PlatformExportMode.Full });
 
             result.Validation.Errors.Should().BeEmpty();
             result.Manifest.Entries.Should().Contain(entry => entry.FileName == "preview/new.opus" && !entry.Compressed);
@@ -255,7 +204,7 @@ public sealed class PlatformPackageExporterTests
             var result = await CreateExporter().ExportPlatformAsync(
                 package,
                 exportRoot,
-                new PlatformExportOptions { Platform = "ios", Mode = PlatformExportMode.Delta });
+                new PlatformExportOptions { Platform = "ios", Mode = PlatformExportMode.Full });
 
             result.Validation.Errors.Should().BeEmpty();
             var entry = result.Manifest.Entries.Single(e => e.FileName == "dlc/new.bundle");
@@ -306,7 +255,7 @@ public sealed class PlatformPackageExporterTests
             var result = await CreateExporter().ExportPlatformAsync(
                 package,
                 exportRoot,
-                new PlatformExportOptions { Platform = "android", Mode = PlatformExportMode.Delta });
+                new PlatformExportOptions { Platform = "android", Mode = PlatformExportMode.Full });
 
             result.Validation.Errors.Should().BeEmpty();
             var entry = result.Manifest.Entries.Single(e => e.FileName == "dlc/android.bin");

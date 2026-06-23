@@ -19,12 +19,15 @@ public sealed class PlatformPackageImporterTests
         {
             Directory.CreateDirectory(projectRoot);
             Directory.CreateDirectory(packageRoot);
+            Directory.CreateDirectory(Path.Combine(packageRoot, "preview"));
+            var previewContent = "preview-bytes"u8.ToArray();
+            await File.WriteAllBytesAsync(Path.Combine(packageRoot, "preview", "shared.p.opus"), previewContent);
+            var previewChecksum = Convert.ToHexString(System.Security.Cryptography.MD5.HashData(previewContent)).ToLowerInvariant();
+
             await WriteManifestAsync(packageRoot, [
                 Entry("table/us/song_song.csv", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", compressed: true),
-                Entry("preview/shared.p.opus", "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", compressed: false)
+                Entry("preview/shared.p.opus", previewChecksum, compressed: false)
             ]);
-            Directory.CreateDirectory(Path.Combine(packageRoot, "preview"));
-            await File.WriteAllTextAsync(Path.Combine(packageRoot, "preview", "shared.p.opus"), "preview-bytes");
 
             var package = CreateEmptyProject(projectRoot);
             var importer = CreateImporter();
@@ -57,11 +60,15 @@ public sealed class PlatformPackageImporterTests
             Directory.CreateDirectory(projectRoot);
             Directory.CreateDirectory(Path.Combine(packageRoot, "dlc"));
             Directory.CreateDirectory(Path.Combine(packageRoot, "Fonts"));
-            await File.WriteAllTextAsync(Path.Combine(packageRoot, "dlc", "android-only.bin"), "android-dlc");
-            await File.WriteAllTextAsync(Path.Combine(packageRoot, "Fonts", "font.bin"), "android-font");
+            var dlcContent = "android-dlc"u8.ToArray();
+            var fontContent = "android-font"u8.ToArray();
+            await File.WriteAllBytesAsync(Path.Combine(packageRoot, "dlc", "android-only.bin"), dlcContent);
+            await File.WriteAllBytesAsync(Path.Combine(packageRoot, "Fonts", "font.bin"), fontContent);
+            var dlcChecksum = Convert.ToHexString(System.Security.Cryptography.MD5.HashData(dlcContent)).ToLowerInvariant();
+            var fontChecksum = Convert.ToHexString(System.Security.Cryptography.MD5.HashData(fontContent)).ToLowerInvariant();
             await WriteManifestAsync(packageRoot, [
-                Entry("dlc/android-only.bin", "11111111111111111111111111111111", compressed: false),
-                Entry("Fonts/font.bin", "22222222222222222222222222222222", compressed: false)
+                Entry("dlc/android-only.bin", dlcChecksum, compressed: false),
+                Entry("Fonts/font.bin", fontChecksum, compressed: false)
             ]);
 
             var package = CreateEmptyProject(projectRoot);
@@ -211,8 +218,8 @@ public sealed class PlatformPackageImporterTests
             File.WriteAllBytes(compressedPath, ms.ToArray());
         }
 
-        var checksum = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(csvBytes)).ToLowerInvariant();
-        var checksumCompressed = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(compressedPath))).ToLowerInvariant();
+        var checksum = Convert.ToHexString(System.Security.Cryptography.MD5.HashData(csvBytes)).ToLowerInvariant();
+        var checksumCompressed = Convert.ToHexString(System.Security.Cryptography.MD5.HashData(File.ReadAllBytes(compressedPath))).ToLowerInvariant();
         var manifestPath = Path.Combine(packageRoot, "patch_new.csv");
         using (var manifestWriter = new StreamWriter(manifestPath))
         {

@@ -64,9 +64,10 @@ public abstract class BlazorUITestBase : Bunit.TestContext
         public List<string> Diagnostics { get; } = [];
         public PlatformExportResult? LastPlatformExportResult { get; set; }
         public string SelectedExportPlatform { get; set; } = "android";
-        public PlatformExportMode PlatformExportMode { get; set; } = PlatformExportMode.Delta;
+        public PlatformExportMode PlatformExportMode { get; set; } = PlatformExportMode.Full;
         public bool HasProject => !string.IsNullOrWhiteSpace(ProjectRoot);
         public bool HasPackage => CurrentPackage is not null;
+        public IReadOnlyList<string> ImportIntegrityErrors => [];
 
         public PackageExportOptions CreateExportOptions() => new();
 

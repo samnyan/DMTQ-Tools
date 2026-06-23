@@ -29,4 +29,7 @@ public sealed class PatchPackage
 
     /// <summary>Power-up item effect entities from ingameitem_itemeffect.</summary>
     public List<IngameItemEffect> IngameItemEffects { get; } = [];
+
+    /// <summary>Integrity errors found during import (decompressed checksums not matching manifest).</summary>
+    public List<string> IntegrityErrors { get; } = [];
 }
