@@ -317,6 +317,73 @@ public sealed class PlatformPackageExporterTests
     private static PlatformPackageExporter CreateExporter()
         => new();
 
+    [TestMethod]
+    public async Task FullWorkflow_ImportAndroidAndIos_ThenExport_ProducesCorrectManifest()
+    {
+        // Resolve external data root
+        var externalRoot = Path.GetFullPath(Path.Combine(
+            AppContext.BaseDirectory, "..", "..", "..", "..",
+            "external", "patch", "phone_new", "1.003.005"));
+        var androidRoot = Path.Combine(externalRoot, "android");
+        var iosRoot = Path.Combine(externalRoot, "ios");
+
+        if (!Directory.Exists(androidRoot) || !Directory.Exists(iosRoot))
+        {
+            Assert.Inconclusive($"External test data not found at {externalRoot}. Skipping integration test.");
+            return;
+        }
+
+        var tempProjectRoot = Path.Combine(Path.GetTempPath(), "dmtq-full-workflow-" + Guid.NewGuid().ToString("N"));
+        var tempExportRoot = Path.Combine(Path.GetTempPath(), "dmtq-full-export-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            Directory.CreateDirectory(tempProjectRoot);
+
+            // Step 2: Create empty PatchPackage
+            var package = CreateEmptyProject(tempProjectRoot);
+
+            // Step 3: Import android platform
+            var importer = new PlatformPackageImporter();
+            await importer.ImportPlatformAsync(package, androidRoot, "android");
+
+            // Step 4: Import ios platform
+            await importer.ImportPlatformAsync(package, iosRoot, "ios");
+
+            // Step 5: Verify Songs and Resources populated
+            package.Songs.Count.Should().BeGreaterThan(0);
+            package.Resources.Count.Should().BeGreaterThan(0);
+
+            // Step 6: Export for ios in Full mode
+            var exporter = new PlatformPackageExporter();
+            var result = await exporter.ExportPlatformAsync(
+                package,
+                tempExportRoot,
+                new PlatformExportOptions { Platform = "ios", Mode = PlatformExportMode.Full });
+
+            // Step 7: Verify patch_new.csv exists and manifest has entries
+            result.Validation.Errors.Should().BeEmpty();
+            File.Exists(Path.Combine(tempExportRoot, "patch_new.csv")).Should().BeTrue();
+            result.Manifest.Entries.Should().NotBeEmpty();
+
+            // Step 8: Verify at least one resource/table file exists in export dir
+            // (exclude the manifest files themselves)
+            var exportedFiles = Directory.GetFiles(tempExportRoot, "*", SearchOption.AllDirectories)
+                .Select(f => Path.GetRelativePath(tempExportRoot, f).Replace('\\', '/'))
+                .Where(f => f != "patch_new.csv" && f != "patch_new.csv.lz4")
+                .ToArray();
+            exportedFiles.Should().NotBeEmpty("at least one resource or table file should be exported");
+
+            // Step 9: Verify LZ4 compression — .lz4 files exist for compressed entries
+            var lz4Files = Directory.GetFiles(tempExportRoot, "*.lz4", SearchOption.AllDirectories);
+            lz4Files.Should().NotBeEmpty("compressed files should produce .lz4 artifacts");
+        }
+        finally
+        {
+            DeleteDirectory(tempProjectRoot);
+            DeleteDirectory(tempExportRoot);
+        }
+    }
+
     private static PatchPackage CreateEmptyProject(string projectRoot)
         => new()
         {
