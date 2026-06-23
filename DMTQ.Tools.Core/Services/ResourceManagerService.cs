@@ -71,7 +71,10 @@ public sealed class ResourceManagerService
         var archivePath = Path.Combine(package.ProjectInfo.ProjectRoot, archiveSubPath.Replace('/', Path.DirectorySeparatorChar));
         Directory.CreateDirectory(Path.GetDirectoryName(archivePath) ?? package.ProjectInfo.ProjectRoot);
         File.Copy(sourceFilePath, archivePath, overwrite: true);
-        await Task.CompletedTask.ConfigureAwait(false);
+
+        // Compute checksum and size of the archived file
+        var checksum = await FileUtility.ComputeMd5Async(archivePath, cancellationToken).ConfigureAwait(false);
+        var fileSize = FileUtility.GetFileSize(archivePath);
 
         // Create or update ResourceFile
         var resourceFile = package.Resources.FirstOrDefault(r =>
@@ -106,12 +109,16 @@ public sealed class ResourceManagerService
                 resourceFile.PlatformManifest.Add(new PlatformManifestEntry
                 {
                     Platform = plat,
-                    Exist = true
+                    Exist = true,
+                    Checksum = checksum,
+                    SourceFileSize = fileSize
                 });
             }
             else
             {
                 existingEntry.Exist = true;
+                existingEntry.Checksum = checksum;
+                existingEntry.SourceFileSize = fileSize;
             }
         }
     }

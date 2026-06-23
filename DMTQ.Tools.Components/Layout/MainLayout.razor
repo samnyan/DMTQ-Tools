@@ -16,14 +16,14 @@
 <div style="height: 100%; display: flex; flex-direction: column; overflow: hidden;">
 
     @* ── Sticky Header ── *@
-    <FluentHeader Height="48" Style="flex-shrink: 0; border-bottom: 1px solid var(--neutral-stroke-rest); padding: 0 1.25rem; display: flex; align-items: center; gap: 1rem;">
-        <span style="font-weight: 600; font-size: 1rem;">UpdatePatchManager</span>
+    <FluentHeader Height="48" Style="border-bottom: 1px solid var(--neutral-stroke-rest); padding: 0 1.25rem;">
+        <div style="font-weight: 600; font-size: 1rem;">UpdatePatchManager</div>
 
-        <div style="flex: 1;" />
+        <FluentSpacer />
 
         @if (State.HasProject)
         {
-            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="10" VerticalAlignment="VerticalAlignment.Center">
+            <div Style="display: flex; align-items: center; gap: 0.5rem;">
                 @if (State.IsDirty)
                 {
                     <span style="color: var(--error); font-size: 0.85rem; font-weight: 500;" title="Unsaved changes">
@@ -42,7 +42,7 @@
                               Style="font-size: 0.8rem; min-width: 4rem;">
                     @(_isSaving ? "Saving..." : "Save")
                 </FluentButton>
-            </FluentStack>
+            </div>
         }
     </FluentHeader>
 
@@ -52,7 +52,6 @@
                        Style="flex-shrink: 0; border-right: 1px solid var(--neutral-stroke-rest);">
             <FluentNavLink Href="" Icon="@(new Icons.Regular.Size20.Home())" Match="NavLinkMatch.All">Project</FluentNavLink>
             <FluentNavLink Href="import" Icon="@(new Icons.Regular.Size20.ArrowDownload())">Import</FluentNavLink>
-            <FluentNavLink Href="tables" Icon="@(new Icons.Regular.Size20.Table())">Tables</FluentNavLink>
             <FluentNavLink Href="songs" Icon="@(new Icons.Regular.Size20.MusicNote1())">Songs</FluentNavLink>
             <FluentNavLink Href="resources" Icon="@(new Icons.Regular.Size20.Folder())">Resources</FluentNavLink>
             <FluentNavLink Href="export" Icon="@(new Icons.Regular.Size20.ArrowUpload())">Export</FluentNavLink>

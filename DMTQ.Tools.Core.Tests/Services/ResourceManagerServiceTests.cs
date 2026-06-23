@@ -66,6 +66,9 @@ public sealed class ResourceManagerServiceTests
         resource.FileName.Should().Be("preview/new.opus");
         resource.Category.Should().Be("preview");
         resource.PlatformManifest.Should().Contain(m => m.Platform == "android" && m.Exist);
+        var manifest = resource.PlatformManifest.First(m => m.Platform == "android");
+        manifest.Checksum.Should().MatchRegex("^[0-9a-f]{32}$");
+        manifest.SourceFileSize.Should().Be("preview-bytes".Length);
         File.ReadAllText(Path.Combine(projectRoot, "resources", "preview", "new.opus")).Should().Be("preview-bytes");
         Directory.Delete(projectRoot, recursive: true);
     }
@@ -89,6 +92,9 @@ public sealed class ResourceManagerServiceTests
         var resource = package.Resources.Single();
         resource.FileName.Should().Be("dlc/new.bundle");
         resource.PlatformManifest.Should().Contain(m => m.Platform == "ios" && m.Exist);
+        var manifest = resource.PlatformManifest.First(m => m.Platform == "ios");
+        manifest.Checksum.Should().MatchRegex("^[0-9a-f]{32}$");
+        manifest.SourceFileSize.Should().Be("dlc-bytes".Length);
         resource.Compressed.Should().BeTrue();
         File.ReadAllText(Path.Combine(projectRoot, "resources", "ios", "dlc", "new.bundle")).Should().Be("dlc-bytes");
         Directory.Delete(projectRoot, recursive: true);
