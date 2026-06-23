@@ -82,12 +82,6 @@
         </FluentStack>
     </section>
 
-    @* Footer *@
-    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8" HorizontalAlignment="HorizontalAlignment.End">
-        <FluentButton Appearance="Appearance.Neutral" OnClick="Cancel">Cancel</FluentButton>
-        <FluentButton Appearance="Appearance.Accent" OnClick="Save">Save</FluentButton>
-    </FluentStack>
-
 </FluentStack>
 
 @code {
@@ -171,16 +165,6 @@
         {
             card.MarkedForDeletion = true;
         }
-    }
-
-    private async Task Cancel()
-    {
-        await Dialog.CancelAsync();
-    }
-
-    private async Task Save()
-    {
-        await Dialog.CloseAsync(Content);
     }
 
     private static string FormatSize(long bytes)
