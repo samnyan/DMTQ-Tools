@@ -76,6 +76,8 @@ public sealed class JsonPatchProjectRepository : IPatchProjectRepository
         public List<QuestDto> Quests { get; set; } = [];
         public List<ProductDto> Products { get; set; } = [];
         public List<ItemDto> Items { get; set; } = [];
+        public List<IngameItemDto> IngameItems { get; set; } = [];
+        public List<IngameItemEffectDto> IngameItemEffects { get; set; } = [];
 
         public static ProjectDocument FromPackage(
             PatchPackage package,
@@ -95,7 +97,9 @@ public sealed class JsonPatchProjectRepository : IPatchProjectRepository
                 Achievements = package.Achievements.Select(AchievementDto.FromModel).ToList(),
                 Quests = package.Quests.Select(QuestDto.FromModel).ToList(),
                 Products = package.Products.Select(ProductDto.FromModel).ToList(),
-                Items = package.Items.Select(ItemDto.FromModel).ToList()
+                Items = package.Items.Select(ItemDto.FromModel).ToList(),
+                IngameItems = package.IngameItems.Select(IngameItemDto.FromModel).ToList(),
+                IngameItemEffects = package.IngameItemEffects.Select(IngameItemEffectDto.FromModel).ToList()
             };
         }
 
@@ -115,6 +119,8 @@ public sealed class JsonPatchProjectRepository : IPatchProjectRepository
             package.Quests.AddRange(Quests.Select(q => q.ToModel()));
             package.Products.AddRange(Products.Select(p => p.ToModel()));
             package.Items.AddRange(Items.Select(i => i.ToModel()));
+            package.IngameItems.AddRange(IngameItems.Select(i => i.ToModel()));
+            package.IngameItemEffects.AddRange(IngameItemEffects.Select(e => e.ToModel()));
 
             var options = new PackageExportOptions();
             foreach (var item in CompressionOverrides)
@@ -540,6 +546,67 @@ public sealed class JsonPatchProjectRepository : IPatchProjectRepository
             foreach (var kvp in SummariesByLanguage) item.SummariesByLanguage[kvp.Key] = kvp.Value;
             return item;
         }
+    }
+
+    private sealed class IngameItemDto
+    {
+        public string Id { get; set; } = string.Empty;
+        public string ItemType { get; set; } = string.Empty;
+        public string ItemLevel { get; set; } = string.Empty;
+        public string ProductId { get; set; } = string.Empty;
+        public string Update { get; set; } = string.Empty;
+
+        public static IngameItemDto FromModel(IngameItem model)
+            => new()
+            {
+                Id = model.Id,
+                ItemType = model.ItemType,
+                ItemLevel = model.ItemLevel,
+                ProductId = model.ProductId,
+                Update = model.Update,
+            };
+
+        public IngameItem ToModel()
+            => new()
+            {
+                Id = Id,
+                ItemType = ItemType,
+                ItemLevel = ItemLevel,
+                ProductId = ProductId,
+                Update = Update,
+            };
+    }
+
+    private sealed class IngameItemEffectDto
+    {
+        public string Id { get; set; } = string.Empty;
+        public string EffectType { get; set; } = string.Empty;
+        public string EffectPoint { get; set; } = string.Empty;
+        public string EffectCount { get; set; } = string.Empty;
+        public string EffectSpecial { get; set; } = string.Empty;
+        public string Update { get; set; } = string.Empty;
+
+        public static IngameItemEffectDto FromModel(IngameItemEffect model)
+            => new()
+            {
+                Id = model.Id,
+                EffectType = model.EffectType,
+                EffectPoint = model.EffectPoint,
+                EffectCount = model.EffectCount,
+                EffectSpecial = model.EffectSpecial,
+                Update = model.Update,
+            };
+
+        public IngameItemEffect ToModel()
+            => new()
+            {
+                Id = Id,
+                EffectType = EffectType,
+                EffectPoint = EffectPoint,
+                EffectCount = EffectCount,
+                EffectSpecial = EffectSpecial,
+                Update = Update,
+            };
     }
 
     private sealed class ProjectInfoDto

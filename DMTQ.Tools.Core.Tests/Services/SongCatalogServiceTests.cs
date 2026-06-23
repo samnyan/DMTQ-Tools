@@ -239,6 +239,41 @@ public sealed class SongCatalogServiceTests
         i1.DescriptionsByLanguage["cn"].Should().Be("Dramatic Trance");
     }
 
+    [TestMethod]
+    public void BuildIngameItemCatalog_MapsItems()
+    {
+        var package = CreatePackage();
+        package.Tables.Tables.Add(CreateTable(
+            "table/us/ingameitem_ingameitem.csv", "ingameitem_ingameitem", "us",
+            ["item_type", "item_level", "product_id", "update"],
+            ["AB", "1", "70001", "0"],
+            ["AB", "2", "70002", "0"],
+            ["FP", "1", "70011", "0"]));
+
+        var catalog = new SongCatalogService().BuildIngameItemCatalog(package);
+
+        catalog.Should().HaveCount(3);
+        catalog.Should().Contain(i => i.Id == "AB_1" && i.ProductId == "70001");
+        catalog.Should().Contain(i => i.Id == "FP_1" && i.ProductId == "70011");
+    }
+
+    [TestMethod]
+    public void BuildIngameItemEffectCatalog_MapsEffects()
+    {
+        var package = CreatePackage();
+        package.Tables.Tables.Add(CreateTable(
+            "table/us/ingameitem_itemeffect.csv", "ingameitem_itemeffect", "us",
+            ["item_id", "effect_type", "effect_point", "effect_count", "effect_special", "update"],
+            ["30001", "E", "3", "1", "", "0"],
+            ["30006", "P", "3", "1", "", "0"]));
+
+        var catalog = new SongCatalogService().BuildIngameItemEffectCatalog(package);
+
+        catalog.Should().HaveCount(2);
+        catalog.Should().Contain(e => e.Id == "30001" && e.EffectType == "E");
+        catalog.Should().Contain(e => e.Id == "30006" && e.EffectType == "P");
+    }
+
     private static PatchPackage CreatePackage()
         => new() { ProjectInfo = new ProjectInfo("project", null, "1.003.005", null) };
 

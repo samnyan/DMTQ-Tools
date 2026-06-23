@@ -184,6 +184,18 @@ public sealed class PlatformPackageImporter(
             package.Items,
             i => i.Id,
             SongCatalogService.IsItemRelatedTable);
+
+        ExtractEntityType(package,
+            songCatalogService.BuildIngameItemCatalog(package),
+            package.IngameItems,
+            i => i.Id,
+            SongCatalogService.IsIngameItemRelatedTable);
+
+        ExtractEntityType(package,
+            songCatalogService.BuildIngameItemEffectCatalog(package),
+            package.IngameItemEffects,
+            e => e.Id,
+            SongCatalogService.IsIngameItemRelatedTable);
     }
 
     private static void ExtractEntityType<T>(

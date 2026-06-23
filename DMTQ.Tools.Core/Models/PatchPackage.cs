@@ -23,4 +23,10 @@ public sealed class PatchPackage
 
     /// <summary>In-game item entities from product_item + item_desc_&lt;lang&gt;.</summary>
     public List<Item> Items { get; } = [];
+
+    /// <summary>Power-up ingame item entities from ingameitem_ingameitem.</summary>
+    public List<IngameItem> IngameItems { get; } = [];
+
+    /// <summary>Power-up item effect entities from ingameitem_itemeffect.</summary>
+    public List<IngameItemEffect> IngameItemEffects { get; } = [];
 }

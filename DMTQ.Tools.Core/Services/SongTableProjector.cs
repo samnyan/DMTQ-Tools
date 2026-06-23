@@ -58,6 +58,14 @@ public sealed class SongTableProjector
                 _ => null
             });
 
+        ProjectEntityTables(package, tables, SongCatalogService.IsIngameItemRelatedTable,
+            (path, lang, name) => name switch
+            {
+                "ingameitem_ingameitem" => BuildIngameItemTable(path, lang, package.IngameItems),
+                "ingameitem_itemeffect" => BuildIngameItemEffectTable(path, lang, package.IngameItemEffects),
+                _ => null
+            });
+
         return tables;
     }
 
@@ -397,6 +405,49 @@ public sealed class SongTableProjector
                 SetCell(row, "description", desc);
                 table.Rows.Add(row);
             }
+        }
+
+        return table;
+    }
+
+    // ── IngameItem projection ──
+
+    private static GameTable BuildIngameItemTable(string path, string? languageCode, List<IngameItem> items)
+    {
+        var columns = new[] { "item_type", "item_level", "product_id", "update" };
+        var table = CreateEmptyTable(path, "ingameitem_ingameitem", languageCode, columns);
+
+        for (var i = 0; i < items.Count; i++)
+        {
+            var item = items[i];
+            var row = NewRow(table, i);
+            SetCell(row, "item_type", item.ItemType);
+            SetCell(row, "item_level", item.ItemLevel);
+            SetCell(row, "product_id", item.ProductId);
+            SetCell(row, "update", item.Update);
+            table.Rows.Add(row);
+        }
+
+        return table;
+    }
+
+    private static GameTable BuildIngameItemEffectTable(string path, string? languageCode, List<IngameItemEffect> effects)
+    {
+        var columns = new[] { "item_id", "effect_type", "effect_point",
+            "effect_count", "effect_special", "update" };
+        var table = CreateEmptyTable(path, "ingameitem_itemeffect", languageCode, columns);
+
+        for (var i = 0; i < effects.Count; i++)
+        {
+            var e = effects[i];
+            var row = NewRow(table, i);
+            SetCell(row, "item_id", e.Id);
+            SetCell(row, "effect_type", e.EffectType);
+            SetCell(row, "effect_point", e.EffectPoint);
+            SetCell(row, "effect_count", e.EffectCount);
+            SetCell(row, "effect_special", e.EffectSpecial);
+            SetCell(row, "update", e.Update);
+            table.Rows.Add(row);
         }
 
         return table;

@@ -319,6 +319,12 @@ public sealed class SongCatalogService
         => tableName.Equals("product_item", StringComparison.OrdinalIgnoreCase)
            || tableName.StartsWith("item_desc_", StringComparison.OrdinalIgnoreCase);
 
+    /// <summary>Returns true when the table carries IngameItem data
+    /// (ingameitem_ingameitem + ingameitem_itemeffect).</summary>
+    public static bool IsIngameItemRelatedTable(string tableName)
+        => tableName.Equals("ingameitem_ingameitem", StringComparison.OrdinalIgnoreCase)
+           || tableName.Equals("ingameitem_itemeffect", StringComparison.OrdinalIgnoreCase);
+
     /// <summary>Returns true when the table carries Achievement data
     /// (quest_achievement + acievement_desc_&lt;lang&gt;).</summary>
     public static bool IsAchievementRelatedTable(string tableName)
@@ -581,5 +587,66 @@ public sealed class SongCatalogService
         }
 
         return items.Values.OrderBy(i => i.Id, StringComparer.OrdinalIgnoreCase).ToArray();
+    }
+
+    // ── IngameItem catalog building ──
+
+    public IReadOnlyList<IngameItem> BuildIngameItemCatalog(PatchPackage package)
+    {
+        if (package.IngameItems.Count > 0)
+            return package.IngameItems.OrderBy(i => i.Id, StringComparer.OrdinalIgnoreCase).ToArray();
+
+        var table = package.Tables.Tables.FirstOrDefault(
+            t => t.TableName.Equals("ingameitem_ingameitem", StringComparison.OrdinalIgnoreCase));
+        if (table is null) return [];
+
+        var items = new Dictionary<string, IngameItem>(StringComparer.OrdinalIgnoreCase);
+        foreach (var row in table.Rows.OrderBy(r => r.Order))
+        {
+            var itemType = GetCell(row, "item_type");
+            var itemLevel = GetCell(row, "item_level");
+            var id = itemType + "_" + itemLevel;
+            if (string.IsNullOrWhiteSpace(id) || items.ContainsKey(id)) continue;
+
+            items[id] = new IngameItem
+            {
+                Id = id,
+                ItemType = itemType,
+                ItemLevel = itemLevel,
+                ProductId = GetCell(row, "product_id"),
+                Update = GetCell(row, "update"),
+            };
+        }
+
+        return items.Values.OrderBy(i => i.Id, StringComparer.OrdinalIgnoreCase).ToArray();
+    }
+
+    public IReadOnlyList<IngameItemEffect> BuildIngameItemEffectCatalog(PatchPackage package)
+    {
+        if (package.IngameItemEffects.Count > 0)
+            return package.IngameItemEffects.OrderBy(e => e.Id, StringComparer.OrdinalIgnoreCase).ToArray();
+
+        var table = package.Tables.Tables.FirstOrDefault(
+            t => t.TableName.Equals("ingameitem_itemeffect", StringComparison.OrdinalIgnoreCase));
+        if (table is null) return [];
+
+        var effects = new Dictionary<string, IngameItemEffect>(StringComparer.OrdinalIgnoreCase);
+        foreach (var row in table.Rows.OrderBy(r => r.Order))
+        {
+            var id = GetCell(row, "item_id", "id");
+            if (string.IsNullOrWhiteSpace(id) || effects.ContainsKey(id)) continue;
+
+            effects[id] = new IngameItemEffect
+            {
+                Id = id,
+                EffectType = GetCell(row, "effect_type"),
+                EffectPoint = GetCell(row, "effect_point"),
+                EffectCount = GetCell(row, "effect_count"),
+                EffectSpecial = GetCell(row, "effect_special"),
+                Update = GetCell(row, "update"),
+            };
+        }
+
+        return effects.Values.OrderBy(e => e.Id, StringComparer.OrdinalIgnoreCase).ToArray();
     }
 }
