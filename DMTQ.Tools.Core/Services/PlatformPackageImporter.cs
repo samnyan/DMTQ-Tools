@@ -275,6 +275,9 @@ public sealed class PlatformPackageImporter
         var songDict = package.Songs.ToDictionary(s => s.Id, StringComparer.OrdinalIgnoreCase);
         var hasPatterns = false;
 
+        // Collect all patterns from every language table into per-song groups
+        var patternsBySong = new Dictionary<string, List<SongPattern>>(StringComparer.OrdinalIgnoreCase);
+
         foreach (var entry in entries)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -282,18 +285,11 @@ public sealed class PlatformPackageImporter
             if (entry.TableName == "song_songPattern")
             {
                 var patterns = ReadWithSchema<SongPattern, PatternCsvSchema>(entry.FilePath);
-                var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                 foreach (var pattern in patterns)
                 {
-                    if (!songDict.TryGetValue(pattern.SongId, out var song))
-                        continue;
-
-                    var key = pattern.SongId + "::" + pattern.PatternId;
-                    if (!seen.Add(key))
-                        continue;
-
-                    song.Patterns.Add(pattern);
-                    hasPatterns = true;
+                    if (!patternsBySong.TryGetValue(pattern.SongId, out var list))
+                        patternsBySong[pattern.SongId] = list = [];
+                    list.Add(pattern);
                 }
             }
             else if (IsLocalizedTable(entry.TableName, "song_desc"))
@@ -324,6 +320,26 @@ public sealed class PlatformPackageImporter
                         song.Localizations[lang] = loc;
                     }
                 }
+            }
+        }
+
+        // Assign patterns to songs, deduplicating by (Signature, Line) per song.
+        // Different language tables may contain identical patterns; only keep the first
+        // occurrence of each (Signature, Line) for a song.
+        foreach (var (songId, patterns) in patternsBySong)
+        {
+            if (!songDict.TryGetValue(songId, out var song))
+                continue;
+
+            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var pattern in patterns)
+            {
+                var key = pattern.Signature + "::" + pattern.Line;
+                if (!seen.Add(key))
+                    continue;
+
+                song.Patterns.Add(pattern);
+                hasPatterns = true;
             }
         }
 

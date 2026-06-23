@@ -23,6 +23,10 @@ public sealed class Quest
 /// <summary>A single mission row within a quest. Missions are ordered by CSV row order.</summary>
 public sealed class QuestMission
 {
+    /// <summary>The 0-based index of this mission within its parent quest.</summary>
+    [JsonInclude]
+    public int Index { get; set; }
+
     /// <summary>Per-language mission description text.</summary>
     public Dictionary<string, string> DescriptionsByLanguage { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 }

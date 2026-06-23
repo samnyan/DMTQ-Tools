@@ -13,6 +13,7 @@ public sealed class QuestMissionDescCsvSchema : CsvLookupSchema<Quest>
     public override string TableName => "quest_mission_desc";
 
     private readonly string _languageCode;
+    private readonly Dictionary<string, int> _missionIndex = new(StringComparer.OrdinalIgnoreCase);
 
     public QuestMissionDescCsvSchema(string languageCode)
     {
@@ -33,14 +34,28 @@ public sealed class QuestMissionDescCsvSchema : CsvLookupSchema<Quest>
         if (!lookup.TryGetValue(questId, out var quest))
             return;
 
-        // Missions are ordered by CSV row order. Ensure we have a mission at this index.
-        while (quest.Missions.Count <= rowIndex)
-            quest.Missions.Add(new QuestMission());
+        // Per-quest index — each quest's missions are indexed independently.
+        // The first language processed creates the mission shells; subsequent
+        // languages populate descriptions into the same index.
+        if (!_missionIndex.TryGetValue(questId, out var index))
+            index = 0;
 
-        var mission = quest.Missions[rowIndex];
+        QuestMission mission;
+        if (index < quest.Missions.Count)
+        {
+            mission = quest.Missions[index];
+        }
+        else
+        {
+            mission = new QuestMission { Index = index };
+            quest.Missions.Add(mission);
+        }
+
         var lang = _languageCode;
         if (fields.TryGetValue("description", out var desc))
             mission.DescriptionsByLanguage[lang] = desc;
+
+        _missionIndex[questId] = index + 1;
     }
 
     /// <summary>Writes the localized quest mission description rows for the schema's language.</summary>
