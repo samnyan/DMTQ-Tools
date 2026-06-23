@@ -152,16 +152,29 @@ public sealed class SongCatalogService
                     continue;
                 }
 
-                var title = GetCell(row, "title", "name", "song_name");
-                var description = GetCell(row, "description", "desc", "comment");
-                if (!string.IsNullOrWhiteSpace(title))
+                var loc = new SongLocalization
                 {
-                    song.TitlesByLanguage[language] = title;
-                }
+                    FullName = GetCell(row, "fullname"),
+                    Genre = GetCell(row, "genre"),
+                    ArtistName = GetCell(row, "artist"),
+                    ComposedBy = GetCell(row, "composed_by"),
+                    Singer = GetCell(row, "singer"),
+                    FeatBy = GetCell(row, "feat_by"),
+                    ArrangedBy = GetCell(row, "arranged_by"),
+                    VisualizedBy = GetCell(row, "visualized_by"),
+                };
 
-                if (!string.IsNullOrWhiteSpace(description))
+                // Only store if at least one field has a value
+                if (!string.IsNullOrWhiteSpace(loc.FullName)
+                    || !string.IsNullOrWhiteSpace(loc.Genre)
+                    || !string.IsNullOrWhiteSpace(loc.ArtistName)
+                    || !string.IsNullOrWhiteSpace(loc.ComposedBy)
+                    || !string.IsNullOrWhiteSpace(loc.Singer)
+                    || !string.IsNullOrWhiteSpace(loc.FeatBy)
+                    || !string.IsNullOrWhiteSpace(loc.ArrangedBy)
+                    || !string.IsNullOrWhiteSpace(loc.VisualizedBy))
                 {
-                    song.DescriptionsByLanguage[language] = description;
+                    song.Localizations[language] = loc;
                 }
             }
         }

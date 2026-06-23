@@ -21,7 +21,8 @@ public sealed class SongCatalogServiceTests
             ["9001", "1001", "1", "2Line", "expert", "12"]));
         package.Tables.Tables.Add(CreateTable(
             "table/us/song_desc_us.csv", "song_desc_us", "us",
-            ["song_id", "title", "description"], ["1001", "Oblivion", "US description"]));
+            ["song_id", "fullname", "genre", "artist", "composed_by", "singer", "feat_by", "arranged_by", "visualized_by"],
+            ["1001", "Oblivion US", "Electronic US", "ArtistX US", "", "", "", "", ""]));
         package.Resources.Add(new ResourceFile(
             "preview/song_1001.p.opus", "resources/shared/preview/song_1001.p.opus",
             "preview", false, null, null, ["android", "ios"]));
@@ -36,8 +37,10 @@ public sealed class SongCatalogServiceTests
         song.FullName.Should().Be("Oblivion Full");
         song.Genre.Should().Be("Electronic");
         song.ArtistName.Should().Be("ArtistX");
-        song.GetTitle("us").Should().Be("Oblivion");
-        song.GetDescription("us").Should().Be("US description");
+        song.Localizations.Should().ContainKey("us");
+        song.Localizations["us"].FullName.Should().Be("Oblivion US");
+        song.Localizations["us"].Genre.Should().Be("Electronic US");
+        song.Localizations["us"].ArtistName.Should().Be("ArtistX US");
         song.Patterns.Should().ContainSingle();
         song.Patterns[0].PatternId.Should().Be("9001");
         song.Patterns[0].Signature.Should().Be("1");

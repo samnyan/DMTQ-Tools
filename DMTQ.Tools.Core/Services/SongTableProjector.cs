@@ -169,21 +169,26 @@ public sealed class SongTableProjector
     private static GameTable BuildSongDescTable(string path, string? languageCode, string tableName, List<Song> songs)
     {
         var language = languageCode ?? ExtractLanguageSuffix(tableName);
-        var columns = new[] { "song_id", "title", "description" };
+        var columns = new[] { "song_id", "fullname", "genre", "artist",
+            "composed_by", "singer", "feat_by", "arranged_by", "visualized_by" };
 
         var table = CreateEmptyTable(path, tableName, languageCode, columns);
         var rowIndex = 0;
 
         foreach (var song in songs)
         {
-            var hasTitle = song.TitlesByLanguage.TryGetValue(language, out var title) && !string.IsNullOrWhiteSpace(title);
-            var hasDesc = song.DescriptionsByLanguage.TryGetValue(language, out var description) && !string.IsNullOrWhiteSpace(description);
-            if (!hasTitle && !hasDesc) continue;
+            if (!song.Localizations.TryGetValue(language, out var loc)) continue;
 
             var row = NewRow(table, rowIndex++);
             SetCell(row, "song_id", song.Id);
-            SetCell(row, "title", title ?? string.Empty);
-            SetCell(row, "description", description ?? string.Empty);
+            SetCell(row, "fullname", loc.FullName);
+            SetCell(row, "genre", loc.Genre);
+            SetCell(row, "artist", loc.ArtistName);
+            SetCell(row, "composed_by", loc.ComposedBy);
+            SetCell(row, "singer", loc.Singer);
+            SetCell(row, "feat_by", loc.FeatBy);
+            SetCell(row, "arranged_by", loc.ArrangedBy);
+            SetCell(row, "visualized_by", loc.VisualizedBy);
             table.Rows.Add(row);
         }
 
