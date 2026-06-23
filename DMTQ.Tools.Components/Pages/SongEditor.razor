@@ -150,9 +150,9 @@
                             <PropertyColumn Property="@(p => p.Signature)" Title="Sig" />
                             <PropertyColumn Property="@(p => p.Difficulty)" Title="Difficulty" />
                             <PropertyColumn Property="@(p => p.Level)" Title="Level" />
-                            <PropertyColumn Property="@(p => p.PointType)" Title="Type" />
-                            <PropertyColumn Property="@(p => p.PointValue)" Title="Value" />
-                            <TemplateColumn Title="FLG" Context="p">
+                            <PropertyColumn Property="@(p => p.PointType)" Title="PointType" />
+                            <PropertyColumn Property="@(p => p.PointValue)" Title="PointValue" />
+                            <TemplateColumn Title="Enable" Context="p">
                                 @(p.Flg == "Y" ? "✓" : "")
                             </TemplateColumn>
                             <TemplateColumn Title="Actions" Context="p">

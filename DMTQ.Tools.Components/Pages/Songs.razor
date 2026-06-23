@@ -119,7 +119,7 @@ else
 
     private PatchPackage? _lastPackage;
     private IReadOnlyList<Song> _catalog = [];
-    private IReadOnlyList<string> _cachedLanguages = [];
+    private IReadOnlyList<string> _cachedLanguages = ["CN", "JP", "KR", "TW", "US"];
 
     private IReadOnlyList<Song> Catalog
     {
@@ -150,7 +150,8 @@ else
 
     private string DisplayTitle(Song song)
     {
-        if (song.Localizations.TryGetValue(selectedLanguage, out var loc) && !string.IsNullOrWhiteSpace(loc.FullName))
+        var lang = selectedLanguage ?? "CN";
+        if (song.Localizations.TryGetValue(lang, out var loc) && !string.IsNullOrWhiteSpace(loc.FullName))
             return loc.FullName;
         return string.IsNullOrWhiteSpace(song.Name) ? song.Id : song.Name;
     }
