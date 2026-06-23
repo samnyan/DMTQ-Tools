@@ -205,7 +205,7 @@ public sealed class PlatformPackageExporter
         CancellationToken cancellationToken)
     {
         // Resolve source path: try platform-specific path first, then generic
-        var sourcePath = ResolveResourceSourcePath(projectRoot, resource.FileName);
+        var sourcePath = ResolveResourceSourcePath(projectRoot, resource.FileName, options.Platform);
 
         if (!File.Exists(sourcePath))
         {
@@ -301,17 +301,25 @@ public sealed class PlatformPackageExporter
         result.Manifest.Entries.Add(manifestEntry);
     }
 
-    private static string ResolveResourceSourcePath(string projectRoot, string fileName)
+    private static string ResolveResourceSourcePath(string projectRoot, string fileName, string? targetPlatform = null)
     {
-        // Try several possible paths
-        var candidates = new[]
-        {
-            Path.Combine(projectRoot, "resources", fileName.Replace('/', Path.DirectorySeparatorChar)),
-            Path.Combine(projectRoot, "resources", "android", fileName.Replace('/', Path.DirectorySeparatorChar)),
-            Path.Combine(projectRoot, "resources", "ios", fileName.Replace('/', Path.DirectorySeparatorChar)),
-            // Also try without resources prefix (raw fileName)
-            Path.Combine(projectRoot, fileName.Replace('/', Path.DirectorySeparatorChar)),
-        };
+        var candidates = new List<string>();
+
+        // Platform-specific path first (if target platform is known)
+        if (!string.IsNullOrWhiteSpace(targetPlatform))
+            candidates.Add(Path.Combine(projectRoot, "resources", targetPlatform, fileName.Replace('/', Path.DirectorySeparatorChar)));
+
+        // Generic resources path
+        candidates.Add(Path.Combine(projectRoot, "resources", fileName.Replace('/', Path.DirectorySeparatorChar)));
+
+        // Other platform paths as fallback
+        if (!string.Equals(targetPlatform, "android", StringComparison.OrdinalIgnoreCase))
+            candidates.Add(Path.Combine(projectRoot, "resources", "android", fileName.Replace('/', Path.DirectorySeparatorChar)));
+        if (!string.Equals(targetPlatform, "ios", StringComparison.OrdinalIgnoreCase))
+            candidates.Add(Path.Combine(projectRoot, "resources", "ios", fileName.Replace('/', Path.DirectorySeparatorChar)));
+
+        // Raw project root path
+        candidates.Add(Path.Combine(projectRoot, fileName.Replace('/', Path.DirectorySeparatorChar)));
 
         foreach (var candidate in candidates)
         {
@@ -319,7 +327,6 @@ public sealed class PlatformPackageExporter
                 return candidate;
         }
 
-        // Return the first candidate as default (used for error reporting)
         return candidates[0];
     }
 
