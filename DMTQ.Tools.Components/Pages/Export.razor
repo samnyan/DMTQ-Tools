@@ -5,7 +5,7 @@
 
 <h1>Export</h1>
 
-<section class="toolbar-panel">
+<FluentStack Orientation="Orientation.Vertical" VerticalGap="16" Style="margin-bottom: 1.25rem;">
     <FluentSelect Items="@(State.Platforms.Select(p => p.Platform).OrderBy(p => p))"
                   OptionText="@(i => i)"
                   OptionValue="@(i => i)"
@@ -24,17 +24,15 @@
                   @bind-SelectedOption="State.ExportCompressionMode"
                   Label="Compression policy" />
 
-    <div class="input-row">
-        <FluentTextField @bind-Value="exportRoot"
-                         Label="Output directory"
-                         Placeholder="D:\DMTQExports\android"
-                         Style="flex: 1;" />
-        <FluentButton Appearance="Appearance.Accent"
-                      @onclick="ExportPlatformPackage"
-                      Disabled="@(!State.HasPackage || State.Platforms.Count == 0 || isBusy)">
-            Export
-        </FluentButton>
-    </div>
+    <FluentTextField @bind-Value="exportRoot"
+                     Label="Output directory"
+                     Placeholder="D:\DMTQExports\android"
+                     Style="width: 100%" />
+    <FluentButton Appearance="Appearance.Accent"
+                  @onclick="ExportPlatformPackage"
+                  Disabled="@(!State.HasPackage || State.Platforms.Count == 0 || isBusy)">
+        Export
+    </FluentButton>
 
     @if (!State.HasPackage)
     {
@@ -56,7 +54,7 @@
     {
         <div class="status-message">@message</div>
     }
-</section>
+</FluentStack>
 
 @if (State.LastPlatformExportResult is not null)
 {

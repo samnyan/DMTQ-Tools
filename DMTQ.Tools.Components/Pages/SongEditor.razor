@@ -39,21 +39,21 @@
                             <FluentStack Orientation="Orientation.Vertical" VerticalGap="8">
                                 @if (IsCreate)
                                 {
-                                    <FluentTextField @bind-Value="songIdInput" Label="Song ID *" Placeholder="e.g. 1" Required />
+                                    <FluentTextField style="width: 100%;" @bind-Value="songIdInput" Label="Song ID *" Placeholder="e.g. 1" Required />
                                 }
                                 else
                                 {
-                                    <FluentTextField Value="@(currentSong?.Id ?? "")" Label="Song ID" ReadOnly="true" />
+                                    <FluentTextField style="width: 100%;" Value="@(currentSong?.Id ?? "")" Label="Song ID" ReadOnly="true" />
                                 }
-                                <FluentTextField @bind-Value="currentSong!.Name" Label="Name" />
-                                <FluentTextField @bind-Value="currentSong!.FullName" Label="Full Name" />
-                                <FluentTextField @bind-Value="currentSong!.Genre" Label="Genre" />
-                                <FluentTextField @bind-Value="currentSong!.ArtistName" Label="Artist Name" />
-                                <FluentTextField @bind-Value="currentSong!.ComposedBy" Label="Composed By" />
-                                <FluentTextField @bind-Value="currentSong!.Singer" Label="Singer" />
-                                <FluentTextField @bind-Value="currentSong!.FeatBy" Label="Feat By" />
-                                <FluentTextField @bind-Value="currentSong!.ArrangedBy" Label="Arranged By" />
-                                <FluentTextField @bind-Value="currentSong!.VisualizedBy" Label="Visualized By" />
+                                <FluentTextField style="width: 100%;" @bind-Value="currentSong!.Name" Label="Name" />
+                                <FluentTextField style="width: 100%;" @bind-Value="currentSong!.FullName" Label="Full Name" />
+                                <FluentTextField style="width: 100%;" @bind-Value="currentSong!.Genre" Label="Genre" />
+                                <FluentTextField style="width: 100%;" @bind-Value="currentSong!.ArtistName" Label="Artist Name" />
+                                <FluentTextField style="width: 100%;" @bind-Value="currentSong!.ComposedBy" Label="Composed By" />
+                                <FluentTextField style="width: 100%;" @bind-Value="currentSong!.Singer" Label="Singer" />
+                                <FluentTextField style="width: 100%;" @bind-Value="currentSong!.FeatBy" Label="Feat By" />
+                                <FluentTextField style="width: 100%;" @bind-Value="currentSong!.ArrangedBy" Label="Arranged By" />
+                                <FluentTextField style="width: 100%;" @bind-Value="currentSong!.VisualizedBy" Label="Visualized By" />
                             </FluentStack>
                         </section>
                     </FluentGridItem>
@@ -66,14 +66,14 @@
                                 <FluentSwitch @bind-Value="bgaLoop" Label="Loop BGA" />
                                 <FluentNumberField @bind-Value="costPoint" Label="Cost (Game Point)" />
                                 <FluentNumberField @bind-Value="costCash" Label="Cost (Game Cash)" />
-                                <FluentTextField @bind-Value="currentSong!.Flag" Label="Flag" />
-                                <FluentTextField @bind-Value="currentSong!.Status" Label="Status" />
+                                <FluentTextField style="width: 100%;" @bind-Value="currentSong!.Flag" Label="Flag" />
+                                <FluentTextField style="width: 100%;" @bind-Value="currentSong!.Status" Label="Status" />
                                 <FluentSwitch @bind-Value="freeYn" Label="Free" />
                                 <FluentSwitch @bind-Value="hiddenYn" Label="Hidden" />
                                 <FluentSwitch @bind-Value="openYn" Label="Open" />
-                                <FluentTextField @bind-Value="currentSong!.TrackId" Label="Track ID" />
-                                <FluentTextField @bind-Value="currentSong!.ModDate" Label="Mod Date" />
-                                <FluentTextField @bind-Value="currentSong!.Update" Label="Update" />
+                                <FluentTextField style="width: 100%;" @bind-Value="currentSong!.TrackId" Label="Track ID" />
+                                <FluentTextField style="width: 100%;" @bind-Value="currentSong!.ModDate" Label="Mod Date" />
+                                <FluentTextField style="width: 100%;" @bind-Value="currentSong!.Update" Label="Update" />
                             </FluentStack>
                         </section>
                     </FluentGridItem>
@@ -84,7 +84,7 @@
                    ════════════════════════════════════════════ *@
                 <section>
                     <h2 class="section-heading">Link ID</h2>
-                    <FluentTextField @bind-Value="currentSong!.ItemId" Label="Item ID" Style="max-width: 400px;" />
+                    <FluentTextField style="width: 100%;" @bind-Value="currentSong!.ItemId" Label="Item ID" />
                 </section>
 
                 @* ════════════════════════════════════════════
@@ -100,29 +100,29 @@
                             <div>
                                 <h3 class="lang-heading">@lang</h3>
                                 <FluentGrid Spacing="2">
-                                    <FluentGridItem xs="12" sm="6" md="4" lg="3">
-                                        <FluentTextField @bind-Value="loc.FullName" Label="FullName" />
+                                    <FluentGridItem xs="12" sm="6" md="4" lg="2">
+                                        <FluentTextField style="width: 100%;" @bind-Value="loc.FullName" Label="FullName" />
                                     </FluentGridItem>
-                                    <FluentGridItem xs="12" sm="6" md="4" lg="3">
-                                        <FluentTextField @bind-Value="loc.Genre" Label="Genre" />
+                                    <FluentGridItem xs="12" sm="6" md="4" lg="2">
+                                        <FluentTextField style="width: 100%;" @bind-Value="loc.Genre" Label="Genre" />
                                     </FluentGridItem>
-                                    <FluentGridItem xs="12" sm="6" md="4" lg="3">
-                                        <FluentTextField @bind-Value="loc.ArtistName" Label="Artist" />
+                                    <FluentGridItem xs="12" sm="6" md="4" lg="2">
+                                        <FluentTextField style="width: 100%;" @bind-Value="loc.ArtistName" Label="Artist" />
                                     </FluentGridItem>
-                                    <FluentGridItem xs="12" sm="6" md="4" lg="3">
-                                        <FluentTextField @bind-Value="loc.ComposedBy" Label="Composed By" />
+                                    <FluentGridItem xs="12" sm="6" md="4" lg="1">
+                                        <FluentTextField style="width: 100%;" @bind-Value="loc.ComposedBy" Label="Composed By" />
                                     </FluentGridItem>
-                                    <FluentGridItem xs="12" sm="6" md="4" lg="3">
-                                        <FluentTextField @bind-Value="loc.Singer" Label="Singer" />
+                                    <FluentGridItem xs="12" sm="6" md="4" lg="1">
+                                        <FluentTextField style="width: 100%;" @bind-Value="loc.Singer" Label="Singer" />
                                     </FluentGridItem>
-                                    <FluentGridItem xs="12" sm="6" md="4" lg="3">
-                                        <FluentTextField @bind-Value="loc.FeatBy" Label="Feat By" />
+                                    <FluentGridItem xs="12" sm="6" md="4" lg="1">
+                                        <FluentTextField style="width: 100%;" @bind-Value="loc.FeatBy" Label="Feat By" />
                                     </FluentGridItem>
-                                    <FluentGridItem xs="12" sm="6" md="4" lg="3">
-                                        <FluentTextField @bind-Value="loc.ArrangedBy" Label="Arranged By" />
+                                    <FluentGridItem xs="12" sm="6" md="4" lg="1">
+                                        <FluentTextField style="width: 100%;" @bind-Value="loc.ArrangedBy" Label="Arranged By" />
                                     </FluentGridItem>
-                                    <FluentGridItem xs="12" sm="6" md="4" lg="3">
-                                        <FluentTextField @bind-Value="loc.VisualizedBy" Label="Visualized By" />
+                                    <FluentGridItem xs="12" sm="6" md="4" lg="2">
+                                        <FluentTextField style="width: 100%;" @bind-Value="loc.VisualizedBy" Label="Visualized By" />
                                     </FluentGridItem>
                                 </FluentGrid>
                             </div>

@@ -9,16 +9,15 @@
 <h1>Project</h1>
 
 <FluentStack Orientation="Orientation.Vertical" VerticalGap="16" Style="margin-bottom: 1.25rem;">
-    <div style="display: flex; gap: 8px; align-items: flex-start;">
+    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8">
         <FluentTextField @bind-Value="projectRoot"
                          Label="Project folder"
                          Placeholder="Select or enter a project folder path..."
-                         Style="flex: 1; max-width: 40rem;" />
+                         Style="width: 100%;" />
         <FluentButton Appearance="Appearance.Neutral"
                       IconStart="@(new Icons.Regular.Size20.Folder())"
-                      OnClick="BrowseFolder"
-                      Style="margin-top: 1.5rem;">Browse</FluentButton>
-    </div>
+                      OnClick="BrowseFolder">Browse</FluentButton>
+    </FluentStack>
 
     <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8">
         <FluentButton Appearance="Appearance.Accent"
