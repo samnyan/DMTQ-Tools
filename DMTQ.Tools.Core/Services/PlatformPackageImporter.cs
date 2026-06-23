@@ -1,12 +1,20 @@
+using System.Globalization;
+using CsvHelper;
+using CsvHelper.Configuration;
 using DMTQ.Tools.Core.Models;
+using DMTQ.Tools.Core.Models.Csv;
+
+// Backward-compat constructor parameters no longer used for import
+#pragma warning disable CS9113
+#pragma warning disable IDE0060
 
 namespace DMTQ.Tools.Core.Services;
 
 public sealed class PlatformPackageImporter(
     Lz4CompressionService compressionService,
     PatchManifestReader manifestReader,
-    CsvTableReader tableReader,
-    SongCatalogService songCatalogService)
+    CsvTableReader tableReader,          // Kept for DI backward compat; no longer used for import
+    SongCatalogService songCatalogService) // Kept for DI backward compat; no longer used for import
 {
     public async Task ImportPlatformAsync(
         PatchPackage package,
@@ -44,9 +52,12 @@ public sealed class PlatformPackageImporter(
             };
             record.BaselineManifestEntries.AddRange(manifest.Entries);
 
-            var preExistingTablePaths = package.Tables.Tables
+            // Track paths already imported in this session + from previous imports (GameTable backwards compat)
+            var importedPaths = package.Tables.Tables
                 .Select(table => table.PackageRelativePath)
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            var csvEntries = new List<CsvImportEntry>();
 
             foreach (var entry in manifest.Entries)
             {
@@ -62,7 +73,7 @@ public sealed class PlatformPackageImporter(
 
                 if (PathClassifier.IsCsvTable(relativePath))
                 {
-                    if (preExistingTablePaths.Contains(relativePath))
+                    if (importedPaths.Contains(relativePath))
                     {
                         record.ImportedTableFileCount++;
                         continue;
@@ -70,9 +81,14 @@ public sealed class PlatformPackageImporter(
 
                     var csvPath = await EnsureCsvFileAsync(sourcePath, tempRoot, relativePath, entry.Compressed, cancellationToken)
                         .ConfigureAwait(false);
-                    await using var csvStream = File.OpenRead(csvPath);
-                    var table = await tableReader.ReadAsync(csvStream, relativePath, cancellationToken).ConfigureAwait(false);
-                    package.Tables.Tables.Add(table);
+
+                    importedPaths.Add(relativePath);
+
+                    var tableName = GetTableName(relativePath);
+                    var languageCode = GetLanguageCode(relativePath)
+                                       ?? ExtractLanguageSuffix(tableName);
+
+                    csvEntries.Add(new CsvImportEntry(csvPath, tableName, languageCode));
                     record.ImportedTableFileCount++;
                 }
                 else
@@ -140,9 +156,20 @@ public sealed class PlatformPackageImporter(
                 }
             }
 
-            package.Platforms.Add(record);
+            // ── Phase 1: import standalone entity tables ──
+            ImportEntityTablesPhase1(package, csvEntries, cancellationToken);
 
-            ExtractEntitiesFromTables(package);
+            // ── Phase 2: import dependent entity tables (patterns, song localizations) ──
+            ImportEntityTablesPhase2(package, csvEntries, cancellationToken);
+
+            // ── Phase 3: import lookup tables (localized descriptions, category links) ──
+            ImportLookupTables(package, csvEntries, cancellationToken);
+
+            // ── Phase 4: cross-entity links (song↔product, song↔item, previews) ──
+            BuildCrossEntityLinks(package, csvEntries, cancellationToken);
+            BuildPreviewLinks(package);
+
+            package.Platforms.Add(record);
         }
         finally
         {
@@ -153,76 +180,471 @@ public sealed class PlatformPackageImporter(
         }
     }
 
-    private void ExtractEntitiesFromTables(PatchPackage package)
+    // ── Phase 1: standalone entity tables ──
+
+    private static void ImportEntityTablesPhase1(
+        PatchPackage package,
+        List<CsvImportEntry> entries,
+        CancellationToken cancellationToken)
     {
-        ExtractEntityType(package,
-            songCatalogService.BuildCatalog(package, forceFromTables: true),
-            package.Songs,
-            s => s.Id,
-            SongCatalogService.IsSongRelatedTable);
+        var existingSongIds = package.Songs.Select(s => s.Id)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var existingAchievementIds = package.Achievements.Select(a => a.Id)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var existingProductIds = package.Products.Select(p => p.Id)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var existingItemIds = package.Items.Select(i => i.Id)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var existingIngameItemIds = package.IngameItems.Select(i => i.Id)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var existingEffectIds = package.IngameItemEffects.Select(e => e.Id)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-        ExtractEntityType(package,
-            songCatalogService.BuildAchievementCatalog(package),
-            package.Achievements,
-            a => a.Id,
-            SongCatalogService.IsAchievementRelatedTable);
+        foreach (var entry in entries)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
 
-        ExtractEntityType(package,
-            songCatalogService.BuildQuestCatalog(package),
-            package.Quests,
-            q => q.Id,
-            SongCatalogService.IsQuestRelatedTable);
-
-        ExtractEntityType(package,
-            songCatalogService.BuildProductCatalog(package),
-            package.Products,
-            p => p.Id,
-            SongCatalogService.IsProductRelatedTable);
-
-        ExtractEntityType(package,
-            songCatalogService.BuildItemCatalog(package),
-            package.Items,
-            i => i.Id,
-            SongCatalogService.IsItemRelatedTable);
-
-        ExtractEntityType(package,
-            songCatalogService.BuildIngameItemCatalog(package),
-            package.IngameItems,
-            i => i.Id,
-            SongCatalogService.IsIngameItemRelatedTable);
-
-        ExtractEntityType(package,
-            songCatalogService.BuildIngameItemEffectCatalog(package),
-            package.IngameItemEffects,
-            e => e.Id,
-            SongCatalogService.IsIngameItemRelatedTable);
+            switch (entry.TableName)
+            {
+                case "song_song":
+                {
+                    var songs = ReadWithSchema<Song, SongCsvSchema>(entry.FilePath);
+                    foreach (var song in songs)
+                    {
+                        if (existingSongIds.Add(song.Id))
+                            package.Songs.Add(song);
+                    }
+                    break;
+                }
+                case "quest_achievement":
+                {
+                    var achievements = ReadWithSchema<Achievement, AchievementCsvSchema>(entry.FilePath);
+                    foreach (var achievement in achievements)
+                    {
+                        if (existingAchievementIds.Add(achievement.Id))
+                            package.Achievements.Add(achievement);
+                    }
+                    break;
+                }
+                case "product_product":
+                {
+                    var products = ReadWithSchema<Product, ProductCsvSchema>(entry.FilePath);
+                    foreach (var product in products)
+                    {
+                        if (existingProductIds.Add(product.Id))
+                            package.Products.Add(product);
+                    }
+                    break;
+                }
+                case "product_item":
+                {
+                    var items = ReadWithSchema<Item, ItemCsvSchema>(entry.FilePath);
+                    foreach (var item in items)
+                    {
+                        if (existingItemIds.Add(item.Id))
+                            package.Items.Add(item);
+                    }
+                    break;
+                }
+                case "ingameitem_ingameitem":
+                {
+                    var ingameItems = ReadWithSchema<IngameItem, IngameItemCsvSchema>(entry.FilePath);
+                    foreach (var ingameItem in ingameItems)
+                    {
+                        if (existingIngameItemIds.Add(ingameItem.Id))
+                            package.IngameItems.Add(ingameItem);
+                    }
+                    break;
+                }
+                case "ingameitem_itemeffect":
+                {
+                    var effects = ReadWithSchema<IngameItemEffect, IngameItemEffectCsvSchema>(entry.FilePath);
+                    foreach (var effect in effects)
+                    {
+                        if (existingEffectIds.Add(effect.Id))
+                            package.IngameItemEffects.Add(effect);
+                    }
+                    break;
+                }
+            }
+        }
     }
 
-    private static void ExtractEntityType<T>(
-        PatchPackage package,
-        IReadOnlyList<T> built,
-        List<T> target,
-        Func<T, string> idSelector,
-        Func<string, bool> isRelatedTable) where T : notnull
-    {
-        if (built.Count == 0) return;
+    // ── Phase 2: dependent entity tables (patterns, song localizations) ──
 
-        var existingIds = target.Select(idSelector)
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
-        foreach (var entity in built)
+    private static void ImportEntityTablesPhase2(
+        PatchPackage package,
+        List<CsvImportEntry> entries,
+        CancellationToken cancellationToken)
+    {
+        var songDict = package.Songs.ToDictionary(s => s.Id, StringComparer.OrdinalIgnoreCase);
+        var hasPatterns = false;
+
+        foreach (var entry in entries)
         {
-            if (!existingIds.Contains(idSelector(entity)))
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (entry.TableName == "song_songPattern")
             {
-                target.Add(entity);
+                var patterns = ReadWithSchema<SongPattern, PatternCsvSchema>(entry.FilePath);
+                var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                foreach (var pattern in patterns)
+                {
+                    if (!songDict.TryGetValue(pattern.SongId, out var song))
+                        continue;
+
+                    var key = pattern.SongId + "::" + pattern.PatternId;
+                    if (!seen.Add(key))
+                        continue;
+
+                    song.Patterns.Add(pattern);
+                    hasPatterns = true;
+                }
+            }
+            else if (IsLocalizedTable(entry.TableName, "song_desc"))
+            {
+                var lang = entry.LanguageCode ?? ExtractLanguageSuffix(entry.TableName);
+                if (string.IsNullOrWhiteSpace(lang))
+                    continue;
+
+                var schema = new SongDescCsvSchema(lang);
+                using var stream = File.OpenRead(entry.FilePath);
+                var localizations = schema.ReadCsv(stream, throwOnMissingColumn: false);
+
+                foreach (var loc in localizations)
+                {
+                    if (!songDict.TryGetValue(loc.SongId, out var song))
+                        continue;
+
+                    // Only add if at least one field has a value
+                    if (!string.IsNullOrWhiteSpace(loc.FullName)
+                        || !string.IsNullOrWhiteSpace(loc.Genre)
+                        || !string.IsNullOrWhiteSpace(loc.ArtistName)
+                        || !string.IsNullOrWhiteSpace(loc.ComposedBy)
+                        || !string.IsNullOrWhiteSpace(loc.Singer)
+                        || !string.IsNullOrWhiteSpace(loc.FeatBy)
+                        || !string.IsNullOrWhiteSpace(loc.ArrangedBy)
+                        || !string.IsNullOrWhiteSpace(loc.VisualizedBy))
+                    {
+                        song.Localizations[lang] = loc;
+                    }
+                }
             }
         }
 
-        var related = package.Tables.Tables
-            .Where(t => isRelatedTable(t.TableName))
-            .ToArray();
-        foreach (var table in related)
-            package.Tables.Tables.Remove(table);
+        // Sort patterns once after all pattern tables are processed
+        if (hasPatterns)
+        {
+            foreach (var song in songDict.Values)
+            {
+                song.Patterns.Sort((left, right) =>
+                {
+                    var lineCmp = string.Compare(left.Line, right.Line, StringComparison.OrdinalIgnoreCase);
+                    return lineCmp != 0
+                        ? lineCmp
+                        : string.Compare(left.Signature, right.Signature, StringComparison.OrdinalIgnoreCase);
+                });
+            }
+        }
     }
+
+    // ── Phase 3: lookup tables ──
+    // Processed in two sub-passes so that quest_desc (which creates entities) runs
+    // before quest_mission_desc (which adds missions to those entities).
+
+    private static void ImportLookupTables(
+        PatchPackage package,
+        List<CsvImportEntry> entries,
+        CancellationToken cancellationToken)
+    {
+        var achievementDict = package.Achievements.ToDictionary(a => a.Id, StringComparer.OrdinalIgnoreCase);
+        var questDict = package.Quests.ToDictionary(q => q.Id, StringComparer.OrdinalIgnoreCase);
+        var productDict = package.Products.ToDictionary(p => p.Id, StringComparer.OrdinalIgnoreCase);
+        var itemDict = package.Items.ToDictionary(i => i.Id, StringComparer.OrdinalIgnoreCase);
+
+        // Sub-pass 3a: entity-creating lookups (quest_desc) and independent lookups
+        foreach (var entry in entries)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (IsLocalizedTable(entry.TableName, "acievement_desc"))
+            {
+                var lang = entry.LanguageCode ?? ExtractLanguageSuffix(entry.TableName);
+                if (string.IsNullOrWhiteSpace(lang)) continue;
+                var schema = new AchievementDescCsvSchema(lang);
+                using var stream = File.OpenRead(entry.FilePath);
+                schema.ReadCsv(stream, achievementDict);
+            }
+            else if (IsLocalizedTable(entry.TableName, "quest_desc"))
+            {
+                var lang = entry.LanguageCode ?? ExtractLanguageSuffix(entry.TableName);
+                if (string.IsNullOrWhiteSpace(lang)) continue;
+                var schema = new QuestDescCsvSchema(lang);
+                using var stream = File.OpenRead(entry.FilePath);
+                schema.ReadCsv(stream, questDict);
+
+                // Sync newly created quests back to package
+                foreach (var (id, quest) in questDict)
+                {
+                    if (!package.Quests.Any(q => q.Id.Equals(id, StringComparison.OrdinalIgnoreCase)))
+                        package.Quests.Add(quest);
+                }
+            }
+            else if (entry.TableName == "category_categoryproduct")
+            {
+                var schema = new CategoryProductCsvSchema();
+                using var stream = File.OpenRead(entry.FilePath);
+                schema.ReadCsv(stream, productDict);
+            }
+            else if (IsLocalizedTable(entry.TableName, "item_desc"))
+            {
+                var lang = entry.LanguageCode ?? ExtractLanguageSuffix(entry.TableName);
+                if (string.IsNullOrWhiteSpace(lang)) continue;
+                var schema = new ItemDescCsvSchema(lang);
+                using var stream = File.OpenRead(entry.FilePath);
+                schema.ReadCsv(stream, itemDict);
+            }
+        }
+
+        // Sub-pass 3b: quest_mission_desc (depends on quests existing from 3a)
+        foreach (var entry in entries)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (IsLocalizedTable(entry.TableName, "quest_mission_desc"))
+            {
+                var lang = entry.LanguageCode ?? ExtractLanguageSuffix(entry.TableName);
+                if (string.IsNullOrWhiteSpace(lang)) continue;
+                var schema = new QuestMissionDescCsvSchema(lang);
+                using var stream = File.OpenRead(entry.FilePath);
+                schema.ReadCsv(stream, questDict);
+            }
+        }
+    }
+
+    // ── Phase 4: cross-entity links ──
+
+    private static void BuildCrossEntityLinks(
+        PatchPackage package,
+        List<CsvImportEntry> entries,
+        CancellationToken cancellationToken)
+    {
+        var songDict = package.Songs.ToDictionary(s => s.Id, StringComparer.OrdinalIgnoreCase);
+
+        // product_product: link product_id → song_id → Song.ProductIds
+        var productToSong = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var entry in entries)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (entry.TableName != "product_product")
+                continue;
+
+            foreach (var row in ReadCsvRows(entry.FilePath))
+            {
+                var productId = GetField(row, "product_id", "id");
+                var songId = GetField(row, "song_id", "songId");
+                if (string.IsNullOrWhiteSpace(productId) || string.IsNullOrWhiteSpace(songId))
+                    continue;
+
+                productToSong[productId] = songId;
+                if (songDict.TryGetValue(songId, out var song))
+                    AddDistinct(song.ProductIds, productId);
+            }
+        }
+
+        // product_item: link item_id → product_id → (via productToSong) → song_id → Song.ItemIds
+        var itemToSong = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var entry in entries)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (entry.TableName != "product_item")
+                continue;
+
+            foreach (var row in ReadCsvRows(entry.FilePath))
+            {
+                var productId = GetField(row, "product_id");
+                var itemId = GetField(row, "item_id", "itemId");
+                if (string.IsNullOrWhiteSpace(productId) || string.IsNullOrWhiteSpace(itemId))
+                    continue;
+
+                if (!productToSong.TryGetValue(productId, out var songId))
+                    continue;
+                if (!songDict.TryGetValue(songId, out var song))
+                    continue;
+
+                itemToSong[itemId] = songId;
+                AddDistinct(song.ItemIds, itemId);
+            }
+        }
+
+        // category_categoryproduct: category_id → product_id → (via productToSong) → Song.CategoryIds
+        foreach (var entry in entries)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (entry.TableName != "category_categoryproduct")
+                continue;
+
+            foreach (var row in ReadCsvRows(entry.FilePath))
+            {
+                var productId = GetField(row, "product_id");
+                var categoryId = GetField(row, "category_id");
+                if (string.IsNullOrWhiteSpace(productId) || string.IsNullOrWhiteSpace(categoryId))
+                    continue;
+
+                if (!productToSong.TryGetValue(productId, out var songId))
+                    continue;
+                if (!songDict.TryGetValue(songId, out var song))
+                    continue;
+
+                AddDistinct(song.CategoryIds, categoryId);
+            }
+        }
+
+        // item_desc_*: item_id → (via itemToSong) → Song.ItemNamesByLanguage
+        foreach (var entry in entries)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (!IsLocalizedTable(entry.TableName, "item_desc"))
+                continue;
+
+            var lang = entry.LanguageCode ?? ExtractLanguageSuffix(entry.TableName);
+            if (string.IsNullOrWhiteSpace(lang))
+                continue;
+
+            foreach (var row in ReadCsvRows(entry.FilePath))
+            {
+                var itemId = GetField(row, "item_id", "itemId", "id");
+                if (string.IsNullOrWhiteSpace(itemId))
+                    continue;
+
+                if (!itemToSong.TryGetValue(itemId, out var songId))
+                    continue;
+                if (!songDict.TryGetValue(songId, out var song))
+                    continue;
+
+                var itemName = GetField(row, "name", "title", "item_name");
+                if (!string.IsNullOrWhiteSpace(itemName))
+                    song.ItemNamesByLanguage[lang] = itemName;
+            }
+        }
+    }
+
+    // ── Preview links ──
+
+    private static void BuildPreviewLinks(PatchPackage package)
+    {
+        var previewPaths = package.Resources
+            .Where(resource => resource.Category.Equals("preview", StringComparison.OrdinalIgnoreCase))
+            .Select(resource => resource.PackageRelativePath)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var song in package.Songs)
+        {
+            if (!string.IsNullOrWhiteSpace(song.Name) && previewPaths.Contains(song.Name))
+            {
+                song.PreviewPackageRelativePath = song.Name;
+                continue;
+            }
+
+            var songIdMatch = previewPaths.FirstOrDefault(path =>
+                path.Contains(song.Id, StringComparison.OrdinalIgnoreCase));
+            if (!string.IsNullOrWhiteSpace(songIdMatch))
+            {
+                song.PreviewPackageRelativePath = songIdMatch;
+            }
+        }
+    }
+
+    // ── Schema helpers ──
+
+    private static List<T> ReadWithSchema<T, TSchema>(string filePath)
+        where TSchema : CsvSchema<T>, new()
+    {
+        using var stream = File.OpenRead(filePath);
+        return new TSchema().ReadCsv(stream, throwOnMissingColumn: false);
+    }
+
+    // ── Raw CSV helpers (for link tables) ──
+
+    private static List<IReadOnlyDictionary<string, string>> ReadCsvRows(string filePath)
+    {
+        using var stream = File.OpenRead(filePath);
+        using var reader = new StreamReader(stream);
+        using var csv = new CsvReader(reader, new CsvConfiguration(CultureInfo.InvariantCulture)
+        {
+            BadDataFound = null,
+            MissingFieldFound = null
+        });
+
+        if (!csv.Read())
+            return [];
+
+        csv.ReadHeader();
+        var headers = csv.HeaderRecord ?? [];
+        var result = new List<IReadOnlyDictionary<string, string>>();
+
+        while (csv.Read())
+        {
+            var row = new Dictionary<string, string>(headers.Length, StringComparer.OrdinalIgnoreCase);
+            for (var i = 0; i < headers.Length; i++)
+            {
+                row[headers[i]] = csv.GetField(i) ?? string.Empty;
+            }
+
+            result.Add(row);
+        }
+
+        return result;
+    }
+
+    private static string GetField(IReadOnlyDictionary<string, string> row, params string[] columnNames)
+    {
+        foreach (var columnName in columnNames)
+        {
+            if (row.TryGetValue(columnName, out var value) && !string.IsNullOrWhiteSpace(value))
+                return value;
+        }
+
+        return string.Empty;
+    }
+
+    private static void AddDistinct(List<string> values, string value)
+    {
+        if (!string.IsNullOrWhiteSpace(value) && !values.Contains(value, StringComparer.OrdinalIgnoreCase))
+        {
+            values.Add(value);
+        }
+    }
+
+    // ── Path helpers ──
+
+    private static string GetTableName(string path)
+    {
+        var normalized = path.Replace('\\', '/');
+        var fileName = Path.GetFileNameWithoutExtension(normalized);
+        return fileName.EndsWith(".csv", StringComparison.OrdinalIgnoreCase)
+            ? Path.GetFileNameWithoutExtension(fileName)
+            : fileName;
+    }
+
+    private static string? GetLanguageCode(string path)
+    {
+        var parts = path.Replace('\\', '/').Split('/', StringSplitOptions.RemoveEmptyEntries);
+        return parts.Length >= 3 && parts[0].Equals("table", StringComparison.OrdinalIgnoreCase)
+            ? parts[1]
+            : null;
+    }
+
+    private static string? ExtractLanguageSuffix(string tableName)
+    {
+        var index = tableName.LastIndexOf('_');
+        return index < 0 || index == tableName.Length - 1 ? null : tableName[(index + 1)..];
+    }
+
+    private static bool IsLocalizedTable(string tableName, string logicalName)
+        => tableName.StartsWith(logicalName + "_", StringComparison.OrdinalIgnoreCase);
+
+    // ── Existing helpers (unchanged) ──
 
     private async Task<string> EnsureCsvFileAsync(
         string sourcePath,
@@ -269,4 +691,8 @@ public sealed class PlatformPackageImporter(
         var parent = Directory.GetParent(packageRoot);
         return parent?.Name.Contains('.', StringComparison.Ordinal) == true ? parent.Name : null;
     }
+
+    // ── Nested types ──
+
+    private sealed record CsvImportEntry(string FilePath, string TableName, string? LanguageCode);
 }

@@ -21,7 +21,7 @@ public abstract class CsvSchema<T>
     /// </summary>
     protected virtual void OnAfterRead(T entity) { }
 
-    public List<T> ReadCsv(Stream stream)
+    public List<T> ReadCsv(Stream stream, bool throwOnMissingColumn = true)
     {
         ArgumentNullException.ThrowIfNull(stream);
 
@@ -48,18 +48,27 @@ public abstract class CsvSchema<T>
             headerIndexMap[headers[i]] = i;
         }
 
-        // Build ordered list of (CsvColumn, csvFieldIndex) for each column we care about
+        // Build ordered list of (CsvColumn, csvFieldIndex) for each column we care about.
+        // When throwOnMissingColumn is false, missing columns are silently skipped (their
+        // setters are never called) so that partial tables from different platforms import
+        // without errors.
         var columnMappings = Columns
             .OrderBy(c => c.Order)
             .Select(c =>
             {
                 if (!headerIndexMap.TryGetValue(c.ColumnName, out var csvIndex))
                 {
-                    throw new InvalidDataException(
-                        $"CSV table '{TableName}' is missing column '{c.ColumnName}'.");
+                    if (throwOnMissingColumn)
+                    {
+                        throw new InvalidDataException(
+                            $"CSV table '{TableName}' is missing column '{c.ColumnName}'.");
+                    }
+                    return (Column: (CsvColumn<T>?)null, CsvIndex: -1);
                 }
-                return (Column: c, CsvIndex: csvIndex);
+                return (Column: (CsvColumn<T>?)c, CsvIndex: csvIndex);
             })
+            .Where(cm => cm.Column is not null)
+            .Select(cm => (Column: cm.Column!, CsvIndex: cm.CsvIndex))
             .ToList();
 
         // Detect an Id property on T for deduplication
