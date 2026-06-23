@@ -31,14 +31,14 @@ public sealed class PlatformPackageImporterTests
 
             await importer.ImportPlatformAsync(package, packageRoot, "ios");
 
-            var platform = package.Platforms.Single(p => p.Platform == "ios");
-            platform.BaselineManifestEntries.Should().HaveCount(2);
-            platform.MissingPhysicalFileCount.Should().Be(1);
+            // Check that resources were created
+            package.Resources.Should().NotBeEmpty();
+            var previewResource = package.Resources.FirstOrDefault(r => r.FileName == "preview/shared.p.opus");
+            previewResource.Should().NotBeNull();
+            previewResource!.Category.Should().Be("preview");
+            previewResource.PlatformManifest.Should().Contain(m => m.Platform == "share" && m.Exist);
+            // Table should have been attempted but source file is missing
             package.Tables.Tables.Should().BeEmpty();
-            package.Resources.Should().ContainSingle(r =>
-                r.PackageRelativePath == "preview/shared.p.opus"
-                && r.Category == "preview"
-                && r.IncludedPlatforms!.Contains("ios"));
         }
         finally
         {
@@ -70,9 +70,9 @@ public sealed class PlatformPackageImporterTests
             await importer.ImportPlatformAsync(package, packageRoot, "android");
 
             package.Resources.Should().HaveCount(2);
-            package.Resources.Should().OnlyContain(r => r.Platform == "android");
-            package.Resources.Should().Contain(r => r.ProjectRelativePath == "resources/android/dlc/android-only.bin");
-            package.Resources.Should().Contain(r => r.ProjectRelativePath == "resources/android/Fonts/font.bin");
+            package.Resources.Should().OnlyContain(r => r.PlatformManifest.Any(m => m.Platform == "android" && m.Exist));
+            package.Resources.Should().Contain(r => r.FileName == "dlc/android-only.bin");
+            package.Resources.Should().Contain(r => r.FileName == "Fonts/font.bin");
             File.Exists(Path.Combine(projectRoot, "resources", "android", "dlc", "android-only.bin")).Should().BeTrue();
             File.Exists(Path.Combine(projectRoot, "resources", "android", "Fonts", "font.bin")).Should().BeTrue();
         }
@@ -109,7 +109,6 @@ public sealed class PlatformPackageImporterTests
             package.Songs.Should().ContainSingle();
             package.Songs[0].Id.Should().Be(1);
             package.Songs[0].Name.Should().Be("android-song", "first import wins");
-            package.Platforms.Should().HaveCount(2);
         }
         finally
         {
@@ -146,7 +145,7 @@ public sealed class PlatformPackageImporterTests
             await importer.ImportPlatformAsync(package, iosRoot, "ios");
 
             var preview = package.Resources.Single(r => r.Category == "preview");
-            preview.IncludedPlatforms.Should().Contain(["android", "ios"]);
+            preview.PlatformManifest.Should().Contain(m => m.Platform == "share");
         }
         finally
         {

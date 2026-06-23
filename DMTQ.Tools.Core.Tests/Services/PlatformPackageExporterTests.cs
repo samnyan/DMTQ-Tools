@@ -18,9 +18,8 @@ public sealed class PlatformPackageExporterTests
         try
         {
             Directory.CreateDirectory(projectRoot);
-            var package = CreateProjectWithPlatform(projectRoot, "ios", [
-                Entry("dlc/built-in-only.bin", 10, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", compressed: false)
-            ]);
+            var package = CreateProjectWithResource(projectRoot, "ios", "dlc/built-in-only.bin",
+                sourceFileSize: 10, sourceChecksum: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", compressed: false, exist: false);
             var exporter = CreateExporter();
 
             var result = await exporter.ExportPlatformAsync(
@@ -51,9 +50,8 @@ public sealed class PlatformPackageExporterTests
         try
         {
             Directory.CreateDirectory(projectRoot);
-            var package = CreateProjectWithPlatform(projectRoot, "android", [
-                Entry("table/us/song_song.csv", 1, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", compressed: false)
-            ]);
+            var package = CreateProjectWithResource(projectRoot, "android", "table/us/song_song.csv",
+                sourceFileSize: 1, sourceChecksum: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", compressed: false, exist: true);
             AddSongTable(package, "changed-name");
             var exporter = CreateExporter();
 
@@ -83,16 +81,43 @@ public sealed class PlatformPackageExporterTests
         try
         {
             Directory.CreateDirectory(Path.Combine(projectRoot, "resources", "android", "dlc"));
-            Directory.CreateDirectory(Path.Combine(projectRoot, "resources", "shared", "preview"));
+            Directory.CreateDirectory(Path.Combine(projectRoot, "resources", "preview"));
             await File.WriteAllTextAsync(Path.Combine(projectRoot, "resources", "android", "dlc", "android.bin"), "android-dlc-current");
-            await File.WriteAllTextAsync(Path.Combine(projectRoot, "resources", "shared", "preview", "song.p.opus"), "preview-current");
+            await File.WriteAllTextAsync(Path.Combine(projectRoot, "resources", "preview", "song.p.opus"), "preview-current");
 
-            var package = CreateProjectWithPlatform(projectRoot, "android", [
-                Entry("dlc/android.bin", 1, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", compressed: false),
-                Entry("preview/song.p.opus", 1, "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", compressed: false)
-            ]);
-            package.Resources.Add(new ResourceFile("dlc/android.bin", "resources/android/dlc/android.bin", "dlc", false, null, "android"));
-            package.Resources.Add(new ResourceFile("preview/song.p.opus", "resources/shared/preview/song.p.opus", "preview", false, null, null, ["android"]));
+            var package = CreateEmptyProject(projectRoot);
+            package.Resources.Add(new ResourceFile
+            {
+                FileName = "dlc/android.bin",
+                Category = "dlc",
+                Compressed = false,
+                PlatformManifest =
+                {
+                    new PlatformManifestEntry
+                    {
+                        Platform = "android",
+                        Exist = true,
+                        SourceFileSize = 1,
+                        SourceChecksum = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                    }
+                }
+            });
+            package.Resources.Add(new ResourceFile
+            {
+                FileName = "preview/song.p.opus",
+                Category = "preview",
+                Compressed = false,
+                PlatformManifest =
+                {
+                    new PlatformManifestEntry
+                    {
+                        Platform = "share",
+                        Exist = true,
+                        SourceFileSize = 1,
+                        SourceChecksum = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+                    }
+                }
+            });
 
             var result = await CreateExporter().ExportPlatformAsync(
                 package,
@@ -118,17 +143,31 @@ public sealed class PlatformPackageExporterTests
         try
         {
             Directory.CreateDirectory(Path.Combine(projectRoot, "resources", "android", "dlc"));
-            await File.WriteAllTextAsync(Path.Combine(projectRoot, "resources", "android", "dlc", "android.bin"), "same-content");
+            var content = "same-content";
+            await File.WriteAllTextAsync(Path.Combine(projectRoot, "resources", "android", "dlc", "android.bin"), content);
 
             var checksum = Convert.ToHexString(
                 System.Security.Cryptography.MD5.HashData(
                     await File.ReadAllBytesAsync(Path.Combine(projectRoot, "resources", "android", "dlc", "android.bin"))))
                 .ToLowerInvariant();
 
-            var package = CreateProjectWithPlatform(projectRoot, "android", [
-                Entry("dlc/android.bin", 12, checksum, compressed: false)
-            ]);
-            package.Resources.Add(new ResourceFile("dlc/android.bin", "resources/android/dlc/android.bin", "dlc", false, null, "android"));
+            var package = CreateEmptyProject(projectRoot);
+            package.Resources.Add(new ResourceFile
+            {
+                FileName = "dlc/android.bin",
+                Category = "dlc",
+                Compressed = false,
+                PlatformManifest =
+                {
+                    new PlatformManifestEntry
+                    {
+                        Platform = "android",
+                        Exist = true,
+                        SourceFileSize = content.Length,
+                        SourceChecksum = checksum
+                    }
+                }
+            });
 
             var result = await CreateExporter().ExportPlatformAsync(
                 package,
@@ -156,8 +195,21 @@ public sealed class PlatformPackageExporterTests
         {
             Directory.CreateDirectory(Path.Combine(projectRoot, "resources", "preview"));
             await File.WriteAllTextAsync(Path.Combine(projectRoot, "resources", "preview", "new.opus"), "new-preview");
-            var package = CreateProjectWithPlatform(projectRoot, "android", []);
-            package.Resources.Add(new ResourceFile("preview/new.opus", "resources/preview/new.opus", "preview", false, null, null, ["android"]));
+            var package = CreateEmptyProject(projectRoot);
+            package.Resources.Add(new ResourceFile
+            {
+                FileName = "preview/new.opus",
+                Category = "preview",
+                Compressed = false,
+                PlatformManifest =
+                {
+                    new PlatformManifestEntry
+                    {
+                        Platform = "share",
+                        Exist = true
+                    }
+                }
+            });
 
             var result = await CreateExporter().ExportPlatformAsync(
                 package,
@@ -184,8 +236,21 @@ public sealed class PlatformPackageExporterTests
         {
             Directory.CreateDirectory(Path.Combine(projectRoot, "resources", "ios", "dlc"));
             await File.WriteAllTextAsync(Path.Combine(projectRoot, "resources", "ios", "dlc", "new.bundle"), "new-dlc");
-            var package = CreateProjectWithPlatform(projectRoot, "ios", []);
-            package.Resources.Add(new ResourceFile("dlc/new.bundle", "resources/ios/dlc/new.bundle", "dlc", true, null, "ios", null));
+            var package = CreateEmptyProject(projectRoot);
+            package.Resources.Add(new ResourceFile
+            {
+                FileName = "dlc/new.bundle",
+                Category = "dlc",
+                Compressed = true,
+                PlatformManifest =
+                {
+                    new PlatformManifestEntry
+                    {
+                        Platform = "ios",
+                        Exist = true
+                    }
+                }
+            });
 
             var result = await CreateExporter().ExportPlatformAsync(
                 package,
@@ -219,11 +284,24 @@ public sealed class PlatformPackageExporterTests
             var contentBytes = await File.ReadAllBytesAsync(Path.Combine(projectRoot, "resources", "android", "dlc", "android.bin"));
             var baselineChecksum = Convert.ToHexString(System.Security.Cryptography.MD5.HashData(contentBytes)).ToLowerInvariant();
 
-            var package = CreateProjectWithPlatform(projectRoot, "android", [
-                Entry("dlc/android.bin", contentBytes.Length, baselineChecksum, compressed: true)
-            ]);
+            var package = CreateEmptyProject(projectRoot);
             // User changes resource to uncompressed via Resource Manager
-            package.Resources.Add(new ResourceFile("dlc/android.bin", "resources/android/dlc/android.bin", "dlc", false, null, "android"));
+            package.Resources.Add(new ResourceFile
+            {
+                FileName = "dlc/android.bin",
+                Category = "dlc",
+                Compressed = false,
+                PlatformManifest =
+                {
+                    new PlatformManifestEntry
+                    {
+                        Platform = "android",
+                        Exist = true,
+                        SourceFileSize = contentBytes.Length,
+                        SourceChecksum = baselineChecksum
+                    }
+                }
+            });
 
             var result = await CreateExporter().ExportPlatformAsync(
                 package,
@@ -253,10 +331,23 @@ public sealed class PlatformPackageExporterTests
         {
             Directory.CreateDirectory(Path.Combine(projectRoot, "resources", "android", "dlc"));
             await File.WriteAllTextAsync(Path.Combine(projectRoot, "resources", "android", "dlc", "android.bin"), "md5-test");
-            var package = CreateProjectWithPlatform(projectRoot, "android", [
-                Entry("dlc/android.bin", 8, "00000000000000000000000000000000", compressed: false)
-            ]);
-            package.Resources.Add(new ResourceFile("dlc/android.bin", "resources/android/dlc/android.bin", "dlc", false, null, "android"));
+            var package = CreateEmptyProject(projectRoot);
+            package.Resources.Add(new ResourceFile
+            {
+                FileName = "dlc/android.bin",
+                Category = "dlc",
+                Compressed = false,
+                PlatformManifest =
+                {
+                    new PlatformManifestEntry
+                    {
+                        Platform = "android",
+                        Exist = true,
+                        SourceFileSize = 8,
+                        SourceChecksum = "00000000000000000000000000000000"
+                    }
+                }
+            });
 
             var result = await CreateExporter().ExportPlatformAsync(
                 package,
@@ -277,25 +368,35 @@ public sealed class PlatformPackageExporterTests
     private static PlatformPackageExporter CreateExporter()
         => new();
 
-    private static PatchPackage CreateProjectWithPlatform(string projectRoot, string platform, PatchFileEntry[] baselineEntries)
-    {
-        var package = new PatchPackage
+    private static PatchPackage CreateEmptyProject(string projectRoot)
+        => new()
         {
             ProjectInfo = new ProjectInfo(projectRoot, null, "1.003.005", null)
         };
-        var platformRecord = new PlatformPackageRecord
+
+    private static PatchPackage CreateProjectWithResource(
+        string projectRoot, string platform, string fileName,
+        long sourceFileSize, string sourceChecksum, bool compressed, bool exist)
+    {
+        var package = CreateEmptyProject(projectRoot);
+        package.Resources.Add(new ResourceFile
         {
-            Platform = platform,
-            SourcePackageRoot = "source-" + platform,
-            Version = "1.003.005"
-        };
-        platformRecord.BaselineManifestEntries.AddRange(baselineEntries);
-        package.Platforms.Add(platformRecord);
+            FileName = fileName,
+            Category = FileUtility.ResourceCategory(fileName),
+            Compressed = compressed,
+            PlatformManifest =
+            {
+                new PlatformManifestEntry
+                {
+                    Platform = platform,
+                    Exist = exist,
+                    SourceFileSize = sourceFileSize,
+                    SourceChecksum = sourceChecksum
+                }
+            }
+        });
         return package;
     }
-
-    private static PatchFileEntry Entry(string fileName, long fileSize, string checksum, bool compressed)
-        => new(fileName, fileSize, checksum, compressed ? fileSize + 1 : 0, compressed ? checksum : string.Empty, 0, compressed, string.Empty, string.Empty);
 
     private static void AddSongTable(PatchPackage package, string songName)
     {

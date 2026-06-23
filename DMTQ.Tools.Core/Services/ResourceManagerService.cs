@@ -14,17 +14,21 @@ public sealed class ResourceManagerService
         return package.Resources
             .Select(resource => new ResourceCatalogEntry
             {
-                PackageRelativePath = resource.PackageRelativePath,
-                ProjectRelativePath = resource.ProjectRelativePath,
+                FileName = resource.FileName,
                 Category = resource.Category,
                 Compressed = resource.Compressed,
-                Platform = resource.Platform,
-                IncludedPlatforms = resource.IncludedPlatforms?.ToArray() ?? [],
-                SourcePackagePath = resource.SourcePackagePath
+                PlatformManifest = resource.PlatformManifest
+                    .Select(m => new PlatformManifestInfo
+                    {
+                        Platform = m.Platform,
+                        Exist = m.Exist,
+                        SourceFileSize = m.SourceFileSize,
+                        SourceChecksum = m.SourceChecksum
+                    })
+                    .ToArray()
             })
             .OrderBy(entry => entry.Category, StringComparer.OrdinalIgnoreCase)
-            .ThenBy(entry => entry.Platform ?? string.Empty, StringComparer.OrdinalIgnoreCase)
-            .ThenBy(entry => entry.PackageRelativePath, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(entry => entry.FileName, StringComparer.OrdinalIgnoreCase)
             .ToArray();
     }
 
@@ -48,28 +52,68 @@ public sealed class ResourceManagerService
         var normalizedPath = FileUtility.NormalizePackageRelativePath(packageRelativePath);
         var category = FileUtility.ResourceCategory(normalizedPath);
         var isPreview = category.Equals("preview", StringComparison.OrdinalIgnoreCase);
-        if (!isPreview && string.IsNullOrWhiteSpace(platform))
+
+        // Archive the file
+        string archiveSubPath;
+        if (isPreview)
+        {
+            archiveSubPath = Path.Combine("resources", normalizedPath);
+        }
+        else if (!string.IsNullOrWhiteSpace(platform))
+        {
+            archiveSubPath = Path.Combine("resources", platform, normalizedPath);
+        }
+        else
         {
             throw new InvalidOperationException("Non-preview resources must target a platform.");
         }
 
-        var projectRelativePath = isPreview
-            ? Path.Combine("resources", normalizedPath).Replace('\\', '/')
-            : Path.Combine("resources", platform!, normalizedPath).Replace('\\', '/');
-        var archivePath = Path.Combine(package.ProjectInfo.ProjectRoot, projectRelativePath.Replace('/', Path.DirectorySeparatorChar));
+        var archivePath = Path.Combine(package.ProjectInfo.ProjectRoot, archiveSubPath.Replace('/', Path.DirectorySeparatorChar));
         Directory.CreateDirectory(Path.GetDirectoryName(archivePath) ?? package.ProjectInfo.ProjectRoot);
         File.Copy(sourceFilePath, archivePath, overwrite: true);
         await Task.CompletedTask.ConfigureAwait(false);
 
-        RemoveResource(package, normalizedPath, isPreview ? null : platform);
-        package.Resources.Add(new ResourceFile(
-            normalizedPath,
-            projectRelativePath,
-            category,
-            compressed,
-            null,
-            isPreview ? null : platform,
-            isPreview ? includedPlatforms.Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(value => value, StringComparer.OrdinalIgnoreCase).ToList() : null));
+        // Create or update ResourceFile
+        var resourceFile = package.Resources.FirstOrDefault(r =>
+            r.FileName.Equals(normalizedPath, StringComparison.OrdinalIgnoreCase));
+
+        if (resourceFile is null)
+        {
+            resourceFile = new ResourceFile
+            {
+                FileName = normalizedPath,
+                Category = category,
+                Compressed = compressed
+            };
+            package.Resources.Add(resourceFile);
+        }
+        else
+        {
+            resourceFile.Compressed = compressed;
+        }
+
+        // Update PlatformManifest
+        var platforms = isPreview
+            ? includedPlatforms.Distinct(StringComparer.OrdinalIgnoreCase).ToArray()
+            : (platform is not null ? new[] { platform } : []);
+
+        foreach (var plat in platforms)
+        {
+            var existingEntry = resourceFile.PlatformManifest
+                .FirstOrDefault(m => m.Platform.Equals(plat, StringComparison.OrdinalIgnoreCase));
+            if (existingEntry is null)
+            {
+                resourceFile.PlatformManifest.Add(new PlatformManifestEntry
+                {
+                    Platform = plat,
+                    Exist = true
+                });
+            }
+            else
+            {
+                existingEntry.Exist = true;
+            }
+        }
     }
 
     public void RemoveResource(PatchPackage package, string packageRelativePath, string? platform)
@@ -79,46 +123,45 @@ public sealed class ResourceManagerService
 
         var normalizedPath = FileUtility.NormalizePackageRelativePath(packageRelativePath);
         package.Resources.RemoveAll(resource =>
-            resource.PackageRelativePath.Equals(normalizedPath, StringComparison.OrdinalIgnoreCase)
-            && string.Equals(resource.Platform, platform, StringComparison.OrdinalIgnoreCase));
+            resource.FileName.Equals(normalizedPath, StringComparison.OrdinalIgnoreCase));
     }
 
     public void SetCompression(PatchPackage package, string packageRelativePath, string? platform, bool compressed)
     {
         ArgumentNullException.ThrowIfNull(package);
-        var resource = FindResource(package, packageRelativePath, platform);
-        ReplaceResource(package, resource, resource with { Compressed = compressed });
+        var resource = FindResource(package, packageRelativePath);
+        resource.Compressed = compressed;
     }
 
     public void SetPreviewIncludedPlatforms(PatchPackage package, string packageRelativePath, IReadOnlyCollection<string> includedPlatforms)
     {
         ArgumentNullException.ThrowIfNull(package);
-        var resource = FindResource(package, packageRelativePath, platform: null);
+        var resource = FindResource(package, packageRelativePath);
         if (!resource.Category.Equals("preview", StringComparison.OrdinalIgnoreCase))
         {
             throw new InvalidOperationException("Only preview resources can use shared platform inclusion flags.");
         }
 
-        var normalizedPlatforms = includedPlatforms
-            .Where(value => !string.IsNullOrWhiteSpace(value))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .OrderBy(value => value, StringComparer.OrdinalIgnoreCase)
-            .ToList();
-        ReplaceResource(package, resource, resource with { IncludedPlatforms = normalizedPlatforms });
+        // Replace all share entries with the new set
+        resource.PlatformManifest.RemoveAll(m => m.Platform.Equals("share", StringComparison.OrdinalIgnoreCase));
+        foreach (var plat in includedPlatforms.Where(v => !string.IsNullOrWhiteSpace(v)))
+        {
+            if (!resource.PlatformManifest.Any(m => m.Platform.Equals(plat, StringComparison.OrdinalIgnoreCase)))
+            {
+                resource.PlatformManifest.Add(new PlatformManifestEntry
+                {
+                    Platform = plat,
+                    Exist = true
+                });
+            }
+        }
     }
 
-    private static ResourceFile FindResource(PatchPackage package, string packageRelativePath, string? platform)
+    private static ResourceFile FindResource(PatchPackage package, string packageRelativePath)
     {
         var normalizedPath = FileUtility.NormalizePackageRelativePath(packageRelativePath);
         return package.Resources.FirstOrDefault(resource =>
-                resource.PackageRelativePath.Equals(normalizedPath, StringComparison.OrdinalIgnoreCase)
-                && string.Equals(resource.Platform, platform, StringComparison.OrdinalIgnoreCase))
+                resource.FileName.Equals(normalizedPath, StringComparison.OrdinalIgnoreCase))
             ?? throw new InvalidOperationException($"Resource '{normalizedPath}' was not found.");
-    }
-
-    private static void ReplaceResource(PatchPackage package, ResourceFile oldResource, ResourceFile newResource)
-    {
-        var index = package.Resources.IndexOf(oldResource);
-        package.Resources[index] = newResource;
     }
 }

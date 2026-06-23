@@ -36,8 +36,8 @@
     <FluentGrid Spacing="3" Justify="JustifyContent.Center" AdaptiveRendering="true">
         <FluentGridItem xs="12" sm="6" md="4" lg="3">
             <FluentCard>
-                <span style="color: #5f6b7a; font-size: 0.8rem;">Manifest entries</span>
-                <p style="font-weight: 600;">@State.CurrentPackage.Manifest.Entries.Count</p>
+                <span style="color: #5f6b7a; font-size: 0.8rem;">Songs</span>
+                <p style="font-weight: 600;">@State.CurrentPackage.Songs.Count</p>
             </FluentCard>
         </FluentGridItem>
         <FluentGridItem xs="12" sm="6" md="4" lg="3">
@@ -60,21 +60,7 @@
         </FluentGridItem>
     </FluentGrid>
 
-    @if (State.Platforms.Count > 0)
-    {
-        <FluentStack Orientation="Orientation.Vertical" Style="margin-top: 1rem;">
-            <h2>Platforms</h2>
-            <FluentDataGrid Items="@State.Platforms.OrderBy(p => p.Platform).AsQueryable()"
-                            TGridItem="PlatformPackageRecord">
-                <PropertyColumn Property="@(p => p.Platform)" Title="Platform" />
-                <PropertyColumn Property="@(p => p.BaselineManifestEntries.Count)" Title="Baseline entries" />
-                <PropertyColumn Property="@(p => p.ImportedTableFileCount)" Title="Imported tables" />
-                <PropertyColumn Property="@(p => p.ImportedResourceFileCount)" Title="Imported resources" />
-                <PropertyColumn Property="@(p => p.MissingPhysicalFileCount)" Title="Missing physical files" />
-                <PropertyColumn Property="@(p => p.SourcePackageRoot)" Title="Source" />
-            </FluentDataGrid>
-        </FluentStack>
-    }
+
 }
 
 @code {

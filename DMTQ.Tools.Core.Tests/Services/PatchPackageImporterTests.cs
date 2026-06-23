@@ -24,23 +24,22 @@ public sealed class PatchPackageImporterTests
 
             package.ProjectInfo.ProjectRoot.Should().Be(tempProjectRoot);
             package.ProjectInfo.SourcePackageRoot.Should().Be(packageRoot);
-            package.Manifest.Entries.Should().HaveCount(382);
             package.Songs.Should().NotBeEmpty();
             package.Songs.SelectMany(s => s.Localizations.Keys).Distinct()
                 .Should().Contain(["cn", "jp", "kr", "tw", "us"]);
-            package.Resources.Should().Contain(r => r.PackageRelativePath.StartsWith("dlc/", StringComparison.Ordinal));
-            package.Resources.Should().Contain(r => r.PackageRelativePath.StartsWith("preview/", StringComparison.Ordinal));
+            package.Resources.Should().Contain(r => r.FileName.StartsWith("dlc/", StringComparison.Ordinal));
+            package.Resources.Should().Contain(r => r.FileName.StartsWith("preview/", StringComparison.Ordinal));
 
             var archivedResources = package.Resources
-                .Where(r => r.PackageRelativePath.StartsWith("dlc/", StringComparison.Ordinal)
-                    || r.PackageRelativePath.StartsWith("preview/", StringComparison.Ordinal))
+                .Where(r => r.FileName.StartsWith("dlc/", StringComparison.Ordinal)
+                    || r.FileName.StartsWith("preview/", StringComparison.Ordinal))
                 .Take(5)
                 .ToArray();
 
             archivedResources.Should().NotBeEmpty();
             foreach (var resource in archivedResources)
             {
-                var archivedPath = Path.Combine(tempProjectRoot, resource.ProjectRelativePath.Replace('/', Path.DirectorySeparatorChar));
+                var archivedPath = Path.Combine(tempProjectRoot, "resources", resource.FileName.Replace('/', Path.DirectorySeparatorChar));
                 File.Exists(archivedPath).Should().BeTrue("import should copy resource files into the project archive");
                 new FileInfo(archivedPath).Length.Should().BeGreaterThan(0);
             }
@@ -65,16 +64,19 @@ public sealed class PatchPackageImporterTests
             var importer = new PatchPackageImporter(new CsvTableReader());
 
             var package = await importer.ImportAsync(packageRoot, tempProjectRoot);
-            var entry = package.Manifest.Entries.First(e =>
-                e.Compressed && e.FileName.StartsWith("dlc/", StringComparison.Ordinal));
-            var resource = package.Resources.Single(r => r.PackageRelativePath == entry.FileName);
+            // Find a compressed dlc resource
+            var resource = package.Resources.First(r =>
+                r.Compressed && r.FileName.StartsWith("dlc/", StringComparison.Ordinal));
+            // Find its manifest entry from one of the PlatformManifest entries
+            var platformEntry = resource.PlatformManifest.First();
             var archivedPath = Path.Combine(
                 tempProjectRoot,
-                resource.ProjectRelativePath.Replace('/', Path.DirectorySeparatorChar));
+                "resources",
+                resource.FileName.Replace('/', Path.DirectorySeparatorChar));
 
-            FileUtility.GetFileSize(archivedPath).Should().Be(entry.FileSize);
+            FileUtility.GetFileSize(archivedPath).Should().Be(platformEntry.SourceFileSize);
             var archivedChecksum = await FileUtility.ComputeMd5Async(archivedPath);
-            archivedChecksum.Should().Be(entry.Checksum);
+            archivedChecksum.Should().Be(platformEntry.SourceChecksum);
         }
         finally
         {

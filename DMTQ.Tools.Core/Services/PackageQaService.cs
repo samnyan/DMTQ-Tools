@@ -24,13 +24,13 @@ public sealed partial class PackageQaService
 
     private static void CheckManifest(PatchPackage package, QaReport report)
     {
-        if (package.Manifest.Entries.Count == 0 && package.Platforms.All(p => p.BaselineManifestEntries.Count == 0))
+        if (package.Resources.Count == 0 && package.Tables.Tables.Count == 0)
         {
             report.Issues.Add(new QaIssue
             {
                 Category = "Manifest",
                 Severity = QaIssueSeverity.Warning,
-                Message = "Package has no manifest entries. Export will produce an empty manifest."
+                Message = "Package has no resources or tables. Export will produce an empty manifest."
             });
         }
     }
@@ -44,26 +44,24 @@ public sealed partial class PackageQaService
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-        foreach (var platform in package.Platforms)
-        {
-            var baselineLanguages = platform.BaselineManifestEntries
-                .Where(entry => FileUtility.IsCsvTable(entry.FileName))
-                .Select(entry => ExtractLanguageFromPath(entry.FileName))
-                .Where(lang => lang is not null)
-                .Select(lang => lang!)
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        // Collect languages from ResourceFile entries that are CSV tables
+        var baselineLanguages = package.Resources
+            .Where(r => FileUtility.IsCsvTable(r.FileName))
+            .Select(r => ExtractLanguageFromPath(r.FileName))
+            .Where(lang => lang is not null)
+            .Select(lang => lang!)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-            var missing = baselineLanguages.Except(importedLanguages, StringComparer.OrdinalIgnoreCase).ToArray();
-            foreach (var language in missing)
+        var missing = baselineLanguages.Except(importedLanguages, StringComparer.OrdinalIgnoreCase).ToArray();
+        foreach (var language in missing)
+        {
+            report.Issues.Add(new QaIssue
             {
-                report.Issues.Add(new QaIssue
-                {
-                    Category = "Tables",
-                    Severity = QaIssueSeverity.Warning,
-                    Message = $"Language '{language}' from '{platform.Platform}' baseline has no matching table data."
-                });
-            }
+                Category = "Tables",
+                Severity = QaIssueSeverity.Warning,
+                Message = $"Language '{language}' from baseline has no matching table data."
+            });
         }
 
         foreach (var baseName in new[] { "song_desc", "item_desc" })
@@ -79,9 +77,9 @@ public sealed partial class PackageQaService
                 .Select(table => table.LanguageCode)
                 .Where(code => !string.IsNullOrWhiteSpace(code))
                 .Select(code => code!)
-                .Concat(package.Platforms.SelectMany(p => p.BaselineManifestEntries)
-                    .Where(entry => FileUtility.IsCsvTable(entry.FileName))
-                    .Select(entry => ExtractLanguageFromPath(entry.FileName))
+                .Concat(package.Resources
+                    .Where(r => FileUtility.IsCsvTable(r.FileName))
+                    .Select(r => ExtractLanguageFromPath(r.FileName))
                     .Where(lang => lang is not null)
                     .Select(lang => lang!))
                 .Distinct(StringComparer.OrdinalIgnoreCase)
@@ -102,7 +100,7 @@ public sealed partial class PackageQaService
     private static void CheckSongPreviewResources(PatchPackage package, QaReport report)
     {
         var resourcePaths = package.Resources
-            .Select(resource => resource.PackageRelativePath)
+            .Select(resource => resource.FileName)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         foreach (var table in package.Tables.Tables.Where(table =>
@@ -183,14 +181,21 @@ public sealed partial class PackageQaService
 
         foreach (var resource in package.Resources)
         {
-            var archivePath = Path.Combine(projectRoot, resource.ProjectRelativePath.Replace('/', Path.DirectorySeparatorChar));
-            if (!File.Exists(archivePath))
+            // Try several possible archive paths
+            var candidates = new[]
+            {
+                Path.Combine(projectRoot, "resources", resource.FileName.Replace('/', Path.DirectorySeparatorChar)),
+                Path.Combine(projectRoot, "resources", "android", resource.FileName.Replace('/', Path.DirectorySeparatorChar)),
+                Path.Combine(projectRoot, "resources", "ios", resource.FileName.Replace('/', Path.DirectorySeparatorChar)),
+            };
+            var archivePath = candidates.FirstOrDefault(File.Exists);
+            if (archivePath is null)
             {
                 report.Issues.Add(new QaIssue
                 {
                     Category = "Resources",
                     Severity = QaIssueSeverity.Error,
-                    Message = $"Resource '{resource.PackageRelativePath}' archive file missing: {archivePath}"
+                    Message = $"Resource '{resource.FileName}' archive file missing."
                 });
             }
         }

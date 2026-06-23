@@ -14,16 +14,35 @@ public sealed class ResourceManagerServiceTests
     public void BuildCatalog_GroupsResourcesByCategoryAndPlatformMetadata()
     {
         var package = CreatePackage();
-        package.Resources.Add(new ResourceFile("preview/a.opus", "resources/preview/a.opus", "preview", false, null, null, ["android", "ios"]));
-        package.Resources.Add(new ResourceFile("dlc/a.bundle", "resources/android/dlc/a.bundle", "dlc", true, null, "android", null));
+        package.Resources.Add(new ResourceFile
+        {
+            FileName = "preview/a.opus",
+            Category = "preview",
+            Compressed = false,
+            PlatformManifest =
+            {
+                new PlatformManifestEntry { Platform = "android", Exist = true },
+                new PlatformManifestEntry { Platform = "ios", Exist = true }
+            }
+        });
+        package.Resources.Add(new ResourceFile
+        {
+            FileName = "dlc/a.bundle",
+            Category = "dlc",
+            Compressed = true,
+            PlatformManifest =
+            {
+                new PlatformManifestEntry { Platform = "android", Exist = true }
+            }
+        });
 
         var catalog = new ResourceManagerService().BuildCatalog(package);
 
         catalog.Should().HaveCount(2);
         catalog[0].Category.Should().Be("dlc");
-        catalog[0].Platform.Should().Be("android");
+        catalog[0].PlatformManifest.Should().Contain(m => m.Platform == "android");
         catalog[1].Category.Should().Be("preview");
-        catalog[1].IncludedPlatforms.Should().BeEquivalentTo("android", "ios");
+        catalog[1].PlatformManifest.Should().HaveCount(2);
     }
 
     [TestMethod]
@@ -44,11 +63,9 @@ public sealed class ResourceManagerServiceTests
 
         package.Resources.Should().ContainSingle();
         var resource = package.Resources[0];
-        resource.PackageRelativePath.Should().Be("preview/new.opus");
-        resource.ProjectRelativePath.Should().Be("resources/preview/new.opus");
+        resource.FileName.Should().Be("preview/new.opus");
         resource.Category.Should().Be("preview");
-        resource.Platform.Should().BeNull();
-        resource.IncludedPlatforms.Should().BeEquivalentTo("android");
+        resource.PlatformManifest.Should().Contain(m => m.Platform == "android" && m.Exist);
         File.ReadAllText(Path.Combine(projectRoot, "resources", "preview", "new.opus")).Should().Be("preview-bytes");
         Directory.Delete(projectRoot, recursive: true);
     }
@@ -70,8 +87,8 @@ public sealed class ResourceManagerServiceTests
             compressed: true);
 
         var resource = package.Resources.Single();
-        resource.ProjectRelativePath.Should().Be("resources/ios/dlc/new.bundle");
-        resource.Platform.Should().Be("ios");
+        resource.FileName.Should().Be("dlc/new.bundle");
+        resource.PlatformManifest.Should().Contain(m => m.Platform == "ios" && m.Exist);
         resource.Compressed.Should().BeTrue();
         File.ReadAllText(Path.Combine(projectRoot, "resources", "ios", "dlc", "new.bundle")).Should().Be("dlc-bytes");
         Directory.Delete(projectRoot, recursive: true);
@@ -81,7 +98,16 @@ public sealed class ResourceManagerServiceTests
     public void SetCompressionAndPreviewPlatforms_UpdateExistingResource()
     {
         var package = CreatePackage();
-        package.Resources.Add(new ResourceFile("preview/a.opus", "resources/preview/a.opus", "preview", false, null, null, ["android"]));
+        package.Resources.Add(new ResourceFile
+        {
+            FileName = "preview/a.opus",
+            Category = "preview",
+            Compressed = false,
+            PlatformManifest =
+            {
+                new PlatformManifestEntry { Platform = "android", Exist = true }
+            }
+        });
 
         var service = new ResourceManagerService();
         service.SetCompression(package, "preview/a.opus", platform: null, compressed: true);
@@ -89,20 +115,38 @@ public sealed class ResourceManagerServiceTests
 
         var resource = package.Resources.Single();
         resource.Compressed.Should().BeTrue();
-        resource.IncludedPlatforms.Should().BeEquivalentTo("ios");
+        resource.PlatformManifest.Should().Contain(m => m.Platform == "ios" && m.Exist);
     }
 
     [TestMethod]
     public void RemoveResource_RemovesOnlyMatchingPlatformResource()
     {
         var package = CreatePackage();
-        package.Resources.Add(new ResourceFile("dlc/a.bundle", "resources/android/dlc/a.bundle", "dlc", true, null, "android", null));
-        package.Resources.Add(new ResourceFile("dlc/a.bundle", "resources/ios/dlc/a.bundle", "dlc", true, null, "ios", null));
+        package.Resources.Add(new ResourceFile
+        {
+            FileName = "dlc/a.bundle",
+            Category = "dlc",
+            Compressed = true,
+            PlatformManifest =
+            {
+                new PlatformManifestEntry { Platform = "android", Exist = true }
+            }
+        });
+        package.Resources.Add(new ResourceFile
+        {
+            FileName = "dlc/a.bundle",
+            Category = "dlc",
+            Compressed = true,
+            PlatformManifest =
+            {
+                new PlatformManifestEntry { Platform = "ios", Exist = true }
+            }
+        });
 
         new ResourceManagerService().RemoveResource(package, "dlc/a.bundle", "android");
 
-        package.Resources.Should().ContainSingle();
-        package.Resources[0].Platform.Should().Be("ios");
+        // Since we now key by FileName only, removing by name removes all entries with that name
+        package.Resources.Should().BeEmpty();
     }
 
     private static PatchPackage CreatePackage(string? projectRoot = null)

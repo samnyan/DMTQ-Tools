@@ -67,8 +67,8 @@
     </FluentGridItem>
     <FluentGridItem xs="12" sm="6" md="4" lg="3">
         <FluentCard>
-            <span style="color: #5f6b7a; font-size: 0.8rem;">Manifest entries</span>
-            <p style="font-weight: 600;">@(State.CurrentPackage?.Manifest.Entries.Count ?? 0)</p>
+            <span style="color: #5f6b7a; font-size: 0.8rem;">Songs</span>
+            <p style="font-weight: 600;">@(State.CurrentPackage?.Songs.Count ?? 0)</p>
         </FluentCard>
     </FluentGridItem>
     <FluentGridItem xs="12" sm="6" md="4" lg="3">
@@ -97,9 +97,13 @@
     private MessageIntent messageIntent = MessageIntent.Info;
     private bool isBusy;
 
-    private string PlatformSummary => State.Platforms.Count == 0
+    private string PlatformSummary => State.CurrentPackage is null
         ? "-"
-        : string.Join(", ", State.Platforms.Select(p => $"{p.Platform} ({p.BaselineManifestEntries.Count})"));
+        : string.Join(", ", State.CurrentPackage.Resources
+            .SelectMany(r => r.PlatformManifest)
+            .Select(m => m.Platform)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(p => p));
 
     private string ValidationText => State.LastValidationResult is null
         ? "Not run"

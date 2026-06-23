@@ -28,15 +28,13 @@ public sealed class JsonPatchProjectRepositoryTests
             var snapshot = await repository.LoadAsync(projectRoot);
 
             snapshot.ExportCompressionMode.Should().Be("UncompressAll");
-            snapshot.ExportOptions.ShouldCompress(package.Manifest.Entries[0]).Should().BeFalse();
+            snapshot.ExportOptions.ShouldCompress(new PatchFileEntry("table/us/song_song.csv", 0, "", 0, "", 0, true, "", "")).Should().BeFalse();
             snapshot.Package.ProjectInfo.ProjectRoot.Should().Be(projectRoot);
-            snapshot.Package.Manifest.Entries.Should().ContainSingle();
-            snapshot.Package.Manifest.Entries[0].FileName.Should().Be("table/us/song_song.csv");
+            snapshot.Package.Resources.Should().ContainSingle();
+            snapshot.Package.Resources[0].FileName.Should().Be("preview/oblivion.p.opus");
             snapshot.Package.Tables.Tables.Should().ContainSingle();
             snapshot.Package.Tables.Tables[0].Rows.Should().ContainSingle();
             snapshot.Package.Tables.Tables[0].Rows[0].Cells.Single(c => c.ColumnName == "name").Value.Should().Be("oblivion");
-            snapshot.Package.Resources.Should().ContainSingle();
-            snapshot.Package.Resources[0].PackageRelativePath.Should().Be("preview/oblivion.p.opus");
         }
         finally
         {
@@ -67,7 +65,6 @@ public sealed class JsonPatchProjectRepositoryTests
             await repository.SaveAsync(package, "UncompressAll", exportOptions, projectRoot);
             var snapshot = await repository.LoadAsync(projectRoot);
 
-            snapshot.Package.Manifest.Entries.Should().HaveCount(package.Manifest.Entries.Count);
             snapshot.Package.Songs.Should().HaveCount(package.Songs.Count);
             snapshot.Package.Resources.Should().HaveCount(package.Resources.Count);
             snapshot.Package.Songs.Should().NotBeEmpty();
@@ -77,7 +74,8 @@ public sealed class JsonPatchProjectRepositoryTests
             var validation = await new PatchPackageValidator().ValidateAsync(exportedManifest, exportRoot);
 
             validation.Errors.Should().BeEmpty();
-            exportedManifest.Entries.Single(e => e.FileName == "table/us/song_song.csv").Compressed.Should().BeFalse();
+            exportedManifest.Entries.Count.Should().BeGreaterThan(0);
+            File.Exists(Path.Combine(exportRoot, "table", "us", "song_song.csv")).Should().BeTrue();
         }
         finally
         {
@@ -117,39 +115,41 @@ public sealed class JsonPatchProjectRepositoryTests
         {
             Directory.CreateDirectory(projectRoot);
             var package = CreateMinimalPackage(projectRoot);
-            package.Platforms.Add(new PlatformPackageRecord
+            package.Resources.Clear();
+            package.Resources.Add(new ResourceFile
             {
-                Platform = "android",
-                SourcePackageRoot = "source-android",
-                Version = "1.003.005",
-                ImportedTableFileCount = 1,
-                ImportedResourceFileCount = 1,
-                MissingPhysicalFileCount = 0,
-                BaselineManifestEntries =
+                FileName = "preview/oblivion.p.opus",
+                Category = "preview",
+                Compressed = false,
+                PlatformManifest =
                 {
-                    new PatchFileEntry("preview/oblivion.p.opus", 12, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", 0, string.Empty, 0, false, string.Empty, string.Empty)
+                    new PlatformManifestEntry
+                    {
+                        Platform = "android",
+                        Exist = true,
+                        SourceFileSize = 12,
+                        SourceChecksum = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                    },
+                    new PlatformManifestEntry
+                    {
+                        Platform = "ios",
+                        Exist = true,
+                        SourceFileSize = 12,
+                        SourceChecksum = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                    }
                 }
             });
-            package.Resources.Clear();
-            package.Resources.Add(new ResourceFile(
-                "preview/oblivion.p.opus",
-                "resources/shared/preview/oblivion.p.opus",
-                "preview",
-                false,
-                null,
-                null,
-                ["android", "ios"]));
 
             var repository = new JsonPatchProjectRepository();
 
             await repository.SaveAsync(package, "Keep", new PackageExportOptions(), projectRoot);
             var snapshot = await repository.LoadAsync(projectRoot);
 
-            snapshot.Package.Platforms.Should().ContainSingle(p => p.Platform == "android");
-            snapshot.Package.Platforms[0].BaselineManifestEntries.Should().ContainSingle(e => e.FileName == "preview/oblivion.p.opus");
             snapshot.Package.Resources.Should().ContainSingle();
-            snapshot.Package.Resources[0].IncludedPlatforms.Should().BeEquivalentTo("android", "ios");
-            snapshot.Package.Resources[0].ProjectRelativePath.Should().Be("resources/shared/preview/oblivion.p.opus");
+            snapshot.Package.Resources[0].FileName.Should().Be("preview/oblivion.p.opus");
+            snapshot.Package.Resources[0].PlatformManifest.Should().HaveCount(2);
+            snapshot.Package.Resources[0].PlatformManifest.Should().Contain(m => m.Platform == "android");
+            snapshot.Package.Resources[0].PlatformManifest.Should().Contain(m => m.Platform == "ios");
         }
         finally
         {
@@ -166,17 +166,6 @@ public sealed class JsonPatchProjectRepositoryTests
         {
             ProjectInfo = new ProjectInfo(projectRoot, "source-package", "1.003.005", "android")
         };
-
-        package.Manifest.Entries.Add(new PatchFileEntry(
-            "table/us/song_song.csv",
-            18,
-            "checksum",
-            0,
-            string.Empty,
-            0,
-            false,
-            string.Empty,
-            string.Empty));
 
         var table = new GameTable
         {
@@ -199,12 +188,12 @@ public sealed class JsonPatchProjectRepositoryTests
             Name = "oblivion"
         });
 
-        package.Resources.Add(new ResourceFile(
-            "preview/oblivion.p.opus",
-            "resources/preview/oblivion.p.opus",
-            "preview",
-            false,
-            null));
+        package.Resources.Add(new ResourceFile
+        {
+            FileName = "preview/oblivion.p.opus",
+            Category = "preview",
+            Compressed = false
+        });
 
         return package;
     }

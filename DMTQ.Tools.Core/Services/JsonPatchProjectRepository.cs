@@ -70,10 +70,8 @@ public sealed class JsonPatchProjectRepository : IPatchProjectRepository
         public string ExportCompressionMode { get; set; } = "Keep";
         public Dictionary<string, bool> CompressionOverrides { get; set; } = new(StringComparer.OrdinalIgnoreCase);
         public ProjectInfo? ProjectInfo { get; set; }
-        public List<PatchFileEntry> ManifestEntries { get; set; } = [];
         public List<GameTable> Tables { get; set; } = [];
         public List<ResourceFile> Resources { get; set; } = [];
-        public List<PlatformPackageRecord> Platforms { get; set; } = [];
         public List<Song> Songs { get; set; } = [];
         public List<Achievement> Achievements { get; set; } = [];
         public List<Quest> Quests { get; set; } = [];
@@ -92,10 +90,8 @@ public sealed class JsonPatchProjectRepository : IPatchProjectRepository
                 ExportCompressionMode = exportCompressionMode,
                 CompressionOverrides = new Dictionary<string, bool>(exportOptions.CompressionOverrides, StringComparer.OrdinalIgnoreCase),
                 ProjectInfo = package.ProjectInfo,
-                ManifestEntries = [..package.Manifest.Entries],
                 Tables = [..package.Tables.Tables],
                 Resources = [..package.Resources],
-                Platforms = [..package.Platforms],
                 Songs = [..package.Songs],
                 Achievements = [..package.Achievements],
                 Quests = [..package.Quests],
@@ -113,10 +109,8 @@ public sealed class JsonPatchProjectRepository : IPatchProjectRepository
                 ProjectInfo = new ProjectInfo(projectRoot, ProjectInfo?.SourcePackageRoot, ProjectInfo?.Version, ProjectInfo?.Platform)
             };
 
-            package.Manifest.Entries.AddRange(ManifestEntries);
             package.Tables.Tables.AddRange(Tables);
             package.Resources.AddRange(Resources);
-            package.Platforms.AddRange(Platforms);
             package.Songs.AddRange(Songs);
             package.Achievements.AddRange(Achievements);
             package.Quests.AddRange(Quests);

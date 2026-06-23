@@ -39,14 +39,6 @@ public sealed class PlatformPackageImporter
             await using var manifestStream = File.OpenRead(manifestCsvPath);
             var manifest = await PatchManifestIO.ReadAsync(manifestStream, cancellationToken).ConfigureAwait(false);
 
-            var record = new PlatformPackageRecord
-            {
-                Platform = platform,
-                SourcePackageRoot = packageRoot,
-                Version = TryGetVersion(packageRoot)
-            };
-            record.BaselineManifestEntries.AddRange(manifest.Entries);
-
             // Track paths already imported in this session + from previous imports (GameTable backwards compat)
             var importedPaths = package.Tables.Tables
                 .Select(table => table.PackageRelativePath)
@@ -60,17 +52,15 @@ public sealed class PlatformPackageImporter
                 var relativePath = FileUtility.NormalizePackageRelativePath(entry.FileName);
                 var sourcePath = TryResolveSourcePath(packageRoot, relativePath, entry.Compressed);
 
-                if (sourcePath is null)
-                {
-                    record.MissingPhysicalFileCount++;
-                    continue;
-                }
-
                 if (FileUtility.IsCsvTable(relativePath))
                 {
                     if (importedPaths.Contains(relativePath))
                     {
-                        record.ImportedTableFileCount++;
+                        continue;
+                    }
+
+                    if (sourcePath is null)
+                    {
                         continue;
                     }
 
@@ -84,7 +74,6 @@ public sealed class PlatformPackageImporter
                                        ?? ExtractLanguageSuffix(tableName);
 
                     csvEntries.Add(new CsvImportEntry(csvPath, tableName, languageCode));
-                    record.ImportedTableFileCount++;
                 }
                 else
                 {
@@ -95,59 +84,67 @@ public sealed class PlatformPackageImporter
                         _ => Path.Combine("resources", platform, relativePath).Replace('\\', '/')
                     };
 
-                    var archivedPath = Path.Combine(projectRoot, projectRelativePath.Replace('/', Path.DirectorySeparatorChar));
-                    Directory.CreateDirectory(Path.GetDirectoryName(archivedPath) ?? projectRoot);
+                    bool fileExists = sourcePath is not null;
 
-                    if (entry.Compressed)
+                    if (fileExists)
                     {
-                        await FileUtility.DecompressFileAsync(sourcePath, archivedPath, cancellationToken)
-                            .ConfigureAwait(false);
-                    }
-                    else
-                    {
-                        await using var source = File.OpenRead(sourcePath);
-                        await using var destination = File.Create(archivedPath);
-                        await source.CopyToAsync(destination, cancellationToken).ConfigureAwait(false);
-                    }
+                        var archivedPath = Path.Combine(projectRoot, projectRelativePath.Replace('/', Path.DirectorySeparatorChar));
+                        Directory.CreateDirectory(Path.GetDirectoryName(archivedPath) ?? projectRoot);
 
-                    var existingPreview = category == "preview"
-                        ? package.Resources.FirstOrDefault(r =>
-                            r.PackageRelativePath.Equals(relativePath, StringComparison.OrdinalIgnoreCase)
-                            && r.Category == "preview")
-                        : null;
-
-                    if (existingPreview is not null)
-                    {
-                        var updatedIncludedPlatforms = new List<string>(existingPreview.IncludedPlatforms ?? []);
-                        if (!updatedIncludedPlatforms.Contains(platform))
+                        if (entry.Compressed)
                         {
-                            updatedIncludedPlatforms.Add(platform);
+                            await FileUtility.DecompressFileAsync(sourcePath!, archivedPath, cancellationToken)
+                                .ConfigureAwait(false);
                         }
+                        else
+                        {
+                            await using var source = File.OpenRead(sourcePath!);
+                            await using var destination = File.Create(archivedPath);
+                            await source.CopyToAsync(destination, cancellationToken).ConfigureAwait(false);
+                        }
+                    }
 
-                        package.Resources.Remove(existingPreview);
-                        package.Resources.Add(new ResourceFile(
-                            existingPreview.PackageRelativePath,
-                            existingPreview.ProjectRelativePath,
-                            existingPreview.Category,
-                            existingPreview.Compressed,
-                            existingPreview.SourcePackagePath,
-                            existingPreview.Platform,
-                            updatedIncludedPlatforms));
+                    // Find or create ResourceFile keyed by relativePath
+                    var resourceFile = package.Resources.FirstOrDefault(r =>
+                        r.FileName.Equals(relativePath, StringComparison.OrdinalIgnoreCase));
+
+                    if (resourceFile is null)
+                    {
+                        resourceFile = new ResourceFile
+                        {
+                            FileName = relativePath,
+                            Category = category,
+                            Compressed = entry.Compressed,
+                            AcquireOnDemand = entry.AcquireOnDemand
+                        };
+                        package.Resources.Add(resourceFile);
+                    }
+
+                    // For preview resources, use "share" as platform
+                    var entryPlatform = category == "preview" ? "share" : platform;
+
+                    // Check if a PlatformManifestEntry already exists for this platform
+                    var existingEntry = resourceFile.PlatformManifest
+                        .FirstOrDefault(m => m.Platform.Equals(entryPlatform, StringComparison.OrdinalIgnoreCase));
+
+                    if (existingEntry is null)
+                    {
+                        resourceFile.PlatformManifest.Add(new PlatformManifestEntry
+                        {
+                            Platform = entryPlatform,
+                            Exist = fileExists,
+                            SourceFileSize = entry.FileSize,
+                            SourceChecksum = entry.Checksum,
+                            SourceCompressedFileSize = entry.CompressedFileSize,
+                            SourceCompressedChecksum = entry.CompressedChecksum,
+                            Checksum = string.Empty
+                        });
                     }
                     else
                     {
-                        var resource = new ResourceFile(
-                            relativePath,
-                            projectRelativePath,
-                            category,
-                            entry.Compressed,
-                            sourcePath,
-                            category != "preview" ? platform : null,
-                            category == "preview" ? [platform] : null);
-                        package.Resources.Add(resource);
+                        // Update existing entry
+                        existingEntry.Exist = fileExists;
                     }
-
-                    record.ImportedResourceFileCount++;
                 }
             }
 
@@ -162,8 +159,6 @@ public sealed class PlatformPackageImporter
 
             // ── Phase 4: cross-entity links (song↔product, song↔item, previews) ──
             BuildPreviewLinks(package);
-
-            package.Platforms.Add(record);
         }
         finally
         {
@@ -438,7 +433,7 @@ public sealed class PlatformPackageImporter
     {
         var previewPaths = package.Resources
             .Where(resource => resource.Category.Equals("preview", StringComparison.OrdinalIgnoreCase))
-            .Select(resource => resource.PackageRelativePath)
+            .Select(resource => resource.FileName)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         foreach (var song in package.Songs)

@@ -21,7 +21,6 @@ public interface IProjectState
     PlatformExportResult? LastPlatformExportResult { get; }
     string SelectedExportPlatform { get; set; }
     PlatformExportMode PlatformExportMode { get; set; }
-    IReadOnlyList<PlatformPackageRecord> Platforms { get; }
     bool HasProject { get; }
     bool HasPackage { get; }
     PackageExportOptions CreateExportOptions();

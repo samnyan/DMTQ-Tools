@@ -21,92 +21,77 @@ public sealed class PlatformPackageExporter
         ArgumentException.ThrowIfNullOrWhiteSpace(exportRoot);
         ArgumentNullException.ThrowIfNull(options);
 
-        var platformRecord = package.Platforms.Single(p =>
-            p.Platform.Equals(options.Platform, StringComparison.OrdinalIgnoreCase));
         Directory.CreateDirectory(exportRoot);
 
         var result = new PlatformExportResult
         {
-            Platform = platformRecord.Platform,
+            Platform = options.Platform,
             ExportRoot = exportRoot
         };
 
-        foreach (var baselineEntry in platformRecord.BaselineManifestEntries)
+        // Export resources for this platform
+        var platformResources = package.Resources
+            .Where(r => r.PlatformManifest.Any(m =>
+                m.Platform.Equals(options.Platform, StringComparison.OrdinalIgnoreCase)
+                || m.Platform.Equals("share", StringComparison.OrdinalIgnoreCase)))
+            .ToArray();
+
+        foreach (var resource in platformResources)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            await ExportEntryAsync(package, baselineEntry, exportRoot, options, result, cancellationToken)
-                .ConfigureAwait(false);
-        }
+            var relativePath = FileUtility.NormalizePackageRelativePath(resource.FileName);
 
-        await ExportProjectOnlyResourcesAsync(package, exportRoot, options, result, cancellationToken)
-            .ConfigureAwait(false);
-
-        await WriteManifestAsync(exportRoot, result, cancellationToken).ConfigureAwait(false);
-        return result;
-    }
-
-    private async Task ExportEntryAsync(
-        PatchPackage package,
-        PatchFileEntry baselineEntry,
-        string exportRoot,
-        PlatformExportOptions options,
-        PlatformExportResult result,
-        CancellationToken cancellationToken)
-    {
-        var relativePath = FileUtility.NormalizePackageRelativePath(baselineEntry.FileName);
-
-        if (FileUtility.IsCsvTable(relativePath))
-        {
-            // Try entity-backed schema first
-            await using var ms = new MemoryStream();
-            if (ExportSchemaRegistry.TryWriteTable(relativePath, package, ms))
+            if (FileUtility.IsCsvTable(relativePath))
             {
-                await TryWriteTableFromStreamAsync(ms, baselineEntry, relativePath, exportRoot, options, result, cancellationToken)
-                    .ConfigureAwait(false);
-                return;
+                // Try entity-backed schema first
+                await using var ms = new MemoryStream();
+                if (ExportSchemaRegistry.TryWriteTable(relativePath, package, ms))
+                {
+                    await WriteTableBytesAsync(ms, relativePath, exportRoot, resource, options, result, cancellationToken)
+                        .ConfigureAwait(false);
+                    continue;
+                }
+
+                // Fallback: look for a raw GameTable
+                var table = package.Tables.Tables.FirstOrDefault(t =>
+                    t.PackageRelativePath.Equals(relativePath, StringComparison.OrdinalIgnoreCase));
+
+                if (table is not null)
+                {
+                    await using var tableMs = new MemoryStream();
+                    WriteGameTableToStream(table, tableMs);
+                    await WriteTableBytesAsync(tableMs, relativePath, exportRoot, resource, options, result, cancellationToken)
+                        .ConfigureAwait(false);
+                    continue;
+                }
+
+                // Missing table — skip
+                result.MissingCurrentFiles++;
+                result.Validation.Errors.Add($"Missing current table for export: {relativePath}");
             }
-
-            // Fallback: look for a raw GameTable
-            var table = package.Tables.Tables.FirstOrDefault(t =>
-                t.PackageRelativePath.Equals(relativePath, StringComparison.OrdinalIgnoreCase));
-
-            if (table is not null)
+            else
             {
-                await TryWriteTableAsync(table, baselineEntry, relativePath, exportRoot, options, result, cancellationToken)
-                    .ConfigureAwait(false);
-                return;
-            }
-        }
-        else
-        {
-            var resource = package.Resources.FirstOrDefault(r =>
-                r.PackageRelativePath.Equals(relativePath, StringComparison.OrdinalIgnoreCase)
-                && (r.Platform == options.Platform
-                    || (r.Category == "preview" && r.IncludedPlatforms?.Contains(options.Platform) == true)));
-
-            if (resource is not null)
-            {
-                await TryWriteResourceAsync(
+                await ExportResourceFileAsync(
                         package.ProjectInfo.ProjectRoot,
                         resource,
-                        baselineEntry,
+                        relativePath,
                         exportRoot,
                         options,
                         result,
                         cancellationToken)
                     .ConfigureAwait(false);
-                return;
             }
         }
 
-        await HandleMissingEntryAsync(baselineEntry, options, result).ConfigureAwait(false);
+        await WriteManifestAsync(exportRoot, result, cancellationToken).ConfigureAwait(false);
+        return result;
     }
 
-    private async Task TryWriteTableFromStreamAsync(
+    private async Task WriteTableBytesAsync(
         MemoryStream writtenStream,
-        PatchFileEntry baselineEntry,
         string relativePath,
         string exportRoot,
+        ResourceFile resource,
         PlatformExportOptions options,
         PlatformExportResult result,
         CancellationToken cancellationToken)
@@ -115,315 +100,190 @@ public sealed class PlatformPackageExporter
         Directory.CreateDirectory(Path.GetDirectoryName(destinationPath) ?? exportRoot);
 
         var bytes = writtenStream.ToArray();
-
         var checksum = ComputeMd5(bytes);
 
-        if (ShouldSkipAsBaseline(options, baselineEntry, checksum))
+        // Find the platform manifest entry for checksum comparison
+        var platformEntry = resource.PlatformManifest.FirstOrDefault(m =>
+            m.Platform.Equals(options.Platform, StringComparison.OrdinalIgnoreCase)
+            || m.Platform.Equals("share", StringComparison.OrdinalIgnoreCase));
+
+        if (options.Mode == PlatformExportMode.Delta
+            && platformEntry is not null
+            && !string.IsNullOrWhiteSpace(platformEntry.SourceChecksum)
+            && string.Equals(checksum, platformEntry.SourceChecksum, StringComparison.OrdinalIgnoreCase))
         {
-            result.Manifest.Entries.Add(baselineEntry);
-            result.FilesSkippedAsBaseline++;
-            result.Messages.Add($"Skipped unchanged baseline file: {relativePath}");
-            return;
-        }
-
-        await File.WriteAllBytesAsync(destinationPath, bytes, cancellationToken).ConfigureAwait(false);
-        result.FilesWritten++;
-
-        var manifestEntry = new PatchFileEntry(
-            relativePath,
-            bytes.Length,
-            checksum,
-            baselineEntry.Compressed ? 0 : 0,
-            string.Empty,
-            baselineEntry.AcquireOnDemand,
-            baselineEntry.Compressed,
-            baselineEntry.Platform,
-            baselineEntry.Tag);
-
-        if (baselineEntry.Compressed)
-        {
-            var compressedPath = destinationPath + ".lz4";
-            await FileUtility.CompressFileAsync(destinationPath, compressedPath, cancellationToken).ConfigureAwait(false);
-            var compressedChecksum = await FileUtility.ComputeMd5Async(compressedPath, cancellationToken).ConfigureAwait(false);
-            var compressedFileSize = FileUtility.GetFileSize(compressedPath);
-            manifestEntry = manifestEntry with
-            {
-                CompressedFileSize = compressedFileSize,
-                CompressedChecksum = compressedChecksum
-            };
-            result.FilesWritten++;
-        }
-
-        result.Manifest.Entries.Add(manifestEntry);
-    }
-
-    private async Task TryWriteTableAsync(
-        GameTable table,
-        PatchFileEntry baselineEntry,
-        string relativePath,
-        string exportRoot,
-        PlatformExportOptions options,
-        PlatformExportResult result,
-        CancellationToken cancellationToken)
-    {
-        var destinationPath = Path.Combine(exportRoot, relativePath.Replace('/', Path.DirectorySeparatorChar));
-        Directory.CreateDirectory(Path.GetDirectoryName(destinationPath) ?? exportRoot);
-
-        await using var ms = new MemoryStream();
-        WriteGameTableToStream(table, ms);
-        var bytes = ms.ToArray();
-
-        var checksum = ComputeMd5(bytes);
-
-        if (ShouldSkipAsBaseline(options, baselineEntry, checksum))
-        {
-            result.Manifest.Entries.Add(baselineEntry);
-            result.FilesSkippedAsBaseline++;
-            result.Messages.Add($"Skipped unchanged baseline file: {relativePath}");
-            return;
-        }
-
-        await File.WriteAllBytesAsync(destinationPath, bytes, cancellationToken).ConfigureAwait(false);
-        result.FilesWritten++;
-
-        var manifestEntry = new PatchFileEntry(
-            relativePath,
-            bytes.Length,
-            checksum,
-            baselineEntry.Compressed ? 0 : 0,
-            string.Empty,
-            baselineEntry.AcquireOnDemand,
-            baselineEntry.Compressed,
-            baselineEntry.Platform,
-            baselineEntry.Tag);
-
-        if (baselineEntry.Compressed)
-        {
-            var compressedPath = destinationPath + ".lz4";
-            await FileUtility.CompressFileAsync(destinationPath, compressedPath, cancellationToken).ConfigureAwait(false);
-            var compressedChecksum = await FileUtility.ComputeMd5Async(compressedPath, cancellationToken).ConfigureAwait(false);
-            var compressedFileSize = FileUtility.GetFileSize(compressedPath);
-            manifestEntry = manifestEntry with
-            {
-                CompressedFileSize = compressedFileSize,
-                CompressedChecksum = compressedChecksum
-            };
-            result.FilesWritten++;
-        }
-
-        result.Manifest.Entries.Add(manifestEntry);
-    }
-
-    private async Task TryWriteResourceAsync(
-        string projectRoot,
-        ResourceFile resource,
-        PatchFileEntry baselineEntry,
-        string exportRoot,
-        PlatformExportOptions options,
-        PlatformExportResult result,
-        CancellationToken cancellationToken)
-    {
-        var sourcePath = ResolveResourceSourcePath(projectRoot, resource);
-
-        if (!File.Exists(sourcePath))
-        {
-            await HandleMissingEntryAsync(baselineEntry, options, result).ConfigureAwait(false);
-            return;
-        }
-
-        var bytes = await File.ReadAllBytesAsync(sourcePath, cancellationToken).ConfigureAwait(false);
-        var checksum = ComputeMd5(bytes);
-
-        if (ShouldSkipAsBaseline(options, baselineEntry, checksum))
-        {
-            if (resource.Compressed == baselineEntry.Compressed)
-            {
-                result.Manifest.Entries.Add(baselineEntry);
-                result.FilesSkippedAsBaseline++;
-                result.Messages.Add($"Skipped unchanged baseline file: {baselineEntry.FileName}");
-                return;
-            }
-
-            // Compression flag changed — write resource with new compression, same content
-        }
-
-        var relativePath = FileUtility.NormalizePackageRelativePath(resource.PackageRelativePath);
-        await WriteResourceFileAsync(exportRoot, relativePath, bytes, resource.Compressed, baselineEntry, result, cancellationToken)
-            .ConfigureAwait(false);
-    }
-
-    private async Task ExportProjectOnlyResourcesAsync(
-        PatchPackage package,
-        string exportRoot,
-        PlatformExportOptions options,
-        PlatformExportResult result,
-        CancellationToken cancellationToken)
-    {
-        var exportedPaths = result.Manifest.Entries
-            .Select(entry => FileUtility.NormalizePackageRelativePath(entry.FileName))
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-        var resources = package.Resources
-            .Where(resource => BelongsToPlatform(resource, options.Platform))
-            .Where(resource => !exportedPaths.Contains(FileUtility.NormalizePackageRelativePath(resource.PackageRelativePath)))
-            .OrderBy(resource => resource.PackageRelativePath, StringComparer.OrdinalIgnoreCase)
-            .ToArray();
-
-        foreach (var resource in resources)
-        {
-            await WriteCurrentResourceAsync(
-                    package.ProjectInfo.ProjectRoot,
-                    resource,
-                    exportRoot,
-                    resource.Compressed,
-                    acquireOnDemand: 0,
-                    platform: string.Empty,
-                    tag: string.Empty,
-                    result,
-                    cancellationToken)
-                .ConfigureAwait(false);
-        }
-    }
-
-    private static bool BelongsToPlatform(ResourceFile resource, string platform)
-        => string.Equals(resource.Platform, platform, StringComparison.OrdinalIgnoreCase)
-           || (resource.Category.Equals("preview", StringComparison.OrdinalIgnoreCase)
-               && resource.IncludedPlatforms?.Contains(platform, StringComparer.OrdinalIgnoreCase) == true);
-
-    private async Task WriteCurrentResourceAsync(
-        string projectRoot,
-        ResourceFile resource,
-        string exportRoot,
-        bool compressed,
-        int acquireOnDemand,
-        string platform,
-        string tag,
-        PlatformExportResult result,
-        CancellationToken cancellationToken)
-    {
-        var sourcePath = ResolveResourceSourcePath(projectRoot, resource);
-
-        if (!File.Exists(sourcePath))
-        {
-            result.MissingCurrentFiles++;
-            result.Validation.Errors.Add($"Missing current resource file: {resource.PackageRelativePath}");
-            return;
-        }
-
-        var bytes = await File.ReadAllBytesAsync(sourcePath, cancellationToken).ConfigureAwait(false);
-        var relativePath = FileUtility.NormalizePackageRelativePath(resource.PackageRelativePath);
-
-        await WriteResourceFileAsync(exportRoot, relativePath, bytes, compressed, baselineEntry: null, result, cancellationToken)
-            .ConfigureAwait(false);
-
-        var destinationPath = Path.Combine(exportRoot, relativePath.Replace('/', Path.DirectorySeparatorChar));
-        var fileSize = FileUtility.GetFileSize(destinationPath);
-        var checksum = await FileUtility.ComputeMd5Async(destinationPath, cancellationToken).ConfigureAwait(false);
-        var compressedFileSize = 0L;
-        var compressedChecksum = string.Empty;
-        if (compressed)
-        {
-            var compressedPath = destinationPath + ".lz4";
-            compressedFileSize = FileUtility.GetFileSize(compressedPath);
-            compressedChecksum = await FileUtility.ComputeMd5Async(compressedPath, cancellationToken).ConfigureAwait(false);
-            // File was already written and compressed by WriteResourceFileAsync
-        }
-
-        result.Manifest.Entries.Add(new PatchFileEntry(
-            relativePath,
-            fileSize,
-            checksum,
-            compressedFileSize,
-            compressedChecksum,
-            acquireOnDemand,
-            compressed,
-            platform,
-            tag));
-    }
-
-    private async Task WriteResourceFileAsync(
-        string exportRoot,
-        string relativePath,
-        byte[] bytes,
-        bool compressed,
-        PatchFileEntry? baselineEntry,
-        PlatformExportResult result,
-        CancellationToken cancellationToken)
-    {
-        var destinationPath = Path.Combine(exportRoot, relativePath.Replace('/', Path.DirectorySeparatorChar));
-        Directory.CreateDirectory(Path.GetDirectoryName(destinationPath) ?? exportRoot);
-        await File.WriteAllBytesAsync(destinationPath, bytes, cancellationToken).ConfigureAwait(false);
-        result.FilesWritten++;
-
-        if (compressed)
-        {
-            var compressedPath = destinationPath + ".lz4";
-            await FileUtility.CompressFileAsync(destinationPath, compressedPath, cancellationToken).ConfigureAwait(false);
-            result.FilesWritten++;
-        }
-
-        if (baselineEntry is not null)
-        {
-            var fileSize = FileUtility.GetFileSize(destinationPath);
-            var checksum = await FileUtility.ComputeMd5Async(destinationPath, cancellationToken).ConfigureAwait(false);
-            var manifestEntry = new PatchFileEntry(
+            // Unchanged — add baseline entry to manifest
+            result.Manifest.Entries.Add(new PatchFileEntry(
                 relativePath,
-                fileSize,
-                checksum,
-                baselineEntry.Compressed ? 0 : 0,
+                platformEntry.SourceFileSize,
+                platformEntry.SourceChecksum,
+                platformEntry.SourceCompressedFileSize,
+                platformEntry.SourceCompressedChecksum,
+                resource.AcquireOnDemand,
+                resource.Compressed,
                 string.Empty,
-                baselineEntry.AcquireOnDemand,
-                compressed,
-                baselineEntry.Platform,
-                baselineEntry.Tag);
-
-            if (compressed)
-            {
-                var compressedPath = destinationPath + ".lz4";
-                var compressedFileSize = FileUtility.GetFileSize(compressedPath);
-                var compressedChecksum = await FileUtility.ComputeMd5Async(compressedPath, cancellationToken).ConfigureAwait(false);
-                manifestEntry = manifestEntry with
-                {
-                    CompressedFileSize = compressedFileSize,
-                    CompressedChecksum = compressedChecksum
-                };
-            }
-
-            result.Manifest.Entries.Add(manifestEntry);
-        }
-    }
-
-    private static string ResolveResourceSourcePath(string projectRoot, ResourceFile resource)
-        => Path.Combine(projectRoot, resource.ProjectRelativePath.Replace('/', Path.DirectorySeparatorChar));
-
-    private static Task HandleMissingEntryAsync(
-        PatchFileEntry baselineEntry,
-        PlatformExportOptions options,
-        PlatformExportResult result)
-    {
-        if (options.Mode == PlatformExportMode.Delta)
-        {
-            result.Manifest.Entries.Add(baselineEntry);
+                string.Empty));
             result.FilesSkippedAsBaseline++;
-            result.Messages.Add($"Skipped baseline-only file: {baselineEntry.FileName}");
-        }
-        else
-        {
-            result.Manifest.Entries.Add(baselineEntry);
-            result.MissingCurrentFiles++;
-            result.Validation.Errors.Add($"Missing current file for full export: {baselineEntry.FileName}");
+            result.Messages.Add($"Skipped unchanged baseline file: {relativePath}");
+            return;
         }
 
-        return Task.CompletedTask;
+        await File.WriteAllBytesAsync(destinationPath, bytes, cancellationToken).ConfigureAwait(false);
+        result.FilesWritten++;
+
+        var manifestEntry = new PatchFileEntry(
+            relativePath,
+            bytes.Length,
+            checksum,
+            resource.Compressed ? 0 : 0,
+            string.Empty,
+            resource.AcquireOnDemand,
+            resource.Compressed,
+            string.Empty,
+            string.Empty);
+
+        if (resource.Compressed)
+        {
+            var compressedPath = destinationPath + ".lz4";
+            await FileUtility.CompressFileAsync(destinationPath, compressedPath, cancellationToken).ConfigureAwait(false);
+            var compressedChecksum = await FileUtility.ComputeMd5Async(compressedPath, cancellationToken).ConfigureAwait(false);
+            var compressedFileSize = FileUtility.GetFileSize(compressedPath);
+            manifestEntry = manifestEntry with
+            {
+                CompressedFileSize = compressedFileSize,
+                CompressedChecksum = compressedChecksum
+            };
+            result.FilesWritten++;
+        }
+
+        result.Manifest.Entries.Add(manifestEntry);
     }
 
-    private static bool ShouldSkipAsBaseline(
+    private async Task ExportResourceFileAsync(
+        string projectRoot,
+        ResourceFile resource,
+        string relativePath,
+        string exportRoot,
         PlatformExportOptions options,
-        PatchFileEntry baselineEntry,
-        string currentChecksum)
-        => options.Mode == PlatformExportMode.Delta
-           && !string.IsNullOrWhiteSpace(baselineEntry.Checksum)
-           && string.Equals(currentChecksum, baselineEntry.Checksum, StringComparison.OrdinalIgnoreCase);
+        PlatformExportResult result,
+        CancellationToken cancellationToken)
+    {
+        // Resolve source path: try platform-specific path first, then generic
+        var sourcePath = ResolveResourceSourcePath(projectRoot, resource.FileName);
+
+        if (!File.Exists(sourcePath))
+        {
+            if (options.Mode == PlatformExportMode.Delta)
+            {
+                // Add baseline entry for missing file
+                var platformEntry = resource.PlatformManifest.FirstOrDefault(m =>
+                    m.Platform.Equals(options.Platform, StringComparison.OrdinalIgnoreCase)
+                    || m.Platform.Equals("share", StringComparison.OrdinalIgnoreCase));
+                if (platformEntry is not null)
+                {
+                    result.Manifest.Entries.Add(new PatchFileEntry(
+                        relativePath,
+                        platformEntry.SourceFileSize,
+                        platformEntry.SourceChecksum,
+                        platformEntry.SourceCompressedFileSize,
+                        platformEntry.SourceCompressedChecksum,
+                        resource.AcquireOnDemand,
+                        resource.Compressed,
+                        string.Empty,
+                        string.Empty));
+                    result.FilesSkippedAsBaseline++;
+                    result.Messages.Add($"Skipped baseline-only file: {relativePath}");
+                }
+            }
+            else
+            {
+                result.MissingCurrentFiles++;
+                result.Validation.Errors.Add($"Missing current file for full export: {relativePath}");
+            }
+            return;
+        }
+
+        var bytes = await File.ReadAllBytesAsync(sourcePath, cancellationToken).ConfigureAwait(false);
+        var checksum = ComputeMd5(bytes);
+
+        // Check for delta skip
+        var platformEntry2 = resource.PlatformManifest.FirstOrDefault(m =>
+            m.Platform.Equals(options.Platform, StringComparison.OrdinalIgnoreCase)
+            || m.Platform.Equals("share", StringComparison.OrdinalIgnoreCase));
+
+        if (options.Mode == PlatformExportMode.Delta
+            && platformEntry2 is not null
+            && !string.IsNullOrWhiteSpace(platformEntry2.SourceChecksum)
+            && string.Equals(checksum, platformEntry2.SourceChecksum, StringComparison.OrdinalIgnoreCase)
+            && resource.Compressed == platformEntry2.SourceCompressedFileSize > 0)
+        {
+            result.Manifest.Entries.Add(new PatchFileEntry(
+                relativePath,
+                platformEntry2.SourceFileSize,
+                platformEntry2.SourceChecksum,
+                platformEntry2.SourceCompressedFileSize,
+                platformEntry2.SourceCompressedChecksum,
+                resource.AcquireOnDemand,
+                resource.Compressed,
+                string.Empty,
+                string.Empty));
+            result.FilesSkippedAsBaseline++;
+            result.Messages.Add($"Skipped unchanged baseline file: {relativePath}");
+            return;
+        }
+
+        var destinationPath = Path.Combine(exportRoot, relativePath.Replace('/', Path.DirectorySeparatorChar));
+        Directory.CreateDirectory(Path.GetDirectoryName(destinationPath) ?? exportRoot);
+        await File.WriteAllBytesAsync(destinationPath, bytes, cancellationToken).ConfigureAwait(false);
+        result.FilesWritten++;
+
+        var manifestEntry = new PatchFileEntry(
+            relativePath,
+            bytes.Length,
+            checksum,
+            resource.Compressed ? 0 : 0,
+            string.Empty,
+            resource.AcquireOnDemand,
+            resource.Compressed,
+            string.Empty,
+            string.Empty);
+
+        if (resource.Compressed)
+        {
+            var compressedPath = destinationPath + ".lz4";
+            await FileUtility.CompressFileAsync(destinationPath, compressedPath, cancellationToken).ConfigureAwait(false);
+            var compressedChecksum = await FileUtility.ComputeMd5Async(compressedPath, cancellationToken).ConfigureAwait(false);
+            var compressedFileSize = FileUtility.GetFileSize(compressedPath);
+            manifestEntry = manifestEntry with
+            {
+                CompressedFileSize = compressedFileSize,
+                CompressedChecksum = compressedChecksum
+            };
+            result.FilesWritten++;
+        }
+
+        result.Manifest.Entries.Add(manifestEntry);
+    }
+
+    private static string ResolveResourceSourcePath(string projectRoot, string fileName)
+    {
+        // Try several possible paths
+        var candidates = new[]
+        {
+            Path.Combine(projectRoot, "resources", fileName.Replace('/', Path.DirectorySeparatorChar)),
+            Path.Combine(projectRoot, "resources", "android", fileName.Replace('/', Path.DirectorySeparatorChar)),
+            Path.Combine(projectRoot, "resources", "ios", fileName.Replace('/', Path.DirectorySeparatorChar)),
+        };
+
+        foreach (var candidate in candidates)
+        {
+            if (File.Exists(candidate))
+                return candidate;
+        }
+
+        // Return the first candidate as default (won't exist)
+        return candidates[0];
+    }
 
     private static string ComputeMd5(byte[] bytes)
         => Convert.ToHexString(MD5.HashData(bytes)).ToLowerInvariant();

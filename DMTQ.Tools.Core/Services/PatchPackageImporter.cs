@@ -42,7 +42,6 @@ public sealed class PatchPackageImporter(
             {
                 ProjectInfo = new ProjectInfo(projectRoot, packageRoot, TryGetVersion(packageRoot), TryGetPlatform(packageRoot))
             };
-            package.Manifest.Entries.AddRange(manifest.Entries);
 
             var csvEntries = new List<CsvImportEntry>();
 
@@ -65,6 +64,7 @@ public sealed class PatchPackageImporter(
                 }
                 else
                 {
+                    var category = FileUtility.ResourceCategory(relativePath);
                     var projectRelativePath = Path.Combine("resources", relativePath).Replace('\\', '/');
                     var archivedPath = Path.Combine(projectRoot, projectRelativePath.Replace('/', Path.DirectorySeparatorChar));
                     Directory.CreateDirectory(Path.GetDirectoryName(archivedPath) ?? projectRoot);
@@ -81,12 +81,28 @@ public sealed class PatchPackageImporter(
                         await source.CopyToAsync(destination, cancellationToken).ConfigureAwait(false);
                     }
 
-                    package.Resources.Add(new ResourceFile(
-                        relativePath,
-                        projectRelativePath,
-                        FileUtility.ResourceCategory(relativePath),
-                        entry.Compressed,
-                        sourcePath));
+                    // Create ResourceFile with PlatformManifestEntry for the package's platform
+                    var resourceFile = new ResourceFile
+                    {
+                        FileName = relativePath,
+                        Category = category,
+                        Compressed = entry.Compressed,
+                        AcquireOnDemand = entry.AcquireOnDemand,
+                        PlatformManifest =
+                        {
+                            new PlatformManifestEntry
+                            {
+                                Platform = package.ProjectInfo.Platform ?? "share",
+                                Exist = true,
+                                SourceFileSize = entry.FileSize,
+                                SourceChecksum = entry.Checksum,
+                                SourceCompressedFileSize = entry.CompressedFileSize,
+                                SourceCompressedChecksum = entry.CompressedChecksum,
+                                Checksum = string.Empty
+                            }
+                        }
+                    };
+                    package.Resources.Add(resourceFile);
                 }
             }
 
@@ -381,7 +397,7 @@ public sealed class PatchPackageImporter(
     {
         var previewPaths = package.Resources
             .Where(resource => resource.Category.Equals("preview", StringComparison.OrdinalIgnoreCase))
-            .Select(resource => resource.PackageRelativePath)
+            .Select(resource => resource.FileName)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         foreach (var song in package.Songs)

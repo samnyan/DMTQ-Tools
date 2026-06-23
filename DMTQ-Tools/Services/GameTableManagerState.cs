@@ -19,8 +19,6 @@ public sealed class GameTableManagerState : IProjectState
     public PlatformExportResult? LastPlatformExportResult { get; private set; }
     public string SelectedExportPlatform { get; set; } = "android";
     public PlatformExportMode PlatformExportMode { get; set; } = PlatformExportMode.Delta;
-    public IReadOnlyList<PlatformPackageRecord> Platforms => CurrentPackage?.Platforms ?? [];
-
     public bool HasProject => !string.IsNullOrWhiteSpace(ProjectRoot);
     public bool HasPackage => CurrentPackage is not null;
 
@@ -39,7 +37,7 @@ public sealed class GameTableManagerState : IProjectState
         LastValidationResult = null;
         LastPlatformExportResult = null;
         RestoredExportOptions = null;
-        Diagnostics.Add($"Imported package: {package.Manifest.Entries.Count} manifest entries, {package.Tables.Tables.Count} tables, {package.Resources.Count} resources.");
+        Diagnostics.Add($"Imported package: {package.Resources.Count} resources, {package.Tables.Tables.Count} tables.");
     }
 
     public void SetExportResult(PatchManifest manifest, PatchValidationResult validation)
@@ -60,11 +58,9 @@ public sealed class GameTableManagerState : IProjectState
         LastValidationResult = null;
         LastPlatformExportResult = null;
         SelectedExportPlatform = platform;
-        var imported = CurrentPackage?.Platforms.FirstOrDefault(p =>
-            p.Platform.Equals(platform, StringComparison.OrdinalIgnoreCase));
-        Diagnostics.Add(imported is null
-            ? $"Platform import completed: {platform}."
-            : $"Platform import completed: {platform}, {imported.BaselineManifestEntries.Count} baseline entries, {imported.MissingPhysicalFileCount} missing physical files.");
+        var resourceCount = CurrentPackage?.Resources.Count(r =>
+            r.PlatformManifest.Any(m => m.Platform == platform)) ?? 0;
+        Diagnostics.Add($"Platform import completed: {platform}, {resourceCount} resources.");
     }
 
     public void SetPlatformExportResult(PlatformExportResult result)
@@ -93,16 +89,16 @@ public sealed class GameTableManagerState : IProjectState
 
         if (ExportCompressionMode == "CompressAll")
         {
-            foreach (var entry in CurrentPackage.Manifest.Entries)
+            foreach (var resource in CurrentPackage.Resources)
             {
-                options.SetCompression(entry.FileName, compressed: true);
+                options.SetCompression(resource.FileName, compressed: true);
             }
         }
         else if (ExportCompressionMode == "UncompressAll")
         {
-            foreach (var entry in CurrentPackage.Manifest.Entries)
+            foreach (var resource in CurrentPackage.Resources)
             {
-                options.SetCompression(entry.FileName, compressed: false);
+                options.SetCompression(resource.FileName, compressed: false);
             }
         }
 
@@ -127,6 +123,6 @@ public sealed class GameTableManagerState : IProjectState
         LastValidationResult = null;
         LastPlatformExportResult = null;
         Diagnostics.Add($"Opened project: {ProjectRoot}");
-        Diagnostics.Add($"Loaded package: {snapshot.Package.Manifest.Entries.Count} manifest entries, {snapshot.Package.Tables.Tables.Count} tables, {snapshot.Package.Resources.Count} resources.");
+        Diagnostics.Add($"Loaded package: {snapshot.Package.Resources.Count} resources, {snapshot.Package.Tables.Tables.Count} tables.");
     }
 }

@@ -6,7 +6,7 @@
 <h1>Export</h1>
 
 <FluentStack Orientation="Orientation.Vertical" VerticalGap="16" Style="margin-bottom: 1.25rem;">
-    <FluentSelect Items="@(State.Platforms.Select(p => p.Platform).OrderBy(p => p))"
+    <FluentSelect Items="@(new[] { "android", "ios" })"
                   OptionText="@(i => i)"
                   OptionValue="@(i => i)"
                   @bind-SelectedOption="State.SelectedExportPlatform"
@@ -30,7 +30,7 @@
                      Style="width: 100%" />
     <FluentButton Appearance="Appearance.Accent"
                   @onclick="ExportPlatformPackage"
-                  Disabled="@(!State.HasPackage || State.Platforms.Count == 0 || isBusy)">
+                  Disabled="@(!State.HasPackage || isBusy)">
         Export
     </FluentButton>
 

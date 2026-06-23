@@ -40,7 +40,7 @@ else
         <FluentGridItem xs="12" sm="6" md="4">
             <FluentCard>
                 <span class="metric-label">Platform-specific</span>
-                <strong>@Catalog.Count(r => !string.IsNullOrWhiteSpace(r.Platform))</strong>
+                <strong>@Catalog.Count(r => r.PlatformManifest.Any(m => m.Platform != "share"))</strong>
             </FluentCard>
         </FluentGridItem>
         <FluentGridItem xs="12" sm="6" md="4">
@@ -59,8 +59,8 @@ else
                               Appearance="@(IsSelected(resource) ? Appearance.Accent : Appearance.Neutral)"
                               OnClick="() => SelectResource(resource)">
                     <FluentStack Orientation="Orientation.Vertical">
-                        <strong>@resource.PackageRelativePath</strong>
-                        <span>@resource.Category / @(resource.Platform ?? "shared") / @(resource.Compressed ? "compressed" : "uncompressed")</span>
+                        <strong>@resource.FileName</strong>
+                        <span>@resource.Category / @(resource.Compressed ? "compressed" : "uncompressed")</span>
                     </FluentStack>
                 </FluentButton>
             }
@@ -75,8 +75,8 @@ else
             {
                 <FluentStack Orientation="Orientation.Horizontal" Style="justify-content: space-between; align-items: center;">
                     <div>
-                        <h2>@SelectedResource.PackageRelativePath</h2>
-                        <p>@SelectedResource.ProjectRelativePath</p>
+                        <h2>@SelectedResource.FileName</h2>
+                        <p>@SelectedResource.Category</p>
                     </div>
                     <div class="table-counts">@SelectedResource.Category</div>
                 </FluentStack>
@@ -141,7 +141,6 @@ else
     private string filter = string.Empty;
     private string categoryFilter = string.Empty;
     private string? selectedPath;
-    private string? selectedPlatform;
     private string sourceFilePath = string.Empty;
     private string selectedCompressedText = "false";
     private bool includeAndroid;
@@ -172,9 +171,7 @@ else
             if (!string.IsNullOrWhiteSpace(filter))
             {
                 query = query.Where(resource =>
-                    resource.PackageRelativePath.Contains(filter, StringComparison.OrdinalIgnoreCase)
-                    || resource.ProjectRelativePath.Contains(filter, StringComparison.OrdinalIgnoreCase)
-                    || (resource.Platform?.Contains(filter, StringComparison.OrdinalIgnoreCase) == true));
+                    resource.FileName.Contains(filter, StringComparison.OrdinalIgnoreCase));
             }
 
             return query;
@@ -182,20 +179,19 @@ else
     }
 
     private ResourceCatalogEntry? SelectedResource => Catalog.FirstOrDefault(resource =>
-        resource.PackageRelativePath == selectedPath
-        && resource.Platform == selectedPlatform);
+        resource.FileName == selectedPath);
 
     private bool IsSelected(ResourceCatalogEntry resource)
-        => resource.PackageRelativePath == selectedPath && resource.Platform == selectedPlatform;
+        => resource.FileName == selectedPath;
 
     private void SelectResource(ResourceCatalogEntry resource)
     {
-        selectedPath = resource.PackageRelativePath;
-        selectedPlatform = resource.Platform;
+        selectedPath = resource.FileName;
         sourceFilePath = string.Empty;
         selectedCompressedText = resource.Compressed ? "true" : "false";
-        includeAndroid = resource.IncludedPlatforms.Contains("android", StringComparer.OrdinalIgnoreCase);
-        includeIos = resource.IncludedPlatforms.Contains("ios", StringComparer.OrdinalIgnoreCase);
+        var platforms = resource.PlatformManifest.Select(m => m.Platform).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        includeAndroid = platforms.Contains("android");
+        includeIos = platforms.Contains("ios");
         message = null;
     }
 
@@ -210,8 +206,8 @@ else
         {
             await Workflow.AddOrReplaceResourceAsync(
                 sourceFilePath,
-                SelectedResource.PackageRelativePath,
-                SelectedResource.Platform,
+                SelectedResource.FileName,
+                null,
                 SelectedResource.IsSharedPreview ? SelectedPreviewPlatforms() : [],
                 bool.Parse(selectedCompressedText));
             message = "Resource replaced.";
@@ -227,10 +223,10 @@ else
 
         await RunResourceAction(async () =>
         {
-            await Workflow.SetResourceCompressionAsync(SelectedResource.PackageRelativePath, SelectedResource.Platform, bool.Parse(selectedCompressedText));
+            await Workflow.SetResourceCompressionAsync(SelectedResource.FileName, null, bool.Parse(selectedCompressedText));
             if (SelectedResource.IsSharedPreview)
             {
-                await Workflow.SetPreviewIncludedPlatformsAsync(SelectedResource.PackageRelativePath, SelectedPreviewPlatforms());
+                await Workflow.SetPreviewIncludedPlatformsAsync(SelectedResource.FileName, SelectedPreviewPlatforms());
             }
             message = "Resource metadata saved.";
         });
@@ -245,9 +241,8 @@ else
 
         await RunResourceAction(async () =>
         {
-            await Workflow.RemoveResourceAsync(SelectedResource.PackageRelativePath, SelectedResource.Platform);
+            await Workflow.RemoveResourceAsync(SelectedResource.FileName, null);
             selectedPath = null;
-            selectedPlatform = null;
             message = "Resource removed from project.";
         });
     }
@@ -263,7 +258,6 @@ else
                 SelectedNewPreviewPlatforms(),
                 bool.Parse(newCompressedText));
             selectedPath = newPackagePath;
-            selectedPlatform = string.IsNullOrWhiteSpace(newPlatform) ? null : newPlatform;
             message = "Resource added.";
         });
     }

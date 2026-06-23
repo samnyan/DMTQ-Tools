@@ -26,66 +26,103 @@ public sealed class PatchPackageExporter
         Directory.CreateDirectory(exportRoot);
         var exportedManifest = new PatchManifest();
 
-        foreach (var sourceEntry in package.Manifest.Entries)
+        // Collect all table paths from raw GameTables and entity-backed tables
+        var tablePaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var table in package.Tables.Tables)
+        {
+            tablePaths.Add(table.PackageRelativePath);
+        }
+
+        // Add entity-backed table paths
+        AddEntityTablePaths(package, tablePaths);
+
+        // Export CSV tables
+        foreach (var relativePath in tablePaths.OrderBy(p => p, StringComparer.OrdinalIgnoreCase))
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var relativePath = FileUtility.NormalizePackageRelativePath(sourceEntry.FileName);
+            var uncompressedPath = Path.Combine(exportRoot, relativePath.Replace('/', Path.DirectorySeparatorChar));
+            Directory.CreateDirectory(Path.GetDirectoryName(uncompressedPath) ?? exportRoot);
 
-            if (FileUtility.IsCsvTable(relativePath))
+            await using (var stream = File.Create(uncompressedPath))
             {
-                var uncompressedPath = Path.Combine(exportRoot, relativePath.Replace('/', Path.DirectorySeparatorChar));
-                Directory.CreateDirectory(Path.GetDirectoryName(uncompressedPath) ?? exportRoot);
-
-                await using (var stream = File.Create(uncompressedPath))
+                if (!ExportSchemaRegistry.TryWriteTable(relativePath, package, stream))
                 {
-                    if (!ExportSchemaRegistry.TryWriteTable(relativePath, package, stream))
-                    {
-                        // Fallback for non-entity tables that were imported as raw GameTables
-                        var table = package.Tables.Tables.Single(t => t.PackageRelativePath == relativePath);
-                        WriteGameTableToStream(table, stream);
-                    }
+                    // Fallback for non-entity tables that were imported as raw GameTables
+                    var table = package.Tables.Tables.Single(t => t.PackageRelativePath == relativePath);
+                    WriteGameTableToStream(table, stream);
                 }
+            }
 
-                var shouldCompress = options.ShouldCompress(sourceEntry);
-                var compressedPath = shouldCompress ? uncompressedPath + ".lz4" : null;
-                if (compressedPath is not null)
-                {
-                    await FileUtility.CompressFileAsync(uncompressedPath, compressedPath, cancellationToken)
-                        .ConfigureAwait(false);
-                }
+            // Determine compression: check if we have a ResourceFile for this table path
+            var resourceForTable = package.Resources.FirstOrDefault(r =>
+                r.FileName.Equals(relativePath, StringComparison.OrdinalIgnoreCase));
+            var defaultCompressed = resourceForTable?.Compressed ?? true;
+            var shouldCompress = options.CompressionOverrides.TryGetValue(
+                FileUtility.NormalizePackageRelativePath(relativePath), out var overrideCompressed)
+                ? overrideCompressed
+                : defaultCompressed;
 
-                exportedManifest.Entries.Add(await CreateExportEntryAsync(
-                    sourceEntry,
-                    relativePath,
-                    uncompressedPath,
-                    compressedPath,
-                    shouldCompress,
-                    cancellationToken).ConfigureAwait(false));
+            var compressedPath = shouldCompress ? uncompressedPath + ".lz4" : null;
+            if (compressedPath is not null)
+            {
+                await FileUtility.CompressFileAsync(uncompressedPath, compressedPath, cancellationToken)
+                    .ConfigureAwait(false);
+            }
+
+            exportedManifest.Entries.Add(await CreateExportEntryAsync(
+                relativePath,
+                uncompressedPath,
+                compressedPath,
+                shouldCompress,
+                resourceForTable?.AcquireOnDemand ?? 0,
+                cancellationToken).ConfigureAwait(false));
+        }
+
+        // Export resources (non-table files)
+        var projectRoot = package.ProjectInfo.ProjectRoot;
+        foreach (var resource in package.Resources)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var relativePath = FileUtility.NormalizePackageRelativePath(resource.FileName);
+
+            // Compute archive path from resource FileName
+            var archivedPath = Path.Combine(projectRoot, "resources", relativePath.Replace('/', Path.DirectorySeparatorChar));
+            var exportPath = Path.Combine(exportRoot, relativePath.Replace('/', Path.DirectorySeparatorChar));
+            Directory.CreateDirectory(Path.GetDirectoryName(exportPath) ?? exportRoot);
+
+            if (File.Exists(archivedPath))
+            {
+                File.Copy(archivedPath, exportPath, overwrite: true);
             }
             else
             {
-                var resource = package.Resources.Single(r => r.PackageRelativePath == relativePath);
-                var archivedPath = Path.Combine(package.ProjectInfo.ProjectRoot, resource.ProjectRelativePath.Replace('/', Path.DirectorySeparatorChar));
-                var exportPath = Path.Combine(exportRoot, relativePath.Replace('/', Path.DirectorySeparatorChar));
-                Directory.CreateDirectory(Path.GetDirectoryName(exportPath) ?? exportRoot);
-                File.Copy(archivedPath, exportPath, overwrite: true);
-
-                var shouldCompress = options.ShouldCompress(sourceEntry);
-                var compressedPath = shouldCompress ? exportPath + ".lz4" : null;
-                if (compressedPath is not null)
-                {
-                    await FileUtility.CompressFileAsync(exportPath, compressedPath, cancellationToken)
-                        .ConfigureAwait(false);
-                }
-
-                exportedManifest.Entries.Add(await CreateExportEntryAsync(
-                    sourceEntry,
-                    relativePath,
-                    exportPath,
-                    compressedPath,
-                    shouldCompress,
-                    cancellationToken).ConfigureAwait(false));
+                // Try platform-specific path
+                archivedPath = Path.Combine(projectRoot, "resources", "android", relativePath.Replace('/', Path.DirectorySeparatorChar));
+                if (!File.Exists(archivedPath))
+                    archivedPath = Path.Combine(projectRoot, "resources", "ios", relativePath.Replace('/', Path.DirectorySeparatorChar));
+                if (File.Exists(archivedPath))
+                    File.Copy(archivedPath, exportPath, overwrite: true);
             }
+
+            var shouldCompress = options.CompressionOverrides.TryGetValue(
+                FileUtility.NormalizePackageRelativePath(resource.FileName), out var resOverrideCompressed)
+                ? resOverrideCompressed
+                : resource.Compressed;
+
+            var compressedPath = shouldCompress ? exportPath + ".lz4" : null;
+            if (compressedPath is not null && File.Exists(exportPath))
+            {
+                await FileUtility.CompressFileAsync(exportPath, compressedPath, cancellationToken)
+                    .ConfigureAwait(false);
+            }
+
+            exportedManifest.Entries.Add(await CreateExportEntryAsync(
+                relativePath,
+                exportPath,
+                compressedPath,
+                shouldCompress,
+                resource.AcquireOnDemand,
+                cancellationToken).ConfigureAwait(false));
         }
 
         var manifestPath = Path.Combine(exportRoot, "patch_new.csv");
@@ -98,20 +135,116 @@ public sealed class PatchPackageExporter
         return exportedManifest;
     }
 
+    private static void AddEntityTablePaths(PatchPackage package, HashSet<string> tablePaths)
+    {
+        // Collect all language codes used in songs and achievements
+        var languages = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var song in package.Songs)
+        {
+            foreach (var lang in song.Localizations.Keys)
+                languages.Add(lang);
+        }
+        foreach (var achievement in package.Achievements)
+        {
+            foreach (var lang in achievement.NamesByLanguage.Keys)
+                languages.Add(lang);
+            foreach (var lang in achievement.PreDescriptionsByLanguage.Keys)
+                languages.Add(lang);
+            foreach (var lang in achievement.AfterDescriptionsByLanguage.Keys)
+                languages.Add(lang);
+        }
+        foreach (var quest in package.Quests)
+        {
+            foreach (var lang in quest.NamesByLanguage.Keys)
+                languages.Add(lang);
+            foreach (var lang in quest.DescriptionsByLanguage.Keys)
+                languages.Add(lang);
+            foreach (var mission in quest.Missions)
+            {
+                foreach (var lang in mission.DescriptionsByLanguage.Keys)
+                    languages.Add(lang);
+            }
+        }
+        foreach (var item in package.Items)
+        {
+            foreach (var lang in item.NamesByLanguage.Keys)
+                languages.Add(lang);
+            foreach (var lang in item.DescriptionsByLanguage.Keys)
+                languages.Add(lang);
+        }
+
+        // Add entity table paths
+        if (package.Songs.Count > 0)
+        {
+            foreach (var lang in languages)
+            {
+                tablePaths.Add($"table/{lang}/song_song.csv");
+                tablePaths.Add($"table/{lang}/song_songPattern.csv");
+                tablePaths.Add($"table/{lang}/song_desc_{lang}.csv");
+            }
+        }
+        if (package.Achievements.Count > 0)
+        {
+            foreach (var lang in languages)
+            {
+                tablePaths.Add($"table/{lang}/quest_achievement.csv");
+                tablePaths.Add($"table/{lang}/acievement_desc_{lang}.csv");
+            }
+        }
+        if (package.Quests.Count > 0)
+        {
+            foreach (var lang in languages)
+            {
+                tablePaths.Add($"table/{lang}/quest_desc_{lang}.csv");
+                tablePaths.Add($"table/{lang}/quest_mission_desc_{lang}.csv");
+            }
+        }
+        if (package.Products.Count > 0)
+        {
+            foreach (var lang in languages)
+            {
+                tablePaths.Add($"table/{lang}/product_product.csv");
+            }
+            tablePaths.Add("table/us/category_categoryproduct.csv");
+        }
+        if (package.Items.Count > 0)
+        {
+            foreach (var lang in languages)
+            {
+                tablePaths.Add($"table/{lang}/product_item.csv");
+                tablePaths.Add($"table/{lang}/item_desc_{lang}.csv");
+            }
+        }
+        if (package.IngameItems.Count > 0)
+        {
+            foreach (var lang in languages)
+            {
+                tablePaths.Add($"table/{lang}/ingameitem_ingameitem.csv");
+            }
+        }
+        if (package.IngameItemEffects.Count > 0)
+        {
+            foreach (var lang in languages)
+            {
+                tablePaths.Add($"table/{lang}/ingameitem_itemeffect.csv");
+            }
+        }
+    }
+
     private async Task<PatchFileEntry> CreateExportEntryAsync(
-        PatchFileEntry sourceEntry,
         string relativePath,
         string filePath,
         string? compressedPath,
         bool compressed,
+        int acquireOnDemand,
         CancellationToken cancellationToken)
     {
         var fileSize = FileUtility.GetFileSize(filePath);
         var checksum = await FileUtility.ComputeMd5Async(filePath, cancellationToken).ConfigureAwait(false);
-        var compressedFileSize = compressedPath is null
+        var compressedFileSize = compressedPath is null || !File.Exists(compressedPath)
             ? 0
             : FileUtility.GetFileSize(compressedPath);
-        var compressedChecksum = compressedPath is null
+        var compressedChecksum = compressedPath is null || !File.Exists(compressedPath)
             ? string.Empty
             : await FileUtility.ComputeMd5Async(compressedPath, cancellationToken).ConfigureAwait(false);
 
@@ -121,10 +254,10 @@ public sealed class PatchPackageExporter
             checksum,
             compressedFileSize,
             compressedChecksum,
-            sourceEntry.AcquireOnDemand,
+            acquireOnDemand,
             compressed,
-            sourceEntry.Platform,
-            sourceEntry.Tag);
+            string.Empty,
+            string.Empty);
     }
 
     /// <summary>Minimal CSV writer for non-entity-backed GameTables (legacy fallback).</summary>

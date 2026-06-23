@@ -18,7 +18,7 @@ public sealed class PackageQaServiceTests
         report.Issues.Should().Contain(issue =>
             issue.Category == "Manifest"
             && issue.Severity == QaIssueSeverity.Warning
-            && issue.Message.Contains("no manifest entries"));
+            && issue.Message.Contains("no resources or tables"));
     }
 
     [TestMethod]
@@ -27,15 +27,37 @@ public sealed class PackageQaServiceTests
         var package = CreatePackage();
         package.Tables.Tables.Add(CreateTable("table/us/song_desc_us.csv", "song_desc_us", "us",
             ["song_id", "title"], ["1", "Title"]));
-        // jp variant is missing
-        package.Platforms.Add(new PlatformPackageRecord
+        // jp variant is missing — add a resource entry for it
+        package.Resources.Add(new ResourceFile
         {
-            Platform = "android",
-            SourcePackageRoot = "source",
-            BaselineManifestEntries =
+            FileName = "table/us/song_desc_us.csv",
+            Category = "other",
+            Compressed = false,
+            PlatformManifest =
             {
-                new PatchFileEntry("table/us/song_desc_us.csv", 10, "aaaa", 0, "", 0, false, "", ""),
-                new PatchFileEntry("table/jp/song_desc_jp.csv", 10, "bbbb", 0, "", 0, false, "", "")
+                new PlatformManifestEntry
+                {
+                    Platform = "android",
+                    Exist = true,
+                    SourceFileSize = 10,
+                    SourceChecksum = "aaaa"
+                }
+            }
+        });
+        package.Resources.Add(new ResourceFile
+        {
+            FileName = "table/jp/song_desc_jp.csv",
+            Category = "other",
+            Compressed = false,
+            PlatformManifest =
+            {
+                new PlatformManifestEntry
+                {
+                    Platform = "android",
+                    Exist = true,
+                    SourceFileSize = 10,
+                    SourceChecksum = "bbbb"
+                }
             }
         });
 
@@ -67,7 +89,12 @@ public sealed class PackageQaServiceTests
     public void Run_DetectsMissingArchiveFile()
     {
         var package = CreatePackage("non-existent-project-root");
-        package.Resources.Add(new ResourceFile("dlc/test.bin", "resources/android/dlc/test.bin", "dlc", false, null, "android"));
+        package.Resources.Add(new ResourceFile
+        {
+            FileName = "dlc/test.bin",
+            Category = "dlc",
+            Compressed = false
+        });
 
         var report = new PackageQaService().Run(package);
         report.Issues.Should().Contain(issue =>
@@ -87,8 +114,20 @@ public sealed class PackageQaServiceTests
             File.WriteAllText(Path.Combine(tempDir, "resources", "android", "dlc", "test.bin"), "data");
 
             var package = CreatePackage(tempDir);
-            package.Manifest.Entries.Add(new PatchFileEntry("dlc/test.bin", 4, "aaaa", 0, "", 0, false, "", ""));
-            package.Resources.Add(new ResourceFile("dlc/test.bin", "resources/android/dlc/test.bin", "dlc", false, null, "android"));
+            package.Resources.Add(new ResourceFile
+            {
+                FileName = "dlc/test.bin",
+                Category = "dlc",
+                Compressed = false,
+                PlatformManifest =
+                {
+                    new PlatformManifestEntry
+                    {
+                        Platform = "android",
+                        Exist = true
+                    }
+                }
+            });
 
             var report = new PackageQaService().Run(package);
             report.IsClean.Should().BeTrue();
