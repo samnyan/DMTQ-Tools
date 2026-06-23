@@ -29,7 +29,23 @@ public sealed class PlatformPackageExporter
             ExportRoot = exportRoot
         };
 
-        // Export resources for this platform
+        // ── Export entity-backed CSV tables ──
+        await ExportEntityTablesAsync(package, exportRoot, options, result, cancellationToken)
+            .ConfigureAwait(false);
+
+        // ── Export non-entity tables from raw GameTables ──
+        foreach (var table in package.Tables.Tables)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var relativePath = table.PackageRelativePath;
+            await using var ms = new MemoryStream();
+            WriteGameTableToStream(table, ms);
+            ms.Position = 0;
+            await WriteTableBytesAsync(ms, relativePath, exportRoot, null, options, result, cancellationToken)
+                .ConfigureAwait(false);
+        }
+
+        // ── Export resources (non-table files) for this platform ──
         var platformResources = package.Resources
             .Where(r => r.PlatformManifest.Any(m =>
                 m.Platform.Equals(options.Platform, StringComparison.OrdinalIgnoreCase)
@@ -43,55 +59,90 @@ public sealed class PlatformPackageExporter
 
             if (FileUtility.IsCsvTable(relativePath))
             {
-                // Try entity-backed schema first
-                await using var ms = new MemoryStream();
-                if (ExportSchemaRegistry.TryWriteTable(relativePath, package, ms))
-                {
-                    await WriteTableBytesAsync(ms, relativePath, exportRoot, resource, options, result, cancellationToken)
-                        .ConfigureAwait(false);
-                    continue;
-                }
-
-                // Fallback: look for a raw GameTable
-                var table = package.Tables.Tables.FirstOrDefault(t =>
-                    t.PackageRelativePath.Equals(relativePath, StringComparison.OrdinalIgnoreCase));
-
-                if (table is not null)
-                {
-                    await using var tableMs = new MemoryStream();
-                    WriteGameTableToStream(table, tableMs);
-                    await WriteTableBytesAsync(tableMs, relativePath, exportRoot, resource, options, result, cancellationToken)
-                        .ConfigureAwait(false);
-                    continue;
-                }
-
-                // Missing table — skip
-                result.MissingCurrentFiles++;
-                result.Validation.Errors.Add($"Missing current table for export: {relativePath}");
+                // Table files are handled by ExportEntityTablesAsync above; skip here
+                continue;
             }
-            else
-            {
-                await ExportResourceFileAsync(
-                        package.ProjectInfo.ProjectRoot,
-                        resource,
-                        relativePath,
-                        exportRoot,
-                        options,
-                        result,
-                        cancellationToken)
-                    .ConfigureAwait(false);
-            }
+
+            await ExportResourceFileAsync(
+                package.ProjectInfo.ProjectRoot,
+                resource,
+                relativePath,
+                exportRoot,
+                options,
+                result,
+                cancellationToken)
+                .ConfigureAwait(false);
         }
 
         await WriteManifestAsync(exportRoot, result, cancellationToken).ConfigureAwait(false);
         return result;
     }
 
+    private async Task ExportEntityTablesAsync(
+        PatchPackage package,
+        string exportRoot,
+        PlatformExportOptions options,
+        PlatformExportResult result,
+        CancellationToken cancellationToken)
+    {
+        // Always export tables for all 5 languages
+        var languages = new[] { "cn", "jp", "kr", "tw", "us" };
+        // Extra shared path
+        var sharedPaths = new[] { "table/slang/slang.csv" };
+
+        foreach (var lang in languages)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            string[] tablePaths =
+            [
+                $"table/{lang}/song_song.csv",
+                $"table/{lang}/song_songPattern.csv",
+                $"table/{lang}/song_desc_{lang}.csv",
+                $"table/{lang}/quest_achievement.csv",
+                $"table/{lang}/acievement_desc_{lang}.csv",
+                $"table/{lang}/quest_desc_{lang}.csv",
+                $"table/{lang}/quest_mission_desc_{lang}.csv",
+                $"table/{lang}/product_product.csv",
+                $"table/{lang}/category_categoryproduct.csv",
+                $"table/{lang}/product_item.csv",
+                $"table/{lang}/item_desc_{lang}.csv",
+                $"table/{lang}/ingameitem_ingameitem.csv",
+                $"table/{lang}/ingameitem_itemeffect.csv",
+            ];
+
+            foreach (var relativePath in tablePaths)
+            {
+                await using var ms = new MemoryStream();
+                if (ExportSchemaRegistry.TryWriteTable(relativePath, package, ms))
+                {
+                    await WriteTableBytesAsync(ms, relativePath, exportRoot, null, options, result, cancellationToken)
+                        .ConfigureAwait(false);
+                }
+            }
+        }
+
+        // Export shared/slang tables
+        foreach (var relativePath in sharedPaths)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var table = package.Tables.Tables.FirstOrDefault(t =>
+                t.PackageRelativePath.Equals(relativePath, StringComparison.OrdinalIgnoreCase));
+            if (table is not null)
+            {
+                await using var ms = new MemoryStream();
+                WriteGameTableToStream(table, ms);
+                ms.Position = 0;
+                await WriteTableBytesAsync(ms, relativePath, exportRoot, null, options, result, cancellationToken)
+                    .ConfigureAwait(false);
+            }
+        }
+    }
+
     private async Task WriteTableBytesAsync(
         MemoryStream writtenStream,
         string relativePath,
         string exportRoot,
-        ResourceFile resource,
+        ResourceFile? resource,
         PlatformExportOptions options,
         PlatformExportResult result,
         CancellationToken cancellationToken)
@@ -102,8 +153,8 @@ public sealed class PlatformPackageExporter
         var bytes = writtenStream.ToArray();
         var checksum = ComputeMd5(bytes);
 
-        // Find the platform manifest entry for checksum comparison
-        var platformEntry = resource.PlatformManifest.FirstOrDefault(m =>
+        // Find the platform manifest entry for checksum comparison (only when resource exists)
+        var platformEntry = resource?.PlatformManifest.FirstOrDefault(m =>
             m.Platform.Equals(options.Platform, StringComparison.OrdinalIgnoreCase)
             || m.Platform.Equals("share", StringComparison.OrdinalIgnoreCase));
 
@@ -131,18 +182,21 @@ public sealed class PlatformPackageExporter
         await File.WriteAllBytesAsync(destinationPath, bytes, cancellationToken).ConfigureAwait(false);
         result.FilesWritten++;
 
+        var acquireOnDemand = resource?.AcquireOnDemand ?? 0;
+        var compressed = resource?.Compressed ?? true;
+
         var manifestEntry = new PatchFileEntry(
             relativePath,
             bytes.Length,
             checksum,
-            resource.Compressed ? 0 : 0,
+            compressed ? 0 : 0,
             string.Empty,
-            resource.AcquireOnDemand,
-            resource.Compressed,
+            acquireOnDemand,
+            compressed,
             string.Empty,
             string.Empty);
 
-        if (resource.Compressed)
+        if (compressed)
         {
             var compressedPath = destinationPath + ".lz4";
             await FileUtility.CompressFileAsync(destinationPath, compressedPath, cancellationToken).ConfigureAwait(false);

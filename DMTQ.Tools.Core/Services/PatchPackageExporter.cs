@@ -137,43 +137,8 @@ public sealed class PatchPackageExporter
 
     private static void AddEntityTablePaths(PatchPackage package, HashSet<string> tablePaths)
     {
-        // Collect all language codes used in songs and achievements
-        var languages = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var song in package.Songs)
-        {
-            foreach (var lang in song.Localizations.Keys)
-                languages.Add(lang);
-        }
-        foreach (var achievement in package.Achievements)
-        {
-            foreach (var lang in achievement.NamesByLanguage.Keys)
-                languages.Add(lang);
-            foreach (var lang in achievement.PreDescriptionsByLanguage.Keys)
-                languages.Add(lang);
-            foreach (var lang in achievement.AfterDescriptionsByLanguage.Keys)
-                languages.Add(lang);
-        }
-        foreach (var quest in package.Quests)
-        {
-            foreach (var lang in quest.NamesByLanguage.Keys)
-                languages.Add(lang);
-            foreach (var lang in quest.DescriptionsByLanguage.Keys)
-                languages.Add(lang);
-            foreach (var mission in quest.Missions)
-            {
-                foreach (var lang in mission.DescriptionsByLanguage.Keys)
-                    languages.Add(lang);
-            }
-        }
-        foreach (var item in package.Items)
-        {
-            foreach (var lang in item.NamesByLanguage.Keys)
-                languages.Add(lang);
-            foreach (var lang in item.DescriptionsByLanguage.Keys)
-                languages.Add(lang);
-        }
+        var languages = new[] { "cn", "jp", "kr", "tw", "us" };
 
-        // Add entity table paths
         if (package.Songs.Count > 0)
         {
             foreach (var lang in languages)
@@ -205,7 +170,10 @@ public sealed class PatchPackageExporter
             {
                 tablePaths.Add($"table/{lang}/product_product.csv");
             }
-            tablePaths.Add("table/us/category_categoryproduct.csv");
+            foreach (var lang in languages)
+            {
+                tablePaths.Add($"table/{lang}/category_categoryproduct.csv");
+            }
         }
         if (package.Items.Count > 0)
         {
@@ -229,6 +197,9 @@ public sealed class PatchPackageExporter
                 tablePaths.Add($"table/{lang}/ingameitem_itemeffect.csv");
             }
         }
+
+        // Shared tables
+        tablePaths.Add("table/slang/slang.csv");
     }
 
     private async Task<PatchFileEntry> CreateExportEntryAsync(
