@@ -363,3 +363,7 @@ pt_to_text/LoginInfo.cs
 
 /external
 /docs
+/.idea
+/.reasonix
+/.playwright
+/.playwright-cli
