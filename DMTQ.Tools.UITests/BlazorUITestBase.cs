@@ -21,6 +21,7 @@ public abstract class BlazorUITestBase : Bunit.TestContext
         Services.AddSingleton<IProjectState>(state);
         Services.AddSingleton<IProjectWorkflow>(new FakeWorkflow(state));
         Services.AddSingleton<IFolderPicker>(new FakeFolderPicker());
+        Services.AddSingleton<IProjectFilePicker>(new FakeFilePicker());
         Services.AddSingleton<LogicalTableService>();
         Services.AddSingleton<SongCatalogService>();
         Services.AddSingleton<SongEditService>();
@@ -99,5 +100,11 @@ public abstract class BlazorUITestBase : Bunit.TestContext
     {
         public string? PickResult { get; set; }
         public Task<string?> PickFolderAsync(CancellationToken ct = default) => Task.FromResult(PickResult);
+    }
+
+    private sealed class FakeFilePicker : IProjectFilePicker
+    {
+        public string? PickResult { get; set; }
+        public Task<string?> PickFileAsync(CancellationToken ct = default) => Task.FromResult(PickResult);
     }
 }

@@ -1,7 +1,9 @@
 @page "/resources"
+@using DMTQ.Tools.Components.Models
 @inject IProjectState State
 @inject IProjectWorkflow Workflow
 @inject ResourceManagerService ResourceMgr
+@inject IDialogService DialogService
 
 <h1>Resources</h1>
 
@@ -13,302 +15,269 @@
 }
 else
 {
-    <FluentStack Orientation="Orientation.Vertical" Style="margin-bottom: 1rem;">
-        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8" VerticalAlignment="VerticalAlignment.Center">
-            <FluentTextField @bind-Value="filter" Immediate="true" Placeholder="Filter resources" />
-            <FluentSelect Items="@(new List<string> { "" }.Concat(Catalog.Select(r => r.Category).Distinct().OrderBy(v => v)))"
-                          OptionText="@(i => string.IsNullOrEmpty(i) ? "All categories" : i)"
-                          OptionValue="@(i => i)"
-                          @bind-SelectedOption="categoryFilter"
-                          Label="Category" />
+    <FluentStack Orientation="Orientation.Vertical" VerticalGap="16">
+
+        @* ── Toolbar ── *@
+        <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center">
+            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" VerticalAlignment="VerticalAlignment.Center">
+                <FluentSelect Items="@(new[] { "All", "dlc", "preview", "slang" })"
+                              OptionText="@(i => i == "All" ? "All Categories" : i)"
+                              OptionValue="@(i => i)"
+                              @bind-SelectedOption="categoryFilter"
+                              Label="Category"
+                              Style="min-width: 140px;" />
+                <FluentTextField @bind-Value="filter" Immediate="true" Placeholder="Filter by file name"
+                                 Style="min-width: 280px;" />
+            </FluentStack>
+            <FluentButton Appearance="Appearance.Accent"
+                          IconStart="@(new Icons.Regular.Size20.Add())"
+                          OnClick="AddNewResource">Add Resource</FluentButton>
         </FluentStack>
-    </FluentStack>
 
-    <FluentGrid Spacing="3" AdaptiveRendering="true">
-        <FluentGridItem xs="12" sm="6" md="4">
-            <FluentCard>
-                <span class="metric-label">Resources</span>
-                <strong>@Catalog.Count</strong>
-            </FluentCard>
-        </FluentGridItem>
-        <FluentGridItem xs="12" sm="6" md="4">
-            <FluentCard>
-                <span class="metric-label">Preview</span>
-                <strong>@Catalog.Count(r => r.Category == "preview")</strong>
-            </FluentCard>
-        </FluentGridItem>
-        <FluentGridItem xs="12" sm="6" md="4">
-            <FluentCard>
-                <span class="metric-label">Platform-specific</span>
-                <strong>@Catalog.Count(r => r.PlatformManifest.Any(m => m.Platform != "share"))</strong>
-            </FluentCard>
-        </FluentGridItem>
-        <FluentGridItem xs="12" sm="6" md="4">
-            <FluentCard>
-                <span class="metric-label">Compressed</span>
-                <strong>@Catalog.Count(r => r.Compressed)</strong>
-            </FluentCard>
-        </FluentGridItem>
-    </FluentGrid>
+        @* ── Metrics ── *@
+        <FluentGrid Spacing="3" AdaptiveRendering="true">
+            <FluentGridItem xs="12" sm="6" md="3">
+                <FluentCard>
+                    <span class="metric-label">Total resources</span><strong>@Catalog.Count</strong>
+                </FluentCard>
+            </FluentGridItem>
+            <FluentGridItem xs="12" sm="6" md="3">
+                <FluentCard>
+                    <span class="metric-label">dlc</span><strong>@Catalog.Count(r => r.Category == "dlc")</strong>
+                </FluentCard>
+            </FluentGridItem>
+            <FluentGridItem xs="12" sm="6" md="3">
+                <FluentCard>
+                    <span class="metric-label">preview</span><strong>@Catalog.Count(r => r.Category == "preview")</strong>
+                </FluentCard>
+            </FluentGridItem>
+            <FluentGridItem xs="12" sm="6" md="3">
+                <FluentCard>
+                    <span class="metric-label">Others</span><strong>@Catalog.Count(r => r.Category != "dlc" && r.Category != "preview")</strong>
+                </FluentCard>
+            </FluentGridItem>
+        </FluentGrid>
 
-    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16" Style="min-height: 34rem;">
-        <FluentStack Orientation="Orientation.Vertical" Style="width: 300px; overflow-y: auto;">
-            @foreach (var resource in FilteredResources.Take(500))
-            {
-                <FluentButton Style="width: 100%;"
-                              Appearance="@(IsSelected(resource) ? Appearance.Accent : Appearance.Neutral)"
-                              OnClick="() => SelectResource(resource)">
-                    <FluentStack Orientation="Orientation.Vertical">
-                        <strong>@resource.FileName</strong>
-                        <span>@resource.Category / @(resource.Compressed ? "compressed" : "uncompressed")</span>
+        @* ── DataGrid ── *@
+        @if (FilteredResources.Any())
+        {
+            <FluentDataGrid Items="@FilteredResources.AsQueryable()" TGridItem="ResourceCatalogEntry"
+                            ShowHover="true"
+                            Pagination="@pagination"
+                            ResizableColumns="true"
+                            HeaderCellAsButtonWithMenu="true">
+                <PropertyColumn Property="@(r => r.FileName)" Title="File Name" Sortable="true" />
+                <PropertyColumn Property="@(r => r.Category)" Title="Category" Sortable="true" />
+                <TemplateColumn Title="Platforms">
+                    @string.Join(", ", context.PlatformManifest.Select(m => $"{m.Platform} {(m.Exist ? "✓" : "✗")}"))
+                </TemplateColumn>
+                <TemplateColumn Title="Size">
+                    @FormatFileSize(context.PlatformManifest.FirstOrDefault()?.SourceFileSize ?? 0)
+                </TemplateColumn>
+                <TemplateColumn Title="Compressed">
+                    @(context.Compressed ? "Yes" : "No")
+                </TemplateColumn>
+                <TemplateColumn Title="Actions">
+                    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="4">
+                        <FluentButton IconStart="@(new Icons.Regular.Size20.Edit())"
+                                      Appearance="Appearance.Neutral"
+                                      OnClick="() => OpenEditDialog(context)"
+                                      Title="Edit" />
+                        <FluentButton IconStart="@(new Icons.Regular.Size20.Delete())"
+                                      Appearance="Appearance.Neutral"
+                                      OnClick="() => DeleteResourceAsync(context)"
+                                      Title="Delete" />
                     </FluentStack>
-                </FluentButton>
-            }
-        </FluentStack>
+                </TemplateColumn>
+            </FluentDataGrid>
+            <FluentPaginator State="@pagination" />
+        }
+        else
+        {
+            <FluentMessageBar Title="No resources found." Intent="MessageIntent.Info" />
+        }
 
-        <FluentStack Orientation="Orientation.Vertical" Style="flex: 1;">
-            @if (SelectedResource is null)
-            {
-                <FluentMessageBar Title="Select a resource." Intent="MessageIntent.Info" />
-            }
-            else
-            {
-                <FluentStack Orientation="Orientation.Horizontal" Style="justify-content: space-between; align-items: center;">
-                    <div>
-                        <h2>@SelectedResource.FileName</h2>
-                        <p>@SelectedResource.Category</p>
-                    </div>
-                    <div class="table-counts">@SelectedResource.Category</div>
-                </FluentStack>
-
-                <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16" Wrap="true">
-                    <FluentTextField @bind-Value="sourceFilePath" Label="Source file for replacement" />
-                    <FluentSelect Items="@(new[] { "true", "false" })"
-                                  OptionText="@(i => i == "true" ? "Compressed" : "Uncompressed")"
-                                  OptionValue="@(i => i)"
-                                  @bind-SelectedOption="selectedCompressedText"
-                                  Label="Compression" />
-                </FluentStack>
-
-                @if (SelectedResource.IsSharedPreview)
-                {
-                    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16" Wrap="true">
-                        <FluentCheckbox @bind-Value="includeAndroid" Label="android" />
-                        <FluentCheckbox @bind-Value="includeIos" Label="ios" />
-                    </FluentStack>
-                }
-
-                <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8">
-                    <FluentButton Appearance="Appearance.Accent" OnClick="ReplaceSelected" Disabled="@isBusy">Replace</FluentButton>
-                    <FluentButton Appearance="Appearance.Neutral" OnClick="SaveSelectedMetadata" Disabled="@isBusy">Save Metadata</FluentButton>
-                    <FluentButton Appearance="Appearance.Neutral" OnClick="RemoveSelected" Disabled="@isBusy">Remove</FluentButton>
-                </FluentStack>
-            }
-        </FluentStack>
-    </FluentStack>
-
-    <FluentStack Orientation="Orientation.Vertical" Style="margin-bottom: 1rem;">
-        <h2 class="section-heading">Add Resource</h2>
-        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16" Wrap="true">
-            <FluentTextField @bind-Value="newSourceFilePath" Label="Source file" />
-            <FluentTextField @bind-Value="newPackagePath" Placeholder="preview/song.p.opus or dlc/file.bundle" Label="Package path" />
-            <FluentSelect Items="@(new[] { "", "android", "ios" })"
-                          OptionText="@(i => string.IsNullOrEmpty(i) ? "shared preview" : i)"
-                          OptionValue="@(i => i)"
-                          @bind-SelectedOption="newPlatform"
-                          Label="Platform" />
-            <FluentSelect Items="@(new[] { "true", "false" })"
-                          OptionText="@(i => i == "true" ? "Compressed" : "Uncompressed")"
-                          OptionValue="@(i => i)"
-                          @bind-SelectedOption="newCompressedText"
-                          Label="Compression" />
-        </FluentStack>
-        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16" Wrap="true">
-            <FluentCheckbox @bind-Value="newIncludeAndroid" Label="android preview inclusion" />
-            <FluentCheckbox @bind-Value="newIncludeIos" Label="ios preview inclusion" />
-        </FluentStack>
-        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8" VerticalAlignment="VerticalAlignment.Center">
-            <FluentButton Appearance="Appearance.Accent" OnClick="AddResource" Disabled="@isBusy">Add Resource</FluentButton>
-            @if (message is not null)
-            {
-                <FluentMessageBar Title="@message" Intent="MessageIntent.Info" />
-            }
-        </FluentStack>
+        @if (!string.IsNullOrEmpty(message))
+        {
+            <FluentMessageBar Title="@message" Intent="MessageIntent.Info" />
+        }
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <FluentMessageBar Title="@errorMessage" Intent="MessageIntent.Error" />
+        }
     </FluentStack>
 }
 
 @code {
     private string filter = string.Empty;
-    private string categoryFilter = string.Empty;
-    private string? selectedPath;
-    private string sourceFilePath = string.Empty;
-    private string selectedCompressedText = "false";
-    private bool includeAndroid;
-    private bool includeIos;
-    private string newSourceFilePath = string.Empty;
-    private string newPackagePath = string.Empty;
-    private string newPlatform = string.Empty;
-    private string newCompressedText = "false";
-    private bool newIncludeAndroid = true;
-    private bool newIncludeIos;
-    private bool isBusy;
+    private string categoryFilter = "All";
     private string? message;
+    private string? errorMessage;
+    private PaginationState pagination = new() { ItemsPerPage = 25 };
 
-    private IReadOnlyList<ResourceCatalogEntry> Catalog => State.CurrentPackage is null
-        ? []
-        : ResourceMgr.BuildCatalog(State.CurrentPackage);
+    private PatchPackage? _lastPackage;
+    private IReadOnlyList<ResourceCatalogEntry> _catalog = [];
+
+    private IReadOnlyList<ResourceCatalogEntry> Catalog
+    {
+        get
+        {
+            if (ReferenceEquals(State.CurrentPackage, _lastPackage)) return _catalog;
+            _lastPackage = State.CurrentPackage;
+            _catalog = State.CurrentPackage is null ? [] : ResourceMgr.BuildCatalog(State.CurrentPackage);
+            return _catalog;
+        }
+    }
 
     private IEnumerable<ResourceCatalogEntry> FilteredResources
     {
         get
         {
             var query = Catalog.AsEnumerable();
-            if (!string.IsNullOrWhiteSpace(categoryFilter))
+            if (!string.Equals(categoryFilter, "All", StringComparison.OrdinalIgnoreCase))
             {
-                query = query.Where(resource => resource.Category.Equals(categoryFilter, StringComparison.OrdinalIgnoreCase));
+                query = query.Where(r => r.Category.Equals(categoryFilter, StringComparison.OrdinalIgnoreCase));
             }
-
             if (!string.IsNullOrWhiteSpace(filter))
             {
-                query = query.Where(resource =>
-                    resource.FileName.Contains(filter, StringComparison.OrdinalIgnoreCase));
+                query = query.Where(r => r.FileName.Contains(filter, StringComparison.OrdinalIgnoreCase));
             }
-
             return query;
         }
     }
 
-    private ResourceCatalogEntry? SelectedResource => Catalog.FirstOrDefault(resource =>
-        resource.FileName == selectedPath);
-
-    private bool IsSelected(ResourceCatalogEntry resource)
-        => resource.FileName == selectedPath;
-
-    private void SelectResource(ResourceCatalogEntry resource)
+    private static string FormatFileSize(long bytes)
     {
-        selectedPath = resource.FileName;
-        sourceFilePath = string.Empty;
-        selectedCompressedText = resource.Compressed ? "true" : "false";
-        var platforms = resource.PlatformManifest.Select(m => m.Platform).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        includeAndroid = platforms.Contains("android");
-        includeIos = platforms.Contains("ios");
-        message = null;
+        if (bytes < 1024) return $"{bytes}B";
+        if (bytes < 1048576) return $"{bytes / 1024}KB";
+        return $"{bytes / 1048576}MB";
     }
 
-    private async Task ReplaceSelected()
+    private static ResourceDialogData BuildDialogData(ResourceCatalogEntry entry)
     {
-        if (SelectedResource is null)
+        return new ResourceDialogData
         {
-            return;
-        }
-
-        await RunResourceAction(async () =>
-        {
-            await Workflow.AddOrReplaceResourceAsync(
-                sourceFilePath,
-                SelectedResource.FileName,
-                null,
-                SelectedResource.IsSharedPreview ? SelectedPreviewPlatforms() : [],
-                bool.Parse(selectedCompressedText));
-            message = "Resource replaced.";
-        });
-    }
-
-    private async Task SaveSelectedMetadata()
-    {
-        if (SelectedResource is null)
-        {
-            return;
-        }
-
-        await RunResourceAction(async () =>
-        {
-            await Workflow.SetResourceCompressionAsync(SelectedResource.FileName, null, bool.Parse(selectedCompressedText));
-            if (SelectedResource.IsSharedPreview)
+            IsNew = false,
+            FileName = entry.FileName,
+            Category = entry.Category,
+            Compressed = entry.Compressed,
+            Platforms = entry.PlatformManifest.Select(m => new PlatformCardData
             {
-                await Workflow.SetPreviewIncludedPlatformsAsync(SelectedResource.FileName, SelectedPreviewPlatforms());
-            }
-            message = "Resource metadata saved.";
-        });
+                Platform = m.Platform,
+                Exist = m.Exist,
+                SourceFileSize = m.SourceFileSize,
+                SourceChecksum = m.SourceChecksum
+            }).ToList()
+        };
     }
 
-    private async Task RemoveSelected()
+    private async Task AddNewResource()
     {
-        if (SelectedResource is null)
-        {
-            return;
-        }
-
-        await RunResourceAction(async () =>
-        {
-            await Workflow.RemoveResourceAsync(SelectedResource.FileName, null);
-            selectedPath = null;
-            message = "Resource removed from project.";
-        });
+        message = null;
+        errorMessage = null;
+        var data = new ResourceDialogData { IsNew = true };
+        var dialog = await DialogService.ShowDialogAsync<ResourceEditDialog, ResourceDialogData>(
+            data,
+            new DialogParameters
+            {
+                Title = "Add Resource",
+                PrimaryAction = "Save",
+                SecondaryAction = "Cancel",
+                Width = "640px",
+                PreventDismissOnOverlayClick = true
+            });
+        var result = await dialog.Result;
+        await ApplyDialogChanges(result, null);
     }
 
-    private async Task AddResource()
+    private async Task OpenEditDialog(ResourceCatalogEntry entry)
     {
-        await RunResourceAction(async () =>
-        {
-            await Workflow.AddOrReplaceResourceAsync(
-                newSourceFilePath,
-                newPackagePath,
-                string.IsNullOrWhiteSpace(newPlatform) ? null : newPlatform,
-                SelectedNewPreviewPlatforms(),
-                bool.Parse(newCompressedText));
-            selectedPath = newPackagePath;
-            message = "Resource added.";
-        });
+        message = null;
+        errorMessage = null;
+        var data = BuildDialogData(entry);
+        var dialog = await DialogService.ShowDialogAsync<ResourceEditDialog, ResourceDialogData>(
+            data,
+            new DialogParameters
+            {
+                Title = "Edit Resource",
+                PrimaryAction = "Save",
+                SecondaryAction = "Cancel",
+                Width = "640px",
+                PreventDismissOnOverlayClick = true
+            });
+        var result = await dialog.Result;
+        await ApplyDialogChanges(result, entry);
     }
 
-    private IReadOnlyCollection<string> SelectedPreviewPlatforms()
+    private async Task DeleteResourceAsync(ResourceCatalogEntry entry)
     {
-        var platforms = new List<string>();
-        if (includeAndroid)
-        {
-            platforms.Add("android");
-        }
+        if (State.CurrentPackage is null) return;
 
-        if (includeIos)
-        {
-            platforms.Add("ios");
-        }
+        message = null;
+        errorMessage = null;
 
-        return platforms;
-    }
+        var dialog = await DialogService.ShowConfirmationAsync(
+            $"Delete resource '{entry.FileName}'? This will remove it from the project.",
+            "Delete", "Cancel", "Delete Resource");
 
-    private IReadOnlyCollection<string> SelectedNewPreviewPlatforms()
-    {
-        var platforms = new List<string>();
-        if (newIncludeAndroid)
-        {
-            platforms.Add("android");
-        }
+        var result = await dialog.Result;
+        if (result.Cancelled) return;
 
-        if (newIncludeIos)
-        {
-            platforms.Add("ios");
-        }
-
-        return platforms;
-    }
-
-    private async Task RunResourceAction(Func<Task> action)
-    {
-        isBusy = true;
         try
         {
-            await action();
+            await Workflow.RemoveResourceAsync(entry.FileName, null);
+            _lastPackage = null; // invalidate catalog cache
+            State.Diagnostics.Add($"Resource deleted: {entry.FileName}");
+            message = $"Resource '{entry.FileName}' deleted.";
         }
         catch (Exception ex)
         {
-            message = ex.Message;
-            State.Diagnostics.Add("Resource manager error: " + ex.Message);
+            errorMessage = ex.Message;
+            State.Diagnostics.Add("Delete resource error: " + ex.Message);
         }
-        finally
+    }
+
+    private async Task ApplyDialogChanges(DialogResult result, ResourceCatalogEntry? original)
+    {
+        if (result.Cancelled || result.Data is not ResourceDialogData data) return;
+
+        try
         {
-            isBusy = false;
+            foreach (var card in data.Platforms)
+            {
+                if (card.MarkedForDeletion)
+                {
+                    await Workflow.RemoveResourceAsync(data.FileName, card.Platform);
+                }
+                else if (card.IsNew || card.PendingFilePath is not null)
+                {
+                    var sourcePath = card.PendingFilePath ?? "";
+                    if (!string.IsNullOrEmpty(sourcePath))
+                    {
+                        await Workflow.AddOrReplaceResourceAsync(sourcePath, data.FileName, card.Platform, [], data.Compressed);
+                    }
+                }
+            }
+
+            // Update compression if changed
+            if (original is not null && original.Compressed != data.Compressed)
+            {
+                await Workflow.SetResourceCompressionAsync(data.FileName, null, data.Compressed);
+            }
+            else if (original is null)
+            {
+                await Workflow.SetResourceCompressionAsync(data.FileName, null, data.Compressed);
+            }
+
+            await Workflow.SaveProjectAsync();
+            _lastPackage = null; // invalidate catalog
+            State.Diagnostics.Add($"Resource updated: {data.FileName}");
+            message = $"Resource '{data.FileName}' saved.";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+            State.Diagnostics.Add("Resource edit error: " + ex.Message);
         }
     }
 }
