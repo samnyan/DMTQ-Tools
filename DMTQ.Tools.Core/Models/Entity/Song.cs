@@ -72,7 +72,6 @@ public sealed class SongPattern
     public string Line { get; set; } = string.Empty;
     public string Signature { get; set; } = string.Empty;
     public string Difficulty { get; set; } = string.Empty;
-    public string Level { get; set; } = string.Empty;
     public string PointType { get; set; } = string.Empty;
     public string PointValue { get; set; } = string.Empty;
     public string Flg { get; set; } = string.Empty;

@@ -147,9 +147,8 @@
                                         ShowHover="true" ResizableColumns="true">
                             <PropertyColumn Property="@(p => p.PatternId)" Title="ID" Sortable="true" />
                             <PropertyColumn Property="@(p => p.Line)" Title="Line" />
-                            <PropertyColumn Property="@(p => p.Signature)" Title="Sig" />
-                            <PropertyColumn Property="@(p => p.Difficulty)" Title="Difficulty" />
-                            <PropertyColumn Property="@(p => p.Level)" Title="Level" />
+                            <PropertyColumn Property="@(p => p.Signature)" Title="Difficulty" />
+                            <PropertyColumn Property="@(p => p.Difficulty)" Title="Stars" />
                             <PropertyColumn Property="@(p => p.PointType)" Title="PointType" />
                             <PropertyColumn Property="@(p => p.PointValue)" Title="PointValue" />
                             <TemplateColumn Title="Enable" Context="p">
@@ -408,7 +407,6 @@
             Line = pattern.Line,
             Signature = pattern.Signature,
             Difficulty = pattern.Difficulty,
-            Level = pattern.Level,
             PointType = pattern.PointType,
             PointValue = pattern.PointValue,
             Flg = pattern.Flg,
@@ -437,7 +435,6 @@
             pattern.Line = clone.Line;
             pattern.Signature = clone.Signature;
             pattern.Difficulty = clone.Difficulty;
-            pattern.Level = clone.Level;
             pattern.PointType = clone.PointType;
             pattern.PointValue = clone.PointValue;
             pattern.Flg = clone.Flg;

@@ -41,7 +41,6 @@ public sealed class SongEditServiceTests
         song.PreviewPackageRelativePath = "preview/new.p.opus";
         song.Patterns.Add(new SongPattern { PatternId = "9002", SongId = "1002" });
         song.Patterns[0].Difficulty = "expert";
-        song.Patterns[0].Level = "13";
 
         new SongEditService().AddSong(package, song);
 
@@ -52,7 +51,6 @@ public sealed class SongEditServiceTests
         added.PreviewPackageRelativePath.Should().Be("preview/new.p.opus");
         added.Patterns.Should().ContainSingle();
         added.Patterns[0].PatternId.Should().Be("9002");
-        added.Patterns[0].Level.Should().Be("13");
     }
 
     [TestMethod]
