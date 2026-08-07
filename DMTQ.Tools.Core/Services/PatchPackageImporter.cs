@@ -123,7 +123,7 @@ public sealed class PatchPackageImporter(
             ImportLookupTables(package, csvEntries, cancellationToken);
 
             // ── Phase 4: cross-entity links (song↔product, song↔item, previews) ──
-            BuildPreviewLinks(package);
+            SongPreviewLinker.LinkPreviewResources(package);
 
             // ── Import any remaining non-entity tables as raw GameTables (for legacy/unknown tables) ──
             var entityTableNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
@@ -394,32 +394,6 @@ public sealed class PatchPackageImporter(
                 var schema = new QuestMissionDescCsvSchema(lang);
                 using var stream = File.OpenRead(entry.FilePath);
                 schema.ReadCsv(stream, questDict);
-            }
-        }
-    }
-
-    // ── Preview links ──
-
-    private static void BuildPreviewLinks(PatchPackage package)
-    {
-        var previewPaths = package.Resources
-            .Where(resource => resource.Category.Equals("preview", StringComparison.OrdinalIgnoreCase))
-            .Select(resource => resource.FileName)
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-        foreach (var song in package.Songs)
-        {
-            if (!string.IsNullOrWhiteSpace(song.Name) && previewPaths.Contains(song.Name))
-            {
-                song.PreviewPackageRelativePath = song.Name;
-                continue;
-            }
-
-            var songIdMatch = previewPaths.FirstOrDefault(path =>
-                path.Contains(song.Id.ToString(), StringComparison.OrdinalIgnoreCase));
-            if (!string.IsNullOrWhiteSpace(songIdMatch))
-            {
-                song.PreviewPackageRelativePath = songIdMatch;
             }
         }
     }

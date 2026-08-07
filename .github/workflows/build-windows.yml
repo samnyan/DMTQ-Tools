@@ -1,0 +1,49 @@
+name: Build DMTQ-Tools for Windows
+
+on:
+  push:
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_VERSION: 10.0.x
+  TARGET_FRAMEWORK: net10.0-windows10.0.19041.0
+  RUNTIME_IDENTIFIER: win-x64
+  BUILD_OUTPUT: artifacts/DMTQ-Tools
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up .NET SDK
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+          workloads: maui-windows
+
+      - name: Restore dependencies
+        run: >-
+          dotnet restore DMTQ-Tools/DMTQ-Tools.csproj
+          --runtime ${{ env.RUNTIME_IDENTIFIER }}
+
+      - name: Build Windows app
+        run: >-
+          dotnet build DMTQ-Tools/DMTQ-Tools.csproj
+          --configuration Release
+          --framework ${{ env.TARGET_FRAMEWORK }}
+          --runtime ${{ env.RUNTIME_IDENTIFIER }}
+          --no-restore
+          --output ${{ env.BUILD_OUTPUT }}
+          -p:WindowsPackageType=None
+
+      - name: Upload Windows build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: DMTQ-Tools-windows
+          path: ${{ env.BUILD_OUTPUT }}
+          if-no-files-found: error
