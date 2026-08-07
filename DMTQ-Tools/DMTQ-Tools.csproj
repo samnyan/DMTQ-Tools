@@ -27,6 +27,8 @@
         <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst'">15.0</SupportedOSPlatformVersion>
         <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</SupportedOSPlatformVersion>
         <TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
+
+        <DevFlowBlazorVersion>0.1.0-preview.11.26317.2</DevFlowBlazorVersion>
     </PropertyGroup>
 
     <ItemGroup>
@@ -54,12 +56,39 @@
         <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="10.0.71" />
         <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.9" />
         <PackageReference Include="Microsoft.Maui.DevFlow.Agent" Version="0.1.0-preview.11.26317.2" />
-        <PackageReference Include="Microsoft.Maui.DevFlow.Blazor" Version="0.1.0-preview.11.26317.2" />
+        <PackageReference Include="Microsoft.Maui.DevFlow.Blazor" Version="$(DevFlowBlazorVersion)" />
     </ItemGroup>
 
     <ItemGroup>
         <ProjectReference Include="..\DMTQ.Tools.Core\DMTQ.Tools.Core.csproj" />
         <ProjectReference Include="..\DMTQ.Tools.Components\DMTQ.Tools.Components.csproj" />
     </ItemGroup>
+
+    <!--
+      Microsoft.Maui.DevFlow.Blazor currently puts its Windows static assets under
+      staticwebassets, while the generated PRI file expects them under the lib
+      framework folder. Copy the assets to the expected location before MAUI
+      assigns target paths. This can be removed when the NuGet package is fixed.
+    -->
+    <Target Name="_FixDevFlowBlazorWwwroot"
+            BeforeTargets="AssignTargetPaths;_CopySourceItemsToOutputDirectory"
+            Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">
+        <PropertyGroup>
+            <_DevFlowPkgRoot>$([System.IO.Path]::Combine('$(NuGetPackageRoot)', 'microsoft.maui.devflow.blazor', '$(DevFlowBlazorVersion)'))</_DevFlowPkgRoot>
+            <_DevFlowStaticSrc>$(_DevFlowPkgRoot)\staticwebassets</_DevFlowStaticSrc>
+            <_DevFlowWwwrootDest>$(_DevFlowPkgRoot)\lib\net10.0-windows10.0.19041\Microsoft.Maui.DevFlow.Blazor\wwwroot</_DevFlowWwwrootDest>
+        </PropertyGroup>
+
+        <MakeDir Directories="$(_DevFlowWwwrootDest)"
+                 Condition="Exists('$(_DevFlowStaticSrc)') and !Exists('$(_DevFlowWwwrootDest)')" />
+        <Copy SourceFiles="$(_DevFlowStaticSrc)\chobitsu.js"
+              DestinationFolder="$(_DevFlowWwwrootDest)"
+              SkipUnchangedFiles="true"
+              Condition="Exists('$(_DevFlowStaticSrc)\chobitsu.js') and !Exists('$(_DevFlowWwwrootDest)\chobitsu.js')" />
+        <Copy SourceFiles="$(_DevFlowStaticSrc)\Microsoft.Maui.DevFlow.Blazor.lib.module.js"
+              DestinationFolder="$(_DevFlowWwwrootDest)"
+              SkipUnchangedFiles="true"
+              Condition="Exists('$(_DevFlowStaticSrc)\Microsoft.Maui.DevFlow.Blazor.lib.module.js') and !Exists('$(_DevFlowWwwrootDest)\Microsoft.Maui.DevFlow.Blazor.lib.module.js')" />
+    </Target>
 
 </Project>
