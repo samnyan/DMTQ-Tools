@@ -1,0 +1,261 @@
+@page "/patterns"
+@using System.Globalization
+@using DMTQ.Tools.Core.Models.Pattern
+@using DMTQ.Tools.Core.Services.Pattern
+@inject IProjectFilePicker FilePicker
+@inject IProjectFileSaver FileSaver
+@inject PatternBinarySerializer Serializer
+
+<h1>@L["Pattern.Title"]</h1>
+
+<FluentStack Orientation="Orientation.Vertical" VerticalGap="16">
+    <section class="toolbar-panel pattern-toolbar">
+        <FluentStack Orientation="Orientation.Horizontal"
+                     HorizontalGap="8"
+                     VerticalAlignment="VerticalAlignment.Center"
+                     Wrap="true">
+            <FluentButton Appearance="Appearance.Accent"
+                          OnClick="LoadPatternAsync"
+                          Disabled="@isBusy">
+                @L["Pattern.Open"]
+            </FluentButton>
+            <FluentSelect Items="TargetFormats"
+                          OptionText="FormatName"
+                          OptionValue="FormatValue"
+                          @bind-SelectedOption="targetFormat"
+                          Label='@L["Pattern.ExportFormat"]'
+                          Disabled="@(pattern is null || isBusy)" />
+            <FluentButton Appearance="Appearance.Neutral"
+                          OnClick="SavePatternAsync"
+                          Disabled="@(pattern is null || isBusy)">
+                @L["Pattern.SaveAs"]
+            </FluentButton>
+            @if (isBusy)
+            {
+                <FluentProgressRing />
+            }
+        </FluentStack>
+        <p class="section-hint">@L["Pattern.OpenHint"]</p>
+        @if (!string.IsNullOrWhiteSpace(statusMessage))
+        {
+            <FluentMessageBar Intent="@statusIntent">@statusMessage</FluentMessageBar>
+        }
+    </section>
+
+    @if (pattern is null)
+    {
+        <FluentCard>
+            <p class="status-message">@L["Pattern.NoPattern"]</p>
+        </FluentCard>
+    }
+    else
+    {
+        <section>
+            <h2 class="section-heading">@L["Pattern.BasicInfo"]</h2>
+            <FluentGrid Spacing="3" AdaptiveRendering="true">
+                <FluentGridItem xs="12" sm="6" md="3">
+                    <FluentCard><span class="metric-label">@L["Pattern.File"]</span><strong class="pattern-value">@fileName</strong></FluentCard>
+                </FluentGridItem>
+                <FluentGridItem xs="12" sm="6" md="3">
+                    <FluentCard><span class="metric-label">@L["Pattern.SourceFormat"]</span><strong>@FormatName(pattern.SourceFormat)</strong></FluentCard>
+                </FluentGridItem>
+                <FluentGridItem xs="12" sm="6" md="3">
+                    <FluentCard><span class="metric-label">@L["Pattern.Encrypted"]</span><strong>@(pattern.WasEncrypted ? L["Pattern.Yes"] : L["Pattern.No"])</strong></FluentCard>
+                </FluentGridItem>
+                <FluentGridItem xs="12" sm="6" md="3">
+                    <FluentCard><span class="metric-label">@L["Pattern.Version"]</span><strong>@pattern.Header.PtVersion</strong></FluentCard>
+                </FluentGridItem>
+                <FluentGridItem xs="12" sm="6" md="3">
+                    <FluentCard><span class="metric-label">@L["Pattern.PositionsPerMeasure"]</span><strong>@pattern.Header.PositionsPerMeasure</strong></FluentCard>
+                </FluentGridItem>
+                <FluentGridItem xs="12" sm="6" md="3">
+                    <FluentCard><span class="metric-label">@L["Pattern.InitialBpm"]</span><strong>@pattern.Header.InitialBpm.ToString("0.###", CultureInfo.InvariantCulture)</strong></FluentCard>
+                </FluentGridItem>
+                <FluentGridItem xs="12" sm="6" md="3">
+                    <FluentCard><span class="metric-label">@L["Pattern.EndPosition"]</span><strong>@pattern.Header.EndPosition</strong></FluentCard>
+                </FluentGridItem>
+                <FluentGridItem xs="12" sm="6" md="3">
+                    <FluentCard><span class="metric-label">@L["Pattern.Events"]</span><strong>@pattern.CommandCount</strong></FluentCard>
+                </FluentGridItem>
+                <FluentGridItem xs="12" sm="6" md="3">
+                    <FluentCard><span class="metric-label">@L["Pattern.Tracks"]</span><strong>@pattern.Tracks.Count</strong></FluentCard>
+                </FluentGridItem>
+                <FluentGridItem xs="12" sm="6" md="3">
+                    <FluentCard><span class="metric-label">@L["Pattern.Sounds"]</span><strong>@pattern.Sounds.Count</strong></FluentCard>
+                </FluentGridItem>
+                <FluentGridItem xs="12" sm="6" md="3">
+                    <FluentCard><span class="metric-label">@L["Pattern.TagB"]</span><strong>@pattern.Header.TagB</strong></FluentCard>
+                </FluentGridItem>
+                <FluentGridItem xs="12" sm="6" md="3">
+                    <FluentCard><span class="metric-label">@L["Pattern.TagC"]</span><strong>@pattern.Header.TagC</strong></FluentCard>
+                </FluentGridItem>
+            </FluentGrid>
+        </section>
+
+        <section>
+            <h2 class="section-heading">@L["Pattern.SoundList"] <span class="table-counts">(@pattern.Sounds.Count)</span></h2>
+            <div class="grid-scroll pattern-grid">
+                <FluentDataGrid Items="@SoundItems" TGridItem="PatternSound">
+                    <PropertyColumn TGridItem="PatternSound" TProp="ushort" Property="@(sound => sound.Id)" Title='@L["Pattern.SoundId"]' Sortable="true" />
+                    <PropertyColumn TGridItem="PatternSound" TProp="ushort" Property="@(sound => sound.Flags)" Title='@L["Pattern.Flags"]' />
+                    <PropertyColumn TGridItem="PatternSound" TProp="string" Property="@(sound => sound.FileName)" Title='@L["Pattern.FileName"]' />
+                </FluentDataGrid>
+            </div>
+        </section>
+
+        <section>
+            <h2 class="section-heading">@L["Pattern.EventList"] <span class="table-counts">(@pattern.CommandCount)</span></h2>
+            <div class="grid-scroll pattern-grid">
+                <FluentDataGrid Items="@EventItems" TGridItem="PatternEventRow">
+                    <PropertyColumn TGridItem="PatternEventRow" TProp="string" Property="@(item => item.Track)" Title='@L["Pattern.Track"]' Sortable="true" />
+                    <PropertyColumn TGridItem="PatternEventRow" TProp="int" Property="@(item => item.Position)" Title='@L["Pattern.Position"]' Sortable="true" />
+                    <PropertyColumn TGridItem="PatternEventRow" TProp="string" Property="@(item => item.Type)" Title='@L["Pattern.Type"]' />
+                    <PropertyColumn TGridItem="PatternEventRow" TProp="string" Property="@(item => item.Details)" Title='@L["Pattern.Details"]' />
+                </FluentDataGrid>
+            </div>
+        </section>
+    }
+</FluentStack>
+
+@code {
+    private static readonly IReadOnlyList<PatternFormat> TargetFormats =
+        [PatternFormat.Pt, PatternFormat.Bytes];
+
+    private PatternDocument? pattern;
+    private PatternFormat targetFormat = PatternFormat.Pt;
+    private string fileName = string.Empty;
+    private string? statusMessage;
+    private MessageIntent statusIntent = MessageIntent.Info;
+    private bool isBusy;
+
+    private IQueryable<PatternSound> SoundItems =>
+        pattern?.Sounds.AsQueryable() ?? Enumerable.Empty<PatternSound>().AsQueryable();
+
+    private IQueryable<PatternEventRow> EventItems =>
+        pattern is null
+            ? Enumerable.Empty<PatternEventRow>().AsQueryable()
+            : pattern.Tracks.SelectMany(track => track.Commands.Select(command =>
+                new PatternEventRow(
+                    TrackName(track),
+                    command.Position,
+                    CommandName(command),
+                    CommandDetails(command)))).AsQueryable();
+
+    private string FormatName(PatternFormat format) => format switch
+    {
+        PatternFormat.Bytes => "bytes",
+        PatternFormat.Pt => "pt",
+        _ => format.ToString()
+    };
+
+    private string FormatValue(PatternFormat format) => format.ToString();
+
+    private async Task LoadPatternAsync()
+    {
+        var path = await FilePicker.PickFileAsync();
+        if (string.IsNullOrWhiteSpace(path))
+            return;
+
+        var format = GetFormat(path);
+        if (format is null)
+        {
+            ShowStatus(L["Pattern.UnsupportedExtension"].Value, MessageIntent.Warning);
+            return;
+        }
+
+        isBusy = true;
+        statusMessage = null;
+        try
+        {
+            await using var stream = File.OpenRead(path);
+            pattern = await Serializer.DeserializeAsync(stream, format.Value);
+            fileName = Path.GetFileName(path);
+            targetFormat = format.Value;
+            ShowStatus(L["Pattern.Loaded", fileName].Value, MessageIntent.Success);
+        }
+        catch (Exception ex)
+        {
+            pattern = null;
+            fileName = string.Empty;
+            ShowStatus(L["Pattern.LoadFailed", ex.Message].Value, MessageIntent.Error);
+        }
+        finally
+        {
+            isBusy = false;
+        }
+    }
+
+    private async Task SavePatternAsync()
+    {
+        if (pattern is null)
+            return;
+
+        isBusy = true;
+        statusMessage = null;
+        try
+        {
+            var options = new PatternSerializationOptions
+            {
+                PtVersion = pattern.Header.PtVersion is 1 or 1536 ? pattern.Header.PtVersion : (short)1,
+                BytesMagic = pattern.Header.BytesMagic
+            };
+            var data = Serializer.Serialize(pattern, targetFormat, options);
+            var suggestedName = BuildSuggestedFileName(targetFormat);
+            await using var content = new MemoryStream(data, writable: false);
+            var savedPath = await FileSaver.SaveFileAsync(suggestedName, content);
+            if (savedPath is not null)
+            {
+                fileName = Path.GetFileName(savedPath);
+                ShowStatus(L["Pattern.Saved", fileName].Value, MessageIntent.Success);
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowStatus(L["Pattern.SaveFailed", ex.Message].Value, MessageIntent.Error);
+        }
+        finally
+        {
+            isBusy = false;
+        }
+    }
+
+    private string BuildSuggestedFileName(PatternFormat format)
+    {
+        var stem = Path.GetFileNameWithoutExtension(fileName);
+        if (string.IsNullOrWhiteSpace(stem))
+            stem = "pattern";
+
+        return $"{stem}.{FormatName(format)}";
+    }
+
+    private static PatternFormat? GetFormat(string path)
+        => Path.GetExtension(path).ToLowerInvariant() switch
+        {
+            ".bytes" => PatternFormat.Bytes,
+            ".pt" => PatternFormat.Pt,
+            _ => null
+        };
+
+    private static string TrackName(PatternTrack track)
+        => string.IsNullOrWhiteSpace(track.Name) ? $"#{track.Id}" : track.Name;
+
+    private string CommandName(PatternCommand command)
+        => command.KnownType is { } type ? type.ToString() : $"0x{command.Type:X2}";
+
+    private static string CommandDetails(PatternCommand command) => command.KnownType switch
+    {
+        PatternCommandType.Note => $"sound {command.SoundIndex}, volume {command.Volume}, pan {command.Pan}, length {command.Length}",
+        PatternCommandType.Volume => $"volume {command.Volume}",
+        PatternCommandType.BpmChange => $"BPM {command.Bpm.ToString("0.###", CultureInfo.InvariantCulture)}",
+        PatternCommandType.Beat => $"beat {command.Beat}",
+        _ => Convert.ToHexString(command.RawParameters)
+    };
+
+    private void ShowStatus(string message, MessageIntent intent)
+    {
+        statusMessage = message;
+        statusIntent = intent;
+    }
+
+    private sealed record PatternEventRow(string Track, int Position, string Type, string Details);
+}

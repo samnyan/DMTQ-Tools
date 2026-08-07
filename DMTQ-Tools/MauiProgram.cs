@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Maui;
 using DMTQ.Tools.Core.Services;
+using DMTQ.Tools.Core.Services.Pattern;
 using DMTQ_Tools.Components.Localization;
 using DMTQ_Tools.Services;
 using Microsoft.Extensions.Logging;
@@ -50,6 +51,8 @@ namespace DMTQ_Tools
 
             builder.Services.AddSingleton<IFolderPicker, MauiFolderPicker>();
             builder.Services.AddSingleton<IProjectFilePicker, MauiFilePicker>();
+            builder.Services.AddSingleton<IProjectFileSaver, MauiFileSaver>();
+            builder.Services.AddSingleton<PatternBinarySerializer>();
 
             var state = new GameTableManagerState();
             builder.Services.AddSingleton<IProjectState>(state);

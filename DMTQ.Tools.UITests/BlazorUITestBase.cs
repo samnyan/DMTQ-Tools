@@ -3,6 +3,7 @@ using DMTQ.Tools.Core.Models.Entity;
 using DMTQ.Tools.Core.Models.Export;
 using DMTQ.Tools.Core.Models.Project;
 using DMTQ.Tools.Core.Services;
+using DMTQ.Tools.Core.Services.Pattern;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Rendering;
 using Microsoft.FluentUI.AspNetCore.Components;
@@ -17,12 +18,19 @@ namespace DMTQ.Tools.UITests;
 /// </summary>
 public abstract class BlazorUITestBase : Bunit.TestContext
 {
+    protected FakeFilePicker FilePicker { get; private set; } = null!;
+    protected FakeFileSaver FileSaver { get; private set; } = null!;
+
     protected void RegisterAllServices(GameTableManagerTestState state)
     {
         Services.AddSingleton<IProjectState>(state);
         Services.AddSingleton<IProjectWorkflow>(new FakeWorkflow(state));
         Services.AddSingleton<IFolderPicker>(new FakeFolderPicker());
-        Services.AddSingleton<IProjectFilePicker>(new FakeFilePicker());
+        FilePicker = new FakeFilePicker();
+        FileSaver = new FakeFileSaver();
+        Services.AddSingleton<IProjectFilePicker>(FilePicker);
+        Services.AddSingleton<IProjectFileSaver>(FileSaver);
+        Services.AddSingleton<PatternBinarySerializer>();
         Services.AddSingleton<LogicalTableService>();
         Services.AddSingleton<SongCatalogService>();
         Services.AddSingleton<SongEditService>();
@@ -112,10 +120,25 @@ public abstract class BlazorUITestBase : Bunit.TestContext
         public Task<string?> PickFolderAsync(CancellationToken ct = default) => Task.FromResult(PickResult);
     }
 
-    private sealed class FakeFilePicker : IProjectFilePicker
+    protected sealed class FakeFilePicker : IProjectFilePicker
     {
         public string? PickResult { get; set; }
         public Task<string?> PickFileAsync(CancellationToken ct = default) => Task.FromResult(PickResult);
+    }
+
+    protected sealed class FakeFileSaver : IProjectFileSaver
+    {
+        public string? SuggestedFileName { get; private set; }
+        public byte[]? SavedContent { get; private set; }
+
+        public async Task<string?> SaveFileAsync(string suggestedFileName, Stream content, CancellationToken ct = default)
+        {
+            SuggestedFileName = suggestedFileName;
+            using var buffer = new MemoryStream();
+            await content.CopyToAsync(buffer, ct);
+            SavedContent = buffer.ToArray();
+            return Path.Combine(Path.GetTempPath(), suggestedFileName);
+        }
     }
 
     private sealed class TestLanguagePreferenceStore : ILanguagePreferenceStore

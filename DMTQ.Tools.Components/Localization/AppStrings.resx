@@ -157,4 +157,40 @@
   <data name="Dialog.ExistSizeChecksum" xml:space="preserve"><value>Exist: {0}, Size: {1}, Checksum: {2}</value></data>
   <data name="Editor.NewSong" xml:space="preserve"><value>New Song</value></data><data name="Editor.NewProduct" xml:space="preserve"><value>New Product</value></data><data name="Editor.NewItem" xml:space="preserve"><value>New Item</value></data><data name="Editor.Edit" xml:space="preserve"><value>Edit: {0}</value></data><data name="Editor.ProductInformation" xml:space="preserve"><value>Product Information</value></data><data name="Editor.ItemInformation" xml:space="preserve"><value>Item Information</value></data><data name="Editor.PriceSaleWindow" xml:space="preserve"><value>Price and Sale Window</value></data><data name="Editor.ItemDescriptionsHint" xml:space="preserve"><value>These values are exported to item_desc_&lt;lang&gt;.csv during package export.</value></data>
   <data name="Editor.OpenSongsProject" xml:space="preserve"><value>Open or import a project before editing songs.</value></data>
+  <data name="Nav.PatternTool" xml:space="preserve"><value>Pattern Tool</value></data>
+  <data name="Pattern.Title" xml:space="preserve"><value>Pattern Tool</value></data>
+  <data name="Pattern.Open" xml:space="preserve"><value>Open Pattern</value></data>
+  <data name="Pattern.SaveAs" xml:space="preserve"><value>Save As</value></data>
+  <data name="Pattern.ExportFormat" xml:space="preserve"><value>Export format</value></data>
+  <data name="Pattern.OpenHint" xml:space="preserve"><value>Open a .pt or .bytes file. The file is parsed into the common pattern model.</value></data>
+  <data name="Pattern.NoPattern" xml:space="preserve"><value>Open a pattern to inspect its metadata, events, and sound table.</value></data>
+  <data name="Pattern.BasicInfo" xml:space="preserve"><value>Pattern information</value></data>
+  <data name="Pattern.File" xml:space="preserve"><value>File</value></data>
+  <data name="Pattern.SourceFormat" xml:space="preserve"><value>Source format</value></data>
+  <data name="Pattern.Encrypted" xml:space="preserve"><value>Encrypted PT</value></data>
+  <data name="Pattern.Version" xml:space="preserve"><value>PT version</value></data>
+  <data name="Pattern.PositionsPerMeasure" xml:space="preserve"><value>Positions per measure</value></data>
+  <data name="Pattern.InitialBpm" xml:space="preserve"><value>Initial BPM</value></data>
+  <data name="Pattern.EndPosition" xml:space="preserve"><value>End position</value></data>
+  <data name="Pattern.Events" xml:space="preserve"><value>Events</value></data>
+  <data name="Pattern.Tracks" xml:space="preserve"><value>Tracks</value></data>
+  <data name="Pattern.Sounds" xml:space="preserve"><value>Sounds</value></data>
+  <data name="Pattern.TagB" xml:space="preserve"><value>Tag B</value></data>
+  <data name="Pattern.TagC" xml:space="preserve"><value>Tag C</value></data>
+  <data name="Pattern.SoundList" xml:space="preserve"><value>Sound list</value></data>
+  <data name="Pattern.EventList" xml:space="preserve"><value>Event list</value></data>
+  <data name="Pattern.SoundId" xml:space="preserve"><value>Sound ID</value></data>
+  <data name="Pattern.Flags" xml:space="preserve"><value>Flags</value></data>
+  <data name="Pattern.FileName" xml:space="preserve"><value>File name</value></data>
+  <data name="Pattern.Track" xml:space="preserve"><value>Track</value></data>
+  <data name="Pattern.Position" xml:space="preserve"><value>Position</value></data>
+  <data name="Pattern.Type" xml:space="preserve"><value>Type</value></data>
+  <data name="Pattern.Details" xml:space="preserve"><value>Details</value></data>
+  <data name="Pattern.Yes" xml:space="preserve"><value>Yes</value></data>
+  <data name="Pattern.No" xml:space="preserve"><value>No</value></data>
+  <data name="Pattern.UnsupportedExtension" xml:space="preserve"><value>Only .pt and .bytes files are supported.</value></data>
+  <data name="Pattern.Loaded" xml:space="preserve"><value>Loaded {0}.</value></data>
+  <data name="Pattern.Saved" xml:space="preserve"><value>Saved {0}.</value></data>
+  <data name="Pattern.LoadFailed" xml:space="preserve"><value>Could not load pattern: {0}</value></data>
+  <data name="Pattern.SaveFailed" xml:space="preserve"><value>Could not save pattern: {0}</value></data>
 </root>
