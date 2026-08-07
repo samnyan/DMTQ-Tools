@@ -24,8 +24,13 @@ public sealed class CategoryProductCsvSchema : CsvLookupSchema<Product>
         if (!lookup.TryGetValue(productId, out var product))
             return;
 
-        if (fields.TryGetValue("category_id", out var categoryId) && !string.IsNullOrWhiteSpace(categoryId))
+        if (fields.TryGetValue("category_id", out var categoryId)
+            && !string.IsNullOrWhiteSpace(categoryId)
+            && !product.CategoryIds.Any(existing =>
+                existing.Equals(categoryId, StringComparison.OrdinalIgnoreCase)))
+        {
             product.CategoryIds.Add(categoryId);
+        }
     }
 
     /// <summary>Writes the category-product join rows from all products.</summary>

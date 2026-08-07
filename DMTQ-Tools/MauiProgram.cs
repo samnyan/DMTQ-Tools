@@ -34,6 +34,10 @@ namespace DMTQ_Tools
             builder.Services.AddSingleton<LogicalTableService>();
             builder.Services.AddSingleton<SongCatalogService>();
             builder.Services.AddSingleton<SongEditService>();
+            builder.Services.AddSingleton<ProductCatalogService>();
+            builder.Services.AddSingleton<ProductEditService>();
+            builder.Services.AddSingleton<ItemCatalogService>();
+            builder.Services.AddSingleton<ItemEditService>();
 
             builder.Services.AddSingleton<ResourceManagerService>();
             builder.Services.AddSingleton<PackageQaService>();

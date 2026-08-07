@@ -11,6 +11,49 @@ namespace DMTQ.Tools.Core.Tests.Services;
 public sealed class JsonPatchProjectRepositoryTests
 {
     [TestMethod]
+    public async Task LoadAsync_AcceptsLegacyStringResourceSizes()
+    {
+        var projectRoot = Path.Combine(Path.GetTempPath(), "dmtq-json-legacy-project-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            Directory.CreateDirectory(projectRoot);
+            var json = """
+                {
+                  "SchemaVersion": 1,
+                  "Resources": [
+                    {
+                      "FileName": "preview/legacy.p.opus",
+                      "Category": "preview",
+                      "PlatformManifest": [
+                        {
+                          "Platform": "share",
+                          "Exist": true,
+                          "SourceFileSize": "1234",
+                          "SourceCompressedFileSize": "",
+                          "SourceChecksum": "",
+                          "SourceCompressedChecksum": ""
+                        }
+                      ]
+                    }
+                  ]
+                }
+                """;
+            await File.WriteAllTextAsync(Path.Combine(projectRoot, "project.json"), json);
+
+            var snapshot = await new JsonPatchProjectRepository().LoadAsync(projectRoot);
+            var manifest = snapshot.Package.Resources.Single().PlatformManifest.Single();
+
+            manifest.SourceFileSize.Should().Be(1234);
+            manifest.SourceCompressedFileSize.Should().Be(0);
+        }
+        finally
+        {
+            if (Directory.Exists(projectRoot))
+                Directory.Delete(projectRoot, recursive: true);
+        }
+    }
+
+    [TestMethod]
     public async Task SaveAndLoadAsync_RoundTripsMinimalPackage()
     {
         var projectRoot = Path.Combine(Path.GetTempPath(), "dmtq-json-project-" + Guid.NewGuid().ToString("N"));

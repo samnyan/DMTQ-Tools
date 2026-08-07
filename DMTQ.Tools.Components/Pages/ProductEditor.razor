@@ -1,0 +1,174 @@
+@page "/products/editor/{ProductId}"
+@inject NavigationManager Navigation
+@inject IProjectState State
+@inject IProjectWorkflow Workflow
+@inject ProductEditService ProductEditSvc
+@inject ProductCatalogService ProductCatalog
+
+<FluentStack Orientation="Orientation.Vertical" VerticalGap="20" HorizontalAlignment="HorizontalAlignment.Stretch">
+    <FluentBreadcrumb>
+        <FluentBreadcrumbItem Href="/products">Products</FluentBreadcrumbItem>
+        <FluentBreadcrumbItem>@(IsCreate ? "New Product" : $"Edit: {currentProduct?.Id}")</FluentBreadcrumbItem>
+    </FluentBreadcrumb>
+
+    @if (State.CurrentPackage is null)
+    {
+        <FluentMessageBar Title="Open or import a project before editing products." Intent="MessageIntent.Warning" />
+    }
+    else if (currentProduct is null && !IsCreate)
+    {
+        <FluentMessageBar Title="@($"Product '{ProductId}' not found.")" Intent="MessageIntent.Error" />
+        <FluentButton Appearance="Appearance.Neutral" OnClick="NavigateBack">Back to Products</FluentButton>
+    }
+    else
+    {
+        <EditForm Model="@currentProduct" OnValidSubmit="SaveAsync" FormName="product-editor">
+            <FluentStack Orientation="Orientation.Vertical" VerticalGap="24" HorizontalAlignment="HorizontalAlignment.Stretch">
+                <section>
+                    <h2 class="section-heading">Product Information</h2>
+                    <FluentGrid Spacing="3">
+                        <FluentGridItem xs="12" md="6">
+                            @if (IsCreate)
+                            {
+                                <FluentTextField style="width: 100%;" @bind-Value="productIdInput" Label="Product ID *" Placeholder="e.g. PRODUCT_001" Required />
+                            }
+                            else
+                            {
+                                <FluentTextField style="width: 100%;" Value="@(currentProduct?.Id ?? string.Empty)" Label="Product ID" ReadOnly="true" />
+                            }
+                        </FluentGridItem>
+                        <FluentGridItem xs="12" md="6">
+                            <FluentTextField style="width: 100%;" @bind-Value="currentProduct!.ItemId" Label="Item ID" />
+                        </FluentGridItem>
+                        <FluentGridItem xs="12" md="6">
+                            <FluentTextField style="width: 100%;" @bind-Value="currentProduct!.PlatformProductId" Label="Platform Product ID" />
+                        </FluentGridItem>
+                        <FluentGridItem xs="12" md="6">
+                            <FluentTextField style="width: 100%;" @bind-Value="currentProduct!.StoreProductId" Label="Store Product ID" />
+                        </FluentGridItem>
+                        <FluentGridItem xs="12" md="4">
+                            <FluentTextField style="width: 100%;" @bind-Value="currentProduct!.ProductType" Label="Product Type" />
+                        </FluentGridItem>
+                        <FluentGridItem xs="12" md="4">
+                            <FluentTextField style="width: 100%;" @bind-Value="currentProduct!.Status" Label="Status" />
+                        </FluentGridItem>
+                        <FluentGridItem xs="12" md="4">
+                            <FluentTextField style="width: 100%;" @bind-Value="currentProduct!.Update" Label="Update" />
+                        </FluentGridItem>
+                    </FluentGrid>
+                </section>
+
+                <section>
+                    <h2 class="section-heading">Price and Sale Window</h2>
+                    <FluentGrid Spacing="3">
+                        <FluentGridItem xs="12" md="6">
+                            <FluentTextField style="width: 100%;" @bind-Value="currentProduct!.CostGamePoint" Label="Cost Game Point" />
+                        </FluentGridItem>
+                        <FluentGridItem xs="12" md="6">
+                            <FluentTextField style="width: 100%;" @bind-Value="currentProduct!.CostGameCash" Label="Cost Game Cash" />
+                        </FluentGridItem>
+                        <FluentGridItem xs="12" md="6">
+                            <FluentTextField style="width: 100%;" @bind-Value="currentProduct!.SaleStartDate" Label="Sale Start Date" />
+                        </FluentGridItem>
+                        <FluentGridItem xs="12" md="6">
+                            <FluentTextField style="width: 100%;" @bind-Value="currentProduct!.SaleEndDate" Label="Sale End Date" />
+                        </FluentGridItem>
+                    </FluentGrid>
+                </section>
+
+                @if (currentProduct!.CategoryIds.Count > 0)
+                {
+                    <FluentMessageBar Title="@CategorySummary" Intent="MessageIntent.Info" />
+                }
+
+                <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8" VerticalAlignment="VerticalAlignment.Center">
+                    <FluentButton Appearance="Appearance.Accent" Type="ButtonType.Submit" Disabled="@isBusy">Save Product</FluentButton>
+                    <FluentButton Appearance="Appearance.Neutral" OnClick="NavigateBack">Cancel</FluentButton>
+                    @if (!string.IsNullOrEmpty(message))
+                    {
+                        <FluentMessageBar Title="@message" Intent="MessageIntent.Info" />
+                    }
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <FluentMessageBar Title="@errorMessage" Intent="MessageIntent.Error" />
+                    }
+                </FluentStack>
+            </FluentStack>
+        </EditForm>
+    }
+</FluentStack>
+
+@code {
+    [Parameter] public string ProductId { get; set; } = default!;
+
+    private bool IsCreate => ProductId.Equals("new", StringComparison.OrdinalIgnoreCase);
+    private Product? currentProduct;
+    private string productIdInput = string.Empty;
+    private string message = string.Empty;
+    private string errorMessage = string.Empty;
+    private bool isBusy;
+
+    private string CategorySummary =>
+        currentProduct is null ? string.Empty : $"Categories: {string.Join(", ", currentProduct.CategoryIds)}";
+
+    private IReadOnlyList<Product> Catalog =>
+        State.CurrentPackage is null ? [] : ProductCatalog.BuildCatalog(State.CurrentPackage);
+
+    protected override void OnParametersSet()
+    {
+        if (IsCreate)
+        {
+            currentProduct ??= new Product { Id = string.Empty };
+            return;
+        }
+
+        var source = Catalog.FirstOrDefault(product =>
+            product.Id.Equals(ProductId, StringComparison.OrdinalIgnoreCase));
+        currentProduct = source is null ? null : ProductEditSvc.CreateDraft(source);
+    }
+
+    private void NavigateBack() => Navigation.NavigateTo("/products");
+
+    private async Task SaveAsync()
+    {
+        if (State.CurrentPackage is null || currentProduct is null) return;
+
+        isBusy = true;
+        message = string.Empty;
+        errorMessage = string.Empty;
+
+        try
+        {
+            if (IsCreate)
+            {
+                if (string.IsNullOrWhiteSpace(productIdInput))
+                {
+                    errorMessage = "Product ID is required.";
+                    return;
+                }
+
+                var product = ProductEditSvc.CreateDraft(currentProduct, productIdInput.Trim());
+                ProductEditSvc.AddProduct(State.CurrentPackage, product);
+                await Workflow.SaveProjectAsync();
+                State.Diagnostics.Add($"Product added: {product.Id}");
+                Navigation.NavigateTo($"/products/editor/{Uri.EscapeDataString(product.Id)}");
+            }
+            else
+            {
+                ProductEditSvc.UpdateProduct(State.CurrentPackage, currentProduct);
+                await Workflow.SaveProjectAsync();
+                State.Diagnostics.Add($"Product edited: {currentProduct.Id}");
+                message = "Product saved.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+            State.Diagnostics.Add("Product save error: " + ex.Message);
+        }
+        finally
+        {
+            isBusy = false;
+        }
+    }
+}

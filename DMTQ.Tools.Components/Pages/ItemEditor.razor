@@ -1,0 +1,207 @@
+@page "/items/editor/{ItemId}"
+@inject NavigationManager Navigation
+@inject IProjectState State
+@inject IProjectWorkflow Workflow
+@inject ItemEditService ItemEditSvc
+@inject ItemCatalogService ItemCatalog
+
+<FluentStack Orientation="Orientation.Vertical" VerticalGap="20" HorizontalAlignment="HorizontalAlignment.Stretch">
+    <FluentBreadcrumb>
+        <FluentBreadcrumbItem Href="/items">Items</FluentBreadcrumbItem>
+        <FluentBreadcrumbItem>@(IsCreate ? "New Item" : $"Edit: {currentItem?.Id}")</FluentBreadcrumbItem>
+    </FluentBreadcrumb>
+
+    @if (State.CurrentPackage is null)
+    {
+        <FluentMessageBar Title="Open or import a project before editing items." Intent="MessageIntent.Warning" />
+    }
+    else if (currentItem is null && !IsCreate)
+    {
+        <FluentMessageBar Title="@($"Item '{ItemId}' not found.")" Intent="MessageIntent.Error" />
+        <FluentButton Appearance="Appearance.Neutral" OnClick="NavigateBack">Back to Items</FluentButton>
+    }
+    else
+    {
+        <EditForm Model="@currentItem" OnValidSubmit="SaveAsync" FormName="item-editor">
+            <FluentStack Orientation="Orientation.Vertical" VerticalGap="24" HorizontalAlignment="HorizontalAlignment.Stretch">
+                <section>
+                    <h2 class="section-heading">Item Information</h2>
+                    <FluentGrid Spacing="3">
+                        <FluentGridItem xs="12" md="6">
+                            @if (IsCreate)
+                            {
+                                <FluentTextField style="width: 100%;" @bind-Value="itemIdInput" Label="Item ID *" Placeholder="e.g. ITEM_001" Required />
+                            }
+                            else
+                            {
+                                <FluentTextField style="width: 100%;" Value="@(currentItem?.Id ?? string.Empty)" Label="Item ID" ReadOnly="true" />
+                            }
+                        </FluentGridItem>
+                        <FluentGridItem xs="12" md="6">
+                            <FluentTextField style="width: 100%;" @bind-Value="currentItem!.ItemName" Label="Item Name" />
+                        </FluentGridItem>
+                        <FluentGridItem xs="12" md="6">
+                            <FluentTextField style="width: 100%;" @bind-Value="currentItem!.ImgUrl1" Label="Image URL 1" />
+                        </FluentGridItem>
+                        <FluentGridItem xs="12" md="6">
+                            <FluentTextField style="width: 100%;" @bind-Value="currentItem!.ImgUrl2" Label="Image URL 2" />
+                        </FluentGridItem>
+                        <FluentGridItem xs="12" md="6">
+                            <FluentTextField style="width: 100%;" @bind-Value="currentItem!.Description" Label="Description" />
+                        </FluentGridItem>
+                        <FluentGridItem xs="12" md="6">
+                            <FluentTextField style="width: 100%;" @bind-Value="currentItem!.Summary" Label="Summary" />
+                        </FluentGridItem>
+                        <FluentGridItem xs="12" md="4">
+                            <FluentTextField style="width: 100%;" @bind-Value="currentItem!.RepeatCount" Label="Repeat Count" />
+                        </FluentGridItem>
+                        <FluentGridItem xs="12" md="4">
+                            <FluentTextField style="width: 100%;" @bind-Value="currentItem!.ItemType" Label="Item Type" />
+                        </FluentGridItem>
+                        <FluentGridItem xs="12" md="4">
+                            <FluentTextField style="width: 100%;" @bind-Value="currentItem!.LimitMinute" Label="Limit Minute" />
+                        </FluentGridItem>
+                        <FluentGridItem xs="12" md="4">
+                            <FluentTextField style="width: 100%;" @bind-Value="currentItem!.Status" Label="Status" />
+                        </FluentGridItem>
+                        <FluentGridItem xs="12" md="4">
+                            <FluentTextField style="width: 100%;" @bind-Value="currentItem!.BuyLevel" Label="Buy Level" />
+                        </FluentGridItem>
+                        <FluentGridItem xs="12" md="4">
+                            <FluentTextField style="width: 100%;" @bind-Value="currentItem!.BuyLimitCount" Label="Buy Limit Count" />
+                        </FluentGridItem>
+                        <FluentGridItem xs="12" md="6">
+                            <FluentTextField style="width: 100%;" @bind-Value="currentItem!.BuyLimitType" Label="Buy Limit Type" />
+                        </FluentGridItem>
+                        <FluentGridItem xs="12" md="6">
+                            <FluentTextField style="width: 100%;" @bind-Value="currentItem!.Update" Label="Update" />
+                        </FluentGridItem>
+                    </FluentGrid>
+                </section>
+
+                <section>
+                    <h2 class="section-heading">Localized Descriptions</h2>
+                    <p class="section-hint">These values are exported to item_desc_&lt;lang&gt;.csv during package export.</p>
+                    <FluentStack Orientation="Orientation.Vertical" VerticalGap="16" HorizontalAlignment="HorizontalAlignment.Stretch">
+                        @foreach (var language in DefaultLanguages)
+                        {
+                            <div>
+                                <h3 class="lang-heading">@language</h3>
+                                <FluentGrid Spacing="2">
+                                    <FluentGridItem xs="12" md="4">
+                                        <FluentTextField style="width: 100%;" @bind-Value="currentItem!.NamesByLanguage[language]" Label="Name" />
+                                    </FluentGridItem>
+                                    <FluentGridItem xs="12" md="4">
+                                        <FluentTextField style="width: 100%;" @bind-Value="currentItem!.DescriptionsByLanguage[language]" Label="Description" />
+                                    </FluentGridItem>
+                                    <FluentGridItem xs="12" md="4">
+                                        <FluentTextField style="width: 100%;" @bind-Value="currentItem!.SummariesByLanguage[language]" Label="Summary" />
+                                    </FluentGridItem>
+                                </FluentGrid>
+                            </div>
+                        }
+                    </FluentStack>
+                </section>
+
+                <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8" VerticalAlignment="VerticalAlignment.Center">
+                    <FluentButton Appearance="Appearance.Accent" Type="ButtonType.Submit" Disabled="@isBusy">Save Item</FluentButton>
+                    <FluentButton Appearance="Appearance.Neutral" OnClick="NavigateBack">Cancel</FluentButton>
+                    @if (!string.IsNullOrEmpty(message))
+                    {
+                        <FluentMessageBar Title="@message" Intent="MessageIntent.Info" />
+                    }
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <FluentMessageBar Title="@errorMessage" Intent="MessageIntent.Error" />
+                    }
+                </FluentStack>
+            </FluentStack>
+        </EditForm>
+    }
+</FluentStack>
+
+@code {
+    [Parameter] public string ItemId { get; set; } = default!;
+
+    private static readonly string[] DefaultLanguages = ["CN", "JP", "KR", "TW", "US"];
+    private bool IsCreate => ItemId.Equals("new", StringComparison.OrdinalIgnoreCase);
+    private Item? currentItem;
+    private string itemIdInput = string.Empty;
+    private string message = string.Empty;
+    private string errorMessage = string.Empty;
+    private bool isBusy;
+
+    private IReadOnlyList<Item> Catalog =>
+        State.CurrentPackage is null ? [] : ItemCatalog.BuildCatalog(State.CurrentPackage);
+
+    protected override void OnParametersSet()
+    {
+        if (IsCreate)
+        {
+            currentItem ??= new Item { Id = string.Empty };
+            EnsureLanguageFields(currentItem);
+            return;
+        }
+
+        var source = Catalog.FirstOrDefault(item =>
+            item.Id.Equals(ItemId, StringComparison.OrdinalIgnoreCase));
+        currentItem = source is null ? null : ItemEditSvc.CreateDraft(source);
+        if (currentItem is not null)
+            EnsureLanguageFields(currentItem);
+    }
+
+    private static void EnsureLanguageFields(Item item)
+    {
+        foreach (var language in DefaultLanguages)
+        {
+            item.NamesByLanguage.TryAdd(language, string.Empty);
+            item.DescriptionsByLanguage.TryAdd(language, string.Empty);
+            item.SummariesByLanguage.TryAdd(language, string.Empty);
+        }
+    }
+
+    private void NavigateBack() => Navigation.NavigateTo("/items");
+
+    private async Task SaveAsync()
+    {
+        if (State.CurrentPackage is null || currentItem is null) return;
+
+        isBusy = true;
+        message = string.Empty;
+        errorMessage = string.Empty;
+
+        try
+        {
+            if (IsCreate)
+            {
+                if (string.IsNullOrWhiteSpace(itemIdInput))
+                {
+                    errorMessage = "Item ID is required.";
+                    return;
+                }
+
+                var item = ItemEditSvc.CreateDraft(currentItem, itemIdInput.Trim());
+                ItemEditSvc.AddItem(State.CurrentPackage, item);
+                await Workflow.SaveProjectAsync();
+                State.Diagnostics.Add($"Item added: {item.Id}");
+                Navigation.NavigateTo($"/items/editor/{Uri.EscapeDataString(item.Id)}");
+            }
+            else
+            {
+                ItemEditSvc.UpdateItem(State.CurrentPackage, currentItem);
+                await Workflow.SaveProjectAsync();
+                State.Diagnostics.Add($"Item edited: {currentItem.Id}");
+                message = "Item saved.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+            State.Diagnostics.Add("Item save error: " + ex.Message);
+        }
+        finally
+        {
+            isBusy = false;
+        }
+    }
+}

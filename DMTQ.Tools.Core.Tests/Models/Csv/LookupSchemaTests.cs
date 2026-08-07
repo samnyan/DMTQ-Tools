@@ -193,6 +193,7 @@ public sealed class LookupSchemaTests
         var schema = new CategoryProductCsvSchema();
         var csv = "category_id,product_id\r\n" +
                   "CAT_SONG,PROD_001\r\n" +
+                  "CAT_SONG,PROD_001\r\n" +
                   "CAT_PREMIUM,PROD_001\r\n" +
                   "CAT_SONG,PROD_002\r\n";
 

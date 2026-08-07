@@ -1,0 +1,143 @@
+@page "/items"
+@inject NavigationManager Navigation
+@inject IProjectState State
+@inject IProjectWorkflow Workflow
+@inject ItemEditService ItemEditor
+@inject ItemCatalogService ItemCatalog
+@inject IDialogService DialogService
+
+<ProjectListShell TItem="Item"
+                  Title="Items"
+                  ProjectMissingMessage="Import or open a project before editing items."
+                  EmptyMessage="No items found. Import CSV data or add an item."
+                  FilteredItems="@FilteredItems"
+                  Pagination="@pagination"
+                  Message="@message"
+                  ErrorMessage="@errorMessage">
+    <Toolbar>
+        <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center">
+            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" VerticalAlignment="VerticalAlignment.Center">
+                <FluentTextField @bind-Value="filter" Immediate="true" Placeholder="Filter by item ID, name, type..."
+                                 Style="min-width: 320px;" />
+                <FluentSelect Items="Languages"
+                              OptionText="@(language => language)"
+                              OptionValue="@(language => language)"
+                              @bind-SelectedOption="selectedLanguage"
+                              Label="Language"
+                              Style="min-width: 100px;" />
+            </FluentStack>
+            <FluentButton Appearance="Appearance.Accent"
+                          IconStart="@(new Icons.Regular.Size20.Add())"
+                          OnClick="CreateNewItem">Add Item</FluentButton>
+        </FluentStack>
+    </Toolbar>
+
+    <Metrics>
+        <FluentGrid Spacing="3" AdaptiveRendering="true">
+            <FluentGridItem xs="12" sm="6" md="3">
+                <FluentCard><span class="metric-label">Items</span><strong>@Catalog.Count</strong></FluentCard>
+            </FluentGridItem>
+            <FluentGridItem xs="12" sm="6" md="3">
+                <FluentCard><span class="metric-label">Active</span><strong>@Catalog.Count(item => item.Status.Equals("Y", StringComparison.OrdinalIgnoreCase))</strong></FluentCard>
+            </FluentGridItem>
+            <FluentGridItem xs="12" sm="6" md="3">
+                <FluentCard><span class="metric-label">Localized names</span><strong>@Catalog.Count(item => item.NamesByLanguage.ContainsKey(selectedLanguage))</strong></FluentCard>
+            </FluentGridItem>
+            <FluentGridItem xs="12" sm="6" md="3">
+                <FluentCard><span class="metric-label">Item types</span><strong>@Catalog.Select(item => item.ItemType).Where(type => !string.IsNullOrWhiteSpace(type)).Distinct(StringComparer.OrdinalIgnoreCase).Count()</strong></FluentCard>
+            </FluentGridItem>
+        </FluentGrid>
+    </Metrics>
+
+    <Columns>
+        <PropertyColumn TGridItem="Item" TProp="string" Property="@(item => item.Id)" Title="Item ID" Sortable="true" />
+        <TemplateColumn TGridItem="Item" Title="Name" Sortable="true" SortBy="@(GridSort<Item>.ByAscending(item => item.ItemName))" Context="item">
+            <strong>@ItemCatalog.GetDisplayName(item, selectedLanguage)</strong>
+        </TemplateColumn>
+        <PropertyColumn TGridItem="Item" TProp="string" Property="@(item => item.ItemType)" Title="Type" Sortable="true" />
+        <PropertyColumn TGridItem="Item" TProp="string" Property="@(item => item.Status)" Title="Status" Sortable="true" />
+        <PropertyColumn TGridItem="Item" TProp="string" Property="@(item => item.BuyLevel)" Title="Buy Level" />
+        <TemplateColumn TGridItem="Item" Title="Summary" Context="item">
+            @ItemCatalog.GetLocalizedSummary(item, selectedLanguage)
+        </TemplateColumn>
+        <TemplateColumn TGridItem="Item" Title="Actions" Context="item">
+            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="4">
+                <FluentButton IconStart="@(new Icons.Regular.Size20.Edit())"
+                              Appearance="Appearance.Neutral"
+                              OnClick="() => EditItem(item.Id)"
+                              Title="Edit" />
+                <FluentButton IconStart="@(new Icons.Regular.Size20.Delete())"
+                              Appearance="Appearance.Neutral"
+                              OnClick="() => DeleteItemAsync(item)"
+                              Title="Delete" />
+            </FluentStack>
+        </TemplateColumn>
+    </Columns>
+</ProjectListShell>
+
+@code {
+    private static readonly IReadOnlyList<string> Languages = ["CN", "JP", "KR", "TW", "US"];
+    private string filter = string.Empty;
+    private string selectedLanguage = "CN";
+    private string? message;
+    private string? errorMessage;
+    private PaginationState pagination = new() { ItemsPerPage = 25 };
+
+    private PatchPackage? _lastPackage;
+    private IReadOnlyList<Item> _catalog = [];
+
+    private IReadOnlyList<Item> Catalog
+    {
+        get
+        {
+            if (ReferenceEquals(State.CurrentPackage, _lastPackage)) return _catalog;
+            _lastPackage = State.CurrentPackage;
+            _catalog = State.CurrentPackage is null ? [] : ItemCatalog.BuildCatalog(State.CurrentPackage);
+            return _catalog;
+        }
+    }
+
+    private IEnumerable<Item> FilteredItems
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(filter)) return Catalog;
+
+            return Catalog.Where(item =>
+                item.Id.Contains(filter, StringComparison.OrdinalIgnoreCase)
+                || item.ItemName.Contains(filter, StringComparison.OrdinalIgnoreCase)
+                || ItemCatalog.GetDisplayName(item, selectedLanguage).Contains(filter, StringComparison.OrdinalIgnoreCase)
+                || item.ItemType.Contains(filter, StringComparison.OrdinalIgnoreCase));
+        }
+    }
+
+    private void CreateNewItem() => Navigation.NavigateTo("/items/editor/new");
+    private void EditItem(string itemId) => Navigation.NavigateTo($"/items/editor/{Uri.EscapeDataString(itemId)}");
+
+    private async Task DeleteItemAsync(Item item)
+    {
+        if (State.CurrentPackage is null) return;
+
+        message = null;
+        errorMessage = null;
+        var dialog = await DialogService.ShowConfirmationAsync(
+            $"Delete item '{ItemCatalog.GetDisplayName(item, selectedLanguage)}' ({item.Id})?",
+            "Delete", "Cancel", "Delete Item");
+        var result = await dialog.Result;
+        if (result.Cancelled) return;
+
+        try
+        {
+            ItemEditor.RemoveItem(State.CurrentPackage, item.Id);
+            await Workflow.SaveProjectAsync();
+            _lastPackage = null;
+            State.Diagnostics.Add($"Item deleted: {item.Id}");
+            message = $"Item {item.Id} deleted.";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+            State.Diagnostics.Add("Delete item error: " + ex.Message);
+        }
+    }
+}

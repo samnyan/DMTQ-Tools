@@ -1,0 +1,131 @@
+@page "/products"
+@inject NavigationManager Navigation
+@inject IProjectState State
+@inject IProjectWorkflow Workflow
+@inject ProductEditService ProductEditor
+@inject ProductCatalogService ProductCatalog
+@inject IDialogService DialogService
+
+<ProjectListShell TItem="Product"
+                  Title="Products"
+                  ProjectMissingMessage="Import or open a project before editing products."
+                  EmptyMessage="No products found. Import CSV data or add a product."
+                  FilteredItems="@FilteredProducts"
+                  Pagination="@pagination"
+                  Message="@message"
+                  ErrorMessage="@errorMessage">
+    <Toolbar>
+        <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center">
+            <FluentTextField @bind-Value="filter" Immediate="true" Placeholder="Filter by product ID, item, SKU..."
+                             Style="min-width: 320px;" />
+            <FluentButton Appearance="Appearance.Accent"
+                          IconStart="@(new Icons.Regular.Size20.Add())"
+                          OnClick="CreateNewProduct">Add Product</FluentButton>
+        </FluentStack>
+    </Toolbar>
+
+    <Metrics>
+        <FluentGrid Spacing="3" AdaptiveRendering="true">
+            <FluentGridItem xs="12" sm="6" md="3">
+                <FluentCard><span class="metric-label">Products</span><strong>@Catalog.Count</strong></FluentCard>
+            </FluentGridItem>
+            <FluentGridItem xs="12" sm="6" md="3">
+                <FluentCard><span class="metric-label">Active</span><strong>@Catalog.Count(product => product.Status.Equals("Y", StringComparison.OrdinalIgnoreCase))</strong></FluentCard>
+            </FluentGridItem>
+            <FluentGridItem xs="12" sm="6" md="3">
+                <FluentCard><span class="metric-label">With store SKU</span><strong>@Catalog.Count(product => !string.IsNullOrWhiteSpace(product.StoreProductId))</strong></FluentCard>
+            </FluentGridItem>
+            <FluentGridItem xs="12" sm="6" md="3">
+                <FluentCard><span class="metric-label">Categories</span><strong>@Catalog.Sum(product => product.CategoryIds.Count)</strong></FluentCard>
+            </FluentGridItem>
+        </FluentGrid>
+    </Metrics>
+
+    <Columns>
+        <PropertyColumn TGridItem="Product" TProp="string" Property="@(product => product.Id)" Title="Product ID" Sortable="true" />
+        <PropertyColumn TGridItem="Product" TProp="string" Property="@(product => product.ItemId)" Title="Item ID" Sortable="true" />
+        <PropertyColumn TGridItem="Product" TProp="string" Property="@(product => product.ProductType)" Title="Type" Sortable="true" />
+        <PropertyColumn TGridItem="Product" TProp="string" Property="@(product => product.PlatformProductId)" Title="Platform SKU" Sortable="true" />
+        <PropertyColumn TGridItem="Product" TProp="string" Property="@(product => product.StoreProductId)" Title="Store SKU" Sortable="true" />
+        <PropertyColumn TGridItem="Product" TProp="string" Property="@(product => product.CostGamePoint)" Title="Game Point" />
+        <PropertyColumn TGridItem="Product" TProp="string" Property="@(product => product.CostGameCash)" Title="Game Cash" />
+        <PropertyColumn TGridItem="Product" TProp="string" Property="@(product => product.Status)" Title="Status" Sortable="true" />
+        <TemplateColumn TGridItem="Product" Title="Actions" Context="product">
+            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="4">
+                <FluentButton IconStart="@(new Icons.Regular.Size20.Edit())"
+                              Appearance="Appearance.Neutral"
+                              OnClick="() => EditProduct(product.Id)"
+                              Title="Edit" />
+                <FluentButton IconStart="@(new Icons.Regular.Size20.Delete())"
+                              Appearance="Appearance.Neutral"
+                              OnClick="() => DeleteProductAsync(product)"
+                              Title="Delete" />
+            </FluentStack>
+        </TemplateColumn>
+    </Columns>
+</ProjectListShell>
+
+@code {
+    private string filter = string.Empty;
+    private string? message;
+    private string? errorMessage;
+    private PaginationState pagination = new() { ItemsPerPage = 25 };
+
+    private PatchPackage? _lastPackage;
+    private IReadOnlyList<Product> _catalog = [];
+
+    private IReadOnlyList<Product> Catalog
+    {
+        get
+        {
+            if (ReferenceEquals(State.CurrentPackage, _lastPackage)) return _catalog;
+            _lastPackage = State.CurrentPackage;
+            _catalog = State.CurrentPackage is null ? [] : ProductCatalog.BuildCatalog(State.CurrentPackage);
+            return _catalog;
+        }
+    }
+
+    private IEnumerable<Product> FilteredProducts
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(filter)) return Catalog;
+
+            return Catalog.Where(product =>
+                product.Id.Contains(filter, StringComparison.OrdinalIgnoreCase)
+                || product.ItemId.Contains(filter, StringComparison.OrdinalIgnoreCase)
+                || product.PlatformProductId.Contains(filter, StringComparison.OrdinalIgnoreCase)
+                || product.StoreProductId.Contains(filter, StringComparison.OrdinalIgnoreCase)
+                || product.ProductType.Contains(filter, StringComparison.OrdinalIgnoreCase));
+        }
+    }
+
+    private void CreateNewProduct() => Navigation.NavigateTo("/products/editor/new");
+    private void EditProduct(string productId) => Navigation.NavigateTo($"/products/editor/{Uri.EscapeDataString(productId)}");
+
+    private async Task DeleteProductAsync(Product product)
+    {
+        if (State.CurrentPackage is null) return;
+
+        message = null;
+        errorMessage = null;
+        var dialog = await DialogService.ShowConfirmationAsync(
+            $"Delete product '{product.Id}'?", "Delete", "Cancel", "Delete Product");
+        var result = await dialog.Result;
+        if (result.Cancelled) return;
+
+        try
+        {
+            ProductEditor.RemoveProduct(State.CurrentPackage, product.Id);
+            await Workflow.SaveProjectAsync();
+            _lastPackage = null;
+            State.Diagnostics.Add($"Product deleted: {product.Id}");
+            message = $"Product {product.Id} deleted.";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+            State.Diagnostics.Add("Delete product error: " + ex.Message);
+        }
+    }
+}
