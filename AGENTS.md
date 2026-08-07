@@ -87,7 +87,6 @@ CSV Models (GameTable, GameTableRow, GameTableCell) ← import/export boundary
 
 ## Conventions
 
-- **TDD**: always write a failing test → implement → verify pass → commit.
 - **Namespaces**: `DMTQ.Tools.Core.Models`, `DMTQ.Tools.Core.Services`, `DMTQ_Tools.Services`, `DMTQ_Tools.Components`.
 - **Pages** use `@bind` on flat properties, never `SourceFields`/`Dictionary<string,string>` for field storage.
 - **Tests** use MSTest + FluentAssertions (`.Should()`). bUnit tests extend `BlazorUITestBase`.

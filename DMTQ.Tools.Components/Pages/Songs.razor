@@ -7,9 +7,9 @@
 @inject IDialogService DialogService
 
 <ProjectListShell TItem="Song"
-                  Title="Songs"
-                  ProjectMissingMessage="Import or open a project before editing songs."
-                  EmptyMessage="No songs found. Import CSV data or add a song."
+                  Title='@L["Nav.Songs"]'
+                  ProjectMissingMessage='@L["Common.NoProject"]'
+                  EmptyMessage='@L["Lists.NoSongs"]'
                   FilteredItems="@FilteredSongs"
                   Pagination="@pagination"
                   Message="@message"
@@ -17,18 +17,18 @@
     <Toolbar>
         <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center">
             <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" VerticalAlignment="VerticalAlignment.Center">
-                <FluentTextField @bind-Value="filter" Immediate="true" Placeholder="Filter by song ID, title, item..."
+                <FluentTextField @bind-Value="filter" Immediate="true" Placeholder='@L["Lists.FilterSongs"]'
                                  Style="min-width: 280px;" />
                 <FluentSelect Items="Languages"
                               OptionText="@(l => l)"
                               OptionValue="@(l => l)"
                               @bind-SelectedOption="selectedLanguage"
-                              Label="Preview Language"
+                              Label='@L["Lists.PreviewLanguage"]'
                               Style="min-width: 100px;" />
             </FluentStack>
             <FluentButton Appearance="Appearance.Accent"
                           IconStart="@(new Icons.Regular.Size20.Add())"
-                          OnClick="CreateNewSong">Add Song</FluentButton>
+                          OnClick="CreateNewSong">@L["Lists.AddSong"]</FluentButton>
         </FluentStack>
     </Toolbar>
 
@@ -36,22 +36,22 @@
         <FluentGrid Spacing="3" AdaptiveRendering="true">
             <FluentGridItem xs="12" sm="6" md="3">
                 <FluentCard>
-                    <span class="metric-label">Songs</span><strong>@Catalog.Count</strong>
+                    <span class="metric-label">@L["Nav.Songs"]</span><strong>@Catalog.Count</strong>
                 </FluentCard>
             </FluentGridItem>
             <FluentGridItem xs="12" sm="6" md="3">
                 <FluentCard>
-                    <span class="metric-label">Patterns</span><strong>@Catalog.Sum(s => s.Patterns.Count)</strong>
+                    <span class="metric-label">@L["Lists.Patterns"]</span><strong>@Catalog.Sum(s => s.Patterns.Count)</strong>
                 </FluentCard>
             </FluentGridItem>
             <FluentGridItem xs="12" sm="6" md="3">
                 <FluentCard>
-                    <span class="metric-label">With preview</span><strong>@Catalog.Count(s => s.HasPreview)</strong>
+                    <span class="metric-label">@L["Lists.WithPreview"]</span><strong>@Catalog.Count(s => s.HasPreview)</strong>
                 </FluentCard>
             </FluentGridItem>
             <FluentGridItem xs="12" sm="6" md="3">
                 <FluentCard>
-                    <span class="metric-label">Languages</span><strong>@Languages.Count</strong>
+                    <span class="metric-label">@L["Common.Languages"]</span><strong>@Languages.Count</strong>
                 </FluentCard>
             </FluentGridItem>
         </FluentGrid>
@@ -59,27 +59,27 @@
 
     <Columns>
         <PropertyColumn TGridItem="Song" TProp="int" Property="@(s => s.Id)" Title="Song ID" Sortable="true" />
-        <TemplateColumn TGridItem="Song" Title="Name" Sortable="true" SortBy="@(GridSort<Song>.ByAscending(s => s.Name))" Context="song">
+        <TemplateColumn TGridItem="Song" Title='@L["Lists.Name"]' Sortable="true" SortBy="@(GridSort<Song>.ByAscending(s => s.Name))" Context="song">
             <strong>@DisplayTitle(song)</strong>
         </TemplateColumn>
         <PropertyColumn TGridItem="Song" TProp="string" Property="@(s => s.Genre)" Title="Genre" Sortable="true" />
-        <PropertyColumn TGridItem="Song" TProp="string" Property="@(s => s.ArtistName)" Title="Artist" Sortable="true" />
-        <TemplateColumn TGridItem="Song" Title="Patterns" Context="song">
+        <PropertyColumn TGridItem="Song" TProp="string" Property="@(s => s.ArtistName)" Title='@L["Lists.Artist"]' Sortable="true" />
+        <TemplateColumn TGridItem="Song" Title='@L["Lists.Patterns"]' Context="song">
             @song.Patterns.Count
         </TemplateColumn>
-        <TemplateColumn TGridItem="Song" Title="Has Preview .opus" Context="song">
-            @(song.HasPreview ? "Yes" : "No")
+        <TemplateColumn TGridItem="Song" Title='@L["Lists.HasPreview"]' Context="song">
+            @(song.HasPreview ? L["Lists.Yes"] : L["Lists.No"])
         </TemplateColumn>
         <TemplateColumn TGridItem="Song" Title="Actions" Context="song">
             <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="4">
                 <FluentButton IconStart="@(new Icons.Regular.Size20.Edit())"
                               Appearance="Appearance.Neutral"
                               OnClick="() => EditSong(song.Id.ToString())"
-                              Title="Edit" />
+                              Title='@L["Common.Edit"]' />
                 <FluentButton IconStart="@(new Icons.Regular.Size20.Delete())"
                               Appearance="Appearance.Neutral"
                               OnClick="() => DeleteSongAsync(song)"
-                              Title="Delete" />
+                              Title='@L["Common.Delete"]' />
             </FluentStack>
         </TemplateColumn>
     </Columns>
@@ -141,8 +141,8 @@
         errorMessage = null;
 
         var dialog = await DialogService.ShowConfirmationAsync(
-            $"Delete song '{DisplayTitle(song)}' ({song.Id})? This will remove the song and all its patterns.",
-            "Delete", "Cancel", "Delete Song");
+            L["Lists.DeleteConfirm", "song", DisplayTitle(song)].Value,
+            L["Common.Delete"].Value, L["Common.Cancel"].Value, L["Nav.Songs"].Value);
 
         var result = await dialog.Result;
         if (result.Cancelled) return;
@@ -153,7 +153,7 @@
             await Workflow.SaveProjectAsync();
             _lastPackage = null; // invalidate catalog cache
             State.Diagnostics.Add($"Song deleted: {song.Id}");
-            message = $"Song {DisplayTitle(song)} deleted.";
+            message = L["Lists.Deleted", L["Nav.Songs"].Value, DisplayTitle(song)].Value;
         }
         catch (Exception ex)
         {

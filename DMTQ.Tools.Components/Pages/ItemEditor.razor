@@ -7,25 +7,25 @@
 
 <FluentStack Orientation="Orientation.Vertical" VerticalGap="20" HorizontalAlignment="HorizontalAlignment.Stretch">
     <FluentBreadcrumb>
-        <FluentBreadcrumbItem Href="/items">Items</FluentBreadcrumbItem>
-        <FluentBreadcrumbItem>@(IsCreate ? "New Item" : $"Edit: {currentItem?.Id}")</FluentBreadcrumbItem>
+        <FluentBreadcrumbItem Href="/items">@L["Nav.Items"]</FluentBreadcrumbItem>
+        <FluentBreadcrumbItem>@(IsCreate ? L["Editor.NewItem"] : L["Editor.Edit", currentItem?.Id ?? string.Empty])</FluentBreadcrumbItem>
     </FluentBreadcrumb>
 
     @if (State.CurrentPackage is null)
     {
-        <FluentMessageBar Title="Open or import a project before editing items." Intent="MessageIntent.Warning" />
+        <FluentMessageBar Title='@L["Editor.OpenProjectFirst"]' Intent="MessageIntent.Warning" />
     }
     else if (currentItem is null && !IsCreate)
     {
-        <FluentMessageBar Title="@($"Item '{ItemId}' not found.")" Intent="MessageIntent.Error" />
-        <FluentButton Appearance="Appearance.Neutral" OnClick="NavigateBack">Back to Items</FluentButton>
+        <FluentMessageBar Title='@L["Editor.NotFound", L["Nav.Items"].Value, ItemId]' Intent="MessageIntent.Error" />
+        <FluentButton Appearance="Appearance.Neutral" OnClick="NavigateBack">@L["Editor.BackTo", L["Nav.Items"].Value]</FluentButton>
     }
     else
     {
         <EditForm Model="@currentItem" OnValidSubmit="SaveAsync" FormName="item-editor">
             <FluentStack Orientation="Orientation.Vertical" VerticalGap="24" HorizontalAlignment="HorizontalAlignment.Stretch">
                 <section>
-                    <h2 class="section-heading">Item Information</h2>
+                    <h2 class="section-heading">@L["Editor.ItemInformation"]</h2>
                     <FluentGrid Spacing="3">
                         <FluentGridItem xs="12" md="6">
                             @if (IsCreate)
@@ -80,8 +80,8 @@
                 </section>
 
                 <section>
-                    <h2 class="section-heading">Localized Descriptions</h2>
-                    <p class="section-hint">These values are exported to item_desc_&lt;lang&gt;.csv during package export.</p>
+                    <h2 class="section-heading">@L["Editor.LocalizedDescriptions"]</h2>
+                    <p class="section-hint">@L["Editor.ItemDescriptionsHint"]</p>
                     <FluentStack Orientation="Orientation.Vertical" VerticalGap="16" HorizontalAlignment="HorizontalAlignment.Stretch">
                         @foreach (var language in DefaultLanguages)
                         {
@@ -104,8 +104,8 @@
                 </section>
 
                 <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8" VerticalAlignment="VerticalAlignment.Center">
-                    <FluentButton Appearance="Appearance.Accent" Type="ButtonType.Submit" Disabled="@isBusy">Save Item</FluentButton>
-                    <FluentButton Appearance="Appearance.Neutral" OnClick="NavigateBack">Cancel</FluentButton>
+                    <FluentButton Appearance="Appearance.Accent" Type="ButtonType.Submit" Disabled="@isBusy">@L["Editor.SaveItem"]</FluentButton>
+                    <FluentButton Appearance="Appearance.Neutral" OnClick="NavigateBack">@L["Common.Cancel"]</FluentButton>
                     @if (!string.IsNullOrEmpty(message))
                     {
                         <FluentMessageBar Title="@message" Intent="MessageIntent.Info" />
@@ -176,7 +176,7 @@
             {
                 if (string.IsNullOrWhiteSpace(itemIdInput))
                 {
-                    errorMessage = "Item ID is required.";
+                    errorMessage = L["Editor.ItemIdRequired"].Value;
                     return;
                 }
 
@@ -191,7 +191,7 @@
                 ItemEditSvc.UpdateItem(State.CurrentPackage, currentItem);
                 await Workflow.SaveProjectAsync();
                 State.Diagnostics.Add($"Item edited: {currentItem.Id}");
-                message = "Item saved.";
+                message = L["Editor.Saved", L["Nav.Items"].Value].Value;
             }
         }
         catch (Exception ex)

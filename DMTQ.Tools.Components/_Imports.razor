@@ -5,6 +5,7 @@
 @using Microsoft.JSInterop
 @using Microsoft.FluentUI.AspNetCore.Components
 @using Icons = Microsoft.FluentUI.AspNetCore.Components.Icons
+@using Microsoft.Extensions.Localization
 @using DMTQ.Tools.Core.Models
 @using DMTQ.Tools.Core.Models.Entity
 @using DMTQ.Tools.Core.Models.Export
@@ -12,3 +13,6 @@
 @using DMTQ.Tools.Core.Services
 @using DMTQ_Tools.Components.Dialogs
 @using DMTQ_Tools.Components.Shared
+@using DMTQ_Tools.Components.Localization
+@inject IStringLocalizer<AppStrings> L
+@inject ILanguageService Language

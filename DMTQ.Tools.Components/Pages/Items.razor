@@ -7,9 +7,9 @@
 @inject IDialogService DialogService
 
 <ProjectListShell TItem="Item"
-                  Title="Items"
-                  ProjectMissingMessage="Import or open a project before editing items."
-                  EmptyMessage="No items found. Import CSV data or add an item."
+                  Title='@L["Nav.Items"]'
+                  ProjectMissingMessage='@L["Common.NoProject"]'
+                  EmptyMessage='@L["Lists.NoItemsDetailed"]'
                   FilteredItems="@FilteredItems"
                   Pagination="@pagination"
                   Message="@message"
@@ -17,31 +17,31 @@
     <Toolbar>
         <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center">
             <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" VerticalAlignment="VerticalAlignment.Center">
-                <FluentTextField @bind-Value="filter" Immediate="true" Placeholder="Filter by item ID, name, type..."
+                <FluentTextField @bind-Value="filter" Immediate="true" Placeholder='@L["Lists.FilterItems"]'
                                  Style="min-width: 320px;" />
                 <FluentSelect Items="Languages"
                               OptionText="@(language => language)"
                               OptionValue="@(language => language)"
                               @bind-SelectedOption="selectedLanguage"
-                              Label="Language"
+                              Label='@L["Lists.Language"]'
                               Style="min-width: 100px;" />
             </FluentStack>
             <FluentButton Appearance="Appearance.Accent"
                           IconStart="@(new Icons.Regular.Size20.Add())"
-                          OnClick="CreateNewItem">Add Item</FluentButton>
+                          OnClick="CreateNewItem">@L["Lists.AddItem"]</FluentButton>
         </FluentStack>
     </Toolbar>
 
     <Metrics>
         <FluentGrid Spacing="3" AdaptiveRendering="true">
             <FluentGridItem xs="12" sm="6" md="3">
-                <FluentCard><span class="metric-label">Items</span><strong>@Catalog.Count</strong></FluentCard>
+                <FluentCard><span class="metric-label">@L["Nav.Items"]</span><strong>@Catalog.Count</strong></FluentCard>
             </FluentGridItem>
             <FluentGridItem xs="12" sm="6" md="3">
                 <FluentCard><span class="metric-label">Active</span><strong>@Catalog.Count(item => item.Status.Equals("Y", StringComparison.OrdinalIgnoreCase))</strong></FluentCard>
             </FluentGridItem>
             <FluentGridItem xs="12" sm="6" md="3">
-                <FluentCard><span class="metric-label">Localized names</span><strong>@Catalog.Count(item => item.NamesByLanguage.ContainsKey(selectedLanguage))</strong></FluentCard>
+                <FluentCard><span class="metric-label">@L["Lists.LocalizedNames"]</span><strong>@Catalog.Count(item => item.NamesByLanguage.ContainsKey(selectedLanguage))</strong></FluentCard>
             </FluentGridItem>
             <FluentGridItem xs="12" sm="6" md="3">
                 <FluentCard><span class="metric-label">Item types</span><strong>@Catalog.Select(item => item.ItemType).Where(type => !string.IsNullOrWhiteSpace(type)).Distinct(StringComparer.OrdinalIgnoreCase).Count()</strong></FluentCard>
@@ -65,11 +65,11 @@
                 <FluentButton IconStart="@(new Icons.Regular.Size20.Edit())"
                               Appearance="Appearance.Neutral"
                               OnClick="() => EditItem(item.Id)"
-                              Title="Edit" />
+                              Title='@L["Common.Edit"]' />
                 <FluentButton IconStart="@(new Icons.Regular.Size20.Delete())"
                               Appearance="Appearance.Neutral"
                               OnClick="() => DeleteItemAsync(item)"
-                              Title="Delete" />
+                              Title='@L["Common.Delete"]' />
             </FluentStack>
         </TemplateColumn>
     </Columns>
@@ -121,8 +121,8 @@
         message = null;
         errorMessage = null;
         var dialog = await DialogService.ShowConfirmationAsync(
-            $"Delete item '{ItemCatalog.GetDisplayName(item, selectedLanguage)}' ({item.Id})?",
-            "Delete", "Cancel", "Delete Item");
+            L["Lists.DeleteConfirm", L["Nav.Items"].Value.ToLowerInvariant(), ItemCatalog.GetDisplayName(item, selectedLanguage)].Value,
+            L["Common.Delete"].Value, L["Common.Cancel"].Value, L["Nav.Items"].Value);
         var result = await dialog.Result;
         if (result.Cancelled) return;
 
@@ -132,7 +132,7 @@
             await Workflow.SaveProjectAsync();
             _lastPackage = null;
             State.Diagnostics.Add($"Item deleted: {item.Id}");
-            message = $"Item {item.Id} deleted.";
+            message = L["Lists.Deleted", L["Nav.Items"].Value, item.Id].Value;
         }
         catch (Exception ex)
         {

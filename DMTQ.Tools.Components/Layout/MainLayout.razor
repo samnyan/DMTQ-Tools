@@ -13,11 +13,11 @@
    breaks precise height calculation. Plain divs guarantee
    exact flex constraint chain: html→body→#app→wrapper.
    ──────────────────────────────────────────────────────────── *@
-<div style="height: 100%; display: flex; flex-direction: column; overflow: hidden;">
+<div @key="Language.CurrentCulture.Name" style="height: 100%; display: flex; flex-direction: column; overflow: hidden;">
 
     @* ── Sticky Header ── *@
     <FluentHeader Height="48" Style="border-bottom: 1px solid var(--neutral-stroke-rest); padding: 0 1.25rem;">
-        <div style="font-weight: 600; font-size: 1rem;">UpdatePatchManager</div>
+        <div style="font-weight: 600; font-size: 1rem;">@L["App.Title"]</div>
 
         <FluentSpacer />
 
@@ -26,7 +26,7 @@
             <div Style="display: flex; align-items: center; gap: 0.5rem;">
                 @if (State.IsDirty)
                 {
-                    <span style="color: var(--error); font-size: 0.85rem; font-weight: 500;" title="Unsaved changes">
+                    <span style="color: var(--error); font-size: 0.85rem; font-weight: 500;" title='@L["Header.UnsavedChanges"]'>
                         @ProjectDisplayName
                     </span>
                 }
@@ -40,24 +40,33 @@
                               OnClick="SaveProjectAsync"
                               Disabled="@(!State.HasPackage || _isSaving)"
                               Style="font-size: 0.8rem; min-width: 4rem;">
-                    @(_isSaving ? "Saving..." : "Save")
+                    @(_isSaving ? L["Header.Saving"] : L["Common.Save"])
                 </FluentButton>
             </div>
         }
+
+        <FluentMenuButton Text="@CurrentLanguageLabel" ButtonAppearance="Appearance.Neutral"
+                          IconStart="@(new Icons.Regular.Size20.Globe())"
+                          Title='@L["Language.Title"]'>
+            <FluentMenuItem Label='@L["Language.English"]' Checked='@(Language.CurrentCulture.Name == "en-US")'
+                            OnClick="UseEnglish" />
+            <FluentMenuItem Label='@L["Language.Chinese"]' Checked='@(Language.CurrentCulture.Name == "zh-CN")'
+                            OnClick="UseChinese" />
+        </FluentMenuButton>
     </FluentHeader>
 
     @* ── Sidebar + Content (row flex, constrained by parent column) ── *@
     <div style="flex: 1; min-height: 0; display: flex; overflow: hidden;">
         <FluentNavMenu Width="250" Collapsible="true" Title="DMTQ Tools"
                        Style="flex-shrink: 0; border-right: 1px solid var(--neutral-stroke-rest);">
-            <FluentNavLink Href="" Icon="@(new Icons.Regular.Size20.Home())" Match="NavLinkMatch.All">Project</FluentNavLink>
-            <FluentNavLink Href="import" Icon="@(new Icons.Regular.Size20.ArrowDownload())">Import</FluentNavLink>
-            <FluentNavLink Href="songs" Icon="@(new Icons.Regular.Size20.MusicNote1())">Songs</FluentNavLink>
-            <FluentNavLink Href="products" Icon="@(new Icons.Regular.Size20.Table())">Products</FluentNavLink>
-            <FluentNavLink Href="items" Icon="@(new Icons.Regular.Size20.Table())">Items</FluentNavLink>
-            <FluentNavLink Href="resources" Icon="@(new Icons.Regular.Size20.Folder())">Resources</FluentNavLink>
-            <FluentNavLink Href="export" Icon="@(new Icons.Regular.Size20.ArrowUpload())">Export</FluentNavLink>
-            <FluentNavLink Href="diagnostics" Icon="@(new Icons.Regular.Size20.Wrench())">Diagnostics</FluentNavLink>
+            <FluentNavLink Href="" Icon="@(new Icons.Regular.Size20.Home())" Match="NavLinkMatch.All">@L["Nav.Project"]</FluentNavLink>
+            <FluentNavLink Href="import" Icon="@(new Icons.Regular.Size20.ArrowDownload())">@L["Nav.Import"]</FluentNavLink>
+            <FluentNavLink Href="songs" Icon="@(new Icons.Regular.Size20.MusicNote1())">@L["Nav.Songs"]</FluentNavLink>
+            <FluentNavLink Href="products" Icon="@(new Icons.Regular.Size20.Table())">@L["Nav.Products"]</FluentNavLink>
+            <FluentNavLink Href="items" Icon="@(new Icons.Regular.Size20.Table())">@L["Nav.Items"]</FluentNavLink>
+            <FluentNavLink Href="resources" Icon="@(new Icons.Regular.Size20.Folder())">@L["Nav.Resources"]</FluentNavLink>
+            <FluentNavLink Href="export" Icon="@(new Icons.Regular.Size20.ArrowUpload())">@L["Nav.Export"]</FluentNavLink>
+            <FluentNavLink Href="diagnostics" Icon="@(new Icons.Regular.Size20.Wrench())">@L["Nav.Diagnostics"]</FluentNavLink>
         </FluentNavMenu>
 
         <main style="flex: 1; min-width: 0; overflow-y: auto; padding: 1.25rem 1.5rem;">
@@ -82,12 +91,24 @@
             ? Path.GetFileName(root.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar))
             : "";
 
+    private string CurrentLanguageLabel =>
+        Language.CurrentCulture.Name == "zh-CN"
+            ? L["Language.Chinese"].Value
+            : L["Language.English"].Value;
+
     protected override void OnInitialized()
     {
         State.StateChanged += OnStateChanged;
+        Language.LanguageChanged += OnLanguageChanged;
     }
 
     private void OnStateChanged() => InvokeAsync(StateHasChanged);
+
+    private void OnLanguageChanged() => InvokeAsync(StateHasChanged);
+
+    private void UseEnglish() => Language.SetLanguage("en-US");
+
+    private void UseChinese() => Language.SetLanguage("zh-CN");
 
     private async Task SaveProjectAsync()
     {
@@ -107,5 +128,6 @@
     public void Dispose()
     {
         State.StateChanged -= OnStateChanged;
+        Language.LanguageChanged -= OnLanguageChanged;
     }
 }

@@ -7,36 +7,36 @@
 @inject IDialogService DialogService
 
 <ProjectListShell TItem="Product"
-                  Title="Products"
-                  ProjectMissingMessage="Import or open a project before editing products."
-                  EmptyMessage="No products found. Import CSV data or add a product."
+                  Title='@L["Nav.Products"]'
+                  ProjectMissingMessage='@L["Common.NoProject"]'
+                  EmptyMessage='@L["Lists.NoProducts"]'
                   FilteredItems="@FilteredProducts"
                   Pagination="@pagination"
                   Message="@message"
                   ErrorMessage="@errorMessage">
     <Toolbar>
         <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center">
-            <FluentTextField @bind-Value="filter" Immediate="true" Placeholder="Filter by product ID, item, SKU..."
+            <FluentTextField @bind-Value="filter" Immediate="true" Placeholder='@L["Lists.FilterProducts"]'
                              Style="min-width: 320px;" />
             <FluentButton Appearance="Appearance.Accent"
                           IconStart="@(new Icons.Regular.Size20.Add())"
-                          OnClick="CreateNewProduct">Add Product</FluentButton>
+                          OnClick="CreateNewProduct">@L["Lists.AddProduct"]</FluentButton>
         </FluentStack>
     </Toolbar>
 
     <Metrics>
         <FluentGrid Spacing="3" AdaptiveRendering="true">
             <FluentGridItem xs="12" sm="6" md="3">
-                <FluentCard><span class="metric-label">Products</span><strong>@Catalog.Count</strong></FluentCard>
+                <FluentCard><span class="metric-label">@L["Lists.Products"]</span><strong>@Catalog.Count</strong></FluentCard>
             </FluentGridItem>
             <FluentGridItem xs="12" sm="6" md="3">
                 <FluentCard><span class="metric-label">Active</span><strong>@Catalog.Count(product => product.Status.Equals("Y", StringComparison.OrdinalIgnoreCase))</strong></FluentCard>
             </FluentGridItem>
             <FluentGridItem xs="12" sm="6" md="3">
-                <FluentCard><span class="metric-label">With store SKU</span><strong>@Catalog.Count(product => !string.IsNullOrWhiteSpace(product.StoreProductId))</strong></FluentCard>
+                <FluentCard><span class="metric-label">@L["Lists.WithStoreSku"]</span><strong>@Catalog.Count(product => !string.IsNullOrWhiteSpace(product.StoreProductId))</strong></FluentCard>
             </FluentGridItem>
             <FluentGridItem xs="12" sm="6" md="3">
-                <FluentCard><span class="metric-label">Categories</span><strong>@Catalog.Sum(product => product.CategoryIds.Count)</strong></FluentCard>
+                <FluentCard><span class="metric-label">@L["Lists.Categories"]</span><strong>@Catalog.Sum(product => product.CategoryIds.Count)</strong></FluentCard>
             </FluentGridItem>
         </FluentGrid>
     </Metrics>
@@ -45,21 +45,21 @@
         <PropertyColumn TGridItem="Product" TProp="string" Property="@(product => product.Id)" Title="Product ID" Sortable="true" />
         <PropertyColumn TGridItem="Product" TProp="string" Property="@(product => product.ItemId)" Title="Item ID" Sortable="true" />
         <PropertyColumn TGridItem="Product" TProp="string" Property="@(product => product.ProductType)" Title="Type" Sortable="true" />
-        <PropertyColumn TGridItem="Product" TProp="string" Property="@(product => product.PlatformProductId)" Title="Platform SKU" Sortable="true" />
-        <PropertyColumn TGridItem="Product" TProp="string" Property="@(product => product.StoreProductId)" Title="Store SKU" Sortable="true" />
-        <PropertyColumn TGridItem="Product" TProp="string" Property="@(product => product.CostGamePoint)" Title="Game Point" />
-        <PropertyColumn TGridItem="Product" TProp="string" Property="@(product => product.CostGameCash)" Title="Game Cash" />
+        <PropertyColumn TGridItem="Product" TProp="string" Property="@(product => product.PlatformProductId)" Title='@L["Lists.PlatformSku"]' Sortable="true" />
+        <PropertyColumn TGridItem="Product" TProp="string" Property="@(product => product.StoreProductId)" Title='@L["Lists.StoreSku"]' Sortable="true" />
+        <PropertyColumn TGridItem="Product" TProp="string" Property="@(product => product.CostGamePoint)" Title='@L["Lists.GamePoint"]' />
+        <PropertyColumn TGridItem="Product" TProp="string" Property="@(product => product.CostGameCash)" Title='@L["Lists.GameCash"]' />
         <PropertyColumn TGridItem="Product" TProp="string" Property="@(product => product.Status)" Title="Status" Sortable="true" />
         <TemplateColumn TGridItem="Product" Title="Actions" Context="product">
             <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="4">
                 <FluentButton IconStart="@(new Icons.Regular.Size20.Edit())"
                               Appearance="Appearance.Neutral"
                               OnClick="() => EditProduct(product.Id)"
-                              Title="Edit" />
+                              Title='@L["Common.Edit"]' />
                 <FluentButton IconStart="@(new Icons.Regular.Size20.Delete())"
                               Appearance="Appearance.Neutral"
                               OnClick="() => DeleteProductAsync(product)"
-                              Title="Delete" />
+                              Title='@L["Common.Delete"]' />
             </FluentStack>
         </TemplateColumn>
     </Columns>
@@ -110,7 +110,8 @@
         message = null;
         errorMessage = null;
         var dialog = await DialogService.ShowConfirmationAsync(
-            $"Delete product '{product.Id}'?", "Delete", "Cancel", "Delete Product");
+            L["Lists.DeleteConfirm", L["Nav.Products"].Value.ToLowerInvariant(), product.Id].Value,
+            L["Common.Delete"].Value, L["Common.Cancel"].Value, L["Nav.Products"].Value);
         var result = await dialog.Result;
         if (result.Cancelled) return;
 
@@ -120,7 +121,7 @@
             await Workflow.SaveProjectAsync();
             _lastPackage = null;
             State.Diagnostics.Add($"Product deleted: {product.Id}");
-            message = $"Product {product.Id} deleted.";
+            message = L["Lists.Deleted", L["Nav.Products"].Value, product.Id].Value;
         }
         catch (Exception ex)
         {

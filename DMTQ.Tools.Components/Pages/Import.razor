@@ -2,28 +2,28 @@
 @inject IProjectState State
 @inject IProjectWorkflow Workflow
 
-<h1>Import</h1>
+<h1>@L["Nav.Import"]</h1>
 
 <FluentStack Orientation="Orientation.Vertical" Style="margin-bottom: 1rem;">
     <FluentSelect Items="@(new[] { "android", "ios" })"
                   OptionText="@(i => i)"
                   OptionValue="@(i => i)"
                   @bind-SelectedOption="platform"
-                  Label="Platform"
+                  Label='@L["Import.Platform"]'
                   Style="max-width: 20rem;" />
 
     <FluentTextField @bind-Value="packageRoot"
-                     Label="Source package directory"
+                     Label='@L["Import.SourceDirectory"]'
                      Placeholder="D:\GitHub\DMTQ-Tools\external\patch\phone_new\1.003.005\android"
                      Style="width: 100%;" />
 
     <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8">
         <FluentButton Appearance="Appearance.Accent"
                       OnClick="ImportPlatformPackage"
-                      Disabled="@isBusy">Import Platform</FluentButton>
+                      Disabled="@isBusy">@L["Import.ImportPlatform"]</FluentButton>
     </FluentStack>
 
-    <span style="color: #5f6b7a; font-size: 0.8rem;">Create or open a project on the Project page before importing.</span>
+    <span style="color: #5f6b7a; font-size: 0.8rem;">@L["Import.Precondition"]</span>
 
     @if (!string.IsNullOrWhiteSpace(message))
     {
@@ -36,25 +36,25 @@
     <FluentGrid Spacing="3" Justify="JustifyContent.Center" AdaptiveRendering="true">
         <FluentGridItem xs="12" sm="6" md="4" lg="3">
             <FluentCard>
-                <span style="color: #5f6b7a; font-size: 0.8rem;">Songs</span>
+                <span style="color: #5f6b7a; font-size: 0.8rem;">@L["Nav.Songs"]</span>
                 <p style="font-weight: 600;">@State.CurrentPackage.Songs.Count</p>
             </FluentCard>
         </FluentGridItem>
         <FluentGridItem xs="12" sm="6" md="4" lg="3">
             <FluentCard>
-                <span style="color: #5f6b7a; font-size: 0.8rem;">Tables</span>
+                <span style="color: #5f6b7a; font-size: 0.8rem;">@L["Home.Tables"]</span>
                 <p style="font-weight: 600;">@State.CurrentPackage.Tables.Tables.Count</p>
             </FluentCard>
         </FluentGridItem>
         <FluentGridItem xs="12" sm="6" md="4" lg="3">
             <FluentCard>
-                <span style="color: #5f6b7a; font-size: 0.8rem;">Resources</span>
+                <span style="color: #5f6b7a; font-size: 0.8rem;">@L["Nav.Resources"]</span>
                 <p style="font-weight: 600;">@State.CurrentPackage.Resources.Count</p>
             </FluentCard>
         </FluentGridItem>
         <FluentGridItem xs="12" sm="6" md="4" lg="3">
             <FluentCard>
-                <span style="color: #5f6b7a; font-size: 0.8rem;">Languages</span>
+                <span style="color: #5f6b7a; font-size: 0.8rem;">@L["Common.Languages"]</span>
                 <p style="font-weight: 600;">@LanguageSummary</p>
             </FluentCard>
         </FluentGridItem>
@@ -80,11 +80,11 @@
     private async Task ImportPlatformPackage()
     {
         isBusy = true;
-        message = "Importing platform package...";
+        message = L["Import.Importing"].Value;
         try
         {
             await Workflow.ImportPlatformPackageAsync(packageRoot, platform);
-            message = "Import completed.";
+            message = L["Import.Completed"].Value;
         }
         catch (Exception ex)
         {
