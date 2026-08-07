@@ -11,6 +11,8 @@ public sealed class SongCatalogService
     {
         ArgumentNullException.ThrowIfNull(package);
 
+        SongPreviewLinker.LinkPreviewResources(package);
+
         return package.Songs
             .OrderBy(song => song.Name, StringComparer.OrdinalIgnoreCase)
             .ThenBy(song => song.Id)
