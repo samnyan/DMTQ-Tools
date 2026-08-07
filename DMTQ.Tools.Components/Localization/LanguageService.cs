@@ -8,7 +8,7 @@ public sealed class LanguageService : ILanguageService
     /// <summary>The preference key used by the MAUI host.</summary>
     public const string PreferenceKey = "dmtq.ui-language";
 
-    /// <summary>The default UI culture.</summary>
+    /// <summary>The fallback UI culture used when the system language is not supported.</summary>
     public const string DefaultCultureName = "en-US";
 
     /// <summary>The supported cultures.</summary>
@@ -22,7 +22,8 @@ public sealed class LanguageService : ILanguageService
     {
         _preferenceStore = preferenceStore ?? throw new ArgumentNullException(nameof(preferenceStore));
         var savedCulture = _preferenceStore.Get(PreferenceKey);
-        _currentCulture = CreateCulture(IsSupported(savedCulture) ? savedCulture! : DefaultCultureName);
+        var initialCultureName = IsSupported(savedCulture) ? savedCulture! : GetSystemCultureName();
+        _currentCulture = CreateCulture(initialCultureName);
         ApplyCulture(_currentCulture);
     }
 
@@ -45,7 +46,11 @@ public sealed class LanguageService : ILanguageService
         }
 
         if (string.Equals(_currentCulture.Name, cultureName, StringComparison.OrdinalIgnoreCase))
+        {
+            // Selecting the automatically detected language is still a manual choice.
+            _preferenceStore.Set(PreferenceKey, _currentCulture.Name);
             return;
+        }
 
         _currentCulture = CreateCulture(cultureName);
         ApplyCulture(_currentCulture);
@@ -55,6 +60,14 @@ public sealed class LanguageService : ILanguageService
 
     private static bool IsSupported(string? cultureName) =>
         cultureName is not null && SupportedCultureNames.Contains(cultureName, StringComparer.OrdinalIgnoreCase);
+
+    private static string GetSystemCultureName()
+    {
+        var systemCulture = CultureInfo.CurrentUICulture;
+        return systemCulture.TwoLetterISOLanguageName.Equals("zh", StringComparison.OrdinalIgnoreCase)
+            ? "zh-CN"
+            : DefaultCultureName;
+    }
 
     private static CultureInfo CreateCulture(string cultureName) => new(cultureName);
 

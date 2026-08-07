@@ -22,7 +22,7 @@ public sealed class LocalizationTests
     [TestMethod]
     public void ChangingLanguagePersistsAndNotifiesOnce()
     {
-        var store = new TestPreferenceStore();
+        var store = new TestPreferenceStore { Value = "en-US" };
         var service = new LanguageService(store);
         var notifications = 0;
         service.LanguageChanged += () => notifications++;
@@ -32,6 +32,48 @@ public sealed class LocalizationTests
         service.CurrentCulture.Name.Should().Be("zh-CN");
         store.Value.Should().Be("zh-CN");
         notifications.Should().Be(1);
+    }
+
+    [TestCleanup]
+    public void RestoreTestCulture()
+    {
+        var culture = new CultureInfo("en-US");
+        CultureInfo.CurrentCulture = culture;
+        CultureInfo.CurrentUICulture = culture;
+        CultureInfo.DefaultThreadCurrentCulture = culture;
+        CultureInfo.DefaultThreadCurrentUICulture = culture;
+    }
+
+    [TestMethod]
+    public void UsesSystemLanguageWithoutPersistingAutomaticChoice()
+    {
+        var originalCulture = CultureInfo.CurrentCulture;
+        var originalUiCulture = CultureInfo.CurrentUICulture;
+        var originalDefaultCulture = CultureInfo.DefaultThreadCurrentCulture;
+        var originalDefaultUiCulture = CultureInfo.DefaultThreadCurrentUICulture;
+
+        try
+        {
+            CultureInfo.CurrentCulture = new CultureInfo("zh-TW");
+            CultureInfo.CurrentUICulture = new CultureInfo("zh-TW");
+            var store = new TestPreferenceStore();
+
+            var service = new LanguageService(store);
+
+            service.CurrentCulture.Name.Should().Be("zh-CN");
+            store.Value.Should().BeNull();
+
+            service.SetLanguage("zh-CN");
+
+            store.Value.Should().Be("zh-CN");
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = originalCulture;
+            CultureInfo.CurrentUICulture = originalUiCulture;
+            CultureInfo.DefaultThreadCurrentCulture = originalDefaultCulture;
+            CultureInfo.DefaultThreadCurrentUICulture = originalDefaultUiCulture;
+        }
     }
 
     [TestMethod]
