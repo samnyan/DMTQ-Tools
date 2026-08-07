@@ -247,7 +247,8 @@
         }
         else if (int.TryParse(SongId, out var id) && currentSong?.Id != id)
         {
-            currentSong = Catalog.FirstOrDefault(s => s.Id == id);
+            var source = Catalog.FirstOrDefault(s => s.Id == id);
+            currentSong = source is null ? null : SongEditSvc.CreateDraft(source);
         }
     }
 
@@ -282,9 +283,7 @@
                     errorMessage = "Song ID is required and must be a number.";
                     return;
                 }
-                var song = new Song { Id = newId };
-                CopyLocalizations(currentSong!, song);
-                CopyFormFields(currentSong!, song);
+                var song = SongEditSvc.CreateDraft(currentSong!, newId);
                 SongEditSvc.AddSong(State.CurrentPackage, song);
                 State.Diagnostics.Add($"Song added: {song.Id}");
                 _lastPackage = null;
@@ -305,49 +304,6 @@
             State.Diagnostics.Add("Song save error: " + ex.Message);
         }
         finally { isBusy = false; }
-    }
-
-    private static void CopyFormFields(Song from, Song to)
-    {
-        to.ItemId = from.ItemId;
-        to.Name = from.Name;
-        to.FullName = from.FullName;
-        to.Genre = from.Genre;
-        to.ArtistName = from.ArtistName;
-        to.OriginalBgaYn = from.OriginalBgaYn;
-        to.LoopBgaYn = from.LoopBgaYn;
-        to.ComposedBy = from.ComposedBy;
-        to.Singer = from.Singer;
-        to.FeatBy = from.FeatBy;
-        to.ArrangedBy = from.ArrangedBy;
-        to.VisualizedBy = from.VisualizedBy;
-        to.CostGamePoint = from.CostGamePoint;
-        to.CostGameCash = from.CostGameCash;
-        to.Flag = from.Flag;
-        to.Status = from.Status;
-        to.FreeYn = from.FreeYn;
-        to.HiddenYn = from.HiddenYn;
-        to.OpenYn = from.OpenYn;
-        to.TrackId = from.TrackId;
-        to.ModDate = from.ModDate;
-        to.Update = from.Update;
-        to.PreviewPackageRelativePath = from.PreviewPackageRelativePath;
-    }
-
-    private static void CopyLocalizations(Song from, Song to)
-    {
-        foreach (var (lang, loc) in from.Localizations)
-            to.Localizations[lang] = new SongLocalization
-            {
-                FullName = loc.FullName,
-                Genre = loc.Genre,
-                ArtistName = loc.ArtistName,
-                ComposedBy = loc.ComposedBy,
-                Singer = loc.Singer,
-                FeatBy = loc.FeatBy,
-                ArrangedBy = loc.ArrangedBy,
-                VisualizedBy = loc.VisualizedBy,
-            };
     }
 
     // ── Pattern: Add via Dialog ──
@@ -376,7 +332,7 @@
         try
         {
             isBusy = true;
-            SongEditSvc.AddPattern(State.CurrentPackage!, currentSong.Id, pattern);
+            SongEditSvc.AddPattern(currentSong, pattern);
             await Workflow.SaveProjectAsync();
             _lastPackage = null;
             message = $"Pattern {pattern.PatternId} added.";
@@ -428,17 +384,7 @@
         try
         {
             isBusy = true;
-            // Copy back to original
-            pattern.Name = clone.Name;
-            pattern.Line = clone.Line;
-            pattern.Signature = clone.Signature;
-            pattern.Difficulty = clone.Difficulty;
-            pattern.PointType = clone.PointType;
-            pattern.PointValue = clone.PointValue;
-            pattern.Flg = clone.Flg;
-            pattern.Update = clone.Update;
-
-            SongEditSvc.UpdatePattern(State.CurrentPackage!, currentSong.Id, pattern.PatternId, pattern);
+            SongEditSvc.UpdatePattern(currentSong, pattern.PatternId, clone);
             await Workflow.SaveProjectAsync();
             _lastPackage = null;
             message = $"Pattern {pattern.PatternId} saved.";
@@ -468,8 +414,7 @@
         isBusy = true;
         try
         {
-            currentSong.Patterns.Remove(pattern);
-            SongEditSvc.UpdateSong(State.CurrentPackage!, currentSong);
+            SongEditSvc.RemovePattern(currentSong, pattern.PatternId);
             await Workflow.SaveProjectAsync();
             _lastPackage = null;
             message = $"Pattern {pattern.PatternId} removed.";

@@ -11,6 +11,42 @@ namespace DMTQ.Tools.Core.Tests.Services;
 public sealed class SongEditServiceTests
 {
     [TestMethod]
+    public void CreateDraft_CopiesSongWithoutSharingNestedState()
+    {
+        var source = new Song { Id = 1001, Name = "source" };
+        source.Localizations["CN"] = new SongLocalization { SongId = 1001, FullName = "Source" };
+        source.Patterns.Add(new SongPattern { PatternId = 9001, SongId = 1001, Name = "pattern" });
+
+        var draft = new SongEditService().CreateDraft(source);
+
+        draft.Should().NotBeSameAs(source);
+        draft.Localizations["CN"].Should().NotBeSameAs(source.Localizations["CN"]);
+        draft.Patterns[0].Should().NotBeSameAs(source.Patterns[0]);
+        draft.Name = "draft";
+        draft.Localizations["CN"].FullName = "Draft";
+        draft.Patterns[0].Name = "draft pattern";
+        source.Name.Should().Be("source");
+        source.Localizations["CN"].FullName.Should().Be("Source");
+        source.Patterns[0].Name.Should().Be("pattern");
+    }
+
+    [TestMethod]
+    public void UpdateSong_AppliesDetachedDraftToExistingSong()
+    {
+        var package = CreatePackage();
+        package.Songs.Add(new Song { Id = 1001, Name = "before" });
+        var draft = new SongEditService().CreateDraft(package.Songs[0]);
+        draft.Name = "after";
+        draft.Patterns.Add(new SongPattern { PatternId = 9001, SongId = 1001 });
+
+        new SongEditService().UpdateSong(package, draft);
+
+        package.Songs[0].Name.Should().Be("after");
+        package.Songs[0].Patterns.Should().ContainSingle();
+        package.Songs[0].Should().NotBeSameAs(draft);
+    }
+
+    [TestMethod]
     public void UpdateSong_ValidatesSongExistsInSongsCollection()
     {
         var package = CreatePackage();
@@ -120,6 +156,31 @@ public sealed class SongEditServiceTests
 
         var action = () => new SongEditService().UpdatePattern(package, 1001, 9001, updated);
         action.Should().NotThrow();
+    }
+
+    [TestMethod]
+    public void UpdatePattern_OnDraftAppliesChangesWithoutMutatingOriginalPattern()
+    {
+        var service = new SongEditService();
+        var song = new Song { Id = 1001 };
+        song.Patterns.Add(new SongPattern { PatternId = 9001, SongId = 1001, Difficulty = 1 });
+        var updated = new SongPattern { PatternId = 9001, SongId = 1001, Difficulty = 5 };
+
+        service.UpdatePattern(song, 9001, updated);
+
+        song.Patterns[0].Difficulty.Should().Be(5);
+    }
+
+    [TestMethod]
+    public void RemovePattern_OnDraftRemovesPattern()
+    {
+        var service = new SongEditService();
+        var song = new Song { Id = 1001 };
+        song.Patterns.Add(new SongPattern { PatternId = 9001, SongId = 1001 });
+
+        service.RemovePattern(song, 9001);
+
+        song.Patterns.Should().BeEmpty();
     }
 
     [TestMethod]
