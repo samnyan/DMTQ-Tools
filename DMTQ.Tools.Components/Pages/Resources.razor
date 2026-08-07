@@ -5,19 +5,15 @@
 @inject ResourceManagerService ResourceMgr
 @inject IDialogService DialogService
 
-<h1>Resources</h1>
-
-@if (State.CurrentPackage is null)
-{
-    <FluentStack Orientation="Orientation.Vertical" Style="margin-bottom: 1rem;">
-        <FluentMessageBar Title="Import or open a project before managing resources." Intent="MessageIntent.Warning" />
-    </FluentStack>
-}
-else
-{
-    <FluentStack Orientation="Orientation.Vertical" VerticalGap="16">
-
-        @* ── Toolbar ── *@
+<ProjectListShell TItem="ResourceCatalogEntry"
+                  Title="Resources"
+                  ProjectMissingMessage="Import or open a project before managing resources."
+                  EmptyMessage="No resources found."
+                  FilteredItems="@FilteredResources"
+                  Pagination="@pagination"
+                  Message="@message"
+                  ErrorMessage="@errorMessage">
+    <Toolbar>
         <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center">
             <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" VerticalAlignment="VerticalAlignment.Center">
                 <FluentSelect Items="@(new[] { "All", "dlc", "preview", "slang" })"
@@ -33,8 +29,9 @@ else
                           IconStart="@(new Icons.Regular.Size20.Add())"
                           OnClick="AddNewResource">Add Resource</FluentButton>
         </FluentStack>
+    </Toolbar>
 
-        @* ── Metrics ── *@
+    <Metrics>
         <FluentGrid Spacing="3" AdaptiveRendering="true">
             <FluentGridItem xs="12" sm="6" md="3">
                 <FluentCard>
@@ -57,56 +54,34 @@ else
                 </FluentCard>
             </FluentGridItem>
         </FluentGrid>
+    </Metrics>
 
-        @* ── DataGrid ── *@
-        @if (FilteredResources.Any())
-        {
-            <FluentDataGrid Items="@FilteredResources.AsQueryable()" TGridItem="ResourceCatalogEntry"
-                            ShowHover="true"
-                            Pagination="@pagination"
-                            ResizableColumns="true"
-                            HeaderCellAsButtonWithMenu="true">
-                <PropertyColumn Property="@(r => r.FileName)" Title="File Name" Sortable="true" />
-                <PropertyColumn Property="@(r => r.Category)" Title="Category" Sortable="true" />
-                <TemplateColumn Title="Platforms">
-                    @string.Join(", ", context.PlatformManifest.Select(m => $"{m.Platform} {(m.Exist ? "✓" : "✗")}"))
-                </TemplateColumn>
-                <TemplateColumn Title="Size">
-                    @FormatFileSize(context.PlatformManifest.FirstOrDefault()?.SourceFileSize ?? 0)
-                </TemplateColumn>
-                <TemplateColumn Title="Compressed">
-                    @(context.Compressed ? "Yes" : "No")
-                </TemplateColumn>
-                <TemplateColumn Title="Actions">
-                    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="4">
-                        <FluentButton IconStart="@(new Icons.Regular.Size20.Edit())"
-                                      Appearance="Appearance.Neutral"
-                                      OnClick="() => OpenEditDialog(context)"
-                                      Title="Edit" />
-                        <FluentButton IconStart="@(new Icons.Regular.Size20.Delete())"
-                                      Appearance="Appearance.Neutral"
-                                      OnClick="() => DeleteResourceAsync(context)"
-                                      Title="Delete" />
-                    </FluentStack>
-                </TemplateColumn>
-            </FluentDataGrid>
-            <FluentPaginator State="@pagination" />
-        }
-        else
-        {
-            <FluentMessageBar Title="No resources found." Intent="MessageIntent.Info" />
-        }
-
-        @if (!string.IsNullOrEmpty(message))
-        {
-            <FluentMessageBar Title="@message" Intent="MessageIntent.Info" />
-        }
-        @if (!string.IsNullOrEmpty(errorMessage))
-        {
-            <FluentMessageBar Title="@errorMessage" Intent="MessageIntent.Error" />
-        }
-    </FluentStack>
-}
+    <Columns>
+        <PropertyColumn TGridItem="ResourceCatalogEntry" TProp="string" Property="@(r => r.FileName)" Title="File Name" Sortable="true" />
+        <PropertyColumn TGridItem="ResourceCatalogEntry" TProp="string" Property="@(r => r.Category)" Title="Category" Sortable="true" />
+        <TemplateColumn TGridItem="ResourceCatalogEntry" Title="Platforms" Context="resource">
+            @string.Join(", ", resource.PlatformManifest.Select(m => $"{m.Platform} {(m.Exist ? "✓" : "✗")}"))
+        </TemplateColumn>
+        <TemplateColumn TGridItem="ResourceCatalogEntry" Title="Size" Context="resource">
+            @FormatFileSize(resource.PlatformManifest.FirstOrDefault()?.SourceFileSize ?? 0)
+        </TemplateColumn>
+        <TemplateColumn TGridItem="ResourceCatalogEntry" Title="Compressed" Context="resource">
+            @(resource.Compressed ? "Yes" : "No")
+        </TemplateColumn>
+        <TemplateColumn TGridItem="ResourceCatalogEntry" Title="Actions" Context="resource">
+            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="4">
+                <FluentButton IconStart="@(new Icons.Regular.Size20.Edit())"
+                              Appearance="Appearance.Neutral"
+                              OnClick="() => OpenEditDialog(resource)"
+                              Title="Edit" />
+                <FluentButton IconStart="@(new Icons.Regular.Size20.Delete())"
+                              Appearance="Appearance.Neutral"
+                              OnClick="() => DeleteResourceAsync(resource)"
+                              Title="Delete" />
+            </FluentStack>
+        </TemplateColumn>
+    </Columns>
+</ProjectListShell>
 
 @code {
     private string filter = string.Empty;

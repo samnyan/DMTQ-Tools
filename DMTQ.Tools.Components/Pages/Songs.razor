@@ -6,19 +6,15 @@
 @inject SongCatalogService SongCatalog
 @inject IDialogService DialogService
 
-<h1>Songs</h1>
-
-@if (State.CurrentPackage is null)
-{
-    <FluentStack Orientation="Orientation.Vertical" Style="margin-bottom: 1rem;">
-        <FluentMessageBar Title="Import or open a project before editing songs." Intent="MessageIntent.Warning" />
-    </FluentStack>
-}
-else
-{
-    <FluentStack Orientation="Orientation.Vertical" VerticalGap="16">
-
-        @* ── Toolbar ── *@
+<ProjectListShell TItem="Song"
+                  Title="Songs"
+                  ProjectMissingMessage="Import or open a project before editing songs."
+                  EmptyMessage="No songs found. Import CSV data or add a song."
+                  FilteredItems="@FilteredSongs"
+                  Pagination="@pagination"
+                  Message="@message"
+                  ErrorMessage="@errorMessage">
+    <Toolbar>
         <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center">
             <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" VerticalAlignment="VerticalAlignment.Center">
                 <FluentTextField @bind-Value="filter" Immediate="true" Placeholder="Filter by song ID, title, item..."
@@ -34,8 +30,9 @@ else
                           IconStart="@(new Icons.Regular.Size20.Add())"
                           OnClick="CreateNewSong">Add Song</FluentButton>
         </FluentStack>
+    </Toolbar>
 
-        @* ── Metrics ── *@
+    <Metrics>
         <FluentGrid Spacing="3" AdaptiveRendering="true">
             <FluentGridItem xs="12" sm="6" md="3">
                 <FluentCard>
@@ -58,57 +55,35 @@ else
                 </FluentCard>
             </FluentGridItem>
         </FluentGrid>
+    </Metrics>
 
-        @* ── DataGrid ── *@
-        @if (Catalog.Count > 0)
-        {
-            <FluentDataGrid Items="@FilteredSongs.AsQueryable()" TGridItem="Song"
-                            ShowHover="true"
-                            Pagination="@pagination"
-                            ResizableColumns="true"
-                            HeaderCellAsButtonWithMenu="true">
-                <PropertyColumn Property="@(s => s.Id)" Title="Song ID" Sortable="true" />
-                <TemplateColumn Title="Name" Sortable="true" SortBy="@(GridSort<Song>.ByAscending(s => s.Name))">
-                    <strong>@DisplayTitle(context)</strong>
-                </TemplateColumn>
-                <PropertyColumn Property="@(s => s.Genre)" Title="Genre" Sortable="true" />
-                <PropertyColumn Property="@(s => s.ArtistName)" Title="Artist" Sortable="true" />
-                <TemplateColumn Title="Patterns">
-                    @context.Patterns.Count
-                </TemplateColumn>
-                <TemplateColumn Title="Has Preview .opus">
-                    @(context.HasPreview ? "Yes" : "No")
-                </TemplateColumn>
-                <TemplateColumn Title="Actions">
-                    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="4">
-                        <FluentButton IconStart="@(new Icons.Regular.Size20.Edit())"
-                                      Appearance="Appearance.Neutral"
-                                      OnClick="() => EditSong(context.Id.ToString())"
-                                      Title="Edit" />
-                        <FluentButton IconStart="@(new Icons.Regular.Size20.Delete())"
-                                      Appearance="Appearance.Neutral"
-                                      OnClick="() => DeleteSongAsync(context)"
-                                      Title="Delete" />
-                    </FluentStack>
-                </TemplateColumn>
-            </FluentDataGrid>
-            <FluentPaginator State="@pagination" />
-        }
-        else
-        {
-            <FluentMessageBar Title="No songs found. Import CSV data or add a song." Intent="MessageIntent.Info" />
-        }
-
-        @if (!string.IsNullOrEmpty(message))
-        {
-            <FluentMessageBar Title="@message" Intent="MessageIntent.Info" />
-        }
-        @if (!string.IsNullOrEmpty(errorMessage))
-        {
-            <FluentMessageBar Title="@errorMessage" Intent="MessageIntent.Error" />
-        }
-    </FluentStack>
-}
+    <Columns>
+        <PropertyColumn TGridItem="Song" TProp="int" Property="@(s => s.Id)" Title="Song ID" Sortable="true" />
+        <TemplateColumn TGridItem="Song" Title="Name" Sortable="true" SortBy="@(GridSort<Song>.ByAscending(s => s.Name))" Context="song">
+            <strong>@DisplayTitle(song)</strong>
+        </TemplateColumn>
+        <PropertyColumn TGridItem="Song" TProp="string" Property="@(s => s.Genre)" Title="Genre" Sortable="true" />
+        <PropertyColumn TGridItem="Song" TProp="string" Property="@(s => s.ArtistName)" Title="Artist" Sortable="true" />
+        <TemplateColumn TGridItem="Song" Title="Patterns" Context="song">
+            @song.Patterns.Count
+        </TemplateColumn>
+        <TemplateColumn TGridItem="Song" Title="Has Preview .opus" Context="song">
+            @(song.HasPreview ? "Yes" : "No")
+        </TemplateColumn>
+        <TemplateColumn TGridItem="Song" Title="Actions" Context="song">
+            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="4">
+                <FluentButton IconStart="@(new Icons.Regular.Size20.Edit())"
+                              Appearance="Appearance.Neutral"
+                              OnClick="() => EditSong(song.Id.ToString())"
+                              Title="Edit" />
+                <FluentButton IconStart="@(new Icons.Regular.Size20.Delete())"
+                              Appearance="Appearance.Neutral"
+                              OnClick="() => DeleteSongAsync(song)"
+                              Title="Delete" />
+            </FluentStack>
+        </TemplateColumn>
+    </Columns>
+</ProjectListShell>
 
 @code {
     private string filter = string.Empty;

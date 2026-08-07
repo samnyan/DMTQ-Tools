@@ -1,0 +1,60 @@
+@typeparam TItem
+@inject IProjectState State
+
+<h1>@Title</h1>
+
+@if (State.CurrentPackage is null)
+{
+    <FluentStack Orientation="Orientation.Vertical" Style="margin-bottom: 1rem;">
+        <FluentMessageBar Title="@ProjectMissingMessage" Intent="MessageIntent.Warning" />
+    </FluentStack>
+}
+else
+{
+    <FluentStack Orientation="Orientation.Vertical" VerticalGap="16">
+        @Toolbar
+
+        @if (Metrics is not null)
+        {
+            @Metrics
+        }
+
+        @if (FilteredItems.Any())
+        {
+            <FluentDataGrid Items="@FilteredItems.AsQueryable()" TGridItem="TItem"
+                            ShowHover="true"
+                            Pagination="@Pagination"
+                            ResizableColumns="true"
+                            HeaderCellAsButtonWithMenu="true">
+                @Columns
+            </FluentDataGrid>
+            <FluentPaginator State="@Pagination" />
+        }
+        else
+        {
+            <FluentMessageBar Title="@EmptyMessage" Intent="MessageIntent.Info" />
+        }
+
+        @if (!string.IsNullOrEmpty(Message))
+        {
+            <FluentMessageBar Title="@Message" Intent="MessageIntent.Info" />
+        }
+        @if (!string.IsNullOrEmpty(ErrorMessage))
+        {
+            <FluentMessageBar Title="@ErrorMessage" Intent="MessageIntent.Error" />
+        }
+    </FluentStack>
+}
+
+@code {
+    [Parameter] public string Title { get; set; } = string.Empty;
+    [Parameter] public string ProjectMissingMessage { get; set; } = "Import or open a project first.";
+    [Parameter] public string EmptyMessage { get; set; } = "No items found.";
+    [Parameter] public IEnumerable<TItem> FilteredItems { get; set; } = [];
+    [Parameter] public PaginationState Pagination { get; set; } = new() { ItemsPerPage = 25 };
+    [Parameter] public RenderFragment? Toolbar { get; set; }
+    [Parameter] public RenderFragment? Metrics { get; set; }
+    [Parameter] public RenderFragment? Columns { get; set; }
+    [Parameter] public string? Message { get; set; }
+    [Parameter] public string? ErrorMessage { get; set; }
+}
