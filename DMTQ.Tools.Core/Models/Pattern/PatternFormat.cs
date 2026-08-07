@@ -9,7 +9,10 @@ public enum PatternFormat
     Bytes,
 
     /// <summary>DJMAX Technika Q .pt format.</summary>
-    Pt
+    Pt,
+
+    /// <summary>Human-editable DMTQ pattern text format.</summary>
+    Text
 }
 
 /// <summary>

@@ -1,10 +1,12 @@
 @page "/patterns"
 @using System.Globalization
+@using System.Text
 @using DMTQ.Tools.Core.Models.Pattern
 @using DMTQ.Tools.Core.Services.Pattern
 @inject IProjectFilePicker FilePicker
 @inject IProjectFileSaver FileSaver
 @inject PatternBinarySerializer Serializer
+@inject PatternTextSerializer TextSerializer
 
 <h1>@L["Pattern.Title"]</h1>
 
@@ -35,7 +37,7 @@
                 <FluentProgressRing />
             }
         </FluentStack>
-        <p class="section-hint">@L["Pattern.OpenHint"]</p>
+        <p class="section-hint">@L["Pattern.OpenHintWithText"]</p>
         @if (!string.IsNullOrWhiteSpace(statusMessage))
         {
             <FluentMessageBar Intent="@statusIntent">@statusMessage</FluentMessageBar>
@@ -119,7 +121,7 @@
 
 @code {
     private static readonly IReadOnlyList<PatternFormat> TargetFormats =
-        [PatternFormat.Pt, PatternFormat.Bytes];
+        [PatternFormat.Pt, PatternFormat.Bytes, PatternFormat.Text];
 
     private PatternDocument? pattern;
     private PatternFormat targetFormat = PatternFormat.Pt;
@@ -145,6 +147,7 @@
     {
         PatternFormat.Bytes => "bytes",
         PatternFormat.Pt => "pt",
+        PatternFormat.Text => "text",
         _ => format.ToString()
     };
 
@@ -159,7 +162,7 @@
         var format = GetFormat(path);
         if (format is null)
         {
-            ShowStatus(L["Pattern.UnsupportedExtension"].Value, MessageIntent.Warning);
+            ShowStatus(L["Pattern.UnsupportedExtensionWithText"].Value, MessageIntent.Warning);
             return;
         }
 
@@ -168,7 +171,9 @@
         try
         {
             await using var stream = File.OpenRead(path);
-            pattern = await Serializer.DeserializeAsync(stream, format.Value);
+            pattern = format.Value == PatternFormat.Text
+                ? await TextSerializer.DeserializeAsync(stream)
+                : await Serializer.DeserializeAsync(stream, format.Value);
             fileName = Path.GetFileName(path);
             targetFormat = format.Value;
             ShowStatus(L["Pattern.Loaded", fileName].Value, MessageIntent.Success);
@@ -199,7 +204,9 @@
                 PtVersion = pattern.Header.PtVersion is 1 or 1536 ? pattern.Header.PtVersion : (short)1,
                 BytesMagic = pattern.Header.BytesMagic
             };
-            var data = Serializer.Serialize(pattern, targetFormat, options);
+            var data = targetFormat == PatternFormat.Text
+                ? Encoding.UTF8.GetBytes(TextSerializer.Serialize(pattern))
+                : Serializer.Serialize(pattern, targetFormat, options);
             var suggestedName = BuildSuggestedFileName(targetFormat);
             await using var content = new MemoryStream(data, writable: false);
             var savedPath = await FileSaver.SaveFileAsync(suggestedName, content);
@@ -225,14 +232,23 @@
         if (string.IsNullOrWhiteSpace(stem))
             stem = "pattern";
 
-        return $"{stem}.{FormatName(format)}";
+        return $"{stem}.{FormatExtension(format)}";
     }
+
+    private static string FormatExtension(PatternFormat format) => format switch
+    {
+        PatternFormat.Bytes => "bytes",
+        PatternFormat.Pt => "pt",
+        PatternFormat.Text => "txt",
+        _ => format.ToString().ToLowerInvariant()
+    };
 
     private static PatternFormat? GetFormat(string path)
         => Path.GetExtension(path).ToLowerInvariant() switch
         {
             ".bytes" => PatternFormat.Bytes,
             ".pt" => PatternFormat.Pt,
+            ".txt" => PatternFormat.Text,
             _ => null
         };
 

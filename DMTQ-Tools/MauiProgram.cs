@@ -53,6 +53,7 @@ namespace DMTQ_Tools
             builder.Services.AddSingleton<IProjectFilePicker, MauiFilePicker>();
             builder.Services.AddSingleton<IProjectFileSaver, MauiFileSaver>();
             builder.Services.AddSingleton<PatternBinarySerializer>();
+            builder.Services.AddSingleton<PatternTextSerializer>();
 
             var state = new GameTableManagerState();
             builder.Services.AddSingleton<IProjectState>(state);

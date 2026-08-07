@@ -31,6 +31,7 @@ public abstract class BlazorUITestBase : Bunit.TestContext
         Services.AddSingleton<IProjectFilePicker>(FilePicker);
         Services.AddSingleton<IProjectFileSaver>(FileSaver);
         Services.AddSingleton<PatternBinarySerializer>();
+        Services.AddSingleton<PatternTextSerializer>();
         Services.AddSingleton<LogicalTableService>();
         Services.AddSingleton<SongCatalogService>();
         Services.AddSingleton<SongEditService>();

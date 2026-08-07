@@ -1,3 +1,4 @@
+using System.Text;
 using DMTQ.Tools.Core.Models.Pattern;
 using DMTQ.Tools.Core.Services.Pattern;
 using FluentAssertions;
@@ -46,6 +47,13 @@ public sealed class PatternToolTests : BlazorUITestBase
             FileSaver.SuggestedFileName.Should().EndWith(".pt");
             new PatternBinarySerializer()
                 .Deserialize(FileSaver.SavedContent!, PatternFormat.Pt)
+                .CommandCount.Should().Be(2);
+
+            cut.Find("fluent-option[value='Text']").Click();
+            cut.FindAll("fluent-button")[1].Click();
+            cut.WaitForAssertion(() => FileSaver.SuggestedFileName.Should().EndWith(".txt"));
+            new PatternTextSerializer()
+                .Deserialize(Encoding.UTF8.GetString(FileSaver.SavedContent!))
                 .CommandCount.Should().Be(2);
         }
         finally

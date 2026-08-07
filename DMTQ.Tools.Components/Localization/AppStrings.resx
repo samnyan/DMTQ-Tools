@@ -162,7 +162,7 @@
   <data name="Pattern.Open" xml:space="preserve"><value>Open Pattern</value></data>
   <data name="Pattern.SaveAs" xml:space="preserve"><value>Save As</value></data>
   <data name="Pattern.ExportFormat" xml:space="preserve"><value>Export format</value></data>
-  <data name="Pattern.OpenHint" xml:space="preserve"><value>Open a .pt or .bytes file. The file is parsed into the common pattern model.</value></data>
+  <data name="Pattern.OpenHint" xml:space="preserve"><value>Open a .pt, .bytes, or .txt file. The file is parsed into the common pattern model.</value></data>
   <data name="Pattern.NoPattern" xml:space="preserve"><value>Open a pattern to inspect its metadata, events, and sound table.</value></data>
   <data name="Pattern.BasicInfo" xml:space="preserve"><value>Pattern information</value></data>
   <data name="Pattern.File" xml:space="preserve"><value>File</value></data>
@@ -188,9 +188,11 @@
   <data name="Pattern.Details" xml:space="preserve"><value>Details</value></data>
   <data name="Pattern.Yes" xml:space="preserve"><value>Yes</value></data>
   <data name="Pattern.No" xml:space="preserve"><value>No</value></data>
-  <data name="Pattern.UnsupportedExtension" xml:space="preserve"><value>Only .pt and .bytes files are supported.</value></data>
+  <data name="Pattern.UnsupportedExtension" xml:space="preserve"><value>Only .pt, .bytes, and .txt files are supported.</value></data>
   <data name="Pattern.Loaded" xml:space="preserve"><value>Loaded {0}.</value></data>
   <data name="Pattern.Saved" xml:space="preserve"><value>Saved {0}.</value></data>
   <data name="Pattern.LoadFailed" xml:space="preserve"><value>Could not load pattern: {0}</value></data>
   <data name="Pattern.SaveFailed" xml:space="preserve"><value>Could not save pattern: {0}</value></data>
+  <data name="Pattern.OpenHintWithText" xml:space="preserve"><value>Open a .pt, .bytes, or .txt file. The file is parsed into the common pattern model.</value></data>
+  <data name="Pattern.UnsupportedExtensionWithText" xml:space="preserve"><value>Only .pt, .bytes, and .txt files are supported.</value></data>
 </root>
