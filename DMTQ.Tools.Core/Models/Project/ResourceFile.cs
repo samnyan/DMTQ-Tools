@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace DMTQ.Tools.Core.Models.Project;
 
 /// <summary>
@@ -36,12 +38,14 @@ public sealed class PlatformManifestEntry
     public bool Exist { get; set; }
 
     /// <summary>Original uncompressed file size from the patch manifest.</summary>
+    [JsonConverter(typeof(FlexibleInt64JsonConverter))]
     public long SourceFileSize { get; set; }
 
     /// <summary>Original MD5 checksum (lowercase hex) from the patch manifest.</summary>
     public string SourceChecksum { get; set; } = string.Empty;
 
     /// <summary>Original compressed file size from the patch manifest.</summary>
+    [JsonConverter(typeof(FlexibleInt64JsonConverter))]
     public long SourceCompressedFileSize { get; set; }
 
     /// <summary>Original compressed MD5 checksum (lowercase hex) from the patch manifest.</summary>

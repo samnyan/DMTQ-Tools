@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="App.Title" xml:space="preserve"><value>UpdatePatchManager</value></data>
+  <data name="Language.Title" xml:space="preserve"><value>Language</value></data>
+  <data name="Language.English" xml:space="preserve"><value>English</value></data>
+  <data name="Language.Chinese" xml:space="preserve"><value>中文</value></data>
+  <data name="Nav.Project" xml:space="preserve"><value>Project</value></data>
+  <data name="Nav.Import" xml:space="preserve"><value>Import</value></data>
+  <data name="Nav.Songs" xml:space="preserve"><value>Songs</value></data>
+  <data name="Nav.Products" xml:space="preserve"><value>Products</value></data>
+  <data name="Nav.Items" xml:space="preserve"><value>Items</value></data>
+  <data name="Nav.Resources" xml:space="preserve"><value>Resources</value></data>
+  <data name="Nav.Export" xml:space="preserve"><value>Export</value></data>
+  <data name="Nav.Diagnostics" xml:space="preserve"><value>Diagnostics</value></data>
+  <data name="Header.UnsavedChanges" xml:space="preserve"><value>Unsaved changes</value></data>
+  <data name="Header.Saving" xml:space="preserve"><value>Saving...</value></data>
+  <data name="Common.Save" xml:space="preserve"><value>Save</value></data>
+  <data name="Common.Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Common.Delete" xml:space="preserve"><value>Delete</value></data>
+  <data name="Common.Edit" xml:space="preserve"><value>Edit</value></data>
+  <data name="Common.NotRun" xml:space="preserve"><value>Not run</value></data>
+  <data name="Common.Passed" xml:space="preserve"><value>Passed</value></data>
+  <data name="Common.Errors" xml:space="preserve"><value>{0} errors</value></data>
+  <data name="Common.NoProject" xml:space="preserve"><value>Import or open a project first.</value></data>
+  <data name="Common.NoItems" xml:space="preserve"><value>No items found.</value></data>
+  <data name="Home.ProjectFolder" xml:space="preserve"><value>Project folder</value></data>
+  <data name="Home.ProjectFolderPlaceholder" xml:space="preserve"><value>Select or enter a project folder path...</value></data>
+  <data name="Home.Browse" xml:space="preserve"><value>Browse</value></data>
+  <data name="Home.Confirm" xml:space="preserve"><value>Confirm</value></data>
+  <data name="Home.Source" xml:space="preserve"><value>Source</value></data>
+  <data name="Home.Version" xml:space="preserve"><value>Version</value></data>
+  <data name="Home.PrimaryPlatform" xml:space="preserve"><value>Primary platform</value></data>
+  <data name="Home.ImportedPlatforms" xml:space="preserve"><value>Imported platforms</value></data>
+  <data name="Home.Tables" xml:space="preserve"><value>Tables</value></data>
+  <data name="Home.LastValidation" xml:space="preserve"><value>Last validation</value></data>
+  <data name="Home.NotSelected" xml:space="preserve"><value>Not selected</value></data>
+  <data name="Home.NotImported" xml:space="preserve"><value>Not imported</value></data>
+  <data name="Home.ProjectLoaded" xml:space="preserve"><value>Project loaded.</value></data>
+  <data name="Home.ProjectSaved" xml:space="preserve"><value>Project saved.</value></data>
+  <data name="Home.ProjectCreated" xml:space="preserve"><value>Project created. Go to the Import page to import a patch package.</value></data>
+  <data name="Home.EnterProjectPath" xml:space="preserve"><value>Please enter a project folder path.</value></data>
+  <data name="Home.FolderNotFound" xml:space="preserve"><value>Folder '{0}' does not exist.</value></data>
+  <data name="Home.EmptyFolderConfirm" xml:space="preserve"><value>This folder is empty. Create a new project here?</value></data>
+  <data name="Home.NewProject" xml:space="preserve"><value>New project</value></data>
+  <data name="Home.InvalidFolder" xml:space="preserve"><value>This folder contains files but is not a DMTQ project. Please choose an empty folder, then go to the Import page to import an existing patch package.</value></data>
+  <data name="Import.SourceDirectory" xml:space="preserve"><value>Source package directory</value></data>
+  <data name="Import.Platform" xml:space="preserve"><value>Platform</value></data>
+  <data name="Import.ImportPlatform" xml:space="preserve"><value>Import Platform</value></data>
+  <data name="Import.Precondition" xml:space="preserve"><value>Create or open a project on the Project page before importing.</value></data>
+  <data name="Import.Importing" xml:space="preserve"><value>Importing platform package...</value></data>
+  <data name="Import.Completed" xml:space="preserve"><value>Import completed.</value></data>
+  <data name="Common.Languages" xml:space="preserve"><value>Languages</value></data>
+  <data name="Export.CompressionPolicy" xml:space="preserve"><value>Compression policy</value></data>
+  <data name="Export.OutputDirectory" xml:space="preserve"><value>Output directory</value></data>
+  <data name="Export.Export" xml:space="preserve"><value>Export</value></data>
+  <data name="Export.Precondition" xml:space="preserve"><value>Import a package before exporting.</value></data>
+  <data name="Export.PreExportQa" xml:space="preserve"><value>Pre-export QA:</value></data>
+  <data name="Export.FixErrors" xml:space="preserve"><value> — Fix errors before exporting.</value></data>
+  <data name="Export.ManifestEntries" xml:space="preserve"><value>Manifest entries</value></data>
+  <data name="Export.FilesWritten" xml:space="preserve"><value>Files written</value></data>
+  <data name="Export.SkippedBaseline" xml:space="preserve"><value>Skipped baseline</value></data>
+  <data name="Export.MissingCurrentFiles" xml:space="preserve"><value>Missing current files</value></data>
+  <data name="Export.ValidationErrors" xml:space="preserve"><value>Validation errors</value></data>
+  <data name="Export.RunningQa" xml:space="preserve"><value>Running QA...</value></data>
+  <data name="Export.Exporting" xml:space="preserve"><value>Exporting platform package...</value></data>
+  <data name="Export.QaFoundErrors" xml:space="preserve"><value>QA found {0} error(s). Fix them before exporting.</value></data>
+  <data name="Export.CompletedValid" xml:space="preserve"><value>Platform export completed and validation passed.</value></data>
+  <data name="Export.CompletedInvalid" xml:space="preserve"><value>Platform export completed with validation errors.</value></data>
+  <data name="Diagnostics.ProjectFile" xml:space="preserve"><value>Project file</value></data>
+  <data name="Diagnostics.NoProject" xml:space="preserve"><value>No project selected.</value></data>
+  <data name="Diagnostics.ProjectExists" xml:space="preserve"><value>Project file exists.</value></data>
+  <data name="Diagnostics.NotSaved" xml:space="preserve"><value>Project has not been saved yet.</value></data>
+  <data name="Diagnostics.QaCheck" xml:space="preserve"><value>QA Check</value></data>
+  <data name="Diagnostics.RunQa" xml:space="preserve"><value>Run QA</value></data>
+  <data name="Diagnostics.WorkflowLog" xml:space="preserve"><value>Workflow log</value></data>
+  <data name="Diagnostics.NoneYet" xml:space="preserve"><value>No diagnostics yet.</value></data>
+  <data name="Diagnostics.LastValidation" xml:space="preserve"><value>Last validation</value></data>
+  <data name="Diagnostics.NotRun" xml:space="preserve"><value>Validation has not run.</value></data>
+  <data name="Diagnostics.Passed" xml:space="preserve"><value>Validation passed.</value></data>
+  <data name="Lists.FilterItems" xml:space="preserve"><value>Filter by item ID, name, type...</value></data>
+  <data name="Lists.FilterProducts" xml:space="preserve"><value>Filter by product ID, item ID, type...</value></data>
+  <data name="Lists.FilterResources" xml:space="preserve"><value>Filter by file name</value></data>
+  <data name="Lists.Language" xml:space="preserve"><value>Language</value></data>
+  <data name="Lists.Category" xml:space="preserve"><value>Category</value></data>
+  <data name="Lists.AllCategories" xml:space="preserve"><value>All Categories</value></data>
+  <data name="Lists.AddItem" xml:space="preserve"><value>Add Item</value></data>
+  <data name="Lists.AddProduct" xml:space="preserve"><value>Add Product</value></data>
+  <data name="Lists.AddResource" xml:space="preserve"><value>Add Resource</value></data>
+  <data name="Lists.Active" xml:space="preserve"><value>Active</value></data>
+  <data name="Lists.LocalizedNames" xml:space="preserve"><value>Localized names</value></data>
+  <data name="Lists.ItemTypes" xml:space="preserve"><value>Item types</value></data>
+  <data name="Lists.TotalResources" xml:space="preserve"><value>Total resources</value></data>
+  <data name="Lists.Others" xml:space="preserve"><value>Others</value></data>
+  <data name="Lists.Actions" xml:space="preserve"><value>Actions</value></data>
+  <data name="Lists.Type" xml:space="preserve"><value>Type</value></data>
+  <data name="Lists.Name" xml:space="preserve"><value>Name</value></data>
+  <data name="Lists.Summary" xml:space="preserve"><value>Summary</value></data>
+  <data name="Lists.ItemId" xml:space="preserve"><value>Item ID</value></data>
+  <data name="Lists.ProductId" xml:space="preserve"><value>Product ID</value></data>
+  <data name="Lists.FileName" xml:space="preserve"><value>File Name</value></data>
+  <data name="Lists.Platforms" xml:space="preserve"><value>Platforms</value></data>
+  <data name="Lists.Size" xml:space="preserve"><value>Size</value></data>
+  <data name="Lists.Compressed" xml:space="preserve"><value>Compressed</value></data>
+  <data name="Lists.Yes" xml:space="preserve"><value>Yes</value></data>
+  <data name="Lists.No" xml:space="preserve"><value>No</value></data>
+  <data name="Lists.DeleteConfirm" xml:space="preserve"><value>Delete {0} '{1}'?</value></data>
+  <data name="Lists.Deleted" xml:space="preserve"><value>{0} {1} deleted.</value></data>
+  <data name="Lists.NoSongs" xml:space="preserve"><value>No songs found. Import CSV data or add a song.</value></data>
+  <data name="Lists.NoProducts" xml:space="preserve"><value>No products found. Import CSV data or add a product.</value></data>
+  <data name="Lists.NoResources" xml:space="preserve"><value>No resources found.</value></data>
+  <data name="Lists.NoItemsDetailed" xml:space="preserve"><value>No items found. Import CSV data or add an item.</value></data>
+  <data name="Lists.FilterSongs" xml:space="preserve"><value>Filter by song ID, title, item...</value></data>
+  <data name="Lists.PreviewLanguage" xml:space="preserve"><value>Preview Language</value></data>
+  <data name="Lists.AddSong" xml:space="preserve"><value>Add Song</value></data>
+  <data name="Lists.Patterns" xml:space="preserve"><value>Patterns</value></data>
+  <data name="Lists.WithPreview" xml:space="preserve"><value>With preview</value></data>
+  <data name="Lists.HasPreview" xml:space="preserve"><value>Has Preview .opus</value></data>
+  <data name="Lists.Artist" xml:space="preserve"><value>Artist</value></data>
+  <data name="Lists.Products" xml:space="preserve"><value>Products</value></data>
+  <data name="Lists.WithStoreSku" xml:space="preserve"><value>With store SKU</value></data>
+  <data name="Lists.Categories" xml:space="preserve"><value>Categories</value></data>
+  <data name="Lists.PlatformSku" xml:space="preserve"><value>Platform SKU</value></data>
+  <data name="Lists.StoreSku" xml:space="preserve"><value>Store SKU</value></data>
+  <data name="Lists.GamePoint" xml:space="preserve"><value>Game Point</value></data>
+  <data name="Lists.GameCash" xml:space="preserve"><value>Game Cash</value></data>
+  <data name="Editor.OpenProjectFirst" xml:space="preserve"><value>Open or import a project before editing.</value></data>
+  <data name="Editor.NotFound" xml:space="preserve"><value>{0} '{1}' not found.</value></data>
+  <data name="Editor.BackTo" xml:space="preserve"><value>Back to {0}</value></data>
+  <data name="Editor.BasicInfo" xml:space="preserve"><value>Basic Info</value></data>
+  <data name="Editor.GameplaySettings" xml:space="preserve"><value>Gameplay Settings</value></data>
+  <data name="Editor.LocalizedDescriptions" xml:space="preserve"><value>Localized Descriptions</value></data>
+  <data name="Editor.SaveItem" xml:space="preserve"><value>Save Item</value></data>
+  <data name="Editor.SaveProduct" xml:space="preserve"><value>Save Product</value></data>
+  <data name="Editor.SaveSong" xml:space="preserve"><value>Save Song</value></data>
+  <data name="Editor.ItemIdRequired" xml:space="preserve"><value>Item ID is required.</value></data>
+  <data name="Editor.ProductIdRequired" xml:space="preserve"><value>Product ID is required.</value></data>
+  <data name="Editor.SongIdRequired" xml:space="preserve"><value>Song ID is required and must be a number.</value></data>
+  <data name="Editor.Saved" xml:space="preserve"><value>{0} saved.</value></data>
+  <data name="Editor.Patterns" xml:space="preserve"><value>Patterns</value></data>
+  <data name="Editor.AddPattern" xml:space="preserve"><value>Add Pattern</value></data>
+  <data name="Editor.NoPatterns" xml:space="preserve"><value>No patterns yet. Click Add Pattern to add one.</value></data>
+  <data name="Editor.DescriptionsHint" xml:space="preserve"><value>Overrides per language. Leave blank to use Basic Info values on export.</value></data>
+  <data name="Dialog.AddResource" xml:space="preserve"><value>Add Resource</value></data>
+  <data name="Dialog.EditResource" xml:space="preserve"><value>Edit Resource</value></data>
+  <data name="Dialog.BasicInfo" xml:space="preserve"><value>Basic Info</value></data>
+  <data name="Dialog.PlatformFiles" xml:space="preserve"><value>Platform Files</value></data>
+  <data name="Dialog.ReplaceFile" xml:space="preserve"><value>Replace File</value></data>
+  <data name="Dialog.SelectPlatform" xml:space="preserve"><value>Select platform:</value></data>
+  <data name="Dialog.AddPlatform" xml:space="preserve"><value>+ Add Platform</value></data>
+  <data name="Dialog.AllPlatformsAdded" xml:space="preserve"><value>All platforms already added.</value></data>
+  <data name="Dialog.WillReplace" xml:space="preserve"><value>Will replace: {0}</value></data>
+  <data name="Dialog.Source" xml:space="preserve"><value>Source: {0}</value></data>
+  <data name="Dialog.ExistSizeChecksum" xml:space="preserve"><value>Exist: {0}, Size: {1}, Checksum: {2}</value></data>
+  <data name="Editor.NewSong" xml:space="preserve"><value>New Song</value></data><data name="Editor.NewProduct" xml:space="preserve"><value>New Product</value></data><data name="Editor.NewItem" xml:space="preserve"><value>New Item</value></data><data name="Editor.Edit" xml:space="preserve"><value>Edit: {0}</value></data><data name="Editor.ProductInformation" xml:space="preserve"><value>Product Information</value></data><data name="Editor.ItemInformation" xml:space="preserve"><value>Item Information</value></data><data name="Editor.PriceSaleWindow" xml:space="preserve"><value>Price and Sale Window</value></data><data name="Editor.ItemDescriptionsHint" xml:space="preserve"><value>These values are exported to item_desc_&lt;lang&gt;.csv during package export.</value></data>
+  <data name="Editor.OpenSongsProject" xml:space="preserve"><value>Open or import a project before editing songs.</value></data>
+</root>

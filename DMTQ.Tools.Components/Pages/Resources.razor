@@ -5,40 +5,37 @@
 @inject ResourceManagerService ResourceMgr
 @inject IDialogService DialogService
 
-<h1>Resources</h1>
-
-@if (State.CurrentPackage is null)
-{
-    <FluentStack Orientation="Orientation.Vertical" Style="margin-bottom: 1rem;">
-        <FluentMessageBar Title="Import or open a project before managing resources." Intent="MessageIntent.Warning" />
-    </FluentStack>
-}
-else
-{
-    <FluentStack Orientation="Orientation.Vertical" VerticalGap="16">
-
-        @* ── Toolbar ── *@
+<ProjectListShell TItem="ResourceCatalogEntry"
+                  Title='@L["Nav.Resources"]'
+                  ProjectMissingMessage='@L["Common.NoProject"]'
+                  EmptyMessage='@L["Lists.NoResources"]'
+                  FilteredItems="@FilteredResources"
+                  Pagination="@pagination"
+                  Message="@message"
+                  ErrorMessage="@errorMessage">
+    <Toolbar>
         <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center">
             <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" VerticalAlignment="VerticalAlignment.Center">
                 <FluentSelect Items="@(new[] { "All", "dlc", "preview", "slang" })"
-                              OptionText="@(i => i == "All" ? "All Categories" : i)"
+                              OptionText="@(i => i == "All" ? L["Lists.AllCategories"].Value : i)"
                               OptionValue="@(i => i)"
                               @bind-SelectedOption="categoryFilter"
-                              Label="Category"
+                              Label='@L["Lists.Category"]'
                               Style="min-width: 140px;" />
-                <FluentTextField @bind-Value="filter" Immediate="true" Placeholder="Filter by file name"
+                <FluentTextField @bind-Value="filter" Immediate="true" Placeholder='@L["Lists.FilterResources"]'
                                  Style="min-width: 280px;" />
             </FluentStack>
             <FluentButton Appearance="Appearance.Accent"
                           IconStart="@(new Icons.Regular.Size20.Add())"
-                          OnClick="AddNewResource">Add Resource</FluentButton>
+                          OnClick="AddNewResource">@L["Lists.AddResource"]</FluentButton>
         </FluentStack>
+    </Toolbar>
 
-        @* ── Metrics ── *@
+    <Metrics>
         <FluentGrid Spacing="3" AdaptiveRendering="true">
             <FluentGridItem xs="12" sm="6" md="3">
                 <FluentCard>
-                    <span class="metric-label">Total resources</span><strong>@Catalog.Count</strong>
+                    <span class="metric-label">@L["Lists.TotalResources"]</span><strong>@Catalog.Count</strong>
                 </FluentCard>
             </FluentGridItem>
             <FluentGridItem xs="12" sm="6" md="3">
@@ -53,60 +50,38 @@ else
             </FluentGridItem>
             <FluentGridItem xs="12" sm="6" md="3">
                 <FluentCard>
-                    <span class="metric-label">Others</span><strong>@Catalog.Count(r => r.Category != "dlc" && r.Category != "preview")</strong>
+                    <span class="metric-label">@L["Lists.Others"]</span><strong>@Catalog.Count(r => r.Category != "dlc" && r.Category != "preview")</strong>
                 </FluentCard>
             </FluentGridItem>
         </FluentGrid>
+    </Metrics>
 
-        @* ── DataGrid ── *@
-        @if (FilteredResources.Any())
-        {
-            <FluentDataGrid Items="@FilteredResources.AsQueryable()" TGridItem="ResourceCatalogEntry"
-                            ShowHover="true"
-                            Pagination="@pagination"
-                            ResizableColumns="true"
-                            HeaderCellAsButtonWithMenu="true">
-                <PropertyColumn Property="@(r => r.FileName)" Title="File Name" Sortable="true" />
-                <PropertyColumn Property="@(r => r.Category)" Title="Category" Sortable="true" />
-                <TemplateColumn Title="Platforms">
-                    @string.Join(", ", context.PlatformManifest.Select(m => $"{m.Platform} {(m.Exist ? "✓" : "✗")}"))
-                </TemplateColumn>
-                <TemplateColumn Title="Size">
-                    @FormatFileSize(context.PlatformManifest.FirstOrDefault()?.SourceFileSize ?? 0)
-                </TemplateColumn>
-                <TemplateColumn Title="Compressed">
-                    @(context.Compressed ? "Yes" : "No")
-                </TemplateColumn>
-                <TemplateColumn Title="Actions">
-                    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="4">
-                        <FluentButton IconStart="@(new Icons.Regular.Size20.Edit())"
-                                      Appearance="Appearance.Neutral"
-                                      OnClick="() => OpenEditDialog(context)"
-                                      Title="Edit" />
-                        <FluentButton IconStart="@(new Icons.Regular.Size20.Delete())"
-                                      Appearance="Appearance.Neutral"
-                                      OnClick="() => DeleteResourceAsync(context)"
-                                      Title="Delete" />
-                    </FluentStack>
-                </TemplateColumn>
-            </FluentDataGrid>
-            <FluentPaginator State="@pagination" />
-        }
-        else
-        {
-            <FluentMessageBar Title="No resources found." Intent="MessageIntent.Info" />
-        }
-
-        @if (!string.IsNullOrEmpty(message))
-        {
-            <FluentMessageBar Title="@message" Intent="MessageIntent.Info" />
-        }
-        @if (!string.IsNullOrEmpty(errorMessage))
-        {
-            <FluentMessageBar Title="@errorMessage" Intent="MessageIntent.Error" />
-        }
-    </FluentStack>
-}
+    <Columns>
+        <PropertyColumn TGridItem="ResourceCatalogEntry" TProp="string" Property="@(r => r.FileName)" Title='@L["Lists.FileName"]' Sortable="true" />
+        <PropertyColumn TGridItem="ResourceCatalogEntry" TProp="string" Property="@(r => r.Category)" Title="Category" Sortable="true" />
+        <TemplateColumn TGridItem="ResourceCatalogEntry" Title='@L["Lists.Platforms"]' Context="resource">
+            @string.Join(", ", resource.PlatformManifest.Select(m => $"{m.Platform} {(m.Exist ? "✓" : "✗")}"))
+        </TemplateColumn>
+        <TemplateColumn TGridItem="ResourceCatalogEntry" Title='@L["Lists.Size"]' Context="resource">
+            @FormatFileSize(resource.PlatformManifest.FirstOrDefault()?.SourceFileSize ?? 0)
+        </TemplateColumn>
+        <TemplateColumn TGridItem="ResourceCatalogEntry" Title='@L["Lists.Compressed"]' Context="resource">
+            @(resource.Compressed ? L["Lists.Yes"] : L["Lists.No"])
+        </TemplateColumn>
+        <TemplateColumn TGridItem="ResourceCatalogEntry" Title="Actions" Context="resource">
+            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="4">
+                <FluentButton IconStart="@(new Icons.Regular.Size20.Edit())"
+                              Appearance="Appearance.Neutral"
+                              OnClick="() => OpenEditDialog(resource)"
+                              Title='@L["Common.Edit"]' />
+                <FluentButton IconStart="@(new Icons.Regular.Size20.Delete())"
+                              Appearance="Appearance.Neutral"
+                              OnClick="() => DeleteResourceAsync(resource)"
+                              Title='@L["Common.Delete"]' />
+            </FluentStack>
+        </TemplateColumn>
+    </Columns>
+</ProjectListShell>
 
 @code {
     private string filter = string.Empty;
@@ -180,9 +155,9 @@ else
             data,
             new DialogParameters
             {
-                Title = "Add Resource",
-                PrimaryAction = "Save",
-                SecondaryAction = "Cancel",
+                Title = L["Dialog.AddResource"].Value,
+                PrimaryAction = L["Common.Save"].Value,
+                SecondaryAction = L["Common.Cancel"].Value,
                 Width = "640px",
                 PreventDismissOnOverlayClick = true
             });
@@ -199,9 +174,9 @@ else
             data,
             new DialogParameters
             {
-                Title = "Edit Resource",
-                PrimaryAction = "Save",
-                SecondaryAction = "Cancel",
+                Title = L["Dialog.EditResource"].Value,
+                PrimaryAction = L["Common.Save"].Value,
+                SecondaryAction = L["Common.Cancel"].Value,
                 Width = "640px",
                 PreventDismissOnOverlayClick = true
             });
@@ -217,8 +192,8 @@ else
         errorMessage = null;
 
         var dialog = await DialogService.ShowConfirmationAsync(
-            $"Delete resource '{entry.FileName}'? This will remove it from the project.",
-            "Delete", "Cancel", "Delete Resource");
+            L["Lists.DeleteConfirm", L["Nav.Resources"].Value.ToLowerInvariant(), entry.FileName].Value,
+            L["Common.Delete"].Value, L["Common.Cancel"].Value, L["Nav.Resources"].Value);
 
         var result = await dialog.Result;
         if (result.Cancelled) return;
@@ -228,7 +203,7 @@ else
             await Workflow.RemoveResourceAsync(entry.FileName, null);
             _lastPackage = null; // invalidate catalog cache
             State.Diagnostics.Add($"Resource deleted: {entry.FileName}");
-            message = $"Resource '{entry.FileName}' deleted.";
+            message = L["Lists.Deleted", L["Nav.Resources"].Value, entry.FileName].Value;
         }
         catch (Exception ex)
         {

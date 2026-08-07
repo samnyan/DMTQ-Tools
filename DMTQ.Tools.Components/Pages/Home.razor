@@ -6,26 +6,26 @@
 @inject NavigationManager Navigation
 @inject IDialogService DialogService
 
-<h1>Project</h1>
+<h1>@L["Nav.Project"]</h1>
 
 <FluentStack Orientation="Orientation.Vertical" VerticalGap="16" Style="margin-bottom: 1.25rem;">
     <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8">
         <FluentTextField @bind-Value="projectRoot"
-                         Label="Project folder"
-                         Placeholder="Select or enter a project folder path..."
+                         Label='@L["Home.ProjectFolder"]'
+                         Placeholder='@L["Home.ProjectFolderPlaceholder"]'
                          Style="width: 100%;" />
         <FluentButton Appearance="Appearance.Neutral"
                       IconStart="@(new Icons.Regular.Size20.Folder())"
-                      OnClick="BrowseFolder">Browse</FluentButton>
+                      OnClick="BrowseFolder">@L["Home.Browse"]</FluentButton>
     </FluentStack>
 
     <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8">
         <FluentButton Appearance="Appearance.Accent"
                       OnClick="ConfirmProject"
-                      Disabled="@(string.IsNullOrWhiteSpace(projectRoot) || isBusy)">Confirm</FluentButton>
+                      Disabled="@(string.IsNullOrWhiteSpace(projectRoot) || isBusy)">@L["Home.Confirm"]</FluentButton>
         <FluentButton Appearance="Appearance.Neutral"
                       OnClick="SaveProject"
-                      Disabled="@(!State.HasPackage || isBusy)">Save</FluentButton>
+                      Disabled="@(!State.HasPackage || isBusy)">@L["Common.Save"]</FluentButton>
     </FluentStack>
 
     @if (!string.IsNullOrWhiteSpace(message))
@@ -37,55 +37,55 @@
 <FluentGrid Spacing="3" Justify="JustifyContent.Center" AdaptiveRendering="true">
     <FluentGridItem xs="12" sm="6" md="4" lg="3">
         <FluentCard>
-            <span style="color: #5f6b7a; font-size: 0.8rem;">Project</span>
-            <p style="font-weight: 600; overflow-wrap: anywhere;">@(State.ProjectRoot ?? "Not selected")</p>
+            <span style="color: #5f6b7a; font-size: 0.8rem;">@L["Nav.Project"]</span>
+            <p style="font-weight: 600; overflow-wrap: anywhere;">@(State.ProjectRoot ?? L["Home.NotSelected"].Value)</p>
         </FluentCard>
     </FluentGridItem>
     <FluentGridItem xs="12" sm="6" md="4" lg="3">
         <FluentCard>
-            <span style="color: #5f6b7a; font-size: 0.8rem;">Source</span>
-            <p style="font-weight: 600; overflow-wrap: anywhere;">@(State.CurrentPackage?.ProjectInfo.SourcePackageRoot ?? "Not imported")</p>
+            <span style="color: #5f6b7a; font-size: 0.8rem;">@L["Home.Source"]</span>
+            <p style="font-weight: 600; overflow-wrap: anywhere;">@(State.CurrentPackage?.ProjectInfo.SourcePackageRoot ?? L["Home.NotImported"].Value)</p>
         </FluentCard>
     </FluentGridItem>
     <FluentGridItem xs="12" sm="6" md="4" lg="3">
         <FluentCard>
-            <span style="color: #5f6b7a; font-size: 0.8rem;">Version</span>
+            <span style="color: #5f6b7a; font-size: 0.8rem;">@L["Home.Version"]</span>
             <p style="font-weight: 600;">@(State.CurrentPackage?.ProjectInfo.Version ?? "-")</p>
         </FluentCard>
     </FluentGridItem>
     <FluentGridItem xs="12" sm="6" md="4" lg="3">
         <FluentCard>
-            <span style="color: #5f6b7a; font-size: 0.8rem;">Primary platform</span>
+            <span style="color: #5f6b7a; font-size: 0.8rem;">@L["Home.PrimaryPlatform"]</span>
             <p style="font-weight: 600;">@(State.CurrentPackage?.ProjectInfo.Platform ?? "-")</p>
         </FluentCard>
     </FluentGridItem>
     <FluentGridItem xs="12" sm="6" md="4" lg="3">
         <FluentCard>
-            <span style="color: #5f6b7a; font-size: 0.8rem;">Imported platforms</span>
+            <span style="color: #5f6b7a; font-size: 0.8rem;">@L["Home.ImportedPlatforms"]</span>
             <p style="font-weight: 600;">@PlatformSummary</p>
         </FluentCard>
     </FluentGridItem>
     <FluentGridItem xs="12" sm="6" md="4" lg="3">
         <FluentCard>
-            <span style="color: #5f6b7a; font-size: 0.8rem;">Songs</span>
+            <span style="color: #5f6b7a; font-size: 0.8rem;">@L["Nav.Songs"]</span>
             <p style="font-weight: 600;">@(State.CurrentPackage?.Songs.Count ?? 0)</p>
         </FluentCard>
     </FluentGridItem>
     <FluentGridItem xs="12" sm="6" md="4" lg="3">
         <FluentCard>
-            <span style="color: #5f6b7a; font-size: 0.8rem;">Tables</span>
+            <span style="color: #5f6b7a; font-size: 0.8rem;">@L["Home.Tables"]</span>
             <p style="font-weight: 600;">@(State.CurrentPackage?.Tables.Tables.Count ?? 0)</p>
         </FluentCard>
     </FluentGridItem>
     <FluentGridItem xs="12" sm="6" md="4" lg="3">
         <FluentCard>
-            <span style="color: #5f6b7a; font-size: 0.8rem;">Resources</span>
+            <span style="color: #5f6b7a; font-size: 0.8rem;">@L["Nav.Resources"]</span>
             <p style="font-weight: 600;">@(State.CurrentPackage?.Resources.Count ?? 0)</p>
         </FluentCard>
     </FluentGridItem>
     <FluentGridItem xs="12" sm="6" md="4" lg="3">
         <FluentCard>
-            <span style="color: #5f6b7a; font-size: 0.8rem;">Last validation</span>
+            <span style="color: #5f6b7a; font-size: 0.8rem;">@L["Home.LastValidation"]</span>
             <p style="font-weight: 600;">@ValidationText</p>
         </FluentCard>
     </FluentGridItem>
@@ -106,8 +106,8 @@
             .OrderBy(p => p));
 
     private string ValidationText => State.LastValidationResult is null
-        ? "Not run"
-        : State.LastValidationResult.IsValid ? "Passed" : $"{State.LastValidationResult.Errors.Count} errors";
+        ? L["Common.NotRun"].Value
+        : State.LastValidationResult.IsValid ? L["Common.Passed"].Value : L["Common.Errors", State.LastValidationResult.Errors.Count].Value;
 
     private async Task BrowseFolder()
     {
@@ -121,13 +121,13 @@
         var root = projectRoot.Trim();
         if (string.IsNullOrWhiteSpace(root))
         {
-            ShowMessage("Please enter a project folder path.", MessageIntent.Warning);
+            ShowMessage(L["Home.EnterProjectPath"].Value, MessageIntent.Warning);
             return;
         }
 
         if (!Directory.Exists(root))
         {
-            ShowMessage($"Folder '{root}' does not exist.", MessageIntent.Error);
+            ShowMessage(L["Home.FolderNotFound", root].Value, MessageIntent.Error);
             return;
         }
 
@@ -143,29 +143,27 @@
             {
                 // Existing project — load it
                 await Workflow.OpenProjectAsync(root);
-                ShowMessage("Project loaded.", MessageIntent.Info);
+                ShowMessage(L["Home.ProjectLoaded"].Value, MessageIntent.Info);
             }
             else if (isEmpty)
             {
                 // Empty directory — ask to create
                 var dialog = await DialogService.ShowConfirmationAsync(
-                    "This folder is empty. Create a new project here?",
-                    "Create", "Cancel",
-                    "New project");
+                    L["Home.EmptyFolderConfirm"].Value,
+                    L["Home.Confirm"].Value, L["Common.Cancel"].Value,
+                    L["Home.NewProject"].Value);
                 var result = await dialog.Result;
                 if (!result.Cancelled)
                 {
                     await Workflow.CreateProjectAsync(root);
-                    ShowMessage("Project created. Go to the Import page to import a patch package.", MessageIntent.Info);
+                    ShowMessage(L["Home.ProjectCreated"].Value, MessageIntent.Info);
                 }
             }
             else
             {
                 // Has files but no project.json
                 ShowMessage(
-                    $"This folder contains files but is not a DMTQ project. " +
-                    $"Please choose an empty folder, then go to the " +
-                    $"Import page to import an existing patch package.",
+                    L["Home.InvalidFolder"].Value,
                     MessageIntent.Error);
             }
         }
@@ -187,7 +185,7 @@
         try
         {
             await Workflow.SaveProjectAsync();
-            ShowMessage("Project saved.", MessageIntent.Info);
+            ShowMessage(L["Home.ProjectSaved"].Value, MessageIntent.Info);
         }
         catch (Exception ex)
         {

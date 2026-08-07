@@ -2,30 +2,30 @@
 @inject IProjectState State
 @inject PackageQaService QaService
 
-<h1>Diagnostics</h1>
+<h1>@L["Nav.Diagnostics"]</h1>
 
 <section class="toolbar-panel">
-    <h2>Project file</h2>
+    <h2>@L["Diagnostics.ProjectFile"]</h2>
     @if (string.IsNullOrWhiteSpace(State.ProjectRoot))
     {
-        <div class="status-message">No project selected.</div>
+        <div class="status-message">@L["Diagnostics.NoProject"]</div>
     }
     else
     {
         var projectFile = System.IO.Path.Combine(State.ProjectRoot, "project.json");
         <div class="status-message">@projectFile</div>
         <div class="status-message @(System.IO.File.Exists(projectFile) ? "success" : "")">
-            @(System.IO.File.Exists(projectFile) ? "Project file exists." : "Project has not been saved yet.")
+            @(System.IO.File.Exists(projectFile) ? L["Diagnostics.ProjectExists"] : L["Diagnostics.NotSaved"])
         </div>
     }
 </section>
 
 <section class="toolbar-panel">
     <div class="input-row">
-        <h2>QA Check</h2>
+        <h2>@L["Diagnostics.QaCheck"]</h2>
         <FluentButton Appearance="Appearance.Accent"
                       OnClick="RunQa"
-                      Disabled="@(!State.HasPackage || isBusy)">Run QA</FluentButton>
+                      Disabled="@(!State.HasPackage || isBusy)">@L["Diagnostics.RunQa"]</FluentButton>
     </div>
     @if (qaReport is not null)
     {
@@ -54,10 +54,10 @@
 </section>
 
 <section class="toolbar-panel">
-    <h2>Workflow log</h2>
+    <h2>@L["Diagnostics.WorkflowLog"]</h2>
     @if (State.Diagnostics.Count == 0)
     {
-        <div class="status-message">No diagnostics yet.</div>
+        <div class="status-message">@L["Diagnostics.NoneYet"]</div>
     }
     else
     {
@@ -71,14 +71,14 @@
 </section>
 
 <section class="toolbar-panel">
-    <h2>Last validation</h2>
+    <h2>@L["Diagnostics.LastValidation"]</h2>
     @if (State.LastValidationResult is null)
     {
-        <div class="status-message">Validation has not run.</div>
+        <div class="status-message">@L["Diagnostics.NotRun"]</div>
     }
     else if (State.LastValidationResult.IsValid)
     {
-        <div class="status-message success">Validation passed.</div>
+        <div class="status-message success">@L["Diagnostics.Passed"]</div>
     }
     else
     {

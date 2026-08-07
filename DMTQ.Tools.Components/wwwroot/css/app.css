@@ -120,6 +120,17 @@ fluent-data-grid {
     color: #5f6b7a;
     font-size: 0.8rem;
     margin-bottom: 0.35rem;
+    white-space: nowrap;
+}
+
+/* Keep metric cards wide enough for labels such as "Localized names". */
+fluent-grid-item:has(.metric-label) {
+    min-width: 12rem;
+}
+
+fluent-card:has(.metric-label) {
+    width: 100%;
+    min-width: 12rem;
 }
 
 /* ── Table counts ── */

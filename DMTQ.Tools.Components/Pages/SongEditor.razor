@@ -11,18 +11,18 @@
 
     @* ── Header ── *@
     <FluentBreadcrumb>
-        <FluentBreadcrumbItem Href="/songs">Songs</FluentBreadcrumbItem>
-        <FluentBreadcrumbItem>@(IsCreate ? "New Song" : $"Edit: {currentSong?.Id}")</FluentBreadcrumbItem>
+        <FluentBreadcrumbItem Href="/songs">@L["Nav.Songs"]</FluentBreadcrumbItem>
+        <FluentBreadcrumbItem>@(IsCreate ? L["Editor.NewSong"] : L["Editor.Edit", currentSong?.Id.ToString() ?? string.Empty])</FluentBreadcrumbItem>
     </FluentBreadcrumb>
 
     @if (State.CurrentPackage is null)
     {
-        <FluentMessageBar Title="Open or import a project before editing songs." Intent="MessageIntent.Warning" />
+        <FluentMessageBar Title='@L["Editor.OpenSongsProject"]' Intent="MessageIntent.Warning" />
     }
     else if (currentSong is null && !IsCreate)
     {
-        <FluentMessageBar Title="@($"Song '{SongId}' not found.")" Intent="MessageIntent.Error" />
-        <FluentButton Appearance="Appearance.Neutral" OnClick="NavigateBack">Back to Songs</FluentButton>
+        <FluentMessageBar Title='@L["Editor.NotFound", L["Nav.Songs"].Value, SongId]' Intent="MessageIntent.Error" />
+        <FluentButton Appearance="Appearance.Neutral" OnClick="NavigateBack">@L["Editor.BackTo", L["Nav.Songs"].Value]</FluentButton>
     }
     else
     {
@@ -35,7 +35,7 @@
                 <FluentGrid Spacing="3">
                     <FluentGridItem xs="12" md="6">
                         <section>
-                            <h2 class="section-heading">Basic Info</h2>
+                            <h2 class="section-heading">@L["Editor.BasicInfo"]</h2>
                             <FluentStack Orientation="Orientation.Vertical" VerticalGap="8">
                                 @if (IsCreate)
                                 {
@@ -60,7 +60,7 @@
 
                     <FluentGridItem xs="12" md="6">
                         <section>
-                            <h2 class="section-heading">Gameplay Settings</h2>
+                            <h2 class="section-heading">@L["Editor.GameplaySettings"]</h2>
                             <FluentStack Orientation="Orientation.Vertical" VerticalGap="8">
                                 <FluentSwitch @bind-Value="bgaOriginal" Label="Original BGA" />
                                 <FluentSwitch @bind-Value="bgaLoop" Label="Loop BGA" />
@@ -91,8 +91,8 @@
                    Row 3: Descriptions (multi-language, full width)
                    ════════════════════════════════════════════ *@
                 <section>
-                    <h2 class="section-heading">Descriptions</h2>
-                    <p class="section-hint">Overrides per language. Leave blank to use Basic Info values on export.</p>
+                    <h2 class="section-heading">@L["Editor.LocalizedDescriptions"]</h2>
+                    <p class="section-hint">@L["Editor.DescriptionsHint"]</p>
                     <FluentStack Orientation="Orientation.Vertical" VerticalGap="16" HorizontalAlignment="HorizontalAlignment.Stretch">
                         @foreach (var lang in DefaultLanguages)
                         {
@@ -135,10 +135,10 @@
                    ════════════════════════════════════════════ *@
                 <section>
                     <div class="table-header">
-                        <h2 class="section-heading">Patterns</h2>
+                        <h2 class="section-heading">@L["Editor.Patterns"]</h2>
                         <FluentButton Appearance="Appearance.Accent"
                                       IconStart="@(new Icons.Regular.Size20.Add())"
-                                      OnClick="OpenAddPatternDialog">Add Pattern</FluentButton>
+                                      OnClick="OpenAddPatternDialog">@L["Editor.AddPattern"]</FluentButton>
                     </div>
 
                     @if (currentSong?.Patterns.Count > 0)
@@ -168,14 +168,14 @@
                     }
                     else
                     {
-                        <FluentMessageBar Title="No patterns yet. Click Add Pattern to add one." Intent="MessageIntent.Info" />
+                        <FluentMessageBar Title='@L["Editor.NoPatterns"]' Intent="MessageIntent.Info" />
                     }
                 </section>
 
                 @* ── Actions ── *@
                 <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8" VerticalAlignment="VerticalAlignment.Center">
-                    <FluentButton Appearance="Appearance.Accent" Type="ButtonType.Submit" Disabled="@isBusy">Save Song</FluentButton>
-                    <FluentButton Appearance="Appearance.Neutral" OnClick="NavigateBack">Cancel</FluentButton>
+                    <FluentButton Appearance="Appearance.Accent" Type="ButtonType.Submit" Disabled="@isBusy">@L["Editor.SaveSong"]</FluentButton>
+                    <FluentButton Appearance="Appearance.Neutral" OnClick="NavigateBack">@L["Common.Cancel"]</FluentButton>
                     @if (!string.IsNullOrEmpty(message))
                     {
                         <FluentMessageBar Title="@message" Intent="MessageIntent.Info" />
@@ -280,7 +280,7 @@
             {
                 if (string.IsNullOrWhiteSpace(songIdInput) || !int.TryParse(songIdInput, out var newId))
                 {
-                    errorMessage = "Song ID is required and must be a number.";
+                    errorMessage = L["Editor.SongIdRequired"].Value;
                     return;
                 }
                 var song = SongEditSvc.CreateDraft(currentSong!, newId);
@@ -295,7 +295,7 @@
                 await Workflow.SaveProjectAsync();
                 _lastPackage = null;
                 State.Diagnostics.Add($"Song edited: {currentSong.Id}");
-                message = "Song saved.";
+                message = L["Editor.Saved", L["Nav.Songs"].Value].Value;
             }
         }
         catch (Exception ex)
@@ -318,9 +318,9 @@
             pattern,
             new DialogParameters
             {
-                Title = "Add Pattern",
-                PrimaryAction = "Add",
-                SecondaryAction = "Cancel",
+                Title = L["Editor.AddPattern"].Value,
+                PrimaryAction = L["Common.Save"].Value,
+                SecondaryAction = L["Common.Cancel"].Value,
                 Width = "480px",
                 PreventDismissOnOverlayClick = true,
             });
@@ -335,7 +335,7 @@
             SongEditSvc.AddPattern(currentSong, pattern);
             await Workflow.SaveProjectAsync();
             _lastPackage = null;
-            message = $"Pattern {pattern.PatternId} added.";
+            message = L["Editor.Saved", L["Editor.Patterns"].Value].Value;
             State.Diagnostics.Add($"Pattern added: {pattern.PatternId}");
         }
         catch (Exception ex)
@@ -371,9 +371,9 @@
             clone,
             new DialogParameters
             {
-                Title = $"Edit Pattern: {pattern.PatternId}",
-                PrimaryAction = "Save",
-                SecondaryAction = "Cancel",
+                Title = L["Editor.Edit", pattern.PatternId].Value,
+                PrimaryAction = L["Common.Save"].Value,
+                SecondaryAction = L["Common.Cancel"].Value,
                 Width = "480px",
                 PreventDismissOnOverlayClick = true,
             });
@@ -387,7 +387,7 @@
             SongEditSvc.UpdatePattern(currentSong, pattern.PatternId, clone);
             await Workflow.SaveProjectAsync();
             _lastPackage = null;
-            message = $"Pattern {pattern.PatternId} saved.";
+            message = L["Editor.Saved", L["Editor.Patterns"].Value].Value;
             State.Diagnostics.Add($"Pattern edited: {pattern.PatternId}");
         }
         catch (Exception ex)
@@ -405,8 +405,8 @@
         if (currentSong is null) return;
 
         var dialog = await DialogService.ShowConfirmationAsync(
-            $"Delete pattern '{pattern.PatternId}'?",
-            "Delete", "Cancel", $"Delete Pattern {pattern.PatternId}");
+            L["Lists.DeleteConfirm", L["Editor.Patterns"].Value, pattern.PatternId].Value,
+            L["Common.Delete"].Value, L["Common.Cancel"].Value, L["Editor.Patterns"].Value);
 
         var result = await dialog.Result;
         if (result.Cancelled) return;
@@ -417,7 +417,7 @@
             SongEditSvc.RemovePattern(currentSong, pattern.PatternId);
             await Workflow.SaveProjectAsync();
             _lastPackage = null;
-            message = $"Pattern {pattern.PatternId} removed.";
+            message = L["Lists.Deleted", L["Editor.Patterns"].Value, pattern.PatternId].Value;
             State.Diagnostics.Add($"Pattern removed: {pattern.PatternId}");
         }
         catch (Exception ex)

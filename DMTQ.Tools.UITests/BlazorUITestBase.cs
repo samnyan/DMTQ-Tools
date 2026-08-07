@@ -6,6 +6,7 @@ using DMTQ.Tools.Core.Services;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Rendering;
 using Microsoft.FluentUI.AspNetCore.Components;
+using DMTQ_Tools.Components.Localization;
 using Bunit;
 
 namespace DMTQ.Tools.UITests;
@@ -25,7 +26,14 @@ public abstract class BlazorUITestBase : Bunit.TestContext
         Services.AddSingleton<LogicalTableService>();
         Services.AddSingleton<SongCatalogService>();
         Services.AddSingleton<SongEditService>();
+        Services.AddSingleton<ProductCatalogService>();
+        Services.AddSingleton<ProductEditService>();
+        Services.AddSingleton<ItemCatalogService>();
+        Services.AddSingleton<ItemEditService>();
         Services.AddFluentUIComponents();
+        Services.AddLocalization();
+        Services.AddSingleton<ILanguagePreferenceStore, TestLanguagePreferenceStore>();
+        Services.AddSingleton<ILanguageService, LanguageService>();
 
         // FluentUI components invoke JS interop in OnAfterRenderAsync (v=... is build-specific).
         // Use Loose mode so unregistered JS calls return empty/default instead of throwing.
@@ -108,5 +116,11 @@ public abstract class BlazorUITestBase : Bunit.TestContext
     {
         public string? PickResult { get; set; }
         public Task<string?> PickFileAsync(CancellationToken ct = default) => Task.FromResult(PickResult);
+    }
+
+    private sealed class TestLanguagePreferenceStore : ILanguagePreferenceStore
+    {
+        public string? Get(string key) => null;
+        public void Set(string key, string value) { }
     }
 }

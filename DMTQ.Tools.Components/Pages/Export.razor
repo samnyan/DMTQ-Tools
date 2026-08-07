@@ -3,43 +3,43 @@
 @inject IProjectWorkflow Workflow
 @inject PackageQaService QaService
 
-<h1>Export</h1>
+<h1>@L["Nav.Export"]</h1>
 
 <FluentStack Orientation="Orientation.Vertical" VerticalGap="16" Style="margin-bottom: 1.25rem;">
     <FluentSelect Items="@(new[] { "android", "ios" })"
                   OptionText="@(i => i)"
                   OptionValue="@(i => i)"
                   @bind-SelectedOption="State.SelectedExportPlatform"
-                  Label="Platform" />
+                  Label='@L["Import.Platform"]' />
 
     <FluentSelect Items="@(new[] { "Keep", "CompressAll", "UncompressAll" })"
                   OptionText="@(i => i)"
                   OptionValue="@(i => i)"
                   @bind-SelectedOption="State.ExportCompressionMode"
-                  Label="Compression policy" />
+                  Label='@L["Export.CompressionPolicy"]' />
 
     <FluentTextField @bind-Value="exportRoot"
-                     Label="Output directory"
+                     Label='@L["Export.OutputDirectory"]'
                      Placeholder="D:\DMTQExports\android"
                      Style="width: 100%" />
     <FluentButton Appearance="Appearance.Accent"
                   @onclick="ExportPlatformPackage"
                   Disabled="@(!State.HasPackage || isBusy)">
-        Export
+        @L["Export.Export"]
     </FluentButton>
 
     @if (!State.HasPackage)
     {
-        <div class="status-message">Import a package before exporting.</div>
+        <div class="status-message">@L["Export.Precondition"]</div>
     }
 
     @if (qaSummary is not null)
     {
         <div class="qa-summary @(qaSummary.IsClean ? "success" : qaSummary.HasErrors ? "error" : "warning")">
-            <strong>Pre-export QA:</strong> @qaSummary.Summary
+            <strong>@L["Export.PreExportQa"]</strong> @qaSummary.Summary
             @if (qaSummary.HasErrors)
             {
-                <span> — Fix errors before exporting.</span>
+                <span>@L["Export.FixErrors"]</span>
             }
         </div>
     }
@@ -61,31 +61,31 @@
         </FluentGridItem>
         <FluentGridItem xs="12" sm="6" md="4">
             <FluentCard>
-                <span class="metric-label">Manifest entries</span>
+                <span class="metric-label">@L["Export.ManifestEntries"]</span>
                 <strong>@State.LastPlatformExportResult.ManifestEntryCount</strong>
             </FluentCard>
         </FluentGridItem>
         <FluentGridItem xs="12" sm="6" md="4">
             <FluentCard>
-                <span class="metric-label">Files written</span>
+                <span class="metric-label">@L["Export.FilesWritten"]</span>
                 <strong>@State.LastPlatformExportResult.FilesWritten</strong>
             </FluentCard>
         </FluentGridItem>
         <FluentGridItem xs="12" sm="6" md="4">
             <FluentCard>
-                <span class="metric-label">Skipped baseline</span>
+                <span class="metric-label">@L["Export.SkippedBaseline"]</span>
                 <strong>@State.LastPlatformExportResult.FilesSkippedAsBaseline</strong>
             </FluentCard>
         </FluentGridItem>
         <FluentGridItem xs="12" sm="6" md="4">
             <FluentCard>
-                <span class="metric-label">Missing current files</span>
+                <span class="metric-label">@L["Export.MissingCurrentFiles"]</span>
                 <strong>@State.LastPlatformExportResult.MissingCurrentFiles</strong>
             </FluentCard>
         </FluentGridItem>
         <FluentGridItem xs="12" sm="6" md="4">
             <FluentCard>
-                <span class="metric-label">Validation</span>
+                <span class="metric-label">@L["Home.LastValidation"]</span>
                 <strong>@ValidationText</strong>
             </FluentCard>
         </FluentGridItem>
@@ -95,7 +95,7 @@
 @if (State.LastValidationResult is not null && !State.LastValidationResult.IsValid)
 {
     <section class="toolbar-panel">
-        <h2>Validation errors</h2>
+        <h2>@L["Export.ValidationErrors"]</h2>
         <ul class="diagnostic-list">
             @foreach (var error in State.LastValidationResult.Errors.Take(100))
             {
@@ -112,13 +112,13 @@
     private QaReport? qaSummary;
 
     private string ValidationText => State.LastValidationResult is null
-        ? "Not run"
-        : State.LastValidationResult.IsValid ? "Passed" : $"{State.LastValidationResult.Errors.Count} errors";
+        ? L["Common.NotRun"].Value
+        : State.LastValidationResult.IsValid ? L["Common.Passed"].Value : L["Common.Errors", State.LastValidationResult.Errors.Count].Value;
 
     private async Task ExportPlatformPackage()
     {
         isBusy = true;
-        message = "Running QA...";
+        message = L["Export.RunningQa"].Value;
         try
         {
             if (State.CurrentPackage is not null)
@@ -126,20 +126,20 @@
                 qaSummary = QaService.Run(State.CurrentPackage);
                 if (qaSummary.HasErrors)
                 {
-                    message = $"QA found {qaSummary.ErrorCount} error(s). Fix them before exporting.";
+                    message = L["Export.QaFoundErrors", qaSummary.ErrorCount].Value;
                     State.Diagnostics.Add($"Pre-export QA: {qaSummary.Summary}");
                     return;
                 }
             }
 
-            message = "Exporting platform package...";
+            message = L["Export.Exporting"].Value;
             await Workflow.ExportPlatformPackageAsync(
                 exportRoot,
                 State.SelectedExportPlatform,
                 State.PlatformExportMode);
             message = State.LastPlatformExportResult?.Validation.IsValid == true
-                ? "Platform export completed and validation passed."
-                : "Platform export completed with validation errors.";
+                ? L["Export.CompletedValid"].Value
+                : L["Export.CompletedInvalid"].Value;
         }
         catch (Exception ex)
         {

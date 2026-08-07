@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Maui;
 using DMTQ.Tools.Core.Services;
+using DMTQ_Tools.Components.Localization;
 using DMTQ_Tools.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.FluentUI.AspNetCore.Components;
@@ -22,18 +23,25 @@ namespace DMTQ_Tools
                 });
 
             builder.Services.AddMauiBlazorWebView();
+            builder.Services.AddLocalization();
 
             // IMPORTANT: Must use default ServiceLifetime.Scoped for FluentUI in MAUI BlazorWebView.
             // Singleton causes MessageService to resolve before NavigationManager is initialized
             // → "WebViewNavigationManager has not been initialized" crash.
             // DO NOT change to ServiceLifetime.Singleton.
             builder.Services.AddFluentUIComponents();
+            builder.Services.AddSingleton<ILanguagePreferenceStore, MauiLanguagePreferenceStore>();
+            builder.Services.AddSingleton<ILanguageService, LanguageService>();
 
             builder.Services.AddSingleton<CsvTableReader>();
             builder.Services.AddSingleton<IPatchProjectRepository, JsonPatchProjectRepository>();
             builder.Services.AddSingleton<LogicalTableService>();
             builder.Services.AddSingleton<SongCatalogService>();
             builder.Services.AddSingleton<SongEditService>();
+            builder.Services.AddSingleton<ProductCatalogService>();
+            builder.Services.AddSingleton<ProductEditService>();
+            builder.Services.AddSingleton<ItemCatalogService>();
+            builder.Services.AddSingleton<ItemEditService>();
 
             builder.Services.AddSingleton<ResourceManagerService>();
             builder.Services.AddSingleton<PackageQaService>();

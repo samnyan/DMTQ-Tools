@@ -7,7 +7,7 @@
 
     @* Basic Info Section *@
     <section>
-        <h2 class="section-heading">Basic Info</h2>
+        <h2 class="section-heading">@L["Dialog.BasicInfo"]</h2>
         <FluentGrid Spacing="3">
             <FluentGridItem xs="12" sm="8">
                 <FluentTextField @bind-Value="Content.FileName" Label="File Name"
@@ -24,7 +24,7 @@
 
     @* Platform Files Section *@
     <section>
-        <h2 class="section-heading">Platform Files</h2>
+        <h2 class="section-heading">@L["Dialog.PlatformFiles"]</h2>
         <FluentStack Orientation="Orientation.Vertical" VerticalGap="8">
             @foreach (var card in Content.Platforms.Where(p => !p.MarkedForDeletion))
             {
@@ -32,25 +32,25 @@
                     <FluentStack Orientation="Orientation.Vertical" VerticalGap="4" Style="padding: 12px;">
                         <div style="font-weight: 600; font-size: 1rem;">@card.Platform</div>
                         <div style="font-size: 0.85rem; color: var(--neutral-foreground-rest);">
-                            Exist: @(card.Exist ? "✓" : "✗"), Size: @FormatSize(card.SourceFileSize), Checksum: @card.SourceChecksum
+                            @L["Dialog.ExistSizeChecksum", card.Exist ? "✓" : "✗", FormatSize(card.SourceFileSize), card.SourceChecksum]
                         </div>
                         @if (!string.IsNullOrEmpty(card.SourceChecksum))
                         {
                             <div style="font-size: 0.85rem; color: var(--neutral-foreground-rest);">
-                                Source: @card.SourceChecksum
+                                @L["Dialog.Source", card.SourceChecksum]
                             </div>
                         }
                         @if (!string.IsNullOrEmpty(card.PendingFilePath))
                         {
                             <div style="font-size: 0.85rem; color: var(--accent-foreground-rest);">
-                                Will replace: @card.PendingFilePath
+                                @L["Dialog.WillReplace", card.PendingFilePath]
                             </div>
                         }
                         <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8" Style="margin-top: 8px;">
                             <FluentButton Appearance="Appearance.Neutral" Size="FluentUI.AspNetCore.Components.Size.Small"
-                                          OnClick="() => PickAndReplaceFile(card)">Replace File</FluentButton>
+                                          OnClick="() => PickAndReplaceFile(card)">@L["Dialog.ReplaceFile"]</FluentButton>
                             <FluentButton Appearance="Appearance.Neutral" Size="FluentUI.AspNetCore.Components.Size.Small"
-                                          OnClick="() => RemovePlatform(card)">Remove</FluentButton>
+                                          OnClick="() => RemovePlatform(card)">@L["Common.Delete"]</FluentButton>
                         </FluentStack>
                     </FluentStack>
                 </FluentCard>
@@ -64,20 +64,20 @@
             @if (_showPlatformChoices)
             {
                 <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8" VerticalAlignment="VerticalAlignment.Center">
-                    <span style="font-weight: 500;">Select platform:</span>
+                    <span style="font-weight: 500;">@L["Dialog.SelectPlatform"]</span>
                     @foreach (var plat in _availablePlatforms)
                     {
                         <FluentButton Appearance="Appearance.Neutral" Size="FluentUI.AspNetCore.Components.Size.Small"
                                       OnClick="() => AddPlatformFor(plat)">@plat</FluentButton>
                     }
                     <FluentButton Appearance="Appearance.Neutral" Size="FluentUI.AspNetCore.Components.Size.Small"
-                                  OnClick="CancelAddPlatform">Cancel</FluentButton>
+                                  OnClick="CancelAddPlatform">@L["Common.Cancel"]</FluentButton>
                 </FluentStack>
             }
             else
             {
                 <FluentButton Appearance="Appearance.Neutral" OnClick="ShowAddPlatformOptions"
-                              IconStart="@(new Icons.Regular.Size20.Add())">+ Add Platform</FluentButton>
+                              IconStart="@(new Icons.Regular.Size20.Add())">@L["Dialog.AddPlatform"]</FluentButton>
             }
         </FluentStack>
     </section>
@@ -104,7 +104,7 @@
 
         if (_availablePlatforms.Count == 0)
         {
-            _addPlatformMessage = "All platforms already added.";
+            _addPlatformMessage = L["Dialog.AllPlatformsAdded"].Value;
             return;
         }
 

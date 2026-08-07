@@ -39,6 +39,7 @@ public sealed class SongsPageTests : BlazorUITestBase
         cut.Markup.Should().Contain("Song ID");
         cut.Markup.Should().Contain("Genre");
         cut.Markup.Should().Contain("Patterns");
+        cut.Markup.Should().Contain("Preview Language");
     }
 
     [TestMethod]
