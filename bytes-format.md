@@ -78,9 +78,10 @@ Command types
 * C: hold note
 * 5: chain note start (all notes in between have type 0)
 * 6: chain note end
-* 2: unknown
+* 1: half speed note
+* 2: twice speed note
 * 100: VideoStart
-* 150: ?
+* 150: KEYSOUND ON/OFF (When turn off the key sound in the option, the game will play xxxx.a.ogg in song.fpk file)
 
 ### 2: Volume
 #### Params

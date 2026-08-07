@@ -1,150 +1,120 @@
-﻿using System;
-using System.Text;
+using System;
 using System.IO;
+using K4os.Compression.LZ4.Legacy;
 
-namespace fpk_tool
+namespace lz4_tool
 {
     class Program
     {
         static void Main(string[] args)
         {
-            if(args.Length <= 0)
+            Console.WriteLine("DMTQ Tools - lz4 tool");
+            if (args.Length < 1)
             {
-                Console.WriteLine("DMTQ Tools - FPK Tool");
-                Console.WriteLine("Drag a .fpk file to unpack, or drag a folder to repack it back to .fpk file");
+                Console.WriteLine("Usage: lz4_tool.exe [-d <folder_path>] [-c <folder_path>] [files_path]");
+                Console.WriteLine("-d <folder_path> : Decompress all file with .lz4 extension in that folder, will overwrite all file");
+                Console.WriteLine("-c <folder_path> : Compress all file without .lz4 extension in that folder, will overwrite all file");
+                Console.WriteLine("files_path : Multiple files, auto detect file extension to decompress or compress to the same folder");
                 Console.ReadLine();
                 return;
             }
-            foreach (var path in args)
+
+            // 遍历所有传入的参数，支持混合使用指令和直接拖拽多个文件
+            for (int i = 0; i < args.Length; i++)
             {
-                FileAttributes attr = File.GetAttributes(path);
-                if (attr.HasFlag(FileAttributes.Directory))
+                // 处理解压文件夹指令
+                if (args[i].Equals("-d", StringComparison.OrdinalIgnoreCase))
                 {
-                    Console.WriteLine("Repacking " + path);
-                    // do pack
-                    DirectoryInfo dir = new DirectoryInfo(path);
-                    FileInfo[] files = dir.GetFiles();
-
-                    using (FileStream fs = new FileStream(Path.Combine(dir.Parent.FullName, dir.Name+".fpk"), FileMode.Create))
-                    using (MemoryStream fileInfo = new MemoryStream(100))
-                    using (MemoryStream fileData = new MemoryStream(100))
+                    if (i + 1 < args.Length && Directory.Exists(args[i + 1]))
                     {
-                        fs.Write(new byte[] { 0x0, 0x10, 0x0, 0x0 }, 0, 4); // Header?
-                        fs.Write(new byte[] { 0x3, 0x0, 0x0, 0x0 }, 0, 4); // Header?
-                        fs.Write(new byte[] { 0x0, 0x0, 0x0, 0x0 }, 0, 4); // Pack Size
-                        fs.Write(new byte[] { 0x0, 0x0, 0x0, 0x0 }, 0, 4); // Compress Pack Size
-                        fs.Write(new byte[] { 0x0, 0x0, 0x0, 0x0 }, 0, 4); // Info Offset
-                        fs.Write(BitConverter.GetBytes(files.Length), 0, 4); // Files Count
-                        fs.Write(new byte[] { 0x1, 0x0, 0x0, 0x0 }, 0, 4); // Unknown header
-
-
-                        long fileOffset = fs.Position;
-                        foreach (FileInfo file in files)
+                        foreach (string file in Directory.EnumerateFiles(args[i + 1], "*.lz4"))
                         {
-                            Console.WriteLine("Adding file: " + file.Name);
-                            // Write File Table
-                            byte[] length = BitConverter.GetBytes(file.Length);
-                            fileInfo.Write(BitConverter.GetBytes(fileOffset), 0, 4); // File offset
-                            fileInfo.Write(length, 0, 4); // File length
-                            fileInfo.Write(length, 0, 4); // Compress file length
-                            string fileName = file.Name;
-
-                            fileInfo.Write(BitConverter.GetBytes(fileName.Length), 0, 4); // Filename length
-
-                            byte[] fileNameBytes = new byte[0x80];
-                            byte[] fileNameTemp = Encoding.ASCII.GetBytes(fileName);
-                            if (fileNameTemp.Length > 0x80)
-                            {
-                                Console.WriteLine("Warning: File name too long: " + fileName);
-                            }
-                            for (int i = 0; i < fileNameTemp.Length && i < 0x80; i++)
-                            {
-                                fileNameBytes[i] = fileNameTemp[i];
-                            }
-                            fileInfo.Write(fileNameBytes, 0, 0x80); // Filename
-
-                            // Write File
-                            fs.Seek(fileOffset, SeekOrigin.Begin);
-
-                            using (FileStream inputfs = new FileStream(file.FullName, FileMode.Open))
-                            {
-                                inputfs.CopyTo(fs);
-                            }
-                            fileOffset += file.Length;
+                            Decompress(file);
                         }
-
-                        fs.Seek(fileOffset, SeekOrigin.Begin);
-                        fileInfo.Seek(0, SeekOrigin.Begin);
-                        fileInfo.CopyTo(fs);
-
-                        // Write File Table Offset
-                        fs.Seek(0x10, SeekOrigin.Begin);
-                        fs.Write(BitConverter.GetBytes(fileOffset), 0, 4);
-
-                        // Write Pack Size
-                        fs.Seek(0x8, SeekOrigin.Begin);
-                        fs.Write(BitConverter.GetBytes(fileOffset - 0x1C), 0, 4);
-                        fs.Write(BitConverter.GetBytes(fileOffset - 0x1C), 0, 4);
-
+                        i++; // 跳过下一个参数（因为它是文件夹路径）
                     }
-
+                    else
+                    {
+                        Console.WriteLine("Invalid folder path for -d");
+                    }
                 }
+                // 处理压缩文件夹指令
+                else if (args[i].Equals("-c", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (i + 1 < args.Length && Directory.Exists(args[i + 1]))
+                    {
+                        foreach (string file in Directory.EnumerateFiles(args[i + 1]))
+                        {
+                            FileInfo info = new FileInfo(file);
+                            if (!info.Extension.Equals(".lz4", StringComparison.OrdinalIgnoreCase))
+                            {
+                                Compress(file);
+                            }
+                        }
+                        i++; // 跳过下一个参数（因为它是文件夹路径）
+                    }
+                    else
+                    {
+                        Console.WriteLine("Invalid folder path for -c");
+                    }
+                }
+                // 处理直接传入的文件（支持批量多选拖拽）
                 else
                 {
-                    Console.WriteLine("Unpacking " + path);
-                    // do unpack
-                    FileInfo info = new FileInfo(path);
-                    string outPath = Path.Combine(info.DirectoryName, Path.GetFileNameWithoutExtension(path));
-                    Directory.CreateDirectory(outPath);
-                    Console.WriteLine("Output path: " + outPath);
-
-                    using (FileStream fs = new FileStream(path, FileMode.Open))
-                    using (BinaryReader reader = new BinaryReader(fs))
+                    if (File.Exists(args[i]))
                     {
-                        fs.Seek(0x8, SeekOrigin.Begin);
-
-
-                        long packSize = reader.ReadInt32();
-                        long compressPackSize = reader.ReadInt32();
-                        if (packSize != compressPackSize)
-                        {
-                            Console.WriteLine("Warning: This file may contains compressed file, which doesn't decompress automatically by this tool.");
-                        }
-                        long fileTableOffset = reader.ReadInt32();
-                        long fileCount = reader.ReadInt32();
-                        Console.WriteLine("FileTable Offset: " + fileTableOffset);
-                        Console.WriteLine("File Count: " + fileCount);
-
-                        long currentOffset = fileTableOffset;
-
-                        for (int i = 0; i < fileCount; i++)
-                        {
-                            fs.Seek(currentOffset, SeekOrigin.Begin);
-                            int fileOffset = reader.ReadInt32();
-                            int size = reader.ReadInt32();
-                            int compressSize = reader.ReadInt32();
-                            int fileNameLength = reader.ReadInt32();
-                            string fileName = new string(reader.ReadChars(fileNameLength));
-                            fs.Seek(fileOffset, SeekOrigin.Begin);
-
-                            byte[] file = new byte[size];
-                            fs.Read(file, 0, size);
-
-
-                            using (FileStream os = new FileStream(Path.Combine(outPath, fileName), FileMode.Create))
-                            {
-                                Console.WriteLine("Writing " + fileName);
-                                os.Write(file, 0, size);
-                            }
-                            currentOffset += 0x90;
-                        }
+                        AutoDetect(args[i]);
+                    }
+                    else if (Directory.Exists(args[i]))
+                    {
+                        Console.WriteLine($"Skipping directory '{args[i]}'. Please use -c or -d to process directories.");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"File not found: {args[i]}");
                     }
                 }
             }
-            
-            Console.WriteLine("Done, Press enter to exit");
+
+            Console.WriteLine("Done, press enter to continue");
             Console.ReadLine();
-            
+        }
+
+        public static void AutoDetect(string file)
+        {
+            FileInfo info = new FileInfo(file);
+            if(info.Extension.Equals(".lz4", StringComparison.OrdinalIgnoreCase))
+            {
+                Decompress(file);
+            }
+            else
+            {
+                Compress(file);
+            }
+        }
+
+        public static void Decompress(string file)
+        {
+            Console.WriteLine("Decompressing " + file);
+            using (var fileStream = new FileStream(file, FileMode.Open))
+            using (var outFileStream = new FileStream(file.Replace(".lz4", ""), FileMode.Create))
+            using (var lz4Stream = LZ4Legacy.Decode(fileStream, leaveOpen: false))
+            {
+                lz4Stream.CopyTo(outFileStream);
+                outFileStream.Flush();
+            }
+        }
+
+        public static void Compress(string file)
+        {
+            Console.WriteLine("Compressing " + file);
+            using (var fileStream = new FileStream(file, FileMode.Open))
+            using (var outFileStream = new FileStream(file + ".lz4", FileMode.Create))
+            using (var lz4Stream = LZ4Legacy.Encode(outFileStream, leaveOpen: false))
+            {
+                fileStream.CopyTo(lz4Stream);
+                outFileStream.Flush();
+            }
         }
     }
 }

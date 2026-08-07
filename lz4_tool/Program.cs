@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using K4os.Compression.LZ4.Legacy;
 
@@ -18,47 +18,64 @@ namespace lz4_tool
                 Console.ReadLine();
                 return;
             }
-            if(args.Length == 1)
-            {
-                // Single file
-                AutoDetect(args[0]);
-                Console.WriteLine("Done, press enter to continue");
-                Console.ReadLine();
-                return;
-            }
-            int decompressIndex = -1;
-            int compressIndex = -1;
-            for (int i=0; i < args.Length; i++)
-            {
-                if(args[i].Equals("-d"))
-                {
-                    decompressIndex = i;
-                }
-                if (args[i].Equals("-c"))
-                {
-                    compressIndex = i;
-                }
-            }
 
-            // Do Folder
-            if(decompressIndex > -1)
+            // 遍历所有传入的参数，支持混合使用指令和直接拖拽多个文件
+            for (int i = 0; i < args.Length; i++)
             {
-                foreach (string file in Directory.EnumerateFiles(args[decompressIndex + 1], "*.lz4"))
+                // 处理解压文件夹指令
+                if (args[i].Equals("-d", StringComparison.OrdinalIgnoreCase))
                 {
-                    Decompress(file);
-                }
-            }
-            if (compressIndex > -1)
-            {
-                foreach (string file in Directory.EnumerateFiles(args[compressIndex + 1]))
-                {
-                    FileInfo info = new FileInfo(file);
-                    if (!info.Extension.Equals(".lz4", StringComparison.OrdinalIgnoreCase))
+                    if (i + 1 < args.Length && Directory.Exists(args[i + 1]))
                     {
-                        Compress(file);
+                        foreach (string file in Directory.EnumerateFiles(args[i + 1], "*.lz4"))
+                        {
+                            Decompress(file);
+                        }
+                        i++; // 跳过下一个参数（因为它是文件夹路径）
+                    }
+                    else
+                    {
+                        Console.WriteLine("Invalid folder path for -d");
+                    }
+                }
+                // 处理压缩文件夹指令
+                else if (args[i].Equals("-c", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (i + 1 < args.Length && Directory.Exists(args[i + 1]))
+                    {
+                        foreach (string file in Directory.EnumerateFiles(args[i + 1]))
+                        {
+                            FileInfo info = new FileInfo(file);
+                            if (!info.Extension.Equals(".lz4", StringComparison.OrdinalIgnoreCase))
+                            {
+                                Compress(file);
+                            }
+                        }
+                        i++; // 跳过下一个参数（因为它是文件夹路径）
+                    }
+                    else
+                    {
+                        Console.WriteLine("Invalid folder path for -c");
+                    }
+                }
+                // 处理直接传入的文件（支持批量多选拖拽）
+                else
+                {
+                    if (File.Exists(args[i]))
+                    {
+                        AutoDetect(args[i]);
+                    }
+                    else if (Directory.Exists(args[i]))
+                    {
+                        Console.WriteLine($"Skipping directory '{args[i]}'. Please use -c or -d to process directories.");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"File not found: {args[i]}");
                     }
                 }
             }
+
             Console.WriteLine("Done, press enter to continue");
             Console.ReadLine();
         }
