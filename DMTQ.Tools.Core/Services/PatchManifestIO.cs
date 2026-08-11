@@ -33,12 +33,12 @@ public static class PatchManifestIO
         {
             manifest.Entries.Add(new PatchFileEntry(
                 NormalizePath(row.FileName),
-                row.FileSize,
+                ParseInt64(row.FileSize, "file_size"),
                 row.Checksum ?? string.Empty,
-                row.CompressedFileSize,
+                ParseInt64(row.CompressedFileSize, "compressed_file_size"),
                 row.CompressedChecksum ?? string.Empty,
-                row.AcquireOnDemand,
-                row.Compressed == 1,
+                ParseInt32(row.AcquireOnDemand, "acquire_on_demand"),
+                ParseInt32(row.Compressed, "compressed") == 1,
                 row.Platform ?? string.Empty,
                 row.Tag ?? string.Empty));
         }
@@ -95,28 +95,50 @@ public static class PatchManifestIO
     private static string NormalizePath(string path)
         => path.Replace('\\', '/');
 
+    private static long ParseInt64(string? value, string fieldName)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return 0;
+
+        if (long.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var result))
+            return result;
+
+        throw new InvalidDataException($"Manifest field '{fieldName}' has invalid Int64 value '{value}'.");
+    }
+
+    private static int ParseInt32(string? value, string fieldName)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return 0;
+
+        if (int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var result))
+            return result;
+
+        throw new InvalidDataException($"Manifest field '{fieldName}' has invalid Int32 value '{value}'.");
+    }
+
     private sealed class PatchManifestCsvRow
     {
         [CsvHelper.Configuration.Attributes.Name("file_name")]
         public string FileName { get; set; } = string.Empty;
 
         [CsvHelper.Configuration.Attributes.Name("file_size")]
-        public long FileSize { get; set; }
+        public string? FileSize { get; set; }
 
         [CsvHelper.Configuration.Attributes.Name("checksum")]
         public string? Checksum { get; set; }
 
         [CsvHelper.Configuration.Attributes.Name("compressed_file_size")]
-        public long CompressedFileSize { get; set; }
+        public string? CompressedFileSize { get; set; }
 
         [CsvHelper.Configuration.Attributes.Name("compressed_checksum")]
         public string? CompressedChecksum { get; set; }
 
         [CsvHelper.Configuration.Attributes.Name("acquire_on_demand")]
-        public int AcquireOnDemand { get; set; }
+        public string? AcquireOnDemand { get; set; }
 
         [CsvHelper.Configuration.Attributes.Name("compressed")]
-        public int Compressed { get; set; }
+        public string? Compressed { get; set; }
 
         [CsvHelper.Configuration.Attributes.Name("platform")]
         public string? Platform { get; set; }

@@ -33,6 +33,22 @@ public sealed class PatchManifestIOTests
     }
 
     [TestMethod]
+    public async Task ReadAsync_UsesZeroFallbackForBlankInt64AndInt32Fields()
+    {
+        var csv = "file_name,file_size,checksum,compressed_file_size,compressed_checksum,acquire_on_demand,compressed,platform,tag,\r\n" +
+                  "table/us/song_song.csv, ,abc,\" \" ,, , ,,,\r\n";
+        await using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(csv));
+
+        var manifest = await PatchManifestIO.ReadAsync(stream);
+
+        var entry = manifest.Entries.Should().ContainSingle().Subject;
+        entry.FileSize.Should().Be(0);
+        entry.CompressedFileSize.Should().Be(0);
+        entry.AcquireOnDemand.Should().Be(0);
+        entry.Compressed.Should().BeFalse();
+    }
+
+    [TestMethod]
     public async Task WriteAsync_WritesPatchNewCsvHeadersAndRows()
     {
         var manifest = new PatchManifest();
