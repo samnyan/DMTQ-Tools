@@ -3,6 +3,14 @@ using System.Text.Json.Serialization;
 
 namespace DMTQ.Tools.Core.Models.Entity;
 
+internal static class YesNoValue
+{
+    public const string No = "N";
+
+    public static string Normalize(string? value)
+        => string.IsNullOrWhiteSpace(value) ? No : value;
+}
+
 /// <summary>
 /// Project-domain song model with flat, strongly-typed fields.
 /// Used for editing in the UI; not tied to CSV column layout.
@@ -18,8 +26,20 @@ public sealed class Song
     public string FullName { get; set; } = string.Empty;
     public string Genre { get; set; } = string.Empty;
     public string ArtistName { get; set; } = string.Empty;
-    public string OriginalBgaYn { get; set; } = string.Empty;
-    public string LoopBgaYn { get; set; } = string.Empty;
+    private string _originalBgaYn = YesNoValue.No;
+    public string OriginalBgaYn
+    {
+        get => _originalBgaYn;
+        set => _originalBgaYn = YesNoValue.Normalize(value);
+    }
+
+    private string _loopBgaYn = YesNoValue.No;
+    public string LoopBgaYn
+    {
+        get => _loopBgaYn;
+        set => _loopBgaYn = YesNoValue.Normalize(value);
+    }
+
     public string ComposedBy { get; set; } = string.Empty;
     public string Singer { get; set; } = string.Empty;
     public string FeatBy { get; set; } = string.Empty;
@@ -29,9 +49,27 @@ public sealed class Song
     public int CostGameCash { get; set; }
     public int Flag { get; set; }
     public string Status { get; set; } = string.Empty;
-    public string FreeYn { get; set; } = string.Empty;
-    public string HiddenYn { get; set; } = string.Empty;
-    public string OpenYn { get; set; } = string.Empty;
+    private string _freeYn = YesNoValue.No;
+    public string FreeYn
+    {
+        get => _freeYn;
+        set => _freeYn = YesNoValue.Normalize(value);
+    }
+
+    private string _hiddenYn = YesNoValue.No;
+    public string HiddenYn
+    {
+        get => _hiddenYn;
+        set => _hiddenYn = YesNoValue.Normalize(value);
+    }
+
+    private string _openYn = YesNoValue.No;
+    public string OpenYn
+    {
+        get => _openYn;
+        set => _openYn = YesNoValue.Normalize(value);
+    }
+
     public int TrackId { get; set; }
     public string ModDate { get; set; } = string.Empty;
     public string Update { get; set; } = string.Empty;
@@ -81,7 +119,12 @@ public sealed class SongPattern
     public int Difficulty { get; set; }
     public int PointType { get; set; }
     public int PointValue { get; set; }
-    public string Flg { get; set; } = string.Empty;
+    private string _flg = YesNoValue.No;
+    public string Flg
+    {
+        get => _flg;
+        set => _flg = YesNoValue.Normalize(value);
+    }
     public string Update { get; set; } = string.Empty;
 }
 

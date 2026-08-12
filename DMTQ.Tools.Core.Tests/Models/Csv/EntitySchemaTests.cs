@@ -10,6 +10,41 @@ namespace DMTQ.Tools.Core.Tests.Models.Csv;
 [TestClass]
 public sealed class EntitySchemaTests
 {
+    [TestMethod]
+    public void Song_DefaultsBooleanFieldsToNo()
+    {
+        var song = new Song();
+
+        song.OriginalBgaYn.Should().Be("N");
+        song.LoopBgaYn.Should().Be("N");
+        song.FreeYn.Should().Be("N");
+        song.HiddenYn.Should().Be("N");
+        song.OpenYn.Should().Be("N");
+
+        song.LoopBgaYn = " ";
+        song.HiddenYn = string.Empty;
+        song.LoopBgaYn.Should().Be("N");
+        song.HiddenYn.Should().Be("N");
+    }
+
+    [TestMethod]
+    public void SongPattern_DefaultsBooleanFieldToNo()
+    {
+        new SongPattern().Flg.Should().Be("N");
+    }
+
+    [TestMethod]
+    public void SongCsvSchema_WritesNoForUnsetBooleanFields()
+    {
+        var schema = new SongCsvSchema();
+        using var stream = new MemoryStream();
+
+        schema.WriteCsv(stream, [new Song { Id = 1001 }]);
+
+        var csv = System.Text.Encoding.UTF8.GetString(stream.ToArray());
+        csv.Should().Contain("1001,0,,,,,N,N,,,,,,0,0,0,,N,N,N,0,,");
+    }
+
     // ── SongCsvSchema ──
 
     [TestMethod]

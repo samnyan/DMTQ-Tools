@@ -13,6 +13,7 @@ public sealed class PatternCsvSchema : CsvSchema<SongPattern>
         typeof(SongPattern).GetProperty("SongId", BindingFlags.Public | BindingFlags.Instance)!;
 
     private static int ParseInt(string v) => int.TryParse(v, out var n) ? n : 0;
+    private static string NormalizeYn(string? value) => YesNoValue.Normalize(value);
 
     public override IReadOnlyList<CsvColumn<SongPattern>> Columns { get; } =
     [
@@ -23,7 +24,7 @@ public sealed class PatternCsvSchema : CsvSchema<SongPattern>
         new CsvColumn<SongPattern>("difficulty",  4, sp => sp.Difficulty.ToString(),  (sp, v) => sp.Difficulty = ParseInt(v)),
         new CsvColumn<SongPattern>("point_type",  5, sp => sp.PointType.ToString(),   (sp, v) => sp.PointType = ParseInt(v)),
         new CsvColumn<SongPattern>("point_value", 6, sp => sp.PointValue.ToString(),  (sp, v) => sp.PointValue = ParseInt(v)),
-        new CsvColumn<SongPattern>("flg",         7, sp => sp.Flg,                    (sp, v) => sp.Flg = v),
+        new CsvColumn<SongPattern>("flg",         7, sp => NormalizeYn(sp.Flg),       (sp, v) => sp.Flg = v),
         new CsvColumn<SongPattern>("update",      8, sp => sp.Update,                 (sp, v) => sp.Update = v),
     ];
 }
