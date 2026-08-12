@@ -1,0 +1,76 @@
+@page "/achievements"
+@inject NavigationManager Navigation
+@inject IProjectState State
+@inject IProjectWorkflow Workflow
+@inject AchievementCatalogService CatalogService
+@inject AchievementEditService EditService
+@inject IDialogService DialogService
+
+<ProjectListShell TItem="Achievement"
+                  Title='@L["Nav.Achievements"]'
+                  ProjectMissingMessage='@L["Common.NoProject"]'
+                  EmptyMessage='@L["Lists.NoAchievements"]'
+                  FilteredItems="@FilteredItems"
+                  Pagination="@pagination"
+                  Message="@message"
+                  ErrorMessage="@errorMessage">
+    <Toolbar>
+        <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween">
+            <FluentTextField @bind-Value="filter" Immediate="true" Placeholder='@L["Lists.FilterAchievements"]' Style="min-width: 320px;" />
+            <FluentButton Appearance="Appearance.Accent" IconStart="@(new Icons.Regular.Size20.Add())" OnClick="CreateNew">@L["Lists.AddAchievement"]</FluentButton>
+        </FluentStack>
+    </Toolbar>
+    <Metrics>
+        <FluentGrid Spacing="3"><FluentGridItem xs="12" sm="6" md="3"><FluentCard><span class="metric-label">@L["Nav.Achievements"]</span><strong>@Catalog.Count</strong></FluentCard></FluentGridItem></FluentGrid>
+    </Metrics>
+    <Columns>
+        <PropertyColumn TGridItem="Achievement" TProp="string" Property="@(item => item.Id)" Title='@L["Fields.AchievementId"]' Sortable="true" />
+        <TemplateColumn TGridItem="Achievement" Title='@L["Fields.Name"]' Context="item">@CatalogService.GetDisplayName(item, PreviewLanguage)</TemplateColumn>
+        <PropertyColumn TGridItem="Achievement" TProp="string" Property="@(item => item.ConditionType)" Title='@L["Fields.ConditionType"]' Sortable="true" />
+        <PropertyColumn TGridItem="Achievement" TProp="string" Property="@(item => item.AchievementTier)" Title='@L["Fields.Tier"]' />
+        <PropertyColumn TGridItem="Achievement" TProp="string" Property="@(item => item.ObtainPoint)" Title='@L["Fields.ObtainPoint"]' />
+        <TemplateColumn TGridItem="Achievement" Title='@L["Lists.Actions"]' Context="item">
+            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="4">
+                <FluentButton IconStart="@(new Icons.Regular.Size20.Edit())" Appearance="Appearance.Neutral" OnClick="() => Edit(item.Id)" Title='@L["Common.Edit"]' />
+                <FluentButton IconStart="@(new Icons.Regular.Size20.Delete())" Appearance="Appearance.Neutral" OnClick="() => DeleteAsync(item)" Title='@L["Common.Delete"]' />
+            </FluentStack>
+        </TemplateColumn>
+    </Columns>
+</ProjectListShell>
+
+@code {
+    private const string PreviewLanguage = "CN";
+    private readonly PaginationState pagination = new() { ItemsPerPage = 25 };
+    private string filter = string.Empty;
+    private string? message;
+    private string? errorMessage;
+
+    private IReadOnlyList<Achievement> Catalog => State.CurrentPackage is null
+        ? []
+        : CatalogService.BuildCatalog(State.CurrentPackage, State.SelectedExportPlatform);
+
+    private IEnumerable<Achievement> FilteredItems => string.IsNullOrWhiteSpace(filter)
+        ? Catalog
+        : Catalog.Where(item => item.Id.Contains(filter, StringComparison.OrdinalIgnoreCase)
+            || CatalogService.GetDisplayName(item, PreviewLanguage).Contains(filter, StringComparison.OrdinalIgnoreCase)
+            || item.ConditionType.Contains(filter, StringComparison.OrdinalIgnoreCase));
+
+    private void CreateNew() => Navigation.NavigateTo("/achievements/editor/new");
+    private void Edit(string id) => Navigation.NavigateTo($"/achievements/editor/{Uri.EscapeDataString(id)}");
+
+    private async Task DeleteAsync(Achievement item)
+    {
+        if (State.CurrentPackage is null) return;
+        var dialog = await DialogService.ShowConfirmationAsync(
+            L["Lists.DeleteConfirm", L["Nav.Achievements"].Value, item.Id].Value,
+            L["Common.Delete"].Value, L["Common.Cancel"].Value, L["Nav.Achievements"].Value);
+        if ((await dialog.Result).Cancelled) return;
+        try
+        {
+            EditService.RemoveAchievement(State.CurrentPackage, item.Id, State.SelectedExportPlatform);
+            await Workflow.SaveProjectAsync();
+            message = L["Lists.Deleted", L["Nav.Achievements"].Value, item.Id].Value;
+        }
+        catch (Exception ex) { errorMessage = ex.Message; }
+    }
+}

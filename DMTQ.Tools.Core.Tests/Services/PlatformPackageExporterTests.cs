@@ -11,6 +11,32 @@ namespace DMTQ.Tools.Core.Tests.Services;
 public sealed class PlatformPackageExporterTests
 {
     [TestMethod]
+    public async Task ExportPlatformAsync_UsesSelectedPlatformsEntityTables()
+    {
+        var projectRoot = Path.Combine(Path.GetTempPath(), "dmtq-platform-data-" + Guid.NewGuid().ToString("N"));
+        var exportRoot = Path.Combine(Path.GetTempPath(), "dmtq-platform-data-out-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            Directory.CreateDirectory(projectRoot);
+            var package = CreateEmptyProject(projectRoot);
+            package.GetOrCreatePlatformTables("android").Songs.Add(new Song { Id = 1, Name = "android-song" });
+            package.GetOrCreatePlatformTables("ios").Songs.Add(new Song { Id = 1, Name = "ios-song" });
+
+            await CreateExporter().ExportPlatformAsync(package, exportRoot,
+                new PlatformExportOptions { Platform = "ios", Mode = PlatformExportMode.Full });
+
+            var csv = await File.ReadAllTextAsync(Path.Combine(exportRoot, "table", "us", "song_song.csv"));
+            csv.Should().Contain("ios-song");
+            csv.Should().NotContain("android-song");
+        }
+        finally
+        {
+            DeleteDirectory(projectRoot);
+            DeleteDirectory(exportRoot);
+        }
+    }
+
+    [TestMethod]
     public async Task ExportPlatformAsync_WritesManifestForMissingOnDiskFileWithPlatformEntry()
     {
         var projectRoot = Path.Combine(Path.GetTempPath(), "dmtq-platform-export-" + Guid.NewGuid().ToString("N"));

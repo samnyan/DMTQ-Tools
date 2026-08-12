@@ -84,15 +84,18 @@
     private PaginationState pagination = new() { ItemsPerPage = 25 };
 
     private PatchPackage? _lastPackage;
+    private string? _lastPlatform;
     private IReadOnlyList<Item> _catalog = [];
 
     private IReadOnlyList<Item> Catalog
     {
         get
         {
-            if (ReferenceEquals(State.CurrentPackage, _lastPackage)) return _catalog;
+            if (ReferenceEquals(State.CurrentPackage, _lastPackage)
+                && string.Equals(State.SelectedExportPlatform, _lastPlatform, StringComparison.OrdinalIgnoreCase)) return _catalog;
             _lastPackage = State.CurrentPackage;
-            _catalog = State.CurrentPackage is null ? [] : ItemCatalog.BuildCatalog(State.CurrentPackage);
+            _lastPlatform = State.SelectedExportPlatform;
+            _catalog = State.CurrentPackage is null ? [] : ItemCatalog.BuildCatalog(State.CurrentPackage, State.SelectedExportPlatform);
             return _catalog;
         }
     }
@@ -128,7 +131,7 @@
 
         try
         {
-            ItemEditor.RemoveItem(State.CurrentPackage, item.Id);
+            ItemEditor.RemoveItem(State.CurrentPackage, item.Id, State.SelectedExportPlatform);
             await Workflow.SaveProjectAsync();
             _lastPackage = null;
             State.Diagnostics.Add($"Item deleted: {item.Id}");

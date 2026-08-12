@@ -8,7 +8,7 @@ namespace DMTQ.Tools.Core.Services;
 
 public sealed class JsonPatchProjectRepository : IPatchProjectRepository
 {
-    private const int CurrentSchemaVersion = 1;
+    private const int CurrentSchemaVersion = 2;
     private const string ProjectFileName = "project.json";
 
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -56,7 +56,7 @@ public sealed class JsonPatchProjectRepository : IPatchProjectRepository
             throw new InvalidDataException("GameTableManager project file is empty or invalid.");
         }
 
-        if (document.SchemaVersion != CurrentSchemaVersion)
+        if (document.SchemaVersion is < 1 or > CurrentSchemaVersion)
         {
             throw new InvalidDataException($"Unsupported GameTableManager project schema version {document.SchemaVersion}.");
         }
@@ -79,6 +79,9 @@ public sealed class JsonPatchProjectRepository : IPatchProjectRepository
         public List<Item> Items { get; set; } = [];
         public List<IngameItem> IngameItems { get; set; } = [];
         public List<IngameItemEffect> IngameItemEffects { get; set; } = [];
+        public Dictionary<string, PlatformTableData> PlatformTables { get; set; } =
+            new(StringComparer.OrdinalIgnoreCase);
+        public List<SlangEntry> SlangEntries { get; set; } = [];
 
         public static ProjectDocument FromPackage(
             PatchPackage package,
@@ -98,7 +101,11 @@ public sealed class JsonPatchProjectRepository : IPatchProjectRepository
                 Products = [..package.Products],
                 Items = [..package.Items],
                 IngameItems = [..package.IngameItems],
-                IngameItemEffects = [..package.IngameItemEffects]
+                IngameItemEffects = [..package.IngameItemEffects],
+                PlatformTables = new Dictionary<string, PlatformTableData>(
+                    package.PlatformTables,
+                    StringComparer.OrdinalIgnoreCase),
+                SlangEntries = [..package.SlangEntries]
             };
         }
 
@@ -118,6 +125,10 @@ public sealed class JsonPatchProjectRepository : IPatchProjectRepository
             package.Items.AddRange(Items);
             package.IngameItems.AddRange(IngameItems);
             package.IngameItemEffects.AddRange(IngameItemEffects);
+            package.PlatformTables = new Dictionary<string, PlatformTableData>(
+                PlatformTables,
+                StringComparer.OrdinalIgnoreCase);
+            package.SlangEntries.AddRange(SlangEntries);
 
             var options = new PackageExportOptions();
             foreach (var item in CompressionOverrides)

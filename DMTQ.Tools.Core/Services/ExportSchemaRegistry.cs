@@ -17,7 +17,11 @@ public static class ExportSchemaRegistry
     /// table is entity-backed and was written; returns <c>false</c> when the table
     /// is not recognised — the caller should fall back to legacy GameTable writing.
     /// </summary>
-    public static bool TryWriteTable(string relativePath, PatchPackage package, Stream stream)
+    public static bool TryWriteTable(
+        string relativePath,
+        PatchPackage package,
+        Stream stream,
+        string? platform = null)
     {
         ArgumentNullException.ThrowIfNull(relativePath);
         ArgumentNullException.ThrowIfNull(package);
@@ -25,20 +29,21 @@ public static class ExportSchemaRegistry
 
         var tableName = GetTableName(relativePath);
         var languageCode = GetLanguageCode(relativePath);
+        var tables = package.GetPlatformTables(platform);
 
         switch (tableName)
         {
             case "song_song":
-                if (package.Songs.Count > 0)
+                if (tables.Songs.Count > 0)
                 {
-                    new SongCsvSchema().WriteCsv(stream, package.Songs);
+                    new SongCsvSchema().WriteCsv(stream, tables.Songs);
                     return true;
                 }
                 return false;
 
             case "song_songPattern":
             {
-                var patterns = package.Songs.SelectMany(s => s.Patterns).ToList();
+                var patterns = tables.Songs.SelectMany(s => s.Patterns).ToList();
                 if (patterns.Count > 0)
                 {
                     new PatternCsvSchema().WriteCsv(stream, patterns);
@@ -48,49 +53,57 @@ public static class ExportSchemaRegistry
             }
 
             case "quest_achievement":
-                if (package.Achievements.Count > 0)
+                if (tables.Achievements.Count > 0)
                 {
-                    new AchievementCsvSchema().WriteCsv(stream, package.Achievements);
+                    new AchievementCsvSchema().WriteCsv(stream, tables.Achievements);
                     return true;
                 }
                 return false;
 
             case "product_product":
-                if (package.Products.Count > 0)
+                if (tables.Products.Count > 0)
                 {
-                    new ProductCsvSchema().WriteCsv(stream, package.Products);
+                    new ProductCsvSchema().WriteCsv(stream, tables.Products);
                     return true;
                 }
                 return false;
 
             case "category_categoryproduct":
-                if (package.Products.Count > 0)
+                if (tables.Products.Count > 0)
                 {
-                    new CategoryProductCsvSchema().WriteCsv(stream, package.Products);
+                    new CategoryProductCsvSchema().WriteCsv(stream, tables.Products);
                     return true;
                 }
                 return false;
 
             case "product_item":
-                if (package.Items.Count > 0)
+                if (tables.Items.Count > 0)
                 {
-                    new ItemCsvSchema().WriteCsv(stream, package.Items);
+                    new ItemCsvSchema().WriteCsv(stream, tables.Items);
                     return true;
                 }
                 return false;
 
             case "ingameitem_ingameitem":
-                if (package.IngameItems.Count > 0)
+                if (tables.IngameItems.Count > 0)
                 {
-                    new IngameItemCsvSchema().WriteCsv(stream, package.IngameItems);
+                    new IngameItemCsvSchema().WriteCsv(stream, tables.IngameItems);
                     return true;
                 }
                 return false;
 
             case "ingameitem_itemeffect":
-                if (package.IngameItemEffects.Count > 0)
+                if (tables.IngameItemEffects.Count > 0)
                 {
-                    new IngameItemEffectCsvSchema().WriteCsv(stream, package.IngameItemEffects);
+                    new IngameItemEffectCsvSchema().WriteCsv(stream, tables.IngameItemEffects);
+                    return true;
+                }
+                return false;
+
+            case "slang":
+                if (package.SlangEntries.Count > 0)
+                {
+                    new SlangCsvSchema().WriteCsv(stream, package.SlangEntries);
                     return true;
                 }
                 return false;
@@ -105,41 +118,41 @@ public static class ExportSchemaRegistry
             switch (logicalName)
             {
                 case "song_desc":
-                    if (package.Songs.Count > 0)
+                    if (tables.Songs.Count > 0)
                     {
-                        WriteSongDesc(stream, package, lang);
+                        WriteSongDesc(stream, tables.Songs, lang);
                         return true;
                     }
                     return false;
 
                 case "acievement_desc":
-                    if (package.Achievements.Count > 0)
+                    if (tables.Achievements.Count > 0)
                     {
-                        new AchievementDescCsvSchema(lang).WriteCsv(stream, package.Achievements);
+                        new AchievementDescCsvSchema(lang).WriteCsv(stream, tables.Achievements);
                         return true;
                     }
                     return false;
 
                 case "quest_desc":
-                    if (package.Quests.Count > 0)
+                    if (tables.Quests.Count > 0)
                     {
-                        new QuestDescCsvSchema(lang).WriteCsv(stream, package.Quests);
+                        new QuestDescCsvSchema(lang).WriteCsv(stream, tables.Quests);
                         return true;
                     }
                     return false;
 
                 case "quest_mission_desc":
-                    if (package.Quests.Count > 0)
+                    if (tables.Quests.Count > 0)
                     {
-                        new QuestMissionDescCsvSchema(lang).WriteCsv(stream, package.Quests);
+                        new QuestMissionDescCsvSchema(lang).WriteCsv(stream, tables.Quests);
                         return true;
                     }
                     return false;
 
                 case "item_desc":
-                    if (package.Items.Count > 0)
+                    if (tables.Items.Count > 0)
                     {
-                        new ItemDescCsvSchema(lang).WriteCsv(stream, package.Items);
+                        new ItemDescCsvSchema(lang).WriteCsv(stream, tables.Items);
                         return true;
                     }
                     return false;
@@ -150,11 +163,11 @@ public static class ExportSchemaRegistry
         return false;
     }
 
-    private static void WriteSongDesc(Stream stream, PatchPackage package, string language)
+    private static void WriteSongDesc(Stream stream, IEnumerable<Song> songs, string language)
     {
         // Gather SongLocalization objects from all Songs for the given language.
         var localizations = new List<SongLocalization>();
-        foreach (var song in package.Songs)
+        foreach (var song in songs)
         {
             if (song.Localizations.TryGetValue(language, out var loc))
             {

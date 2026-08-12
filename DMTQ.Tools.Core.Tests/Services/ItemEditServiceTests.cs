@@ -69,6 +69,27 @@ public sealed class ItemEditServiceTests
             .WithMessage("Item 'item_001' already exists.");
     }
 
+    [TestMethod]
+    public void ApplyEffectDraft_UsesParentItemIdAndCanRemoveEffect()
+    {
+        var package = CreatePackage();
+        var service = new ItemEditService();
+
+        service.ApplyEffectDraft(package, "ITEM_001", new IngameItemEffect
+        {
+            Id = "ignored",
+            EffectType = "F",
+            EffectPoint = "1.5"
+        });
+
+        package.IngameItemEffects.Should().ContainSingle()
+            .Which.Id.Should().Be("ITEM_001");
+        package.IngameItemEffects[0].EffectPoint.Should().Be("1.5");
+
+        service.ApplyEffectDraft(package, "ITEM_001", null);
+        package.IngameItemEffects.Should().BeEmpty();
+    }
+
     private static PatchPackage CreatePackage()
         => new() { ProjectInfo = new ProjectInfo("project", null, "1.003.005", null) };
 }

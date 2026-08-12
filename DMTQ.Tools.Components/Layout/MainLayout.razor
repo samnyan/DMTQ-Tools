@@ -21,6 +21,16 @@
 
         <FluentSpacer />
 
+        @if (EditablePlatforms.Count > 1)
+        {
+            <div style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.8rem;">
+                <span>@L["Header.DataPlatform"]</span>
+                <FluentSelect Items="@EditablePlatforms"
+                              @bind-Value="State.SelectedExportPlatform"
+                              Style="min-width: 7rem;" />
+            </div>
+        }
+
         @if (State.HasProject)
         {
             <div Style="display: flex; align-items: center; gap: 0.5rem;">
@@ -65,12 +75,15 @@
             <FluentNavLink Href="patterns" Icon="@(new Icons.Regular.Size20.MusicNote1())">@L["Nav.PatternTool"]</FluentNavLink>
             <FluentNavLink Href="products" Icon="@(new Icons.Regular.Size20.Table())">@L["Nav.Products"]</FluentNavLink>
             <FluentNavLink Href="items" Icon="@(new Icons.Regular.Size20.Table())">@L["Nav.Items"]</FluentNavLink>
+            <FluentNavLink Href="achievements" Icon="@(new Icons.Regular.Size20.Table())">@L["Nav.Achievements"]</FluentNavLink>
+            <FluentNavLink Href="quests" Icon="@(new Icons.Regular.Size20.Table())">@L["Nav.Quests"]</FluentNavLink>
+            <FluentNavLink Href="slang" Icon="@(new Icons.Regular.Size20.Table())">@L["Nav.Slang"]</FluentNavLink>
             <FluentNavLink Href="resources" Icon="@(new Icons.Regular.Size20.Folder())">@L["Nav.Resources"]</FluentNavLink>
             <FluentNavLink Href="export" Icon="@(new Icons.Regular.Size20.ArrowUpload())">@L["Nav.Export"]</FluentNavLink>
             <FluentNavLink Href="diagnostics" Icon="@(new Icons.Regular.Size20.Wrench())">@L["Nav.Diagnostics"]</FluentNavLink>
         </FluentNavMenu>
 
-        <main style="flex: 1; min-width: 0; overflow-y: auto; padding: 1.25rem 1.5rem;">
+        <main style="flex: 1; min-width: 0; overflow-y: auto; overflow-x: hidden; padding: 1.25rem 1.5rem;">
             @Body
         </main>
     </div>
@@ -96,6 +109,10 @@
         Language.CurrentCulture.Name == "zh-CN"
             ? L["Language.Chinese"].Value
             : L["Language.English"].Value;
+
+    private IReadOnlyList<string> EditablePlatforms => State.CurrentPackage?.PlatformTables.Keys
+        .OrderBy(platform => platform, StringComparer.OrdinalIgnoreCase)
+        .ToArray() ?? [];
 
     protected override void OnInitialized()
     {

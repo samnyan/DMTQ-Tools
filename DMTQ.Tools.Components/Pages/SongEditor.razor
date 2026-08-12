@@ -215,15 +215,18 @@
     private int? costCash { get => currentSong?.CostGameCash; set { if (currentSong is not null && value.HasValue) currentSong.CostGameCash = value.Value; } }
 
     private PatchPackage? _lastPackage;
+    private string? _lastPlatform;
     private IReadOnlyList<Song> _catalog = [];
 
     private IReadOnlyList<Song> Catalog
     {
         get
         {
-            if (ReferenceEquals(State.CurrentPackage, _lastPackage)) return _catalog;
+            if (ReferenceEquals(State.CurrentPackage, _lastPackage)
+                && string.Equals(State.SelectedExportPlatform, _lastPlatform, StringComparison.OrdinalIgnoreCase)) return _catalog;
             _lastPackage = State.CurrentPackage;
-            _catalog = State.CurrentPackage is null ? [] : SongCatalog.BuildCatalog(State.CurrentPackage);
+            _lastPlatform = State.SelectedExportPlatform;
+            _catalog = State.CurrentPackage is null ? [] : SongCatalog.BuildCatalog(State.CurrentPackage, State.SelectedExportPlatform);
             return _catalog;
         }
     }
@@ -284,14 +287,14 @@
                     return;
                 }
                 var song = SongEditSvc.CreateDraft(currentSong!, newId);
-                SongEditSvc.AddSong(State.CurrentPackage, song);
+                SongEditSvc.AddSong(State.CurrentPackage, song, State.SelectedExportPlatform);
                 State.Diagnostics.Add($"Song added: {song.Id}");
                 _lastPackage = null;
                 Navigation.NavigateTo($"/songs/editor/{song.Id}");
             }
             else if (currentSong is not null)
             {
-                SongEditSvc.UpdateSong(State.CurrentPackage, currentSong);
+                SongEditSvc.UpdateSong(State.CurrentPackage, currentSong, State.SelectedExportPlatform);
                 await Workflow.SaveProjectAsync();
                 _lastPackage = null;
                 State.Diagnostics.Add($"Song edited: {currentSong.Id}");

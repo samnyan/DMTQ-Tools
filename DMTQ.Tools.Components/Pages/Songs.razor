@@ -93,6 +93,7 @@
     private PaginationState pagination = new() { ItemsPerPage = 25 };
 
     private PatchPackage? _lastPackage;
+    private string? _lastPlatform;
     private IReadOnlyList<Song> _catalog = [];
     private static readonly IReadOnlyList<string> _languages = ["CN", "JP", "KR", "TW", "US"];
 
@@ -100,9 +101,11 @@
     {
         get
         {
-            if (ReferenceEquals(State.CurrentPackage, _lastPackage)) return _catalog;
+            if (ReferenceEquals(State.CurrentPackage, _lastPackage)
+                && string.Equals(State.SelectedExportPlatform, _lastPlatform, StringComparison.OrdinalIgnoreCase)) return _catalog;
             _lastPackage = State.CurrentPackage;
-            _catalog = State.CurrentPackage is null ? [] : SongCatalog.BuildCatalog(State.CurrentPackage);
+            _lastPlatform = State.SelectedExportPlatform;
+            _catalog = State.CurrentPackage is null ? [] : SongCatalog.BuildCatalog(State.CurrentPackage, State.SelectedExportPlatform);
             return _catalog;
         }
     }
@@ -149,7 +152,7 @@
 
         try
         {
-            SongEditor.RemoveSong(State.CurrentPackage, song.Id);
+            SongEditor.RemoveSong(State.CurrentPackage, song.Id, State.SelectedExportPlatform);
             await Workflow.SaveProjectAsync();
             _lastPackage = null; // invalidate catalog cache
             State.Diagnostics.Add($"Song deleted: {song.Id}");

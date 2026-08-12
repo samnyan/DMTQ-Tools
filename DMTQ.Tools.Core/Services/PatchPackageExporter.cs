@@ -198,7 +198,12 @@ public sealed class PatchPackageExporter
             }
         }
 
-        // Shared non-entity tables (now handled as shared resources) are not added here.
+        if (package.SlangEntries.Count > 0)
+        {
+            tablePaths.Add("table/slang/slang.csv");
+        }
+
+        // Any remaining non-entity tables continue through the raw GameTable fallback.
     }
 
     private async Task<PatchFileEntry> CreateExportEntryAsync(

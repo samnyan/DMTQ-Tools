@@ -21,26 +21,28 @@ public sealed class SongEditService
         return draft;
     }
 
-    public void UpdateSong(PatchPackage package, Song song)
+    public void UpdateSong(PatchPackage package, Song song, string? platform = null)
     {
         ArgumentNullException.ThrowIfNull(package);
         ArgumentNullException.ThrowIfNull(song);
 
-        var existing = package.Songs.FirstOrDefault(s => s.Id == song.Id)
+        var songs = package.GetPlatformTables(platform).Songs;
+        var existing = songs.FirstOrDefault(s => s.Id == song.Id)
             ?? throw new InvalidOperationException($"Song '{song.Id}' was not found.");
 
         CopySongData(song, existing);
     }
 
-    public void AddSong(PatchPackage package, Song song)
+    public void AddSong(PatchPackage package, Song song, string? platform = null)
     {
         ArgumentNullException.ThrowIfNull(package);
         ArgumentNullException.ThrowIfNull(song);
 
-        if (package.Songs.Any(s => s.Id == song.Id))
+        var songs = package.GetPlatformTables(platform).Songs;
+        if (songs.Any(s => s.Id == song.Id))
             throw new InvalidOperationException($"Song '{song.Id}' already exists.");
 
-        package.Songs.Add(CreateDraft(song));
+        songs.Add(CreateDraft(song));
     }
 
     public void UpdatePattern(PatchPackage package, int songId, int patternId,
@@ -118,15 +120,16 @@ public sealed class SongEditService
         song.Patterns.Remove(pattern);
     }
 
-    public void RemoveSong(PatchPackage package, int songId)
+    public void RemoveSong(PatchPackage package, int songId, string? platform = null)
     {
         ArgumentNullException.ThrowIfNull(package);
 
-        var song = package.Songs.FirstOrDefault(
+        var songs = package.GetPlatformTables(platform).Songs;
+        var song = songs.FirstOrDefault(
             s => s.Id == songId)
             ?? throw new InvalidOperationException($"Song '{songId}' was not found.");
 
-        package.Songs.Remove(song);
+        songs.Remove(song);
     }
 
     private static void CopySongData(Song source, Song target)

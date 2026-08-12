@@ -39,6 +39,11 @@ public abstract class BlazorUITestBase : Bunit.TestContext
         Services.AddSingleton<ProductEditService>();
         Services.AddSingleton<ItemCatalogService>();
         Services.AddSingleton<ItemEditService>();
+        Services.AddSingleton<AchievementCatalogService>();
+        Services.AddSingleton<AchievementEditService>();
+        Services.AddSingleton<QuestCatalogService>();
+        Services.AddSingleton<QuestEditService>();
+        Services.AddSingleton<SlangEditService>();
         Services.AddFluentUIComponents();
         Services.AddLocalization();
         Services.AddSingleton<ILanguagePreferenceStore, TestLanguagePreferenceStore>();

@@ -76,10 +76,51 @@
                     </FluentGrid>
                 </section>
 
-                @if (currentProduct!.CategoryIds.Count > 0)
-                {
-                    <FluentMessageBar Title="@CategorySummary" Intent="MessageIntent.Info" />
-                }
+                <section>
+                    <h2 class="section-heading">@L["Editor.ProductCategories"]</h2>
+                    <p class="section-hint">@L["Editor.ProductCategoriesHint"]</p>
+                    <div class="choice-grid">
+                        @foreach (var categoryId in AvailableCategoryIds)
+                        {
+                            <FluentCheckbox Value="@HasCategory(categoryId)"
+                                            ValueChanged="@(value => ToggleCategory(categoryId, value == true))"
+                                            Label="@categoryId" />
+                        }
+                    </div>
+                    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8" VerticalAlignment="VerticalAlignment.Center">
+                        <FluentTextField @bind-Value="newCategoryId" Label='@L["Fields.CategoryId"]' />
+                        <FluentButton Appearance="Appearance.Neutral" OnClick="AddCategory">@L["Common.Add"]</FluentButton>
+                    </FluentStack>
+                </section>
+
+                <section>
+                    <div class="section-title-row">
+                        <div>
+                            <h2 class="section-heading">@L["Editor.IngameConfigurations"]</h2>
+                            <p class="section-hint">@L["Editor.IngameConfigurationsHint"]</p>
+                        </div>
+                        <FluentButton Appearance="Appearance.Neutral" OnClick="AddIngameItem"
+                                      IconStart="@(new Icons.Regular.Size20.Add())">@L["Editor.AddConfiguration"]</FluentButton>
+                    </div>
+                    @if (ingameItemDrafts.Count == 0)
+                    {
+                        <FluentMessageBar Title='@L["Editor.NoIngameConfigurations"]' Intent="MessageIntent.Info" />
+                    }
+                    else
+                    {
+                        @foreach (var ingameItem in ingameItemDrafts)
+                        {
+                            <div class="related-row" @key="ingameItem">
+                                <FluentTextField @bind-Value="ingameItem.ItemType" Label='@L["Fields.ItemType"]' />
+                                <FluentTextField @bind-Value="ingameItem.ItemLevel" Label='@L["Fields.ItemLevel"]' />
+                                <FluentTextField Value="@(currentProduct?.Id ?? productIdInput)" Label='@L["Fields.ProductId"]' ReadOnly="true" />
+                                <FluentTextField @bind-Value="ingameItem.Update" Label='@L["Fields.Update"]' />
+                                <FluentButton Appearance="Appearance.Neutral" OnClick="() => RemoveIngameItem(ingameItem)"
+                                              IconStart="@(new Icons.Regular.Size20.Delete())" Title='@L["Common.Delete"]' />
+                            </div>
+                        }
+                    }
+                </section>
 
                 <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8" VerticalAlignment="VerticalAlignment.Center">
                     <FluentButton Appearance="Appearance.Accent" Type="ButtonType.Submit" Disabled="@isBusy">@L["Editor.SaveProduct"]</FluentButton>
@@ -107,24 +148,33 @@
     private string message = string.Empty;
     private string errorMessage = string.Empty;
     private bool isBusy;
-
-    private string CategorySummary =>
-        currentProduct is null ? string.Empty : $"Categories: {string.Join(", ", currentProduct.CategoryIds)}";
+    private string newCategoryId = string.Empty;
+    private List<IngameItem> ingameItemDrafts = [];
 
     private IReadOnlyList<Product> Catalog =>
-        State.CurrentPackage is null ? [] : ProductCatalog.BuildCatalog(State.CurrentPackage);
+        State.CurrentPackage is null ? [] : ProductCatalog.BuildCatalog(State.CurrentPackage, State.SelectedExportPlatform);
+
+    private IEnumerable<string> AvailableCategoryIds => Catalog
+        .SelectMany(product => product.CategoryIds)
+        .Concat(currentProduct?.CategoryIds ?? [])
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .OrderBy(id => id, StringComparer.OrdinalIgnoreCase);
 
     protected override void OnParametersSet()
     {
         if (IsCreate)
         {
             currentProduct ??= new Product { Id = string.Empty };
+            ingameItemDrafts = [];
             return;
         }
 
         var source = Catalog.FirstOrDefault(product =>
             product.Id.Equals(ProductId, StringComparison.OrdinalIgnoreCase));
         currentProduct = source is null ? null : ProductEditSvc.CreateDraft(source);
+        ingameItemDrafts = source is null || State.CurrentPackage is null
+            ? []
+            : ProductEditSvc.CreateIngameItemDrafts(State.CurrentPackage, source.Id, State.SelectedExportPlatform);
     }
 
     private void NavigateBack() => Navigation.NavigateTo("/products");
@@ -148,14 +198,14 @@
                 }
 
                 var product = ProductEditSvc.CreateDraft(currentProduct, productIdInput.Trim());
-                ProductEditSvc.AddProduct(State.CurrentPackage, product);
+                ProductEditSvc.AddProduct(State.CurrentPackage, product, ingameItemDrafts, State.SelectedExportPlatform);
                 await Workflow.SaveProjectAsync();
                 State.Diagnostics.Add($"Product added: {product.Id}");
                 Navigation.NavigateTo($"/products/editor/{Uri.EscapeDataString(product.Id)}");
             }
             else
             {
-                ProductEditSvc.UpdateProduct(State.CurrentPackage, currentProduct);
+                ProductEditSvc.UpdateProduct(State.CurrentPackage, currentProduct, ingameItemDrafts, State.SelectedExportPlatform);
                 await Workflow.SaveProjectAsync();
                 State.Diagnostics.Add($"Product edited: {currentProduct.Id}");
                 message = L["Editor.Saved", L["Nav.Products"].Value].Value;
@@ -171,4 +221,32 @@
             isBusy = false;
         }
     }
+
+    private bool HasCategory(string categoryId) => currentProduct?.CategoryIds.Contains(categoryId, StringComparer.OrdinalIgnoreCase) == true;
+
+    private void ToggleCategory(string categoryId, bool selected)
+    {
+        if (currentProduct is null) return;
+        currentProduct.CategoryIds.RemoveAll(id => id.Equals(categoryId, StringComparison.OrdinalIgnoreCase));
+        if (selected)
+            currentProduct.CategoryIds.Add(categoryId);
+    }
+
+    private void AddCategory()
+    {
+        if (currentProduct is null || string.IsNullOrWhiteSpace(newCategoryId)) return;
+        var categoryId = newCategoryId.Trim();
+        if (!HasCategory(categoryId))
+            currentProduct.CategoryIds.Add(categoryId);
+        newCategoryId = string.Empty;
+    }
+
+    private void AddIngameItem()
+        => ingameItemDrafts.Add(new IngameItem
+        {
+            Id = Guid.NewGuid().ToString("N"),
+            ProductId = currentProduct?.Id ?? productIdInput
+        });
+
+    private void RemoveIngameItem(IngameItem item) => ingameItemDrafts.Remove(item);
 }

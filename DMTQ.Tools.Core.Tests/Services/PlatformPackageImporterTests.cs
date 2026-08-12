@@ -91,7 +91,7 @@ public sealed class PlatformPackageImporterTests
     }
 
     [TestMethod]
-    public async Task ImportPlatformAsync_ExtractsSongsAsEntitiesAndDeduplicates()
+    public async Task ImportPlatformAsync_PreservesDifferentEntityTablesPerPlatform()
     {
         var projectRoot = Path.Combine(Path.GetTempPath(), "dmtq-platform-tables-" + Guid.NewGuid().ToString("N"));
         var androidRoot = Path.Combine(Path.GetTempPath(), "dmtq-android-package-" + Guid.NewGuid().ToString("N"));
@@ -112,10 +112,15 @@ public sealed class PlatformPackageImporterTests
             // Song tables should be removed after entity extraction
             package.Tables.Tables.Where(t => SongCatalogService.IsSongRelatedTable(t.TableName))
                 .Should().BeEmpty("song tables should be extracted into entities");
-            // Songs should be stored as entities
+            // Legacy root data mirrors the first import for backwards compatibility.
             package.Songs.Should().ContainSingle();
             package.Songs[0].Id.Should().Be(1);
-            package.Songs[0].Name.Should().Be("android-song", "first import wins");
+            package.Songs[0].Name.Should().Be("android-song");
+
+            package.GetPlatformTables("android").Songs.Should().ContainSingle()
+                .Which.Name.Should().Be("android-song");
+            package.GetPlatformTables("ios").Songs.Should().ContainSingle()
+                .Which.Name.Should().Be("ios-song-jp");
         }
         finally
         {
@@ -159,6 +164,54 @@ public sealed class PlatformPackageImporterTests
             DeleteDirectory(projectRoot);
             DeleteDirectory(androidRoot);
             DeleteDirectory(iosRoot);
+        }
+    }
+
+    [TestMethod]
+    public async Task ImportPlatformAsync_ImportsSlangAsEditableSharedTable()
+    {
+        var projectRoot = Path.Combine(Path.GetTempPath(), "dmtq-platform-slang-" + Guid.NewGuid().ToString("N"));
+        var packageRoot = Path.Combine(Path.GetTempPath(), "dmtq-platform-slang-package-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            Directory.CreateDirectory(projectRoot);
+            CreatePackageWithTable(packageRoot, "table/slang/slang.csv", "", "slang,", "\"blocked\",");
+            var package = CreateEmptyProject(projectRoot);
+
+            await CreateImporter().ImportPlatformAsync(package, packageRoot, "android");
+
+            package.SlangEntries.Should().ContainSingle().Which.Value.Should().Be("blocked");
+            package.Resources.Should().NotContain(resource => resource.FileName == "table/slang/slang.csv");
+        }
+        finally
+        {
+            DeleteDirectory(projectRoot);
+            DeleteDirectory(packageRoot);
+        }
+    }
+
+    [TestMethod]
+    public async Task ImportPlatformAsync_PreservesCategoryMultiplicityWithoutRepeatingLanguageCopies()
+    {
+        var projectRoot = Path.Combine(Path.GetTempPath(), "dmtq-platform-category-" + Guid.NewGuid().ToString("N"));
+        var packageRoot = Path.Combine(Path.GetTempPath(), "dmtq-platform-category-package-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            Directory.CreateDirectory(projectRoot);
+            CreatePackageWithTables(packageRoot,
+                ("table/cn/product_product.csv", "product_id,item_id", "P1,I1"),
+                ("table/cn/category_categoryproduct.csv", "category_id,product_id", "C1,P1\nC1,P1"),
+                ("table/jp/category_categoryproduct.csv", "category_id,product_id", "C1,P1\nC1,P1"));
+            var package = CreateEmptyProject(projectRoot);
+
+            await CreateImporter().ImportPlatformAsync(package, packageRoot, "android");
+
+            package.GetPlatformTables("android").Products.Single().CategoryIds.Should().Equal("C1", "C1");
+        }
+        finally
+        {
+            DeleteDirectory(projectRoot);
+            DeleteDirectory(packageRoot);
         }
     }
 
@@ -238,6 +291,41 @@ public sealed class PlatformPackageImporterTests
             File.WriteAllBytes(Path.Combine(packageRoot, "patch_new.csv.lz4"), manifestMs.ToArray());
         }
     }
+
+    private static void CreatePackageWithTables(
+        string packageRoot,
+        params (string RelativePath, string Header, string Rows)[] tables)
+    {
+        Directory.CreateDirectory(packageRoot);
+        var manifestRows = new List<string>
+        {
+            "file_name,file_size,checksum,compressed_file_size,compressed_checksum,acquire_on_demand,compressed,platform,tag"
+        };
+
+        foreach (var table in tables)
+        {
+            var csvPath = Path.Combine(packageRoot, table.RelativePath.Replace('/', Path.DirectorySeparatorChar));
+            Directory.CreateDirectory(Path.GetDirectoryName(csvPath)!);
+            File.WriteAllText(csvPath, $"{table.Header}\n{table.Rows}");
+            var csvBytes = File.ReadAllBytes(csvPath);
+            var compressedPath = csvPath + ".lz4";
+            using (var compressed = File.Create(compressedPath))
+            using (var lz4 = K4os.Compression.LZ4.Legacy.LZ4Legacy.Encode(compressed, leaveOpen: false))
+                lz4.Write(csvBytes);
+            var compressedBytes = File.ReadAllBytes(compressedPath);
+            manifestRows.Add($"{table.RelativePath},{csvBytes.Length},{Md5(csvBytes)},{compressedBytes.Length},{Md5(compressedBytes)},0,1,,");
+        }
+
+        var manifestPath = Path.Combine(packageRoot, "patch_new.csv");
+        File.WriteAllLines(manifestPath, manifestRows);
+        var manifestBytes = File.ReadAllBytes(manifestPath);
+        using var manifestCompressed = File.Create(Path.Combine(packageRoot, "patch_new.csv.lz4"));
+        using var manifestLz4 = K4os.Compression.LZ4.Legacy.LZ4Legacy.Encode(manifestCompressed, leaveOpen: false);
+        manifestLz4.Write(manifestBytes);
+    }
+
+    private static string Md5(byte[] bytes)
+        => Convert.ToHexString(System.Security.Cryptography.MD5.HashData(bytes)).ToLowerInvariant();
 
     private static void DeleteDirectory(string path)
     {

@@ -33,16 +33,16 @@ public sealed class PlatformPackageImporter
 
         try
         {
+            var platformTables = package.GetOrCreatePlatformTables(platform);
             var manifestCsvPath = Path.Combine(tempRoot, "patch_new.csv");
             await FileUtility.DecompressFileAsync(manifestPath, manifestCsvPath, cancellationToken).ConfigureAwait(false);
 
             await using var manifestStream = File.OpenRead(manifestCsvPath);
             var manifest = await PatchManifestIO.ReadAsync(manifestStream, cancellationToken).ConfigureAwait(false);
 
-            // Track paths already imported in this session + from previous imports (GameTable backwards compat)
-            var importedPaths = package.Tables.Tables
-                .Select(table => table.PackageRelativePath)
-                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            // Paths are unique within one manifest. They must not be shared across
+            // platforms because Android and iOS can legitimately contain different CSVs.
+            var importedPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
             var csvEntries = new List<CsvImportEntry>();
 
@@ -54,13 +54,6 @@ public sealed class PlatformPackageImporter
 
                 if (FileUtility.IsCsvTable(relativePath))
                 {
-                    // slang is a shared resource, not an entity-backed table
-                    if (relativePath.Equals("table/slang/slang.csv", StringComparison.OrdinalIgnoreCase))
-                    {
-                        ImportSharedResource(package, projectRoot, relativePath, entry, sourcePath, cancellationToken);
-                        continue;
-                    }
-
                     if (importedPaths.Contains(relativePath))
                     {
                         continue;
@@ -170,16 +163,20 @@ public sealed class PlatformPackageImporter
             }
 
             // ── Phase 1: import standalone entity tables ──
-            ImportEntityTablesPhase1(package, csvEntries, cancellationToken);
+            ImportEntityTablesPhase1(platformTables, csvEntries, cancellationToken);
 
             // ── Phase 2: import dependent entity tables (patterns, song localizations) ──
-            ImportEntityTablesPhase2(package, csvEntries, cancellationToken);
+            ImportEntityTablesPhase2(platformTables, csvEntries, cancellationToken);
 
             // ── Phase 3: import lookup tables (localized descriptions, category links) ──
-            ImportLookupTables(package, csvEntries, cancellationToken);
+            ImportLookupTables(platformTables, csvEntries, cancellationToken);
+
+            ImportSharedTables(package, csvEntries, cancellationToken);
+
+            MirrorPrimaryPlatformForLegacyConsumers(package, platformTables);
 
             // ── Phase 4: cross-entity links (song↔product, song↔item, previews) ──
-            SongPreviewLinker.LinkPreviewResources(package);
+            SongPreviewLinker.LinkPreviewResources(package, platformTables.Songs);
         }
         finally
         {
@@ -193,21 +190,21 @@ public sealed class PlatformPackageImporter
     // ── Phase 1: standalone entity tables ──
 
     private static void ImportEntityTablesPhase1(
-        PatchPackage package,
+        PlatformTableData tables,
         List<CsvImportEntry> entries,
         CancellationToken cancellationToken)
     {
-        var existingSongIds = package.Songs.Select(s => s.Id)
+        var existingSongIds = tables.Songs.Select(s => s.Id)
             .ToHashSet();
-        var existingAchievementIds = package.Achievements.Select(a => a.Id)
+        var existingAchievementIds = tables.Achievements.Select(a => a.Id)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
-        var existingProductIds = package.Products.Select(p => p.Id)
+        var existingProductIds = tables.Products.Select(p => p.Id)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
-        var existingItemIds = package.Items.Select(i => i.Id)
+        var existingItemIds = tables.Items.Select(i => i.Id)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
-        var existingIngameItemIds = package.IngameItems.Select(i => i.Id)
+        var existingIngameItemIds = tables.IngameItems.Select(i => i.Id)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
-        var existingEffectIds = package.IngameItemEffects.Select(e => e.Id)
+        var existingEffectIds = tables.IngameItemEffects.Select(e => e.Id)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         foreach (var entry in entries)
@@ -222,7 +219,7 @@ public sealed class PlatformPackageImporter
                     foreach (var song in songs)
                     {
                         if (existingSongIds.Add(song.Id))
-                            package.Songs.Add(song);
+                            tables.Songs.Add(song);
                     }
                     break;
                 }
@@ -232,7 +229,7 @@ public sealed class PlatformPackageImporter
                     foreach (var achievement in achievements)
                     {
                         if (existingAchievementIds.Add(achievement.Id))
-                            package.Achievements.Add(achievement);
+                            tables.Achievements.Add(achievement);
                     }
                     break;
                 }
@@ -242,7 +239,7 @@ public sealed class PlatformPackageImporter
                     foreach (var product in products)
                     {
                         if (existingProductIds.Add(product.Id))
-                            package.Products.Add(product);
+                            tables.Products.Add(product);
                     }
                     break;
                 }
@@ -252,7 +249,7 @@ public sealed class PlatformPackageImporter
                     foreach (var item in items)
                     {
                         if (existingItemIds.Add(item.Id))
-                            package.Items.Add(item);
+                            tables.Items.Add(item);
                     }
                     break;
                 }
@@ -262,7 +259,7 @@ public sealed class PlatformPackageImporter
                     foreach (var ingameItem in ingameItems)
                     {
                         if (existingIngameItemIds.Add(ingameItem.Id))
-                            package.IngameItems.Add(ingameItem);
+                            tables.IngameItems.Add(ingameItem);
                     }
                     break;
                 }
@@ -272,7 +269,7 @@ public sealed class PlatformPackageImporter
                     foreach (var effect in effects)
                     {
                         if (existingEffectIds.Add(effect.Id))
-                            package.IngameItemEffects.Add(effect);
+                            tables.IngameItemEffects.Add(effect);
                     }
                     break;
                 }
@@ -283,11 +280,11 @@ public sealed class PlatformPackageImporter
     // ── Phase 2: dependent entity tables (patterns, song localizations) ──
 
     private static void ImportEntityTablesPhase2(
-        PatchPackage package,
+        PlatformTableData tables,
         List<CsvImportEntry> entries,
         CancellationToken cancellationToken)
     {
-        var songDict = package.Songs.ToDictionary(s => s.Id);
+        var songDict = tables.Songs.ToDictionary(s => s.Id);
         var hasPatterns = false;
 
         // Collect all patterns from every language table into per-song groups
@@ -379,14 +376,15 @@ public sealed class PlatformPackageImporter
     // before quest_mission_desc (which adds missions to those entities).
 
     private static void ImportLookupTables(
-        PatchPackage package,
+        PlatformTableData tables,
         List<CsvImportEntry> entries,
         CancellationToken cancellationToken)
     {
-        var achievementDict = package.Achievements.ToDictionary(a => a.Id, StringComparer.OrdinalIgnoreCase);
-        var questDict = package.Quests.ToDictionary(q => q.Id, StringComparer.OrdinalIgnoreCase);
-        var productDict = package.Products.ToDictionary(p => p.Id, StringComparer.OrdinalIgnoreCase);
-        var itemDict = package.Items.ToDictionary(i => i.Id, StringComparer.OrdinalIgnoreCase);
+        var achievementDict = tables.Achievements.ToDictionary(a => a.Id, StringComparer.OrdinalIgnoreCase);
+        var questDict = tables.Quests.ToDictionary(q => q.Id, StringComparer.OrdinalIgnoreCase);
+        var productDict = tables.Products.ToDictionary(p => p.Id, StringComparer.OrdinalIgnoreCase);
+        var itemDict = tables.Items.ToDictionary(i => i.Id, StringComparer.OrdinalIgnoreCase);
+        var categoryTableProcessed = false;
 
         // Sub-pass 3a: entity-creating lookups (quest_desc) and independent lookups
         foreach (var entry in entries)
@@ -412,15 +410,16 @@ public sealed class PlatformPackageImporter
                 // Sync newly created quests back to package
                 foreach (var (id, quest) in questDict)
                 {
-                    if (!package.Quests.Any(q => q.Id.Equals(id, StringComparison.OrdinalIgnoreCase)))
-                        package.Quests.Add(quest);
+                    if (!tables.Quests.Any(q => q.Id.Equals(id, StringComparison.OrdinalIgnoreCase)))
+                        tables.Quests.Add(quest);
                 }
             }
-            else if (entry.TableName == "category_categoryproduct")
+            else if (entry.TableName == "category_categoryproduct" && !categoryTableProcessed)
             {
                 var schema = new CategoryProductCsvSchema();
                 using var stream = File.OpenRead(entry.FilePath);
                 schema.ReadCsv(stream, productDict);
+                categoryTableProcessed = true;
             }
             else if (IsLocalizedTable(entry.TableName, "item_desc"))
             {
@@ -446,6 +445,52 @@ public sealed class PlatformPackageImporter
                 schema.ReadCsv(stream, questDict);
             }
         }
+    }
+
+    private static void ImportSharedTables(
+        PatchPackage package,
+        IEnumerable<CsvImportEntry> entries,
+        CancellationToken cancellationToken)
+    {
+        if (package.SlangEntries.Count > 0)
+        {
+            return;
+        }
+
+        var slangEntry = entries.FirstOrDefault(entry =>
+            entry.TableName.Equals("slang", StringComparison.OrdinalIgnoreCase));
+        if (slangEntry is null)
+        {
+            return;
+        }
+
+        cancellationToken.ThrowIfCancellationRequested();
+        using var stream = File.OpenRead(slangEntry.FilePath);
+        package.SlangEntries.AddRange(new SlangCsvSchema().ReadCsv(stream));
+    }
+
+    private static void MirrorPrimaryPlatformForLegacyConsumers(
+        PatchPackage package,
+        PlatformTableData tables)
+    {
+        if (package.Songs.Count != 0
+            || package.Achievements.Count != 0
+            || package.Quests.Count != 0
+            || package.Products.Count != 0
+            || package.Items.Count != 0
+            || package.IngameItems.Count != 0
+            || package.IngameItemEffects.Count != 0)
+        {
+            return;
+        }
+
+        package.Songs.AddRange(tables.Songs);
+        package.Achievements.AddRange(tables.Achievements);
+        package.Quests.AddRange(tables.Quests);
+        package.Products.AddRange(tables.Products);
+        package.Items.AddRange(tables.Items);
+        package.IngameItems.AddRange(tables.IngameItems);
+        package.IngameItemEffects.AddRange(tables.IngameItemEffects);
     }
 
     // ── Schema helpers ──
@@ -525,75 +570,6 @@ public sealed class PlatformPackageImporter
         }
 
         return null;
-    }
-
-    private static string? TryGetVersion(string packageRoot)
-    {
-        var parent = Directory.GetParent(packageRoot);
-        return parent?.Name.Contains('.', StringComparison.Ordinal) == true ? parent.Name : null;
-    }
-
-    // ── Shared resource import (slang etc.) ──
-
-    private static void ImportSharedResource(
-        PatchPackage package,
-        string projectRoot,
-        string relativePath,
-        PatchFileEntry entry,
-        string? sourcePath,
-        CancellationToken cancellationToken)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-
-        var archivedPath = Path.Combine(projectRoot, "resources", relativePath.Replace('/', Path.DirectorySeparatorChar));
-        Directory.CreateDirectory(Path.GetDirectoryName(archivedPath) ?? projectRoot);
-
-        if (sourcePath is not null)
-        {
-            if (entry.Compressed)
-            {
-                FileUtility.DecompressFileAsync(sourcePath, archivedPath, cancellationToken)
-                    .GetAwaiter().GetResult();
-            }
-            else
-            {
-                using var source = File.OpenRead(sourcePath);
-                using var dest = File.Create(archivedPath);
-                source.CopyTo(dest);
-            }
-        }
-
-        var resourceFile = package.Resources.FirstOrDefault(r =>
-            r.FileName.Equals(relativePath, StringComparison.OrdinalIgnoreCase));
-
-        if (resourceFile is null)
-        {
-            resourceFile = new ResourceFile
-            {
-                FileName = relativePath,
-                Category = "slang",
-                Compressed = entry.Compressed,
-                AcquireOnDemand = entry.AcquireOnDemand
-            };
-            package.Resources.Add(resourceFile);
-        }
-
-        var existing = resourceFile.PlatformManifest
-            .FirstOrDefault(m => m.Platform.Equals("share", StringComparison.OrdinalIgnoreCase));
-
-        if (existing is null)
-        {
-            resourceFile.PlatformManifest.Add(new PlatformManifestEntry
-            {
-                Platform = "share",
-                Exist = sourcePath is not null,
-                SourceFileSize = entry.FileSize,
-                SourceChecksum = entry.Checksum,
-                SourceCompressedFileSize = entry.CompressedFileSize,
-                SourceCompressedChecksum = entry.CompressedChecksum,
-                Checksum = string.Empty
-            });
-        }
     }
 
     // ── Nested types ──

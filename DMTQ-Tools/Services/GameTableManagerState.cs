@@ -17,7 +17,17 @@ public sealed class GameTableManagerState : IProjectState
     public List<string> Diagnostics { get; } = [];
 
     public PlatformExportResult? LastPlatformExportResult { get; private set; }
-    public string SelectedExportPlatform { get; set; } = "android";
+    private string _selectedExportPlatform = "android";
+    public string SelectedExportPlatform
+    {
+        get => _selectedExportPlatform;
+        set
+        {
+            if (string.Equals(_selectedExportPlatform, value, StringComparison.OrdinalIgnoreCase)) return;
+            _selectedExportPlatform = value;
+            StateChanged?.Invoke();
+        }
+    }
     public PlatformExportMode PlatformExportMode { get; set; } = PlatformExportMode.Full;
     public bool HasProject => !string.IsNullOrWhiteSpace(ProjectRoot);
     public bool HasPackage => CurrentPackage is not null;
@@ -139,6 +149,13 @@ public sealed class GameTableManagerState : IProjectState
         ArgumentNullException.ThrowIfNull(snapshot);
         ProjectRoot = snapshot.Package.ProjectInfo.ProjectRoot;
         CurrentPackage = snapshot.Package;
+        if (snapshot.Package.PlatformTables.Count > 0
+            && !snapshot.Package.PlatformTables.ContainsKey(SelectedExportPlatform))
+        {
+            SelectedExportPlatform = snapshot.Package.PlatformTables.Keys
+                .OrderBy(platform => platform, StringComparer.OrdinalIgnoreCase)
+                .First();
+        }
         ExportCompressionMode = snapshot.ExportCompressionMode;
         RestoredExportOptions = snapshot.ExportOptions;
         LastExportManifest = null;

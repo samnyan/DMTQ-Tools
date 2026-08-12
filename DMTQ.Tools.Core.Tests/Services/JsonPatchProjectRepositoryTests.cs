@@ -203,6 +203,32 @@ public sealed class JsonPatchProjectRepositoryTests
         }
     }
 
+    [TestMethod]
+    public async Task SaveAndLoadAsync_RoundTripsPlatformTablesAndSlang()
+    {
+        var projectRoot = Path.Combine(Path.GetTempPath(), "dmtq-json-platform-tables-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            Directory.CreateDirectory(projectRoot);
+            var package = CreateMinimalPackage(projectRoot);
+            package.GetOrCreatePlatformTables("android").Products.Add(new Product { Id = "1", StoreProductId = "android" });
+            package.GetOrCreatePlatformTables("ios").Products.Add(new Product { Id = "1", StoreProductId = "ios" });
+            package.SlangEntries.Add(new SlangEntry { Id = "entry", Value = "blocked" });
+            var repository = new JsonPatchProjectRepository();
+
+            await repository.SaveAsync(package, "Keep", new PackageExportOptions(), projectRoot);
+            var snapshot = await repository.LoadAsync(projectRoot);
+
+            snapshot.Package.GetPlatformTables("android").Products.Single().StoreProductId.Should().Be("android");
+            snapshot.Package.GetPlatformTables("ios").Products.Single().StoreProductId.Should().Be("ios");
+            snapshot.Package.SlangEntries.Should().ContainSingle().Which.Value.Should().Be("blocked");
+        }
+        finally
+        {
+            if (Directory.Exists(projectRoot)) Directory.Delete(projectRoot, recursive: true);
+        }
+    }
+
     private static PatchPackage CreateMinimalPackage(string projectRoot)
     {
         var package = new PatchPackage

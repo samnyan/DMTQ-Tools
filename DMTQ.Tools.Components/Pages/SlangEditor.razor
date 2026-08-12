@@ -1,0 +1,59 @@
+@page "/slang/editor/{EntryId}"
+@inject NavigationManager Navigation
+@inject IProjectState State
+@inject IProjectWorkflow Workflow
+@inject SlangEditService EditService
+
+<FluentStack Orientation="Orientation.Vertical" VerticalGap="20" HorizontalAlignment="HorizontalAlignment.Stretch">
+    <FluentBreadcrumb><FluentBreadcrumbItem Href="/slang">@L["Nav.Slang"]</FluentBreadcrumbItem><FluentBreadcrumbItem>@(IsCreate ? L["Editor.NewSlang"] : L["Common.Edit"])</FluentBreadcrumbItem></FluentBreadcrumb>
+    @if (State.CurrentPackage is null) { <FluentMessageBar Title='@L["Editor.OpenProjectFirst"]' Intent="MessageIntent.Warning" /> }
+    else if (entry is null && !IsCreate) { <FluentMessageBar Title='@L["Editor.NotFound", L["Nav.Slang"].Value, EntryId]' Intent="MessageIntent.Error" /> }
+    else
+    {
+        <EditForm Model="@editModel" OnValidSubmit="SaveAsync" FormName="slang-editor">
+            <FluentStack Orientation="Orientation.Vertical" VerticalGap="20" HorizontalAlignment="HorizontalAlignment.Stretch">
+                <section><h2 class="section-heading">@L["Editor.SlangEntry"]</h2><p class="section-hint">@L["Editor.SlangHint"]</p>
+                    <FluentTextField style="width:100%" @bind-Value="editModel.Value" Label='@L["Fields.SlangValue"]' Required /></section>
+                <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8">
+                    <FluentButton Appearance="Appearance.Accent" Type="ButtonType.Submit" Disabled="@isBusy">@L["Common.Save"]</FluentButton>
+                    <FluentButton Appearance="Appearance.Neutral" OnClick="NavigateBack">@L["Common.Cancel"]</FluentButton>
+                    @if (!string.IsNullOrWhiteSpace(errorMessage)) { <FluentMessageBar Title="@errorMessage" Intent="MessageIntent.Error" /> }
+                </FluentStack>
+            </FluentStack>
+        </EditForm>
+    }
+</FluentStack>
+
+@code {
+    [Parameter] public string EntryId { get; set; } = string.Empty;
+    private bool IsCreate => EntryId.Equals("new", StringComparison.OrdinalIgnoreCase);
+    private SlangEntry? entry;
+    private SlangEditModel editModel = new();
+    private bool isBusy;
+    private string? errorMessage;
+
+    protected override void OnParametersSet()
+    {
+        if (IsCreate) { entry = null; editModel = new(); return; }
+        entry = State.CurrentPackage?.SlangEntries.FirstOrDefault(item => item.Id == EntryId);
+        editModel = new SlangEditModel { Value = entry?.Value ?? string.Empty };
+    }
+
+    private void NavigateBack() => Navigation.NavigateTo("/slang");
+    private async Task SaveAsync()
+    {
+        if (State.CurrentPackage is null) return;
+        isBusy = true; errorMessage = null;
+        try
+        {
+            if (IsCreate) EditService.Add(State.CurrentPackage, editModel.Value);
+            else EditService.Update(State.CurrentPackage, EntryId, editModel.Value);
+            await Workflow.SaveProjectAsync();
+            NavigateBack();
+        }
+        catch (Exception ex) { errorMessage = ex.Message; }
+        finally { isBusy = false; }
+    }
+
+    private sealed class SlangEditModel { public string Value { get; set; } = string.Empty; }
+}

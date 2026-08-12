@@ -1,0 +1,116 @@
+@page "/quests/editor/{QuestId}"
+@inject NavigationManager Navigation
+@inject IProjectState State
+@inject IProjectWorkflow Workflow
+@inject QuestCatalogService CatalogService
+@inject QuestEditService EditService
+
+<FluentStack Orientation="Orientation.Vertical" VerticalGap="20" HorizontalAlignment="HorizontalAlignment.Stretch">
+    <FluentBreadcrumb><FluentBreadcrumbItem Href="/quests">@L["Nav.Quests"]</FluentBreadcrumbItem><FluentBreadcrumbItem>@(IsCreate ? L["Editor.NewQuest"] : L["Editor.Edit", draft?.Id ?? string.Empty])</FluentBreadcrumbItem></FluentBreadcrumb>
+    @if (State.CurrentPackage is null) { <FluentMessageBar Title='@L["Editor.OpenProjectFirst"]' Intent="MessageIntent.Warning" /> }
+    else if (draft is null && !IsCreate) { <FluentMessageBar Title='@L["Editor.NotFound", L["Nav.Quests"].Value, QuestId]' Intent="MessageIntent.Error" /> }
+    else
+    {
+        <EditForm Model="@draft" OnValidSubmit="SaveAsync" FormName="quest-editor">
+            <FluentStack Orientation="Orientation.Vertical" VerticalGap="24" HorizontalAlignment="HorizontalAlignment.Stretch">
+                <section>
+                    <h2 class="section-heading">@L["Editor.QuestDescriptions"]</h2>
+                    @if (IsCreate) { <FluentTextField @bind-Value="idInput" Label='@L["Fields.QuestId"]' Required /> }
+                    else { <FluentTextField Value="@draft!.Id" Label='@L["Fields.QuestId"]' ReadOnly="true" /> }
+                    @foreach (var language in Languages)
+                    {
+                        <div class="language-panel"><h3 class="lang-heading">@language</h3><FluentGrid Spacing="2">
+                            <FluentGridItem xs="12" md="4"><FluentTextField style="width:100%" @bind-Value="draft!.NamesByLanguage[language]" Label='@L["Fields.Name"]' /></FluentGridItem>
+                            <FluentGridItem xs="12" md="8"><FluentTextField style="width:100%" @bind-Value="draft!.DescriptionsByLanguage[language]" Label='@L["Fields.Description"]' /></FluentGridItem>
+                        </FluentGrid></div>
+                    }
+                </section>
+                <section>
+                    <div class="section-title-row"><div><h2 class="section-heading">@L["Editor.Missions"]</h2><p class="section-hint">@L["Editor.MissionsHint"]</p></div>
+                        <FluentButton Appearance="Appearance.Neutral" IconStart="@(new Icons.Regular.Size20.Add())" OnClick="AddMission">@L["Editor.AddMission"]</FluentButton></div>
+                    @if (draft!.Missions.Count == 0) { <FluentMessageBar Title='@L["Editor.NoMissions"]' Intent="MessageIntent.Info" /> }
+                    @for (var index = 0; index < draft.Missions.Count; index++)
+                    {
+                        var mission = draft.Missions[index];
+                        <div class="mission-card" @key="mission">
+                            <div class="section-title-row"><strong>@L["Editor.MissionNumber", index + 1]</strong><FluentStack Orientation="Orientation.Horizontal" HorizontalGap="4">
+                                <FluentButton Appearance="Appearance.Neutral" Disabled="@(index == 0)" OnClick="() => MoveMission(mission, -1)" IconStart="@(new Icons.Regular.Size20.ArrowUp())" Title='@L["Common.MoveUp"]' />
+                                <FluentButton Appearance="Appearance.Neutral" Disabled="@(index == draft.Missions.Count - 1)" OnClick="() => MoveMission(mission, 1)" IconStart="@(new Icons.Regular.Size20.ArrowDown())" Title='@L["Common.MoveDown"]' />
+                                <FluentButton Appearance="Appearance.Neutral" OnClick="() => RemoveMission(mission)" IconStart="@(new Icons.Regular.Size20.Delete())" Title='@L["Common.Delete"]' />
+                            </FluentStack></div>
+                            <div class="mission-language-grid">
+                                @foreach (var language in Languages)
+                                {
+                                    <FluentTextField @bind-Value="mission.DescriptionsByLanguage[language]" Label="@language" />
+                                }
+                            </div>
+                        </div>
+                    }
+                </section>
+                <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8">
+                    <FluentButton Appearance="Appearance.Accent" Type="ButtonType.Submit" Disabled="@isBusy">@L["Editor.SaveQuest"]</FluentButton>
+                    <FluentButton Appearance="Appearance.Neutral" OnClick="NavigateBack">@L["Common.Cancel"]</FluentButton>
+                    @if (!string.IsNullOrWhiteSpace(message)) { <FluentMessageBar Title="@message" Intent="MessageIntent.Info" /> }
+                    @if (!string.IsNullOrWhiteSpace(errorMessage)) { <FluentMessageBar Title="@errorMessage" Intent="MessageIntent.Error" /> }
+                </FluentStack>
+            </FluentStack>
+        </EditForm>
+    }
+</FluentStack>
+
+@code {
+    [Parameter] public string QuestId { get; set; } = string.Empty;
+    private static readonly string[] Languages = ["CN", "JP", "KR", "TW", "US"];
+    private bool IsCreate => QuestId.Equals("new", StringComparison.OrdinalIgnoreCase);
+    private Quest? draft;
+    private string idInput = string.Empty;
+    private string? message;
+    private string? errorMessage;
+    private bool isBusy;
+
+    protected override void OnParametersSet()
+    {
+        if (IsCreate) draft ??= new Quest { Id = string.Empty };
+        else if (State.CurrentPackage is not null)
+        {
+            var source = CatalogService.BuildCatalog(State.CurrentPackage, State.SelectedExportPlatform).FirstOrDefault(q => q.Id.Equals(QuestId, StringComparison.OrdinalIgnoreCase));
+            draft = source is null ? null : EditService.CreateDraft(source);
+        }
+        if (draft is not null) EnsureLanguages(draft);
+    }
+
+    private static void EnsureLanguages(Quest quest)
+    {
+        foreach (var language in Languages) { quest.NamesByLanguage.TryAdd(language, string.Empty); quest.DescriptionsByLanguage.TryAdd(language, string.Empty); }
+        foreach (var mission in quest.Missions) foreach (var language in Languages) mission.DescriptionsByLanguage.TryAdd(language, string.Empty);
+    }
+
+    private void AddMission() { if (draft is null) return; EditService.AddMission(draft); EnsureLanguages(draft); }
+    private void RemoveMission(QuestMission mission) { if (draft is not null) EditService.RemoveMission(draft, mission); }
+    private void MoveMission(QuestMission mission, int offset) { if (draft is not null) EditService.MoveMission(draft, mission, offset); }
+    private void NavigateBack() => Navigation.NavigateTo("/quests");
+    private async Task SaveAsync()
+    {
+        if (State.CurrentPackage is null || draft is null) return;
+        isBusy = true; message = null; errorMessage = null;
+        try
+        {
+            if (IsCreate)
+            {
+                if (string.IsNullOrWhiteSpace(idInput)) { errorMessage = L["Editor.QuestIdRequired"].Value; return; }
+                var created = EditService.CreateDraft(draft, idInput.Trim());
+                EditService.AddQuest(State.CurrentPackage, created, State.SelectedExportPlatform);
+                await Workflow.SaveProjectAsync();
+                Navigation.NavigateTo($"/quests/editor/{Uri.EscapeDataString(created.Id)}");
+            }
+            else
+            {
+                EditService.UpdateQuest(State.CurrentPackage, draft, State.SelectedExportPlatform);
+                await Workflow.SaveProjectAsync();
+                message = L["Editor.Saved", L["Nav.Quests"].Value].Value;
+            }
+        }
+        catch (Exception ex) { errorMessage = ex.Message; }
+        finally { isBusy = false; }
+    }
+}

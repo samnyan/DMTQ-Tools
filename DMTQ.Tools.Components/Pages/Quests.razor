@@ -1,0 +1,61 @@
+@page "/quests"
+@inject NavigationManager Navigation
+@inject IProjectState State
+@inject IProjectWorkflow Workflow
+@inject QuestCatalogService CatalogService
+@inject QuestEditService EditService
+@inject IDialogService DialogService
+
+<ProjectListShell TItem="Quest" Title='@L["Nav.Quests"]' ProjectMissingMessage='@L["Common.NoProject"]'
+                  EmptyMessage='@L["Lists.NoQuests"]' FilteredItems="@FilteredItems" Pagination="@pagination"
+                  Message="@message" ErrorMessage="@errorMessage">
+    <Toolbar>
+        <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween">
+            <FluentTextField @bind-Value="filter" Immediate="true" Placeholder='@L["Lists.FilterQuests"]' Style="min-width:320px" />
+            <FluentButton Appearance="Appearance.Accent" IconStart="@(new Icons.Regular.Size20.Add())" OnClick="CreateNew">@L["Lists.AddQuest"]</FluentButton>
+        </FluentStack>
+    </Toolbar>
+    <Metrics><FluentGrid Spacing="3">
+        <FluentGridItem xs="12" sm="6" md="3"><FluentCard><span class="metric-label">@L["Nav.Quests"]</span><strong>@Catalog.Count</strong></FluentCard></FluentGridItem>
+        <FluentGridItem xs="12" sm="6" md="3"><FluentCard><span class="metric-label">@L["Editor.Missions"]</span><strong>@Catalog.Sum(q => q.Missions.Count)</strong></FluentCard></FluentGridItem>
+    </FluentGrid></Metrics>
+    <Columns>
+        <PropertyColumn TGridItem="Quest" TProp="string" Property="@(q => q.Id)" Title='@L["Fields.QuestId"]' Sortable="true" />
+        <TemplateColumn TGridItem="Quest" Title='@L["Fields.Name"]' Context="q">@CatalogService.GetDisplayName(q, PreviewLanguage)</TemplateColumn>
+        <TemplateColumn TGridItem="Quest" Title='@L["Editor.Missions"]' Context="q">@q.Missions.Count</TemplateColumn>
+        <TemplateColumn TGridItem="Quest" Title='@L["Lists.Actions"]' Context="q">
+            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="4">
+                <FluentButton IconStart="@(new Icons.Regular.Size20.Edit())" Appearance="Appearance.Neutral" OnClick="() => Edit(q.Id)" Title='@L["Common.Edit"]' />
+                <FluentButton IconStart="@(new Icons.Regular.Size20.Delete())" Appearance="Appearance.Neutral" OnClick="() => DeleteAsync(q)" Title='@L["Common.Delete"]' />
+            </FluentStack>
+        </TemplateColumn>
+    </Columns>
+</ProjectListShell>
+
+@code {
+    private const string PreviewLanguage = "CN";
+    private readonly PaginationState pagination = new() { ItemsPerPage = 25 };
+    private string filter = string.Empty;
+    private string? message;
+    private string? errorMessage;
+    private IReadOnlyList<Quest> Catalog => State.CurrentPackage is null ? [] : CatalogService.BuildCatalog(State.CurrentPackage, State.SelectedExportPlatform);
+    private IEnumerable<Quest> FilteredItems => string.IsNullOrWhiteSpace(filter) ? Catalog : Catalog.Where(q =>
+        q.Id.Contains(filter, StringComparison.OrdinalIgnoreCase)
+        || CatalogService.GetDisplayName(q, PreviewLanguage).Contains(filter, StringComparison.OrdinalIgnoreCase));
+    private void CreateNew() => Navigation.NavigateTo("/quests/editor/new");
+    private void Edit(string id) => Navigation.NavigateTo($"/quests/editor/{Uri.EscapeDataString(id)}");
+    private async Task DeleteAsync(Quest quest)
+    {
+        if (State.CurrentPackage is null) return;
+        var dialog = await DialogService.ShowConfirmationAsync(L["Lists.DeleteConfirm", L["Nav.Quests"].Value, quest.Id].Value,
+            L["Common.Delete"].Value, L["Common.Cancel"].Value, L["Nav.Quests"].Value);
+        if ((await dialog.Result).Cancelled) return;
+        try
+        {
+            EditService.RemoveQuest(State.CurrentPackage, quest.Id, State.SelectedExportPlatform);
+            await Workflow.SaveProjectAsync();
+            message = L["Lists.Deleted", L["Nav.Quests"].Value, quest.Id].Value;
+        }
+        catch (Exception ex) { errorMessage = ex.Message; }
+    }
+}

@@ -7,13 +7,14 @@ namespace DMTQ.Tools.Core.Services;
 
 public sealed class SongCatalogService
 {
-    public IReadOnlyList<Song> BuildCatalog(PatchPackage package)
+    public IReadOnlyList<Song> BuildCatalog(PatchPackage package, string? platform = null)
     {
         ArgumentNullException.ThrowIfNull(package);
 
-        SongPreviewLinker.LinkPreviewResources(package);
+        var songs = package.GetPlatformTables(platform).Songs;
+        SongPreviewLinker.LinkPreviewResources(package, songs);
 
-        return package.Songs
+        return songs
             .OrderBy(song => song.Name, StringComparer.OrdinalIgnoreCase)
             .ThenBy(song => song.Id)
             .ToArray();

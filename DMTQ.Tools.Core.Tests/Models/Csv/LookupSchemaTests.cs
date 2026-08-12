@@ -182,7 +182,7 @@ public sealed class LookupSchemaTests
     // ── CategoryProductCsvSchema ──
 
     [TestMethod]
-    public void CategoryProductCsvSchema_AddsCategoryIdsToProduct()
+    public void CategoryProductCsvSchema_PreservesRepeatedCategoryRows()
     {
         var lookup = new Dictionary<string, Product>
         {
@@ -203,7 +203,7 @@ public sealed class LookupSchemaTests
         schema.ReadCsv(stream, lookup);
 
         // Assert
-        lookup["PROD_001"].CategoryIds.Should().Equal("CAT_SONG", "CAT_PREMIUM");
+        lookup["PROD_001"].CategoryIds.Should().Equal("CAT_SONG", "CAT_SONG", "CAT_PREMIUM");
         lookup["PROD_002"].CategoryIds.Should().Equal("CAT_SONG");
     }
 

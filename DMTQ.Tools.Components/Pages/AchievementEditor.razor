@@ -1,0 +1,126 @@
+@page "/achievements/editor/{AchievementId}"
+@inject NavigationManager Navigation
+@inject IProjectState State
+@inject IProjectWorkflow Workflow
+@inject AchievementCatalogService CatalogService
+@inject AchievementEditService EditService
+
+<FluentStack Orientation="Orientation.Vertical" VerticalGap="20" HorizontalAlignment="HorizontalAlignment.Stretch">
+    <FluentBreadcrumb>
+        <FluentBreadcrumbItem Href="/achievements">@L["Nav.Achievements"]</FluentBreadcrumbItem>
+        <FluentBreadcrumbItem>@(IsCreate ? L["Editor.NewAchievement"] : L["Editor.Edit", draft?.Id ?? string.Empty])</FluentBreadcrumbItem>
+    </FluentBreadcrumb>
+    @if (State.CurrentPackage is null)
+    {
+        <FluentMessageBar Title='@L["Editor.OpenProjectFirst"]' Intent="MessageIntent.Warning" />
+    }
+    else if (draft is null && !IsCreate)
+    {
+        <FluentMessageBar Title='@L["Editor.NotFound", L["Nav.Achievements"].Value, AchievementId]' Intent="MessageIntent.Error" />
+    }
+    else
+    {
+        <EditForm Model="@draft" OnValidSubmit="SaveAsync" FormName="achievement-editor">
+            <FluentStack Orientation="Orientation.Vertical" VerticalGap="24" HorizontalAlignment="HorizontalAlignment.Stretch">
+                <section>
+                    <h2 class="section-heading">@L["Editor.AchievementRules"]</h2>
+                    <FluentGrid Spacing="3">
+                        <FluentGridItem xs="12" md="4">@if (IsCreate) { <FluentTextField style="width:100%" @bind-Value="idInput" Label='@L["Fields.AchievementId"]' Required /> } else { <FluentTextField style="width:100%" Value="@draft!.Id" Label='@L["Fields.AchievementId"]' ReadOnly="true" /> }</FluentGridItem>
+                        <FluentGridItem xs="12" md="4"><FluentTextField style="width:100%" @bind-Value="draft!.ConditionType" Label='@L["Fields.ConditionType"]' /></FluentGridItem>
+                        <FluentGridItem xs="12" md="4"><FluentTextField style="width:100%" @bind-Value="draft!.ConditionValue" Label='@L["Fields.ConditionValue"]' /></FluentGridItem>
+                        <FluentGridItem xs="12" md="4"><FluentTextField style="width:100%" @bind-Value="draft!.ConditionCount" Label='@L["Fields.ConditionCount"]' /></FluentGridItem>
+                        <FluentGridItem xs="12" md="8"><FluentTextField style="width:100%" @bind-Value="draft!.ConditionSpecial" Label='@L["Fields.ConditionSpecial"]' /></FluentGridItem>
+                        <FluentGridItem xs="12" md="4"><FluentTextField style="width:100%" @bind-Value="draft!.ImgUrl" Label='@L["Fields.ImageUrl"]' /></FluentGridItem>
+                        <FluentGridItem xs="12" md="4"><FluentTextField style="width:100%" @bind-Value="draft!.AchievementTier" Label='@L["Fields.Tier"]' /></FluentGridItem>
+                        <FluentGridItem xs="12" md="4"><FluentTextField style="width:100%" @bind-Value="draft!.ObtainPoint" Label='@L["Fields.ObtainPoint"]' /></FluentGridItem>
+                        <FluentGridItem xs="12" md="4"><FluentTextField style="width:100%" @bind-Value="draft!.Name" Label='@L["Fields.BaseName"]' /></FluentGridItem>
+                        <FluentGridItem xs="12" md="4"><FluentTextField style="width:100%" @bind-Value="draft!.PreDescription" Label='@L["Fields.PreDescription"]' /></FluentGridItem>
+                        <FluentGridItem xs="12" md="4"><FluentTextField style="width:100%" @bind-Value="draft!.AfterDescription" Label='@L["Fields.AfterDescription"]' /></FluentGridItem>
+                        <FluentGridItem xs="12" md="4"><FluentTextField style="width:100%" @bind-Value="draft!.Update" Label='@L["Fields.Update"]' /></FluentGridItem>
+                    </FluentGrid>
+                </section>
+                <section>
+                    <h2 class="section-heading">@L["Editor.LocalizedDescriptions"]</h2>
+                    <p class="section-hint">@L["Editor.AchievementDescriptionsHint"]</p>
+                    @foreach (var language in Languages)
+                    {
+                        <div class="language-panel">
+                            <h3 class="lang-heading">@language</h3>
+                            <FluentGrid Spacing="2">
+                                <FluentGridItem xs="12" md="4"><FluentTextField style="width:100%" @bind-Value="draft!.NamesByLanguage[language]" Label='@L["Fields.Name"]' /></FluentGridItem>
+                                <FluentGridItem xs="12" md="4"><FluentTextField style="width:100%" @bind-Value="draft!.PreDescriptionsByLanguage[language]" Label='@L["Fields.PreDescription"]' /></FluentGridItem>
+                                <FluentGridItem xs="12" md="4"><FluentTextField style="width:100%" @bind-Value="draft!.AfterDescriptionsByLanguage[language]" Label='@L["Fields.AfterDescription"]' /></FluentGridItem>
+                            </FluentGrid>
+                        </div>
+                    }
+                </section>
+                <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8">
+                    <FluentButton Appearance="Appearance.Accent" Type="ButtonType.Submit" Disabled="@isBusy">@L["Editor.SaveAchievement"]</FluentButton>
+                    <FluentButton Appearance="Appearance.Neutral" OnClick="NavigateBack">@L["Common.Cancel"]</FluentButton>
+                    @if (!string.IsNullOrWhiteSpace(message)) { <FluentMessageBar Title="@message" Intent="MessageIntent.Info" /> }
+                    @if (!string.IsNullOrWhiteSpace(errorMessage)) { <FluentMessageBar Title="@errorMessage" Intent="MessageIntent.Error" /> }
+                </FluentStack>
+            </FluentStack>
+        </EditForm>
+    }
+</FluentStack>
+
+@code {
+    [Parameter] public string AchievementId { get; set; } = string.Empty;
+    private static readonly string[] Languages = ["CN", "JP", "KR", "TW", "US"];
+    private bool IsCreate => AchievementId.Equals("new", StringComparison.OrdinalIgnoreCase);
+    private Achievement? draft;
+    private string idInput = string.Empty;
+    private string? message;
+    private string? errorMessage;
+    private bool isBusy;
+
+    protected override void OnParametersSet()
+    {
+        if (IsCreate) draft ??= new Achievement { Id = string.Empty };
+        else if (State.CurrentPackage is not null)
+        {
+            var source = CatalogService.BuildCatalog(State.CurrentPackage, State.SelectedExportPlatform)
+                .FirstOrDefault(item => item.Id.Equals(AchievementId, StringComparison.OrdinalIgnoreCase));
+            draft = source is null ? null : EditService.CreateDraft(source);
+        }
+        if (draft is not null) EnsureLanguages(draft);
+    }
+
+    private static void EnsureLanguages(Achievement achievement)
+    {
+        foreach (var language in Languages)
+        {
+            achievement.NamesByLanguage.TryAdd(language, string.Empty);
+            achievement.PreDescriptionsByLanguage.TryAdd(language, string.Empty);
+            achievement.AfterDescriptionsByLanguage.TryAdd(language, string.Empty);
+        }
+    }
+
+    private void NavigateBack() => Navigation.NavigateTo("/achievements");
+
+    private async Task SaveAsync()
+    {
+        if (State.CurrentPackage is null || draft is null) return;
+        isBusy = true; message = null; errorMessage = null;
+        try
+        {
+            if (IsCreate)
+            {
+                if (string.IsNullOrWhiteSpace(idInput)) { errorMessage = L["Editor.AchievementIdRequired"].Value; return; }
+                var created = EditService.CreateDraft(draft, idInput.Trim());
+                EditService.AddAchievement(State.CurrentPackage, created, State.SelectedExportPlatform);
+                await Workflow.SaveProjectAsync();
+                Navigation.NavigateTo($"/achievements/editor/{Uri.EscapeDataString(created.Id)}");
+            }
+            else
+            {
+                EditService.UpdateAchievement(State.CurrentPackage, draft, State.SelectedExportPlatform);
+                await Workflow.SaveProjectAsync();
+                message = L["Editor.Saved", L["Nav.Achievements"].Value].Value;
+            }
+        }
+        catch (Exception ex) { errorMessage = ex.Message; }
+        finally { isBusy = false; }
+    }
+}

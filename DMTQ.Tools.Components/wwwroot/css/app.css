@@ -180,6 +180,56 @@ section {
     color: var(--neutral-foreground-rest);
 }
 
+.language-panel {
+    margin-top: 0.75rem;
+    padding: 0.75rem;
+    border: 1px solid var(--neutral-stroke-rest, #d8dee6);
+    border-radius: 6px;
+}
+
+.section-title-row {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.choice-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.related-row {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(8rem, 1fr)) auto;
+    gap: 0.5rem;
+    align-items: end;
+    margin-bottom: 0.5rem;
+}
+
+.mission-card {
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+    border: 1px solid var(--neutral-stroke-rest, #d8dee6);
+    border-radius: 6px;
+    background: var(--neutral-layer-1, #fff);
+}
+
+.mission-language-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+    gap: 0.5rem;
+}
+
+@media (max-width: 900px) {
+    .related-row {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
 /* ── Data grid (used by legacy editable tables) ── */
 .grid-scroll {
     overflow: auto;

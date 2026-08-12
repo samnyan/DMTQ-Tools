@@ -57,7 +57,9 @@ public sealed class PlatformPackageExporter
             cancellationToken.ThrowIfCancellationRequested();
             var relativePath = FileUtility.NormalizePackageRelativePath(resource.FileName);
 
-            if (FileUtility.IsCsvTable(relativePath))
+            if (FileUtility.IsCsvTable(relativePath)
+                && !(relativePath.Equals("table/slang/slang.csv", StringComparison.OrdinalIgnoreCase)
+                     && package.SlangEntries.Count == 0))
             {
                 // Table files are handled by ExportEntityTablesAsync above; skip here
                 continue;
@@ -111,12 +113,27 @@ public sealed class PlatformPackageExporter
             foreach (var relativePath in tablePaths)
             {
                 await using var ms = new MemoryStream();
-                if (ExportSchemaRegistry.TryWriteTable(relativePath, package, ms))
+                if (ExportSchemaRegistry.TryWriteTable(relativePath, package, ms, options.Platform))
                 {
                     await WriteTableBytesAsync(ms, relativePath, exportRoot, null, options, result, cancellationToken)
                         .ConfigureAwait(false);
                 }
             }
+        }
+
+        await using var slangStream = new MemoryStream();
+        const string slangPath = "table/slang/slang.csv";
+        if (ExportSchemaRegistry.TryWriteTable(slangPath, package, slangStream, options.Platform))
+        {
+            await WriteTableBytesAsync(
+                    slangStream,
+                    slangPath,
+                    exportRoot,
+                    null,
+                    options,
+                    result,
+                    cancellationToken)
+                .ConfigureAwait(false);
         }
     }
 

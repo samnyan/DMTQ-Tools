@@ -195,4 +195,73 @@
   <data name="Pattern.SaveFailed" xml:space="preserve"><value>Could not save pattern: {0}</value></data>
   <data name="Pattern.OpenHintWithText" xml:space="preserve"><value>Open a .pt, .bytes, or .txt file. The file is parsed into the common pattern model.</value></data>
   <data name="Pattern.UnsupportedExtensionWithText" xml:space="preserve"><value>Only .pt, .bytes, and .txt files are supported.</value></data>
+  <data name="Header.DataPlatform" xml:space="preserve"><value>Data platform</value></data>
+  <data name="Common.Add" xml:space="preserve"><value>Add</value></data>
+  <data name="Common.MoveUp" xml:space="preserve"><value>Move up</value></data>
+  <data name="Common.MoveDown" xml:space="preserve"><value>Move down</value></data>
+  <data name="Nav.Achievements" xml:space="preserve"><value>Achievements</value></data>
+  <data name="Nav.Quests" xml:space="preserve"><value>Quests</value></data>
+  <data name="Nav.Slang" xml:space="preserve"><value>Slang filter</value></data>
+  <data name="Lists.NoAchievements" xml:space="preserve"><value>No achievements found. Import CSV data or add an achievement.</value></data>
+  <data name="Lists.FilterAchievements" xml:space="preserve"><value>Filter by achievement ID, name, or condition...</value></data>
+  <data name="Lists.AddAchievement" xml:space="preserve"><value>Add achievement</value></data>
+  <data name="Lists.NoQuests" xml:space="preserve"><value>No quests found. Import CSV data or add a quest.</value></data>
+  <data name="Lists.FilterQuests" xml:space="preserve"><value>Filter by quest ID or localized name...</value></data>
+  <data name="Lists.AddQuest" xml:space="preserve"><value>Add quest</value></data>
+  <data name="Lists.NoSlang" xml:space="preserve"><value>No slang entries found.</value></data>
+  <data name="Lists.FilterSlang" xml:space="preserve"><value>Filter slang entries...</value></data>
+  <data name="Lists.AddSlang" xml:space="preserve"><value>Add entry</value></data>
+  <data name="Lists.SlangEntries" xml:space="preserve"><value>Entries</value></data>
+  <data name="Fields.AchievementId" xml:space="preserve"><value>Achievement ID</value></data>
+  <data name="Fields.QuestId" xml:space="preserve"><value>Quest ID</value></data>
+  <data name="Fields.ProductId" xml:space="preserve"><value>Product ID</value></data>
+  <data name="Fields.CategoryId" xml:space="preserve"><value>Category ID</value></data>
+  <data name="Fields.ItemType" xml:space="preserve"><value>Item type</value></data>
+  <data name="Fields.ItemLevel" xml:space="preserve"><value>Item level</value></data>
+  <data name="Fields.Update" xml:space="preserve"><value>Update</value></data>
+  <data name="Fields.Name" xml:space="preserve"><value>Name</value></data>
+  <data name="Fields.BaseName" xml:space="preserve"><value>Base name</value></data>
+  <data name="Fields.Description" xml:space="preserve"><value>Description</value></data>
+  <data name="Fields.ConditionType" xml:space="preserve"><value>Condition type</value></data>
+  <data name="Fields.ConditionValue" xml:space="preserve"><value>Condition value</value></data>
+  <data name="Fields.ConditionCount" xml:space="preserve"><value>Condition count</value></data>
+  <data name="Fields.ConditionSpecial" xml:space="preserve"><value>Condition special</value></data>
+  <data name="Fields.ImageUrl" xml:space="preserve"><value>Image URL</value></data>
+  <data name="Fields.Tier" xml:space="preserve"><value>Tier</value></data>
+  <data name="Fields.ObtainPoint" xml:space="preserve"><value>Obtain point</value></data>
+  <data name="Fields.PreDescription" xml:space="preserve"><value>Pre-description</value></data>
+  <data name="Fields.AfterDescription" xml:space="preserve"><value>After-description</value></data>
+  <data name="Fields.EffectType" xml:space="preserve"><value>Effect type</value></data>
+  <data name="Fields.EffectPoint" xml:space="preserve"><value>Effect point</value></data>
+  <data name="Fields.EffectCount" xml:space="preserve"><value>Effect count</value></data>
+  <data name="Fields.EffectSpecial" xml:space="preserve"><value>Effect special</value></data>
+  <data name="Fields.SlangValue" xml:space="preserve"><value>Blocked word or phrase</value></data>
+  <data name="Editor.ProductCategories" xml:space="preserve"><value>Product categories</value></data>
+  <data name="Editor.ProductCategoriesHint" xml:space="preserve"><value>Edits category_categoryproduct.csv links for this product.</value></data>
+  <data name="Editor.IngameConfigurations" xml:space="preserve"><value>In-game configurations</value></data>
+  <data name="Editor.IngameConfigurationsHint" xml:space="preserve"><value>Rows linked by product_id in ingameitem_ingameitem.csv.</value></data>
+  <data name="Editor.AddConfiguration" xml:space="preserve"><value>Add configuration</value></data>
+  <data name="Editor.NoIngameConfigurations" xml:space="preserve"><value>This product has no in-game configuration.</value></data>
+  <data name="Editor.ItemEffect" xml:space="preserve"><value>Item effect</value></data>
+  <data name="Editor.ItemEffectHint" xml:space="preserve"><value>The optional ingameitem_itemeffect.csv row linked by item_id.</value></data>
+  <data name="Editor.AddEffect" xml:space="preserve"><value>Add effect</value></data>
+  <data name="Editor.RemoveEffect" xml:space="preserve"><value>Remove effect</value></data>
+  <data name="Editor.NoItemEffect" xml:space="preserve"><value>This item has no effect row.</value></data>
+  <data name="Editor.NewAchievement" xml:space="preserve"><value>New achievement</value></data>
+  <data name="Editor.SaveAchievement" xml:space="preserve"><value>Save achievement</value></data>
+  <data name="Editor.AchievementRules" xml:space="preserve"><value>Achievement rules</value></data>
+  <data name="Editor.AchievementDescriptionsHint" xml:space="preserve"><value>These values are written to acievement_desc_&lt;lang&gt;.csv.</value></data>
+  <data name="Editor.AchievementIdRequired" xml:space="preserve"><value>Achievement ID is required.</value></data>
+  <data name="Editor.NewQuest" xml:space="preserve"><value>New quest</value></data>
+  <data name="Editor.SaveQuest" xml:space="preserve"><value>Save quest</value></data>
+  <data name="Editor.QuestDescriptions" xml:space="preserve"><value>Localized quest descriptions</value></data>
+  <data name="Editor.QuestIdRequired" xml:space="preserve"><value>Quest ID is required.</value></data>
+  <data name="Editor.Missions" xml:space="preserve"><value>Missions</value></data>
+  <data name="Editor.MissionsHint" xml:space="preserve"><value>Mission order is preserved across all five localized CSV files.</value></data>
+  <data name="Editor.AddMission" xml:space="preserve"><value>Add mission</value></data>
+  <data name="Editor.NoMissions" xml:space="preserve"><value>This quest has no missions.</value></data>
+  <data name="Editor.MissionNumber" xml:space="preserve"><value>Mission {0}</value></data>
+  <data name="Editor.NewSlang" xml:space="preserve"><value>New slang entry</value></data>
+  <data name="Editor.SlangEntry" xml:space="preserve"><value>Slang entry</value></data>
+  <data name="Editor.SlangHint" xml:space="preserve"><value>The exporter preserves the trailing empty column required by current patches.</value></data>
 </root>

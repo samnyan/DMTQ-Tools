@@ -80,6 +80,39 @@
                 </section>
 
                 <section>
+                    <div class="section-title-row">
+                        <div>
+                            <h2 class="section-heading">@L["Editor.ItemEffect"]</h2>
+                            <p class="section-hint">@L["Editor.ItemEffectHint"]</p>
+                        </div>
+                        @if (effectDraft is null)
+                        {
+                            <FluentButton Appearance="Appearance.Neutral" OnClick="AddEffect"
+                                          IconStart="@(new Icons.Regular.Size20.Add())">@L["Editor.AddEffect"]</FluentButton>
+                        }
+                        else
+                        {
+                            <FluentButton Appearance="Appearance.Neutral" OnClick="RemoveEffect"
+                                          IconStart="@(new Icons.Regular.Size20.Delete())">@L["Editor.RemoveEffect"]</FluentButton>
+                        }
+                    </div>
+                    @if (effectDraft is null)
+                    {
+                        <FluentMessageBar Title='@L["Editor.NoItemEffect"]' Intent="MessageIntent.Info" />
+                    }
+                    else
+                    {
+                        <FluentGrid Spacing="3">
+                            <FluentGridItem xs="12" md="4"><FluentTextField style="width: 100%;" @bind-Value="effectDraft.EffectType" Label='@L["Fields.EffectType"]' /></FluentGridItem>
+                            <FluentGridItem xs="12" md="4"><FluentTextField style="width: 100%;" @bind-Value="effectDraft.EffectPoint" Label='@L["Fields.EffectPoint"]' /></FluentGridItem>
+                            <FluentGridItem xs="12" md="4"><FluentTextField style="width: 100%;" @bind-Value="effectDraft.EffectCount" Label='@L["Fields.EffectCount"]' /></FluentGridItem>
+                            <FluentGridItem xs="12" md="8"><FluentTextField style="width: 100%;" @bind-Value="effectDraft.EffectSpecial" Label='@L["Fields.EffectSpecial"]' /></FluentGridItem>
+                            <FluentGridItem xs="12" md="4"><FluentTextField style="width: 100%;" @bind-Value="effectDraft.Update" Label='@L["Fields.Update"]' /></FluentGridItem>
+                        </FluentGrid>
+                    }
+                </section>
+
+                <section>
                     <h2 class="section-heading">@L["Editor.LocalizedDescriptions"]</h2>
                     <p class="section-hint">@L["Editor.ItemDescriptionsHint"]</p>
                     <FluentStack Orientation="Orientation.Vertical" VerticalGap="16" HorizontalAlignment="HorizontalAlignment.Stretch">
@@ -130,15 +163,17 @@
     private string message = string.Empty;
     private string errorMessage = string.Empty;
     private bool isBusy;
+    private IngameItemEffect? effectDraft;
 
     private IReadOnlyList<Item> Catalog =>
-        State.CurrentPackage is null ? [] : ItemCatalog.BuildCatalog(State.CurrentPackage);
+        State.CurrentPackage is null ? [] : ItemCatalog.BuildCatalog(State.CurrentPackage, State.SelectedExportPlatform);
 
     protected override void OnParametersSet()
     {
         if (IsCreate)
         {
             currentItem ??= new Item { Id = string.Empty };
+            effectDraft = null;
             EnsureLanguageFields(currentItem);
             return;
         }
@@ -146,6 +181,9 @@
         var source = Catalog.FirstOrDefault(item =>
             item.Id.Equals(ItemId, StringComparison.OrdinalIgnoreCase));
         currentItem = source is null ? null : ItemEditSvc.CreateDraft(source);
+        effectDraft = source is null || State.CurrentPackage is null
+            ? null
+            : ItemEditSvc.CreateEffectDraft(State.CurrentPackage, source.Id, State.SelectedExportPlatform);
         if (currentItem is not null)
             EnsureLanguageFields(currentItem);
     }
@@ -181,14 +219,16 @@
                 }
 
                 var item = ItemEditSvc.CreateDraft(currentItem, itemIdInput.Trim());
-                ItemEditSvc.AddItem(State.CurrentPackage, item);
+                ItemEditSvc.AddItem(State.CurrentPackage, item, State.SelectedExportPlatform);
+                ItemEditSvc.ApplyEffectDraft(State.CurrentPackage, item.Id, effectDraft, State.SelectedExportPlatform);
                 await Workflow.SaveProjectAsync();
                 State.Diagnostics.Add($"Item added: {item.Id}");
                 Navigation.NavigateTo($"/items/editor/{Uri.EscapeDataString(item.Id)}");
             }
             else
             {
-                ItemEditSvc.UpdateItem(State.CurrentPackage, currentItem);
+                ItemEditSvc.UpdateItem(State.CurrentPackage, currentItem, State.SelectedExportPlatform);
+                ItemEditSvc.ApplyEffectDraft(State.CurrentPackage, currentItem.Id, effectDraft, State.SelectedExportPlatform);
                 await Workflow.SaveProjectAsync();
                 State.Diagnostics.Add($"Item edited: {currentItem.Id}");
                 message = L["Editor.Saved", L["Nav.Items"].Value].Value;
@@ -204,4 +244,12 @@
             isBusy = false;
         }
     }
+
+    private void AddEffect()
+        => effectDraft = new IngameItemEffect
+        {
+            Id = currentItem?.Id ?? itemIdInput
+        };
+
+    private void RemoveEffect() => effectDraft = null;
 }

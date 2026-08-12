@@ -25,10 +25,10 @@ public sealed class CategoryProductCsvSchema : CsvLookupSchema<Product>
             return;
 
         if (fields.TryGetValue("category_id", out var categoryId)
-            && !string.IsNullOrWhiteSpace(categoryId)
-            && !product.CategoryIds.Any(existing =>
-                existing.Equals(categoryId, StringComparison.OrdinalIgnoreCase)))
+            && !string.IsNullOrWhiteSpace(categoryId))
         {
+            // Current client patches intentionally repeat identical links five or
+            // ten times. Preserve row multiplicity for lossless round-tripping.
             product.CategoryIds.Add(categoryId);
         }
     }

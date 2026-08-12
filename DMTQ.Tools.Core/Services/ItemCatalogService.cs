@@ -6,11 +6,11 @@ namespace DMTQ.Tools.Core.Services;
 /// <summary>Builds the editable Item catalog and resolves localized display values.</summary>
 public sealed class ItemCatalogService
 {
-    public IReadOnlyList<Item> BuildCatalog(PatchPackage package)
+    public IReadOnlyList<Item> BuildCatalog(PatchPackage package, string? platform = null)
     {
         ArgumentNullException.ThrowIfNull(package);
 
-        return package.Items
+        return package.GetPlatformTables(platform).Items
             .OrderBy(item => item.Id, StringComparer.OrdinalIgnoreCase)
             .ThenBy(item => item.ItemName, StringComparer.OrdinalIgnoreCase)
             .ToArray();

@@ -43,6 +43,11 @@ namespace DMTQ_Tools
             builder.Services.AddSingleton<ProductEditService>();
             builder.Services.AddSingleton<ItemCatalogService>();
             builder.Services.AddSingleton<ItemEditService>();
+            builder.Services.AddSingleton<AchievementCatalogService>();
+            builder.Services.AddSingleton<AchievementEditService>();
+            builder.Services.AddSingleton<QuestCatalogService>();
+            builder.Services.AddSingleton<QuestEditService>();
+            builder.Services.AddSingleton<SlangEditService>();
 
             builder.Services.AddSingleton<ResourceManagerService>();
             builder.Services.AddSingleton<PackageQaService>();

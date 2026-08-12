@@ -66,6 +66,39 @@ public sealed class ProductEditServiceTests
             .WithMessage("Product 'prod_001' already exists.");
     }
 
+    [TestMethod]
+    public void ApplyIngameItemDrafts_ReplacesOnlyRowsLinkedToProduct()
+    {
+        var package = CreatePackage();
+        package.IngameItems.Add(new IngameItem { Id = "AB_1", ItemType = "AB", ItemLevel = "1", ProductId = "P1" });
+        package.IngameItems.Add(new IngameItem { Id = "FP_1", ItemType = "FP", ItemLevel = "1", ProductId = "P2" });
+        var service = new ProductEditService();
+
+        service.ApplyIngameItemDrafts(package, "P1",
+            [new IngameItem { Id = "draft", ItemType = "AB", ItemLevel = "2", Update = "1" }]);
+
+        package.IngameItems.Should().Contain(item => item.Id == "AB_2" && item.ProductId == "P1" && item.Update == "1");
+        package.IngameItems.Should().Contain(item => item.Id == "FP_1" && item.ProductId == "P2");
+        package.IngameItems.Should().NotContain(item => item.Id == "AB_1");
+    }
+
+    [TestMethod]
+    public void UpdateProductAggregate_DoesNotMutateProductWhenChildValidationFails()
+    {
+        var package = CreatePackage();
+        package.Products.Add(new Product { Id = "P1", Status = "N" });
+        package.IngameItems.Add(new IngameItem { Id = "FP_1", ItemType = "FP", ItemLevel = "1", ProductId = "P2" });
+        var draft = new ProductEditService().CreateDraft(package.Products[0]);
+        draft.Status = "Y";
+
+        var action = () => new ProductEditService().UpdateProduct(package, draft,
+            [new IngameItem { Id = "draft", ItemType = "FP", ItemLevel = "1" }]);
+
+        action.Should().Throw<InvalidOperationException>();
+        package.Products[0].Status.Should().Be("N");
+        package.IngameItems.Should().ContainSingle(item => item.ProductId == "P2");
+    }
+
     private static PatchPackage CreatePackage()
         => new() { ProjectInfo = new ProjectInfo("project", null, "1.003.005", null) };
 }

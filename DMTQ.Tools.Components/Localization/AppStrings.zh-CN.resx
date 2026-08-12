@@ -23,4 +23,73 @@
   <data name="Editor.OpenSongsProject" xml:space="preserve"><value>请先打开或导入项目再编辑歌曲。</value></data><data name="Nav.PatternTool" xml:space="preserve"><value>谱面工具</value></data><data name="Pattern.Title" xml:space="preserve"><value>谱面工具</value></data><data name="Pattern.Open" xml:space="preserve"><value>打开谱面</value></data><data name="Pattern.SaveAs" xml:space="preserve"><value>另存为</value></data><data name="Pattern.ExportFormat" xml:space="preserve"><value>导出格式</value></data><data name="Pattern.OpenHint" xml:space="preserve"><value>打开 .pt 或 .bytes 文件，文件会解析为统一谱面模型。</value></data><data name="Pattern.NoPattern" xml:space="preserve"><value>请打开谱面以查看基础信息、事件和音效表。</value></data><data name="Pattern.BasicInfo" xml:space="preserve"><value>谱面信息</value></data><data name="Pattern.File" xml:space="preserve"><value>文件</value></data><data name="Pattern.SourceFormat" xml:space="preserve"><value>源格式</value></data><data name="Pattern.Encrypted" xml:space="preserve"><value>PT 已加密</value></data><data name="Pattern.Version" xml:space="preserve"><value>PT 版本</value></data><data name="Pattern.PositionsPerMeasure" xml:space="preserve"><value>每小节位置数</value></data><data name="Pattern.InitialBpm" xml:space="preserve"><value>初始 BPM</value></data><data name="Pattern.EndPosition" xml:space="preserve"><value>结束位置</value></data><data name="Pattern.Events" xml:space="preserve"><value>事件</value></data><data name="Pattern.Tracks" xml:space="preserve"><value>轨道</value></data><data name="Pattern.Sounds" xml:space="preserve"><value>音效</value></data><data name="Pattern.TagB" xml:space="preserve"><value>标签 B</value></data><data name="Pattern.TagC" xml:space="preserve"><value>标签 C</value></data><data name="Pattern.SoundList" xml:space="preserve"><value>音效列表</value></data><data name="Pattern.EventList" xml:space="preserve"><value>事件列表</value></data><data name="Pattern.SoundId" xml:space="preserve"><value>音效 ID</value></data><data name="Pattern.Flags" xml:space="preserve"><value>标志</value></data><data name="Pattern.FileName" xml:space="preserve"><value>文件名</value></data><data name="Pattern.Track" xml:space="preserve"><value>轨道</value></data><data name="Pattern.Position" xml:space="preserve"><value>位置</value></data><data name="Pattern.Type" xml:space="preserve"><value>类型</value></data><data name="Pattern.Details" xml:space="preserve"><value>参数</value></data><data name="Pattern.Yes" xml:space="preserve"><value>是</value></data><data name="Pattern.No" xml:space="preserve"><value>否</value></data><data name="Pattern.UnsupportedExtension" xml:space="preserve"><value>只支持 .pt 和 .bytes 文件。</value></data><data name="Pattern.Loaded" xml:space="preserve"><value>已加载 {0}。</value></data><data name="Pattern.Saved" xml:space="preserve"><value>已保存 {0}。</value></data><data name="Pattern.LoadFailed" xml:space="preserve"><value>谱面加载失败：{0}</value></data><data name="Pattern.SaveFailed" xml:space="preserve"><value>谱面保存失败：{0}</value></data>
   <data name="Pattern.OpenHintWithText" xml:space="preserve"><value>打开 .pt、.bytes 或 .txt 文件，文件会解析为统一谱面模型。</value></data>
   <data name="Pattern.UnsupportedExtensionWithText" xml:space="preserve"><value>只支持 .pt、.bytes 和 .txt 文件。</value></data>
+  <data name="Header.DataPlatform" xml:space="preserve"><value>数据平台</value></data>
+  <data name="Common.Add" xml:space="preserve"><value>添加</value></data>
+  <data name="Common.MoveUp" xml:space="preserve"><value>上移</value></data>
+  <data name="Common.MoveDown" xml:space="preserve"><value>下移</value></data>
+  <data name="Nav.Achievements" xml:space="preserve"><value>成就</value></data>
+  <data name="Nav.Quests" xml:space="preserve"><value>任务</value></data>
+  <data name="Nav.Slang" xml:space="preserve"><value>屏蔽词</value></data>
+  <data name="Lists.NoAchievements" xml:space="preserve"><value>未找到成就。请导入 CSV 数据或添加成就。</value></data>
+  <data name="Lists.FilterAchievements" xml:space="preserve"><value>按成就 ID、名称或条件筛选...</value></data>
+  <data name="Lists.AddAchievement" xml:space="preserve"><value>添加成就</value></data>
+  <data name="Lists.NoQuests" xml:space="preserve"><value>未找到任务。请导入 CSV 数据或添加任务。</value></data>
+  <data name="Lists.FilterQuests" xml:space="preserve"><value>按任务 ID 或本地化名称筛选...</value></data>
+  <data name="Lists.AddQuest" xml:space="preserve"><value>添加任务</value></data>
+  <data name="Lists.NoSlang" xml:space="preserve"><value>未找到屏蔽词条目。</value></data>
+  <data name="Lists.FilterSlang" xml:space="preserve"><value>筛选屏蔽词...</value></data>
+  <data name="Lists.AddSlang" xml:space="preserve"><value>添加条目</value></data>
+  <data name="Lists.SlangEntries" xml:space="preserve"><value>条目数</value></data>
+  <data name="Fields.AchievementId" xml:space="preserve"><value>成就 ID</value></data>
+  <data name="Fields.QuestId" xml:space="preserve"><value>任务 ID</value></data>
+  <data name="Fields.ProductId" xml:space="preserve"><value>商品 ID</value></data>
+  <data name="Fields.CategoryId" xml:space="preserve"><value>类别 ID</value></data>
+  <data name="Fields.ItemType" xml:space="preserve"><value>道具类型</value></data>
+  <data name="Fields.ItemLevel" xml:space="preserve"><value>道具等级</value></data>
+  <data name="Fields.Update" xml:space="preserve"><value>更新标记</value></data>
+  <data name="Fields.Name" xml:space="preserve"><value>名称</value></data>
+  <data name="Fields.BaseName" xml:space="preserve"><value>基础名称</value></data>
+  <data name="Fields.Description" xml:space="preserve"><value>描述</value></data>
+  <data name="Fields.ConditionType" xml:space="preserve"><value>条件类型</value></data>
+  <data name="Fields.ConditionValue" xml:space="preserve"><value>条件值</value></data>
+  <data name="Fields.ConditionCount" xml:space="preserve"><value>条件数量</value></data>
+  <data name="Fields.ConditionSpecial" xml:space="preserve"><value>特殊条件</value></data>
+  <data name="Fields.ImageUrl" xml:space="preserve"><value>图片 URL</value></data>
+  <data name="Fields.Tier" xml:space="preserve"><value>等级</value></data>
+  <data name="Fields.ObtainPoint" xml:space="preserve"><value>获得点数</value></data>
+  <data name="Fields.PreDescription" xml:space="preserve"><value>达成前描述</value></data>
+  <data name="Fields.AfterDescription" xml:space="preserve"><value>达成后描述</value></data>
+  <data name="Fields.EffectType" xml:space="preserve"><value>效果类型</value></data>
+  <data name="Fields.EffectPoint" xml:space="preserve"><value>效果数值</value></data>
+  <data name="Fields.EffectCount" xml:space="preserve"><value>效果次数</value></data>
+  <data name="Fields.EffectSpecial" xml:space="preserve"><value>特殊效果</value></data>
+  <data name="Fields.SlangValue" xml:space="preserve"><value>屏蔽词或短语</value></data>
+  <data name="Editor.ProductCategories" xml:space="preserve"><value>商品类别</value></data>
+  <data name="Editor.ProductCategoriesHint" xml:space="preserve"><value>编辑该商品在 category_categoryproduct.csv 中的关联。</value></data>
+  <data name="Editor.IngameConfigurations" xml:space="preserve"><value>局内道具配置</value></data>
+  <data name="Editor.IngameConfigurationsHint" xml:space="preserve"><value>编辑 ingameitem_ingameitem.csv 中通过 product_id 关联的行。</value></data>
+  <data name="Editor.AddConfiguration" xml:space="preserve"><value>添加配置</value></data>
+  <data name="Editor.NoIngameConfigurations" xml:space="preserve"><value>该商品没有局内道具配置。</value></data>
+  <data name="Editor.ItemEffect" xml:space="preserve"><value>道具效果</value></data>
+  <data name="Editor.ItemEffectHint" xml:space="preserve"><value>通过 item_id 关联的可选 ingameitem_itemeffect.csv 行。</value></data>
+  <data name="Editor.AddEffect" xml:space="preserve"><value>添加效果</value></data>
+  <data name="Editor.RemoveEffect" xml:space="preserve"><value>移除效果</value></data>
+  <data name="Editor.NoItemEffect" xml:space="preserve"><value>该道具没有效果行。</value></data>
+  <data name="Editor.NewAchievement" xml:space="preserve"><value>新建成就</value></data>
+  <data name="Editor.SaveAchievement" xml:space="preserve"><value>保存成就</value></data>
+  <data name="Editor.AchievementRules" xml:space="preserve"><value>成就规则</value></data>
+  <data name="Editor.AchievementDescriptionsHint" xml:space="preserve"><value>这些值会写入 acievement_desc_&lt;lang&gt;.csv。</value></data>
+  <data name="Editor.AchievementIdRequired" xml:space="preserve"><value>必须填写成就 ID。</value></data>
+  <data name="Editor.NewQuest" xml:space="preserve"><value>新建任务</value></data>
+  <data name="Editor.SaveQuest" xml:space="preserve"><value>保存任务</value></data>
+  <data name="Editor.QuestDescriptions" xml:space="preserve"><value>任务本地化描述</value></data>
+  <data name="Editor.QuestIdRequired" xml:space="preserve"><value>必须填写任务 ID。</value></data>
+  <data name="Editor.Missions" xml:space="preserve"><value>任务步骤</value></data>
+  <data name="Editor.MissionsHint" xml:space="preserve"><value>步骤顺序会在五个本地化 CSV 中保持一致。</value></data>
+  <data name="Editor.AddMission" xml:space="preserve"><value>添加步骤</value></data>
+  <data name="Editor.NoMissions" xml:space="preserve"><value>该任务没有步骤。</value></data>
+  <data name="Editor.MissionNumber" xml:space="preserve"><value>步骤 {0}</value></data>
+  <data name="Editor.NewSlang" xml:space="preserve"><value>新建屏蔽词</value></data>
+  <data name="Editor.SlangEntry" xml:space="preserve"><value>屏蔽词条目</value></data>
+  <data name="Editor.SlangHint" xml:space="preserve"><value>导出器会保留当前补丁所需的末尾空列。</value></data>
 </root>
