@@ -133,6 +133,7 @@
   <data name="Editor.BasicInfo" xml:space="preserve"><value>Basic Info</value></data>
   <data name="Editor.GameplaySettings" xml:space="preserve"><value>Gameplay Settings</value></data>
   <data name="Editor.LocalizedDescriptions" xml:space="preserve"><value>Localized Descriptions</value></data>
+  <data name="Editor.SyncOriginalText" xml:space="preserve"><value>Sync original text</value></data>
   <data name="Editor.SaveItem" xml:space="preserve"><value>Save Item</value></data>
   <data name="Editor.SaveProduct" xml:space="preserve"><value>Save Product</value></data>
   <data name="Editor.SaveSong" xml:space="preserve"><value>Save Song</value></data>

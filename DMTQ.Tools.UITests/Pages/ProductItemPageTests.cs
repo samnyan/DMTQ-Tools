@@ -1,6 +1,8 @@
 using DMTQ.Tools.Core.Models.Entity;
 using DMTQ.Tools.Core.Models.Export;
 using DMTQ.Tools.Core.Models.Project;
+using System.Reflection;
+using Microsoft.FluentUI.AspNetCore.Components;
 
 namespace DMTQ.Tools.UITests.Pages;
 
@@ -75,6 +77,37 @@ public sealed class ProductItemPageTests : BlazorUITestBase
             cut.Markup.Should().Contain(language);
         cut.Markup.Should().Contain("Save Item");
     }
+
+    [TestMethod]
+    public void ItemEditor_SyncOriginalText_CopiesAndLiveUpdatesLocalizedFields()
+    {
+        var state = CreateStateWithEmptyPackage();
+        state.SetPackage(CreateSamplePackage());
+        state.SetProjectRoot("test-project");
+        RegisterAllServices(state);
+        var cut = Render<ItemEditor>(parameters => parameters.Add(p => p.ItemId, "ITEM_001"));
+
+        cut.FindAll("fluent-switch")
+            .Single(element => element.TextContent.Contains("Sync original text", StringComparison.Ordinal))
+            .TriggerEvent("onswitchcheckedchange", new CheckboxChangeEventArgs { Checked = true });
+        var originalFields = cut.FindAll("fluent-text-field");
+        originalFields[1].Input("Live item");
+        originalFields[4].Input("Live description");
+        originalFields[5].Input("Live summary");
+
+        var draft = GetPrivateField<Item>(cut.Instance, "currentItem");
+        foreach (var language in new[] { "CN", "JP", "KR", "TW", "US" })
+        {
+            draft.NamesByLanguage[language].Should().Be("Live item");
+            draft.DescriptionsByLanguage[language].Should().Be("Live description");
+            draft.SummariesByLanguage[language].Should().Be("Live summary");
+        }
+    }
+
+    private static T GetPrivateField<T>(object instance, string fieldName)
+        where T : class
+        => (T)(instance.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic)
+            ?.GetValue(instance) ?? throw new InvalidOperationException($"Field '{fieldName}' was not found."));
 
     private static PatchPackage CreateSamplePackage()
     {

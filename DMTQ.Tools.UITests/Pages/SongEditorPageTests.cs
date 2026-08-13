@@ -3,6 +3,8 @@ using DMTQ.Tools.Core.Models.Entity;
 using DMTQ.Tools.Core.Models.Export;
 using DMTQ.Tools.Core.Models.Project;
 using DMTQ.Tools.Core.Services;
+using System.Reflection;
+using Microsoft.FluentUI.AspNetCore.Components;
 
 namespace DMTQ.Tools.UITests.Pages;
 
@@ -52,6 +54,40 @@ public sealed class SongEditorPageTests : BlazorUITestBase
 
         cut.Markup.Should().Contain("Open or import a project before editing songs");
     }
+
+    [TestMethod]
+    public void SyncOriginalText_CopiesAndLiveUpdatesMatchingLocalizedFields()
+    {
+        var state = CreateStateWithEmptyPackage();
+        state.SetPackage(CreateSamplePackage());
+        state.SetProjectRoot("test-project");
+        RegisterAllServices(state);
+        var cut = Render<SongEditor>(parameters => parameters.Add(p => p.SongId, "1001"));
+
+        var syncSwitch = cut.FindAll("fluent-switch")
+            .Single(element => element.TextContent.Contains("Sync original text", StringComparison.Ordinal));
+        syncSwitch.TriggerEvent("onswitchcheckedchange", new CheckboxChangeEventArgs { Checked = true });
+        var originalFields = cut.FindAll("fluent-text-field");
+        originalFields[2].Input("Live full name");
+        originalFields[4].Input("Live artist");
+
+        var draft = GetPrivateField<Song>(cut.Instance, "currentSong");
+        draft.Localizations.Should().ContainKeys("CN", "JP", "KR", "TW", "US");
+        draft.Localizations.Values.Should().OnlyContain(localization =>
+            localization.FullName == "Live full name"
+            && localization.ArtistName == "Live artist"
+            && localization.Genre == "G");
+
+        syncSwitch.TriggerEvent("onswitchcheckedchange", new CheckboxChangeEventArgs { Checked = false });
+        originalFields[2].Input("Original only");
+        draft.Localizations.Values.Should().OnlyContain(localization =>
+            localization.FullName == "Live full name");
+    }
+
+    private static T GetPrivateField<T>(object instance, string fieldName)
+        where T : class
+        => (T)(instance.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic)
+            ?.GetValue(instance) ?? throw new InvalidOperationException($"Field '{fieldName}' was not found."));
 
     private static PatchPackage CreateSamplePackage()
     {

@@ -46,14 +46,14 @@
                                     <FluentTextField style="width: 100%;" Value="@(currentSong?.Id.ToString() ?? "")" Label="Song ID" ReadOnly="true" />
                                 }
                                 <FluentTextField style="width: 100%;" @bind-Value="currentSong!.Name" Label="Name" />
-                                <FluentTextField style="width: 100%;" @bind-Value="currentSong!.FullName" Label="Full Name" />
-                                <FluentTextField style="width: 100%;" @bind-Value="currentSong!.Genre" Label="Genre" />
-                                <FluentTextField style="width: 100%;" @bind-Value="currentSong!.ArtistName" Label="Artist Name" />
-                                <FluentTextField style="width: 100%;" @bind-Value="currentSong!.ComposedBy" Label="Composed By" />
-                                <FluentTextField style="width: 100%;" @bind-Value="currentSong!.Singer" Label="Singer" />
-                                <FluentTextField style="width: 100%;" @bind-Value="currentSong!.FeatBy" Label="Feat By" />
-                                <FluentTextField style="width: 100%;" @bind-Value="currentSong!.ArrangedBy" Label="Arranged By" />
-                                <FluentTextField style="width: 100%;" @bind-Value="currentSong!.VisualizedBy" Label="Visualized By" />
+                                <FluentTextField style="width: 100%;" @bind-Value="songFullName" Label="Full Name" Immediate="true" />
+                                <FluentTextField style="width: 100%;" @bind-Value="songGenre" Label="Genre" Immediate="true" />
+                                <FluentTextField style="width: 100%;" @bind-Value="songArtistName" Label="Artist Name" Immediate="true" />
+                                <FluentTextField style="width: 100%;" @bind-Value="songComposedBy" Label="Composed By" Immediate="true" />
+                                <FluentTextField style="width: 100%;" @bind-Value="songSinger" Label="Singer" Immediate="true" />
+                                <FluentTextField style="width: 100%;" @bind-Value="songFeatBy" Label="Feat By" Immediate="true" />
+                                <FluentTextField style="width: 100%;" @bind-Value="songArrangedBy" Label="Arranged By" Immediate="true" />
+                                <FluentTextField style="width: 100%;" @bind-Value="songVisualizedBy" Label="Visualized By" Immediate="true" />
                             </FluentStack>
                         </section>
                     </FluentGridItem>
@@ -91,8 +91,13 @@
                    Row 3: Descriptions (multi-language, full width)
                    ════════════════════════════════════════════ *@
                 <section>
-                    <h2 class="section-heading">@L["Editor.LocalizedDescriptions"]</h2>
-                    <p class="section-hint">@L["Editor.DescriptionsHint"]</p>
+                    <div class="section-title-row">
+                        <div>
+                            <h2 class="section-heading">@L["Editor.LocalizedDescriptions"]</h2>
+                            <p class="section-hint">@L["Editor.DescriptionsHint"]</p>
+                        </div>
+                        <FluentSwitch @bind-Value="syncOriginalText" Label='@L["Editor.SyncOriginalText"]' />
+                    </div>
                     <FluentStack Orientation="Orientation.Vertical" VerticalGap="16" HorizontalAlignment="HorizontalAlignment.Stretch">
                         @foreach (var lang in DefaultLanguages)
                         {
@@ -202,6 +207,26 @@
     private string message = string.Empty;
     private string errorMessage = string.Empty;
     private bool isBusy;
+    private bool _syncOriginalText;
+
+    private bool syncOriginalText
+    {
+        get => _syncOriginalText;
+        set
+        {
+            _syncOriginalText = value;
+            if (value) SyncOriginalToAllLanguages();
+        }
+    }
+
+    private string songFullName { get => currentSong?.FullName ?? string.Empty; set => SetOriginalField(song => song.FullName = value); }
+    private string songGenre { get => currentSong?.Genre ?? string.Empty; set => SetOriginalField(song => song.Genre = value); }
+    private string songArtistName { get => currentSong?.ArtistName ?? string.Empty; set => SetOriginalField(song => song.ArtistName = value); }
+    private string songComposedBy { get => currentSong?.ComposedBy ?? string.Empty; set => SetOriginalField(song => song.ComposedBy = value); }
+    private string songSinger { get => currentSong?.Singer ?? string.Empty; set => SetOriginalField(song => song.Singer = value); }
+    private string songFeatBy { get => currentSong?.FeatBy ?? string.Empty; set => SetOriginalField(song => song.FeatBy = value); }
+    private string songArrangedBy { get => currentSong?.ArrangedBy ?? string.Empty; set => SetOriginalField(song => song.ArrangedBy = value); }
+    private string songVisualizedBy { get => currentSong?.VisualizedBy ?? string.Empty; set => SetOriginalField(song => song.VisualizedBy = value); }
 
     // YN ↔ bool wrappers
     private bool bgaOriginal { get => currentSong?.OriginalBgaYn == "Y"; set => currentSong!.OriginalBgaYn = value ? "Y" : "N"; }
@@ -263,6 +288,31 @@
             currentSong.Localizations[lang] = loc;
         }
         return loc;
+    }
+
+    private void SetOriginalField(Action<Song> update)
+    {
+        if (currentSong is null) return;
+        update(currentSong);
+        if (_syncOriginalText) SyncOriginalToAllLanguages();
+    }
+
+    private void SyncOriginalToAllLanguages()
+    {
+        if (currentSong is null) return;
+
+        foreach (var language in DefaultLanguages)
+        {
+            var localization = GetOrCreateLocalization(language);
+            localization.FullName = currentSong.FullName;
+            localization.Genre = currentSong.Genre;
+            localization.ArtistName = currentSong.ArtistName;
+            localization.ComposedBy = currentSong.ComposedBy;
+            localization.Singer = currentSong.Singer;
+            localization.FeatBy = currentSong.FeatBy;
+            localization.ArrangedBy = currentSong.ArrangedBy;
+            localization.VisualizedBy = currentSong.VisualizedBy;
+        }
     }
 
     private void NavigateBack() => Navigation.NavigateTo("/songs");

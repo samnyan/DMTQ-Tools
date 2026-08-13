@@ -92,4 +92,5 @@
   <data name="Editor.NewSlang" xml:space="preserve"><value>新建屏蔽词</value></data>
   <data name="Editor.SlangEntry" xml:space="preserve"><value>屏蔽词条目</value></data>
   <data name="Editor.SlangHint" xml:space="preserve"><value>导出器会保留当前补丁所需的末尾空列。</value></data>
+  <data name="Editor.SyncOriginalText" xml:space="preserve"><value>同步原文</value></data>
 </root>

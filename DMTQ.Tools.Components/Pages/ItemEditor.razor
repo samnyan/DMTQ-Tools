@@ -38,7 +38,7 @@
                             }
                         </FluentGridItem>
                         <FluentGridItem xs="12" md="6">
-                            <FluentTextField style="width: 100%;" @bind-Value="currentItem!.ItemName" Label="Item Name" />
+                            <FluentTextField style="width: 100%;" @bind-Value="itemName" Label="Item Name" Immediate="true" />
                         </FluentGridItem>
                         <FluentGridItem xs="12" md="6">
                             <FluentTextField style="width: 100%;" @bind-Value="currentItem!.ImgUrl1" Label="Image URL 1" />
@@ -47,10 +47,10 @@
                             <FluentTextField style="width: 100%;" @bind-Value="currentItem!.ImgUrl2" Label="Image URL 2" />
                         </FluentGridItem>
                         <FluentGridItem xs="12" md="6">
-                            <FluentTextField style="width: 100%;" @bind-Value="currentItem!.Description" Label="Description" />
+                            <FluentTextField style="width: 100%;" @bind-Value="itemDescription" Label="Description" Immediate="true" />
                         </FluentGridItem>
                         <FluentGridItem xs="12" md="6">
-                            <FluentTextField style="width: 100%;" @bind-Value="currentItem!.Summary" Label="Summary" />
+                            <FluentTextField style="width: 100%;" @bind-Value="itemSummary" Label="Summary" Immediate="true" />
                         </FluentGridItem>
                         <FluentGridItem xs="12" md="4">
                             <FluentTextField style="width: 100%;" @bind-Value="currentItem!.RepeatCount" Label="Repeat Count" />
@@ -113,8 +113,13 @@
                 </section>
 
                 <section>
-                    <h2 class="section-heading">@L["Editor.LocalizedDescriptions"]</h2>
-                    <p class="section-hint">@L["Editor.ItemDescriptionsHint"]</p>
+                    <div class="section-title-row">
+                        <div>
+                            <h2 class="section-heading">@L["Editor.LocalizedDescriptions"]</h2>
+                            <p class="section-hint">@L["Editor.ItemDescriptionsHint"]</p>
+                        </div>
+                        <FluentSwitch @bind-Value="syncOriginalText" Label='@L["Editor.SyncOriginalText"]' />
+                    </div>
                     <FluentStack Orientation="Orientation.Vertical" VerticalGap="16" HorizontalAlignment="HorizontalAlignment.Stretch">
                         @foreach (var language in DefaultLanguages)
                         {
@@ -164,6 +169,21 @@
     private string errorMessage = string.Empty;
     private bool isBusy;
     private IngameItemEffect? effectDraft;
+    private bool _syncOriginalText;
+
+    private bool syncOriginalText
+    {
+        get => _syncOriginalText;
+        set
+        {
+            _syncOriginalText = value;
+            if (value) SyncOriginalToAllLanguages();
+        }
+    }
+
+    private string itemName { get => currentItem?.ItemName ?? string.Empty; set => SetOriginalField(item => item.ItemName = value); }
+    private string itemDescription { get => currentItem?.Description ?? string.Empty; set => SetOriginalField(item => item.Description = value); }
+    private string itemSummary { get => currentItem?.Summary ?? string.Empty; set => SetOriginalField(item => item.Summary = value); }
 
     private IReadOnlyList<Item> Catalog =>
         State.CurrentPackage is null ? [] : ItemCatalog.BuildCatalog(State.CurrentPackage, State.SelectedExportPlatform);
@@ -195,6 +215,26 @@
             item.NamesByLanguage.TryAdd(language, string.Empty);
             item.DescriptionsByLanguage.TryAdd(language, string.Empty);
             item.SummariesByLanguage.TryAdd(language, string.Empty);
+        }
+    }
+
+    private void SetOriginalField(Action<Item> update)
+    {
+        if (currentItem is null) return;
+        update(currentItem);
+        if (_syncOriginalText) SyncOriginalToAllLanguages();
+    }
+
+    private void SyncOriginalToAllLanguages()
+    {
+        if (currentItem is null) return;
+
+        EnsureLanguageFields(currentItem);
+        foreach (var language in DefaultLanguages)
+        {
+            currentItem.NamesByLanguage[language] = currentItem.ItemName;
+            currentItem.DescriptionsByLanguage[language] = currentItem.Description;
+            currentItem.SummariesByLanguage[language] = currentItem.Summary;
         }
     }
 
