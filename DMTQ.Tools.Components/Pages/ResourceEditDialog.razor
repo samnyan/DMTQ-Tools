@@ -1,25 +1,33 @@
 @using DMTQ.Tools.Components.Models
+@using DMTQ.Tools.Core.Services
 @using Icons = Microsoft.FluentUI.AspNetCore.Components.Icons
 @inject IProjectFilePicker FilePicker
 @implements IDialogContentComponent<DMTQ.Tools.Components.Models.ResourceDialogData>
 
 <FluentStack Orientation="Orientation.Vertical" VerticalGap="16" Style="min-width: 520px;">
 
-    @* Basic Info Section *@
+    @* Resource path *@
     <section>
         <h2 class="section-heading">@L["Dialog.BasicInfo"]</h2>
-        <FluentGrid Spacing="3">
-            <FluentGridItem xs="12" sm="8">
-                <FluentTextField @bind-Value="Content.FileName" Label="File Name"
-                                 ReadOnly="@(!Content.IsNew)" Style="width: 100%;" />
-            </FluentGridItem>
-            <FluentGridItem xs="12" sm="4">
-                <FluentSelect Items="@_categoryOptions" @bind-Value="Content.Category" Label="Category" />
-            </FluentGridItem>
-            <FluentGridItem xs="12">
-                <FluentSwitch @bind-Value="Content.Compressed" Label="Compressed" />
-            </FluentGridItem>
-        </FluentGrid>
+        <FluentStack Orientation="Orientation.Vertical" VerticalGap="8">
+            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" VerticalAlignment="VerticalAlignment.Center">
+                <FluentSelect Items="@_categoryOptions"
+                              OptionText="@(category => FileUtility.GetCategoryPathPrefix(category) + "/")"
+                              OptionValue="@(category => category)"
+                              @bind-SelectedOption="Content.Category"
+                              Label="Category"
+                              Style="min-width: 140px;"
+                              Disabled="@(!Content.IsNew)" />
+                <FluentTextField @bind-Value="Content.FileName"
+                                 Label="File Name"
+                                 ReadOnly="@(!Content.IsNew)"
+                                 Style="flex: 1;" />
+            </FluentStack>
+            <div style="font-size: 0.85rem; color: var(--neutral-foreground-rest); padding-left: 4px;">
+                Full path: <code style="font-weight: 600;">@FullPathPreview</code>
+            </div>
+            <FluentSwitch @bind-Value="Content.Compressed" Label="Compressed" />
+        </FluentStack>
     </section>
 
     @* Platform Files Section *@
@@ -61,7 +69,7 @@
                 <FluentMessageBar Title="@_addPlatformMessage" Intent="MessageIntent.Warning" />
             }
 
-            @if (_showPlatformChoices)
+            @if (Content.Category.Equals("dlc", StringComparison.OrdinalIgnoreCase) && _showPlatformChoices)
             {
                 <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8" VerticalAlignment="VerticalAlignment.Center">
                     <span style="font-weight: 500;">@L["Dialog.SelectPlatform"]</span>
@@ -74,10 +82,15 @@
                                   OnClick="CancelAddPlatform">@L["Common.Cancel"]</FluentButton>
                 </FluentStack>
             }
-            else
+            else if (Content.Category.Equals("dlc", StringComparison.OrdinalIgnoreCase))
             {
                 <FluentButton Appearance="Appearance.Neutral" OnClick="ShowAddPlatformOptions"
                               IconStart="@(new Icons.Regular.Size20.Add())">@L["Dialog.AddPlatform"]</FluentButton>
+            }
+            else
+            {
+                <FluentButton Appearance="Appearance.Neutral" OnClick="PickSharedFileAsync"
+                              IconStart="@(new Icons.Regular.Size20.Add())">Select File</FluentButton>
             }
         </FluentStack>
     </section>
@@ -94,6 +107,16 @@
     private bool _showPlatformChoices;
     private List<string> _availablePlatforms = [];
     private string _addPlatformMessage = string.Empty;
+
+    private string FullPathPreview => string.IsNullOrWhiteSpace(Content.FileName)
+        ? "(enter a file name)"
+        : BuildFullPath(Content.Category, Content.FileName);
+
+    private static string BuildFullPath(string category, string fileName)
+    {
+        var prefix = FileUtility.GetCategoryPathPrefix(category);
+        return string.IsNullOrEmpty(prefix) ? fileName : $"{prefix}/{fileName}";
+    }
 
     private void ShowAddPlatformOptions()
     {
@@ -153,6 +176,34 @@
 
         card.PendingFilePath = path;
         card.LocalChecksum = ComputeMd5(path);
+        card.SourceFileSize = new FileInfo(path).Length;
+    }
+
+    private async Task PickSharedFileAsync()
+    {
+        var path = await FilePicker.PickFileAsync();
+        if (path is null) return;
+
+        var existing = Content.Platforms.FirstOrDefault(card =>
+            card.Platform.Equals("share", StringComparison.OrdinalIgnoreCase)
+            && !card.MarkedForDeletion);
+        if (existing is not null)
+        {
+            existing.PendingFilePath = path;
+            existing.LocalChecksum = ComputeMd5(path);
+            existing.SourceFileSize = new FileInfo(path).Length;
+            return;
+        }
+
+        Content.Platforms.Add(new PlatformCardData
+        {
+            Platform = "share",
+            IsNew = true,
+            PendingFilePath = path,
+            LocalChecksum = ComputeMd5(path),
+            SourceFileSize = new FileInfo(path).Length,
+            Exist = false
+        });
     }
 
     private void RemovePlatform(PlatformCardData card)

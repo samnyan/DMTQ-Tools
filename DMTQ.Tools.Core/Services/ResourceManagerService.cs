@@ -32,6 +32,30 @@ public sealed class ResourceManagerService
             .ToArray();
     }
 
+    /// <summary>Adds a resource entry before any physical platform file is assigned.</summary>
+    /// <param name="package">Project package to update.</param>
+    /// <param name="packageRelativePath">Complete package-relative resource path.</param>
+    /// <param name="compressed">Whether the resource should be compressed during export.</param>
+    public void AddResourceStub(PatchPackage package, string packageRelativePath, bool compressed)
+    {
+        ArgumentNullException.ThrowIfNull(package);
+        ArgumentException.ThrowIfNullOrWhiteSpace(packageRelativePath);
+
+        var normalizedPath = FileUtility.NormalizePackageRelativePath(packageRelativePath);
+        if (package.Resources.Any(resource =>
+                resource.FileName.Equals(normalizedPath, StringComparison.OrdinalIgnoreCase)))
+        {
+            return;
+        }
+
+        package.Resources.Add(new ResourceFile
+        {
+            FileName = normalizedPath,
+            Category = FileUtility.ResourceCategory(normalizedPath),
+            Compressed = compressed
+        });
+    }
+
     public async Task AddOrReplaceResourceAsync(
         PatchPackage package,
         string sourceFilePath,
@@ -51,11 +75,12 @@ public sealed class ResourceManagerService
 
         var normalizedPath = FileUtility.NormalizePackageRelativePath(packageRelativePath);
         var category = FileUtility.ResourceCategory(normalizedPath);
-        var isPreview = category.Equals("preview", StringComparison.OrdinalIgnoreCase);
+        var isShared = category.Equals("preview", StringComparison.OrdinalIgnoreCase)
+            || category.Equals("slang", StringComparison.OrdinalIgnoreCase);
 
         // Archive the file
         string archiveSubPath;
-        if (isPreview)
+        if (isShared)
         {
             archiveSubPath = Path.Combine("resources", normalizedPath);
         }
@@ -65,7 +90,7 @@ public sealed class ResourceManagerService
         }
         else
         {
-            throw new InvalidOperationException("Non-preview resources must target a platform.");
+            throw new InvalidOperationException("Non-shared resources must target a platform.");
         }
 
         var archivePath = Path.Combine(package.ProjectInfo.ProjectRoot, archiveSubPath.Replace('/', Path.DirectorySeparatorChar));
@@ -96,8 +121,12 @@ public sealed class ResourceManagerService
         }
 
         // Update PlatformManifest
-        var platforms = isPreview
-            ? includedPlatforms.Distinct(StringComparer.OrdinalIgnoreCase).ToArray()
+        var platforms = isShared
+            ? includedPlatforms
+                .Where(value => !string.IsNullOrWhiteSpace(value))
+                .DefaultIfEmpty("share")
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray()
             : (platform is not null ? new[] { platform } : []);
 
         foreach (var plat in platforms)
@@ -144,9 +173,10 @@ public sealed class ResourceManagerService
     {
         ArgumentNullException.ThrowIfNull(package);
         var resource = FindResource(package, packageRelativePath);
-        if (!resource.Category.Equals("preview", StringComparison.OrdinalIgnoreCase))
+        if (!resource.Category.Equals("preview", StringComparison.OrdinalIgnoreCase)
+            && !resource.Category.Equals("slang", StringComparison.OrdinalIgnoreCase))
         {
-            throw new InvalidOperationException("Only preview resources can use shared platform inclusion flags.");
+            throw new InvalidOperationException("Only shared resources can use shared platform inclusion flags.");
         }
 
         // Replace all share entries with the new set

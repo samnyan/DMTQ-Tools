@@ -115,6 +115,7 @@ public abstract class BlazorUITestBase : Bunit.TestContext
         public Task SaveProjectAsync(CancellationToken ct = default) => Task.CompletedTask;
         public Task OpenProjectAsync(string projectRoot, CancellationToken ct = default) => Task.CompletedTask;
         public Task AddOrReplaceResourceAsync(string s, string p, string? pl, IReadOnlyCollection<string> ip, bool c, CancellationToken ct = default) => Task.CompletedTask;
+        public Task AddResourceStubAsync(string p, bool c, CancellationToken ct = default) => Task.CompletedTask;
         public Task RemoveResourceAsync(string p, string? pl, CancellationToken ct = default) => Task.CompletedTask;
         public Task SetResourceCompressionAsync(string p, string? pl, bool c, CancellationToken ct = default) => Task.CompletedTask;
         public Task SetPreviewIncludedPlatformsAsync(string p, IReadOnlyCollection<string> ip, CancellationToken ct = default) => Task.CompletedTask;

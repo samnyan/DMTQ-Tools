@@ -17,6 +17,7 @@ public interface IProjectWorkflow
     Task SaveProjectAsync(CancellationToken cancellationToken = default);
     Task OpenProjectAsync(string projectRoot, CancellationToken cancellationToken = default);
     Task AddOrReplaceResourceAsync(string sourceFilePath, string packageRelativePath, string? platform, IReadOnlyCollection<string> includedPlatforms, bool compressed, CancellationToken cancellationToken = default);
+    Task AddResourceStubAsync(string packageRelativePath, bool compressed, CancellationToken cancellationToken = default);
     Task RemoveResourceAsync(string packageRelativePath, string? platform, CancellationToken cancellationToken = default);
     Task SetResourceCompressionAsync(string packageRelativePath, string? platform, bool compressed, CancellationToken cancellationToken = default);
     Task SetPreviewIncludedPlatformsAsync(string packageRelativePath, IReadOnlyCollection<string> includedPlatforms, CancellationToken cancellationToken = default);

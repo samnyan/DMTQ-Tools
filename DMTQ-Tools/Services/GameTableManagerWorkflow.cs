@@ -123,6 +123,19 @@ public sealed class GameTableManagerWorkflow : IProjectWorkflow
         _state.Diagnostics.Add($"Resource added or replaced: {packageRelativePath}");
     }
 
+    public async Task AddResourceStubAsync(
+        string packageRelativePath,
+        bool compressed,
+        CancellationToken cancellationToken = default)
+    {
+        if (_state.CurrentPackage is null)
+            throw new InvalidOperationException("Import or open a project before managing resources.");
+
+        _resourceManager.AddResourceStub(_state.CurrentPackage, packageRelativePath, compressed);
+        await SaveProjectAsync(cancellationToken).ConfigureAwait(false);
+        _state.Diagnostics.Add($"Resource stub added: {packageRelativePath}");
+    }
+
     public async Task RemoveResourceAsync(string packageRelativePath, string? platform, CancellationToken cancellationToken = default)
     {
         if (_state.CurrentPackage is null) throw new InvalidOperationException("Import or open a project before managing resources.");

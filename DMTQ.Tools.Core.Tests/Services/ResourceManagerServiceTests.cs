@@ -74,6 +74,47 @@ public sealed class ResourceManagerServiceTests
     }
 
     [TestMethod]
+    public async Task AddOrReplaceResourceAsync_DefaultsSharedPreviewManifestWhenPlatformsAreEmpty()
+    {
+        var projectRoot = CreateTempDirectory();
+        try
+        {
+            var sourcePath = Path.Combine(projectRoot, "source.opus");
+            await File.WriteAllTextAsync(sourcePath, "preview-bytes");
+            var package = CreatePackage(projectRoot);
+
+            await new ResourceManagerService().AddOrReplaceResourceAsync(
+                package,
+                sourcePath,
+                "preview/new.opus",
+                platform: null,
+                includedPlatforms: [],
+                compressed: false);
+
+            var resource = package.Resources.Should().ContainSingle().Subject;
+            resource.PlatformManifest.Should().ContainSingle(entry =>
+                entry.Platform == "share" && entry.Exist);
+            File.ReadAllText(Path.Combine(projectRoot, "resources", "preview", "new.opus"))
+                .Should().Be("preview-bytes");
+        }
+        finally
+        {
+            Directory.Delete(projectRoot, recursive: true);
+        }
+    }
+
+    [TestMethod]
+    public void ResourcePathHelpers_RoundTripCategoryPrefixAndFileName()
+    {
+        FileUtility.GetCategoryPathPrefix("preview").Should().Be("preview");
+        FileUtility.ParseResourcePath("preview/folder/song.opus")
+            .Should().Be(("preview", "folder/song.opus"));
+        FileUtility.GetCategoryPathPrefix("slang").Should().Be("table/slang");
+        FileUtility.ParseResourcePath("table/slang/zh.csv")
+            .Should().Be(("slang", "zh.csv"));
+    }
+
+    [TestMethod]
     public async Task AddOrReplaceResourceAsync_AddsPlatformResourceToPlatformArchive()
     {
         var projectRoot = CreateTempDirectory();

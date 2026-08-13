@@ -72,7 +72,16 @@ public static class FileUtility
     public static string ResourceCategory(string packageRelativePath)
     {
         var path = NormalizePackageRelativePath(packageRelativePath);
-        var firstSegment = path.Split('/', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+        var parts = path.Split('/', StringSplitOptions.RemoveEmptyEntries);
+
+        if (parts.Length >= 3
+            && parts[0].Equals("table", StringComparison.OrdinalIgnoreCase)
+            && parts[1].Equals("slang", StringComparison.OrdinalIgnoreCase))
+        {
+            return "slang";
+        }
+
+        var firstSegment = parts.FirstOrDefault();
         return firstSegment switch
         {
             "dlc" => "dlc",
@@ -81,6 +90,40 @@ public static class FileUtility
             "fonts" => "Fonts",
             _ => "other"
         };
+    }
+
+    /// <summary>Gets the fixed package path prefix for a resource category.</summary>
+    /// <param name="category">Resource category selected by the user.</param>
+    /// <returns>The package-relative prefix without a trailing slash.</returns>
+    public static string GetCategoryPathPrefix(string category)
+        => category.ToLowerInvariant() switch
+        {
+            "dlc" => "dlc",
+            "preview" => "preview",
+            "slang" => "table/slang",
+            _ => string.Empty
+        };
+
+    /// <summary>Splits a package resource path into its selectable category and editable suffix.</summary>
+    /// <param name="packageRelativePath">Complete package-relative resource path.</param>
+    /// <returns>The category and path portion following its fixed prefix.</returns>
+    public static (string Category, string FileNameOnly) ParseResourcePath(string packageRelativePath)
+    {
+        var path = NormalizePackageRelativePath(packageRelativePath);
+        var parts = path.Split('/', StringSplitOptions.RemoveEmptyEntries);
+
+        if (parts.Length >= 3
+            && parts[0].Equals("table", StringComparison.OrdinalIgnoreCase)
+            && parts[1].Equals("slang", StringComparison.OrdinalIgnoreCase))
+        {
+            return ("slang", string.Join('/', parts.Skip(2)));
+        }
+
+        var category = ResourceCategory(path);
+        var fileNameOnly = category is "dlc" or "preview"
+            ? string.Join('/', parts.Skip(1))
+            : path;
+        return (category, fileNameOnly);
     }
 
     public static string Normalize(string path)

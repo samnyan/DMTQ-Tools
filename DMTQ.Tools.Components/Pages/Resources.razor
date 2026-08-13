@@ -1,5 +1,6 @@
 @page "/resources"
 @using DMTQ.Tools.Components.Models
+@using DMTQ.Tools.Core.Services
 @inject IProjectState State
 @inject IProjectWorkflow Workflow
 @inject ResourceManagerService ResourceMgr
@@ -130,11 +131,12 @@
 
     private static ResourceDialogData BuildDialogData(ResourceCatalogEntry entry)
     {
+        var (category, fileNameOnly) = FileUtility.ParseResourcePath(entry.FileName);
         return new ResourceDialogData
         {
             IsNew = false,
-            FileName = entry.FileName,
-            Category = entry.Category,
+            FileName = fileNameOnly,
+            Category = category,
             Compressed = entry.Compressed,
             Platforms = entry.PlatformManifest.Select(m => new PlatformCardData
             {
@@ -216,20 +218,42 @@
     {
         if (result.Cancelled || result.Data is not ResourceDialogData data) return;
 
+        if (string.IsNullOrWhiteSpace(data.FileName))
+        {
+            errorMessage = "File name is required.";
+            return;
+        }
+
+        var prefix = FileUtility.GetCategoryPathPrefix(data.Category);
+        var fullPath = string.IsNullOrEmpty(prefix)
+            ? data.FileName
+            : $"{prefix}/{data.FileName}";
+
         try
         {
+            if (original is null)
+            {
+                await Workflow.AddResourceStubAsync(fullPath, data.Compressed);
+            }
+
             foreach (var card in data.Platforms)
             {
                 if (card.MarkedForDeletion)
                 {
-                    await Workflow.RemoveResourceAsync(data.FileName, card.Platform);
+                    await Workflow.RemoveResourceAsync(fullPath, card.Platform);
                 }
                 else if (card.IsNew || card.PendingFilePath is not null)
                 {
                     var sourcePath = card.PendingFilePath ?? "";
                     if (!string.IsNullOrEmpty(sourcePath))
                     {
-                        await Workflow.AddOrReplaceResourceAsync(sourcePath, data.FileName, card.Platform, [], data.Compressed);
+                        var isShared = data.Category is "preview" or "slang";
+                        await Workflow.AddOrReplaceResourceAsync(
+                            sourcePath,
+                            fullPath,
+                            isShared ? null : card.Platform,
+                            isShared ? [card.Platform] : [],
+                            data.Compressed);
                     }
                 }
             }
@@ -237,17 +261,13 @@
             // Update compression if changed
             if (original is not null && original.Compressed != data.Compressed)
             {
-                await Workflow.SetResourceCompressionAsync(data.FileName, null, data.Compressed);
-            }
-            else if (original is null)
-            {
-                await Workflow.SetResourceCompressionAsync(data.FileName, null, data.Compressed);
+                await Workflow.SetResourceCompressionAsync(fullPath, null, data.Compressed);
             }
 
             await Workflow.SaveProjectAsync();
             _lastPackage = null; // invalidate catalog
-            State.Diagnostics.Add($"Resource updated: {data.FileName}");
-            message = $"Resource '{data.FileName}' saved.";
+            State.Diagnostics.Add($"Resource updated: {fullPath}");
+            message = $"Resource '{fullPath}' saved.";
         }
         catch (Exception ex)
         {
