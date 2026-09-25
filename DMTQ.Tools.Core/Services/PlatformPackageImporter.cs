@@ -162,6 +162,8 @@ public sealed class PlatformPackageImporter
                 }
             }
 
+            ResetImportedEntityTables(platformTables, csvEntries);
+
             // ── Phase 1: import standalone entity tables ──
             ImportEntityTablesPhase1(platformTables, csvEntries, cancellationToken);
 
@@ -284,6 +286,12 @@ public sealed class PlatformPackageImporter
         List<CsvImportEntry> entries,
         CancellationToken cancellationToken)
     {
+        if (entries.Any(entry => entry.TableName.Equals("song_songPattern", StringComparison.OrdinalIgnoreCase)))
+        {
+            foreach (var song in tables.Songs)
+                song.Patterns.Clear();
+        }
+
         var songDict = tables.Songs.ToDictionary(s => s.Id);
         var hasPatterns = false;
 
@@ -313,6 +321,9 @@ public sealed class PlatformPackageImporter
                 var schema = new SongDescCsvSchema(lang);
                 using var stream = File.OpenRead(entry.FilePath);
                 var localizations = schema.ReadCsv(stream, throwOnMissingColumn: false);
+
+                foreach (var song in tables.Songs)
+                    song.Localizations.Remove(lang);
 
                 foreach (var loc in localizations)
                 {
@@ -380,6 +391,12 @@ public sealed class PlatformPackageImporter
         List<CsvImportEntry> entries,
         CancellationToken cancellationToken)
     {
+        if (entries.Any(entry => entry.TableName.Equals("category_categoryproduct", StringComparison.OrdinalIgnoreCase)))
+        {
+            foreach (var product in tables.Products)
+                product.CategoryIds.Clear();
+        }
+
         var achievementDict = tables.Achievements.ToDictionary(a => a.Id, StringComparer.OrdinalIgnoreCase);
         var questDict = tables.Quests.ToDictionary(q => q.Id, StringComparer.OrdinalIgnoreCase);
         var productDict = tables.Products.ToDictionary(p => p.Id, StringComparer.OrdinalIgnoreCase);
@@ -452,11 +469,6 @@ public sealed class PlatformPackageImporter
         IEnumerable<CsvImportEntry> entries,
         CancellationToken cancellationToken)
     {
-        if (package.SlangEntries.Count > 0)
-        {
-            return;
-        }
-
         var slangEntry = entries.FirstOrDefault(entry =>
             entry.TableName.Equals("slang", StringComparison.OrdinalIgnoreCase));
         if (slangEntry is null)
@@ -466,6 +478,7 @@ public sealed class PlatformPackageImporter
 
         cancellationToken.ThrowIfCancellationRequested();
         using var stream = File.OpenRead(slangEntry.FilePath);
+        package.SlangEntries.Clear();
         package.SlangEntries.AddRange(new SlangCsvSchema().ReadCsv(stream));
     }
 
@@ -473,17 +486,26 @@ public sealed class PlatformPackageImporter
         PatchPackage package,
         PlatformTableData tables)
     {
-        if (package.Songs.Count != 0
+        var isSoleImportedPlatform = package.PlatformTables.Count == 1
+                                     && package.PlatformTables.ContainsValue(tables);
+        if (!isSoleImportedPlatform && (package.Songs.Count != 0
             || package.Achievements.Count != 0
             || package.Quests.Count != 0
             || package.Products.Count != 0
             || package.Items.Count != 0
             || package.IngameItems.Count != 0
-            || package.IngameItemEffects.Count != 0)
+            || package.IngameItemEffects.Count != 0))
         {
             return;
         }
 
+        package.Songs.Clear();
+        package.Achievements.Clear();
+        package.Quests.Clear();
+        package.Products.Clear();
+        package.Items.Clear();
+        package.IngameItems.Clear();
+        package.IngameItemEffects.Clear();
         package.Songs.AddRange(tables.Songs);
         package.Achievements.AddRange(tables.Achievements);
         package.Quests.AddRange(tables.Quests);
@@ -491,6 +513,21 @@ public sealed class PlatformPackageImporter
         package.Items.AddRange(tables.Items);
         package.IngameItems.AddRange(tables.IngameItems);
         package.IngameItemEffects.AddRange(tables.IngameItemEffects);
+    }
+
+    private static void ResetImportedEntityTables(PlatformTableData tables, IReadOnlyCollection<CsvImportEntry> entries)
+    {
+        if (ContainsTable("song_song")) tables.Songs.Clear();
+        if (ContainsTable("quest_achievement")) tables.Achievements.Clear();
+        if (entries.Any(entry => entry.TableName.StartsWith("quest_desc_", StringComparison.OrdinalIgnoreCase)))
+            tables.Quests.Clear();
+        if (ContainsTable("product_product")) tables.Products.Clear();
+        if (ContainsTable("product_item")) tables.Items.Clear();
+        if (ContainsTable("ingameitem_ingameitem")) tables.IngameItems.Clear();
+        if (ContainsTable("ingameitem_itemeffect")) tables.IngameItemEffects.Clear();
+
+        bool ContainsTable(string tableName)
+            => entries.Any(entry => entry.TableName.Equals(tableName, StringComparison.OrdinalIgnoreCase));
     }
 
     // ── Schema helpers ──

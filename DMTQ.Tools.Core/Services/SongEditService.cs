@@ -45,6 +45,32 @@ public sealed class SongEditService
         songs.Add(CreateDraft(song));
     }
 
+    /// <summary>Adds a song and its required linked game item as one operation.</summary>
+    /// <param name="package">The project package that owns the platform tables.</param>
+    /// <param name="song">The song row and any patterns created with it.</param>
+    /// <param name="item">The game item data linked by the song's item ID.</param>
+    /// <param name="platform">The platform whose tables receive the new rows.</param>
+    public void AddSongWithItem(PatchPackage package, Song song, Item item, string? platform = null)
+    {
+        ArgumentNullException.ThrowIfNull(package);
+        ArgumentNullException.ThrowIfNull(song);
+        ArgumentNullException.ThrowIfNull(item);
+
+        var tables = package.GetPlatformTables(platform);
+        if (tables.Songs.Any(existing => existing.Id == song.Id))
+            throw new InvalidOperationException($"Song '{song.Id}' already exists.");
+        var itemId = song.ItemId.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        if (!string.IsNullOrWhiteSpace(item.Id) && !item.Id.Equals(itemId, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("The linked game item ID must match the song's Item ID.");
+        if (tables.Items.Any(existing => existing.Id.Equals(itemId, StringComparison.OrdinalIgnoreCase)))
+            throw new InvalidOperationException($"Item '{itemId}' already exists.");
+
+        var songDraft = CreateDraft(song);
+
+        tables.Items.Add(ItemEditService.CloneItem(item, itemId));
+        tables.Songs.Add(songDraft);
+    }
+
     public void UpdatePattern(PatchPackage package, int songId, int patternId,
         SongPattern pattern)
     {
@@ -176,14 +202,14 @@ public sealed class SongEditService
         }
 
         target.Patterns.Clear();
-        target.Patterns.AddRange(source.Patterns.Select(ClonePattern));
+        target.Patterns.AddRange(source.Patterns.Select(pattern => ClonePattern(pattern, target.Id)));
     }
 
-    private static SongPattern ClonePattern(SongPattern source)
+    private static SongPattern ClonePattern(SongPattern source, int? songId = null)
         => new()
         {
             PatternId = source.PatternId,
-            SongId = source.SongId,
+            SongId = songId ?? source.SongId,
             Name = source.Name,
             Line = source.Line,
             Signature = source.Signature,

@@ -83,9 +83,15 @@
                    Row 2: Link ID (full width)
                    ════════════════════════════════════════════ *@
                 <section>
-                    <h2 class="section-heading">Link ID</h2>
-                    <FluentNumberField style="width: 100%;" @bind-Value="currentSong!.ItemId" Label="Item ID" />
+                    <h2 class="section-heading">@L["Editor.GameItemLink"]</h2>
+                    <p class="section-hint">@L["Editor.SongItemHint"]</p>
+                    <FluentNumberField style="width: 100%;" @bind-Value="linkedItemId" Label='@L["Fields.GameItemId"]' Required="@IsCreate" />
                 </section>
+
+                @if (IsCreate && linkedItemDraft is not null)
+                {
+                    <ItemDataFields Content="@linkedItemDraft" />
+                }
 
                 @* ════════════════════════════════════════════
                    Row 3: Descriptions (multi-language, full width)
@@ -204,10 +210,12 @@
     private bool IsCreate => SongId == "new";
     private Song? currentSong;
     private string songIdInput = string.Empty;
+    private bool linkedItemIdWasEdited;
     private string message = string.Empty;
     private string errorMessage = string.Empty;
     private bool isBusy;
     private bool _syncOriginalText;
+    private Item? linkedItemDraft;
 
     private bool syncOriginalText
     {
@@ -238,6 +246,19 @@
     // Numeric wrappers (int? ↔ int)
     private int? costPoint { get => currentSong?.CostGamePoint; set { if (currentSong is not null && value.HasValue) currentSong.CostGamePoint = value.Value; } }
     private int? costCash { get => currentSong?.CostGameCash; set { if (currentSong is not null && value.HasValue) currentSong.CostGameCash = value.Value; } }
+
+    private int? linkedItemId
+    {
+        get => linkedItemIdWasEdited || !IsCreate
+            ? currentSong?.ItemId
+            : int.TryParse(songIdInput, out var songId) ? songId : null;
+        set
+        {
+            if (currentSong is null || !value.HasValue) return;
+            currentSong.ItemId = value.Value;
+            linkedItemIdWasEdited = true;
+        }
+    }
 
     private PatchPackage? _lastPackage;
     private string? _lastPlatform;
@@ -272,6 +293,18 @@
         if (IsCreate)
         {
             currentSong ??= new Song { Id = 0 };
+            linkedItemDraft ??= new Item
+            {
+                Id = string.Empty,
+                ItemType = "S",
+                RepeatCount = "0",
+                LimitMinute = "0",
+                Status = "N",
+                BuyLevel = "0",
+                BuyLimitCount = "1",
+                BuyLimitType = "F",
+                Update = "0"
+            };
         }
         else if (int.TryParse(SongId, out var id) && currentSong?.Id != id)
         {
@@ -336,8 +369,16 @@
                     errorMessage = L["Editor.SongIdRequired"].Value;
                     return;
                 }
-                var song = SongEditSvc.CreateDraft(currentSong!, newId);
-                SongEditSvc.AddSong(State.CurrentPackage, song, State.SelectedExportPlatform);
+                var linkedId = linkedItemId;
+                if (!linkedId.HasValue || linkedId.Value < 1)
+                {
+                    errorMessage = L["Editor.SongItemIdRequired"].Value;
+                    return;
+                }
+                currentSong!.ItemId = linkedId.Value;
+                var song = SongEditSvc.CreateDraft(currentSong, newId);
+                SongEditSvc.AddSongWithItem(State.CurrentPackage, song, linkedItemDraft!, State.SelectedExportPlatform);
+                await Workflow.SaveProjectAsync();
                 State.Diagnostics.Add($"Song added: {song.Id}");
                 _lastPackage = null;
                 Navigation.NavigateTo($"/songs/editor/{song.Id}");
@@ -365,7 +406,12 @@
     {
         if (currentSong is null) return;
 
-        var pattern = new SongPattern { PatternId = 0, SongId = currentSong.Id };
+        var nextPatternId = Catalog.SelectMany(song => song.Patterns)
+            .Concat(currentSong.Patterns)
+            .Select(pattern => pattern.PatternId)
+            .DefaultIfEmpty(0)
+            .Max() + 1;
+        var pattern = new SongPattern { PatternId = nextPatternId, SongId = currentSong.Id };
 
         var dialog = await DialogService.ShowDialogAsync<PatternDialog, SongPattern>(
             pattern,
@@ -386,9 +432,17 @@
         {
             isBusy = true;
             SongEditSvc.AddPattern(currentSong, pattern);
-            await Workflow.SaveProjectAsync();
+            if (IsCreate)
+            {
+                message = L["Editor.PatternDraftSavedWithSong"].Value;
+            }
+            else
+            {
+                SongEditSvc.UpdateSong(State.CurrentPackage!, currentSong, State.SelectedExportPlatform);
+                await Workflow.SaveProjectAsync();
+                message = L["Editor.Saved", L["Editor.Patterns"].Value].Value;
+            }
             _lastPackage = null;
-            message = L["Editor.Saved", L["Editor.Patterns"].Value].Value;
             State.Diagnostics.Add($"Pattern added: {pattern.PatternId}");
         }
         catch (Exception ex)
@@ -438,6 +492,12 @@
         {
             isBusy = true;
             SongEditSvc.UpdatePattern(currentSong, pattern.PatternId, clone);
+            if (IsCreate)
+            {
+                message = L["Editor.PatternDraftSavedWithSong"].Value;
+                return;
+            }
+            SongEditSvc.UpdateSong(State.CurrentPackage!, currentSong, State.SelectedExportPlatform);
             await Workflow.SaveProjectAsync();
             _lastPackage = null;
             message = L["Editor.Saved", L["Editor.Patterns"].Value].Value;
@@ -468,6 +528,12 @@
         try
         {
             SongEditSvc.RemovePattern(currentSong, pattern.PatternId);
+            if (IsCreate)
+            {
+                message = L["Editor.PatternDraftSavedWithSong"].Value;
+                return;
+            }
+            SongEditSvc.UpdateSong(State.CurrentPackage!, currentSong, State.SelectedExportPlatform);
             await Workflow.SaveProjectAsync();
             _lastPackage = null;
             message = L["Lists.Deleted", L["Editor.Patterns"].Value, pattern.PatternId].Value;

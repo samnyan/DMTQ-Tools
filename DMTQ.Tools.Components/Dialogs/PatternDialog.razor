@@ -13,16 +13,16 @@
                              Disabled="@(originalId is not null)" Required />
         </FluentGridItem>
         <FluentGridItem xs="12" sm="6">
-            <FluentNumberField @bind-Value="Content.Line" Label="Line" Placeholder="2Line/3Line/4Line" />
+            <FluentSelect Items="LineOptions" @bind-SelectedOption="selectedLine" Label='@L["Fields.ChartLine"]' />
         </FluentGridItem>
         <FluentGridItem xs="12" sm="6">
-            <FluentNumberField @bind-Value="Content.Signature" Label="Difficulty" Placeholder="0/1/2/3" />
+            <FluentSelect Items="SignatureOptions" @bind-SelectedOption="selectedSignature" Label='@L["Fields.ChartDifficulty"]' />
         </FluentGridItem>
         <FluentGridItem xs="12" sm="6">
-            <FluentNumberField @bind-Value="Content.Difficulty" Label="Stars" />
+            <FluentNumberField @bind-Value="Content.Difficulty" Label='@L["Fields.StarRating"]' />
         </FluentGridItem>
         <FluentGridItem xs="12" sm="6">
-            <FluentNumberField @bind-Value="Content.PointType" Label="Point Type" />
+            <FluentSelect Items="PointTypeOptions" @bind-SelectedOption="selectedPointType" Label='@L["Fields.PointType"]' />
         </FluentGridItem>
         <FluentGridItem xs="12" sm="6">
             <FluentNumberField @bind-Value="Content.PointValue" Label="Point Value" />
@@ -43,6 +43,32 @@
 
     private int? originalId;
 
+    private string[] LineOptions =>
+        IncludeExisting([$"2 — {L["Options.PatternLine2"].Value}", $"3 — {L["Options.PatternLine3"].Value}", $"4 — {L["Options.PatternLine4"].Value}"], Content.Line);
+    private string[] SignatureOptions =>
+        IncludeExisting([$"0 — {L["Options.PatternEasy"].Value}", $"1 — {L["Options.PatternNormal"].Value}",
+            $"2 — {L["Options.PatternHard"].Value}", $"3 — {L["Options.PatternExpert"].Value}"], Content.Signature);
+    private string[] PointTypeOptions =>
+        IncludeExisting([$"0 — {L["Options.PointNone"].Value}", $"1 — {L["Options.PointMax"].Value}", $"2 — {L["Options.PointQ"].Value}"], Content.PointType);
+
+    private string selectedLine
+    {
+        get => GetOption(LineOptions, Content.Line);
+        set => Content.Line = GetCode(value);
+    }
+
+    private string selectedSignature
+    {
+        get => GetOption(SignatureOptions, Content.Signature);
+        set => Content.Signature = GetCode(value);
+    }
+
+    private string selectedPointType
+    {
+        get => GetOption(PointTypeOptions, Content.PointType);
+        set => Content.PointType = GetCode(value);
+    }
+
     private bool flgChecked
     {
         get => Content.Flg == "Y";
@@ -54,4 +80,16 @@
         if (Content.PatternId > 0)
             originalId = Content.PatternId;
     }
+
+    private string GetOption(IReadOnlyList<string> knownOptions, int value)
+        => knownOptions.FirstOrDefault(option => GetCode(option) == value)
+           ?? $"{value} — {L["Fields.ExistingValue"].Value}";
+
+    private string[] IncludeExisting(string[] options, int value)
+        => options.Any(option => GetCode(option) == value)
+            ? options
+            : [.. options, GetOption(options, value)];
+
+    private static int GetCode(string? option)
+        => int.TryParse(option?.Split(" — ", 2)[0], out var value) ? value : 0;
 }

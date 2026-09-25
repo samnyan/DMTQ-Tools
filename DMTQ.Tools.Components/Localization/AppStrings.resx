@@ -238,7 +238,7 @@
   <data name="Fields.EffectSpecial" xml:space="preserve"><value>Effect special</value></data>
   <data name="Fields.SlangValue" xml:space="preserve"><value>Blocked word or phrase</value></data>
   <data name="Editor.ProductCategories" xml:space="preserve"><value>Product categories</value></data>
-  <data name="Editor.ProductCategoriesHint" xml:space="preserve"><value>Edits category_categoryproduct.csv links for this product.</value></data>
+  <data name="Editor.ProductCategoriesHint" xml:space="preserve"><value>Links this product to category IDs in category_categoryproduct.csv. A product can belong to more than one category.</value></data>
   <data name="Editor.IngameConfigurations" xml:space="preserve"><value>In-game configurations</value></data>
   <data name="Editor.IngameConfigurationsHint" xml:space="preserve"><value>Rows linked by product_id in ingameitem_ingameitem.csv.</value></data>
   <data name="Editor.AddConfiguration" xml:space="preserve"><value>Add configuration</value></data>
@@ -265,4 +265,47 @@
   <data name="Editor.NewSlang" xml:space="preserve"><value>New slang entry</value></data>
   <data name="Editor.SlangEntry" xml:space="preserve"><value>Slang entry</value></data>
   <data name="Editor.SlangHint" xml:space="preserve"><value>The exporter preserves the trailing empty column required by current patches.</value></data>
+  <data name="Fields.ItemName" xml:space="preserve"><value>Item name</value></data>
+  <data name="Fields.ItemId" xml:space="preserve"><value>Item ID</value></data>
+  <data name="Fields.ImageUrl1" xml:space="preserve"><value>Image URL 1</value></data>
+  <data name="Fields.ImageUrl2" xml:space="preserve"><value>Image URL 2</value></data>
+  <data name="Fields.Summary" xml:space="preserve"><value>Summary</value></data>
+  <data name="Fields.RepeatCount" xml:space="preserve"><value>Repeat count</value></data>
+  <data name="Fields.LimitMinute" xml:space="preserve"><value>Limit duration (minutes)</value></data>
+  <data name="Fields.Status" xml:space="preserve"><value>Status code</value></data>
+  <data name="Fields.BuyLevel" xml:space="preserve"><value>Required level</value></data>
+  <data name="Fields.BuyLimitCount" xml:space="preserve"><value>Purchase limit count</value></data>
+  <data name="Fields.BuyLimitType" xml:space="preserve"><value>Purchase limit type code</value></data>
+  <data name="Fields.GameItemId" xml:space="preserve"><value>Linked game item ID</value></data>
+  <data name="Fields.ChartLine" xml:space="preserve"><value>Chart line count</value></data>
+  <data name="Fields.ChartDifficulty" xml:space="preserve"><value>Chart difficulty</value></data>
+  <data name="Fields.StarRating" xml:space="preserve"><value>Star rating</value></data>
+  <data name="Fields.PointType" xml:space="preserve"><value>Play reward type</value></data>
+  <data name="Fields.ExistingValue" xml:space="preserve"><value>Existing value</value></data>
+  <data name="Editor.CopyBaseToLanguages" xml:space="preserve"><value>Copy base values to all languages</value></data>
+  <data name="Editor.GameItemLink" xml:space="preserve"><value>Linked game item</value></data>
+  <data name="Editor.SongItemHint" xml:space="preserve"><value>A song references its game item through song_song.item_id. The matching product_item row is created and saved with this song; store product IDs are configured separately when needed.</value></data>
+  <data name="Editor.SongItemIdRequired" xml:space="preserve"><value>Enter a positive game item ID so the song can link to its required item.</value></data>
+  <data name="Editor.PatternDraftSavedWithSong" xml:space="preserve"><value>Pattern changes are part of this unsaved song and will be saved with it.</value></data>
+  <data name="Editor.CategoryIdExplanation" xml:space="preserve"><value>Category IDs are supplied by the game server. This CSV stores only the ID and product link, not category names. Existing IDs come from imported rows; add a custom ID only when you know the server value.</value></data>
+  <data name="Options.ItemTypeMusic" xml:space="preserve"><value>Music</value></data>
+  <data name="Options.ItemTypeNoteSkin" xml:space="preserve"><value>Note skin</value></data>
+  <data name="Options.ItemTypeStatusBarSkin" xml:space="preserve"><value>Status bar skin</value></data>
+  <data name="Options.ItemTypePartner" xml:space="preserve"><value>Partner</value></data>
+  <data name="Options.ItemTypeAddOn" xml:space="preserve"><value>Add-on</value></data>
+  <data name="Options.ItemTypeMaxPoint" xml:space="preserve"><value>MAX point</value></data>
+  <data name="Options.ItemTypeQPoint" xml:space="preserve"><value>Q point</value></data>
+  <data name="Options.ItemTypeUnlock" xml:space="preserve"><value>Unlock</value></data>
+  <data name="Options.ItemTypeIngame" xml:space="preserve"><value>In-game</value></data>
+  <data name="Options.ItemTypeMusicPack" xml:space="preserve"><value>Music pack</value></data>
+  <data name="Options.PatternLine2" xml:space="preserve"><value>2 lines</value></data>
+  <data name="Options.PatternLine3" xml:space="preserve"><value>3 lines</value></data>
+  <data name="Options.PatternLine4" xml:space="preserve"><value>4 lines</value></data>
+  <data name="Options.PatternEasy" xml:space="preserve"><value>Easy</value></data>
+  <data name="Options.PatternNormal" xml:space="preserve"><value>Normal</value></data>
+  <data name="Options.PatternHard" xml:space="preserve"><value>Hard</value></data>
+  <data name="Options.PatternExpert" xml:space="preserve"><value>Expert</value></data>
+  <data name="Options.PointNone" xml:space="preserve"><value>No reward</value></data>
+  <data name="Options.PointMax" xml:space="preserve"><value>MAX point</value></data>
+  <data name="Options.PointQ" xml:space="preserve"><value>Q point</value></data>
 </root>

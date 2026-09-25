@@ -1,0 +1,118 @@
+@using DMTQ.Tools.Core.Models.Entity
+
+<section>
+    <h2 class="section-heading">@L["Editor.ItemInformation"]</h2>
+    <FluentGrid Spacing="3">
+        @if (ShowItemId)
+        {
+            <FluentGridItem xs="12" md="6">
+                <FluentTextField style="width: 100%;" Value="@ItemId" ValueChanged="ItemIdChanged" Label='@L["Fields.ItemId"]' Required="@IsItemIdRequired" ReadOnly="@IsItemIdReadOnly" />
+            </FluentGridItem>
+        }
+        <FluentGridItem xs="12" md="6">
+            <FluentTextField style="width: 100%;" @bind-Value="itemName" Label='@L["Fields.ItemName"]' Immediate="true" />
+        </FluentGridItem>
+        <FluentGridItem xs="12" md="6">
+            <FluentTextField style="width: 100%;" @bind-Value="Content.ImgUrl1" Label='@L["Fields.ImageUrl1"]' />
+        </FluentGridItem>
+        <FluentGridItem xs="12" md="6">
+            <FluentTextField style="width: 100%;" @bind-Value="Content.ImgUrl2" Label='@L["Fields.ImageUrl2"]' />
+        </FluentGridItem>
+        <FluentGridItem xs="12" md="6">
+            <FluentTextField style="width: 100%;" @bind-Value="itemDescription" Label='@L["Fields.Description"]' Immediate="true" />
+        </FluentGridItem>
+        <FluentGridItem xs="12" md="6">
+            <FluentTextField style="width: 100%;" @bind-Value="itemSummary" Label='@L["Fields.Summary"]' Immediate="true" />
+        </FluentGridItem>
+        <FluentGridItem xs="12" md="4">
+            <FluentTextField style="width: 100%;" @bind-Value="Content.RepeatCount" Label='@L["Fields.RepeatCount"]' />
+        </FluentGridItem>
+        <FluentGridItem xs="12" md="4">
+            <FluentSelect Items="ItemTypeOptions" @bind-SelectedOption="selectedItemType" Label='@L["Fields.ItemType"]' />
+        </FluentGridItem>
+        <FluentGridItem xs="12" md="4">
+            <FluentTextField style="width: 100%;" @bind-Value="Content.LimitMinute" Label='@L["Fields.LimitMinute"]' />
+        </FluentGridItem>
+        <FluentGridItem xs="12" md="4">
+            <FluentTextField style="width: 100%;" @bind-Value="Content.Status" Label='@L["Fields.Status"]' />
+        </FluentGridItem>
+        <FluentGridItem xs="12" md="4">
+            <FluentTextField style="width: 100%;" @bind-Value="Content.BuyLevel" Label='@L["Fields.BuyLevel"]' />
+        </FluentGridItem>
+        <FluentGridItem xs="12" md="4">
+            <FluentTextField style="width: 100%;" @bind-Value="Content.BuyLimitCount" Label='@L["Fields.BuyLimitCount"]' />
+        </FluentGridItem>
+        <FluentGridItem xs="12" md="6">
+            <FluentTextField style="width: 100%;" @bind-Value="Content.BuyLimitType" Label='@L["Fields.BuyLimitType"]' />
+        </FluentGridItem>
+        <FluentGridItem xs="12" md="6">
+            <FluentTextField style="width: 100%;" @bind-Value="Content.Update" Label='@L["Fields.Update"]' />
+        </FluentGridItem>
+    </FluentGrid>
+</section>
+
+<LocalizedItemFields @ref="localizedFields" Content="@Content" />
+
+@code {
+    private string[] ItemTypeOptions
+    {
+        get
+        {
+            var options = new[]
+            {
+                "", $"S — {L["Options.ItemTypeMusic"].Value}", $"N — {L["Options.ItemTypeNoteSkin"].Value}",
+            $"K — {L["Options.ItemTypeStatusBarSkin"].Value}", $"C — {L["Options.ItemTypePartner"].Value}",
+            $"F — {L["Options.ItemTypeAddOn"].Value}", $"M — {L["Options.ItemTypeMaxPoint"].Value}",
+            $"Q — {L["Options.ItemTypeQPoint"].Value}", $"T — {L["Options.ItemTypeUnlock"].Value}",
+                $"I — {L["Options.ItemTypeIngame"].Value}", $"P — {L["Options.ItemTypeMusicPack"].Value}"
+            };
+            return string.IsNullOrWhiteSpace(Content.ItemType)
+                   || options.Any(option => option.StartsWith(Content.ItemType + " — ", StringComparison.OrdinalIgnoreCase))
+                ? options
+                : [.. options, $"{Content.ItemType} — {L["Fields.ExistingValue"].Value}"];
+        }
+    }
+
+    [Parameter, EditorRequired] public Item Content { get; set; } = default!;
+    [Parameter] public bool ShowItemId { get; set; }
+    [Parameter] public string ItemId { get; set; } = string.Empty;
+    [Parameter] public EventCallback<string> ItemIdChanged { get; set; }
+    [Parameter] public bool IsItemIdReadOnly { get; set; }
+    [Parameter] public bool IsItemIdRequired { get; set; }
+
+    private LocalizedItemFields? localizedFields;
+
+    private string itemName
+    {
+        get => Content.ItemName;
+        set => SetBaseField(item => item.ItemName = value);
+    }
+
+    private string itemDescription
+    {
+        get => Content.Description;
+        set => SetBaseField(item => item.Description = value);
+    }
+
+    private string itemSummary
+    {
+        get => Content.Summary;
+        set => SetBaseField(item => item.Summary = value);
+    }
+
+    private string selectedItemType
+    {
+        get => string.IsNullOrWhiteSpace(Content.ItemType)
+            ? string.Empty
+            : ItemTypeOptions.FirstOrDefault(option => option.StartsWith(Content.ItemType + " — ", StringComparison.OrdinalIgnoreCase))
+              ?? Content.ItemType;
+        set => Content.ItemType = value.Split(" — ", 2)[0];
+    }
+
+    private void SetBaseField(Action<Item> update)
+    {
+        update(Content);
+        if (localizedFields?.IsSyncOriginalText == true)
+            localizedFields.CopyBaseToAllLanguages();
+    }
+}

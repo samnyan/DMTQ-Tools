@@ -42,7 +42,12 @@ public sealed class ItemEditService
     {
         ArgumentNullException.ThrowIfNull(source);
 
-        var draft = new Item { Id = id ?? source.Id };
+        return CloneItem(source, id ?? source.Id);
+    }
+
+    internal static Item CloneItem(Item source, string id)
+    {
+        var draft = new Item { Id = id };
         CopyItemData(source, draft);
         return draft;
     }

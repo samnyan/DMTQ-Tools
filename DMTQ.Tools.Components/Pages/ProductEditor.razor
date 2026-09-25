@@ -79,6 +79,7 @@
                 <section>
                     <h2 class="section-heading">@L["Editor.ProductCategories"]</h2>
                     <p class="section-hint">@L["Editor.ProductCategoriesHint"]</p>
+                    <p class="section-hint">@L["Editor.CategoryIdExplanation"]</p>
                     <div class="choice-grid">
                         @foreach (var categoryId in AvailableCategoryIds)
                         {
@@ -88,7 +89,7 @@
                         }
                     </div>
                     <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8" VerticalAlignment="VerticalAlignment.Center">
-                        <FluentTextField @bind-Value="newCategoryId" Label='@L["Fields.CategoryId"]' />
+                        <FluentNumberField @bind-Value="newCategoryId" Label='@L["Fields.CategoryId"]' />
                         <FluentButton Appearance="Appearance.Neutral" OnClick="AddCategory">@L["Common.Add"]</FluentButton>
                     </FluentStack>
                 </section>
@@ -148,7 +149,7 @@
     private string message = string.Empty;
     private string errorMessage = string.Empty;
     private bool isBusy;
-    private string newCategoryId = string.Empty;
+    private int? newCategoryId;
     private List<IngameItem> ingameItemDrafts = [];
 
     private IReadOnlyList<Product> Catalog =>
@@ -234,11 +235,11 @@
 
     private void AddCategory()
     {
-        if (currentProduct is null || string.IsNullOrWhiteSpace(newCategoryId)) return;
-        var categoryId = newCategoryId.Trim();
+        if (currentProduct is null || !newCategoryId.HasValue || newCategoryId.Value < 0) return;
+        var categoryId = newCategoryId.Value.ToString(System.Globalization.CultureInfo.InvariantCulture);
         if (!HasCategory(categoryId))
             currentProduct.CategoryIds.Add(categoryId);
-        newCategoryId = string.Empty;
+        newCategoryId = null;
     }
 
     private void AddIngameItem()

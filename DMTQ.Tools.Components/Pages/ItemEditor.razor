@@ -24,60 +24,12 @@
     {
         <EditForm Model="@currentItem" OnValidSubmit="SaveAsync" FormName="item-editor">
             <FluentStack Orientation="Orientation.Vertical" VerticalGap="24" HorizontalAlignment="HorizontalAlignment.Stretch">
-                <section>
-                    <h2 class="section-heading">@L["Editor.ItemInformation"]</h2>
-                    <FluentGrid Spacing="3">
-                        <FluentGridItem xs="12" md="6">
-                            @if (IsCreate)
-                            {
-                                <FluentTextField style="width: 100%;" @bind-Value="itemIdInput" Label="Item ID *" Placeholder="e.g. ITEM_001" Required />
-                            }
-                            else
-                            {
-                                <FluentTextField style="width: 100%;" Value="@(currentItem?.Id ?? string.Empty)" Label="Item ID" ReadOnly="true" />
-                            }
-                        </FluentGridItem>
-                        <FluentGridItem xs="12" md="6">
-                            <FluentTextField style="width: 100%;" @bind-Value="itemName" Label="Item Name" Immediate="true" />
-                        </FluentGridItem>
-                        <FluentGridItem xs="12" md="6">
-                            <FluentTextField style="width: 100%;" @bind-Value="currentItem!.ImgUrl1" Label="Image URL 1" />
-                        </FluentGridItem>
-                        <FluentGridItem xs="12" md="6">
-                            <FluentTextField style="width: 100%;" @bind-Value="currentItem!.ImgUrl2" Label="Image URL 2" />
-                        </FluentGridItem>
-                        <FluentGridItem xs="12" md="6">
-                            <FluentTextField style="width: 100%;" @bind-Value="itemDescription" Label="Description" Immediate="true" />
-                        </FluentGridItem>
-                        <FluentGridItem xs="12" md="6">
-                            <FluentTextField style="width: 100%;" @bind-Value="itemSummary" Label="Summary" Immediate="true" />
-                        </FluentGridItem>
-                        <FluentGridItem xs="12" md="4">
-                            <FluentTextField style="width: 100%;" @bind-Value="currentItem!.RepeatCount" Label="Repeat Count" />
-                        </FluentGridItem>
-                        <FluentGridItem xs="12" md="4">
-                            <FluentTextField style="width: 100%;" @bind-Value="currentItem!.ItemType" Label="Item Type" />
-                        </FluentGridItem>
-                        <FluentGridItem xs="12" md="4">
-                            <FluentTextField style="width: 100%;" @bind-Value="currentItem!.LimitMinute" Label="Limit Minute" />
-                        </FluentGridItem>
-                        <FluentGridItem xs="12" md="4">
-                            <FluentTextField style="width: 100%;" @bind-Value="currentItem!.Status" Label="Status" />
-                        </FluentGridItem>
-                        <FluentGridItem xs="12" md="4">
-                            <FluentTextField style="width: 100%;" @bind-Value="currentItem!.BuyLevel" Label="Buy Level" />
-                        </FluentGridItem>
-                        <FluentGridItem xs="12" md="4">
-                            <FluentTextField style="width: 100%;" @bind-Value="currentItem!.BuyLimitCount" Label="Buy Limit Count" />
-                        </FluentGridItem>
-                        <FluentGridItem xs="12" md="6">
-                            <FluentTextField style="width: 100%;" @bind-Value="currentItem!.BuyLimitType" Label="Buy Limit Type" />
-                        </FluentGridItem>
-                        <FluentGridItem xs="12" md="6">
-                            <FluentTextField style="width: 100%;" @bind-Value="currentItem!.Update" Label="Update" />
-                        </FluentGridItem>
-                    </FluentGrid>
-                </section>
+                <ItemDataFields Content="@(currentItem!)"
+                                ShowItemId="true"
+                                ItemId="@(IsCreate ? itemIdInput : currentItem!.Id)"
+                                ItemIdChanged="@(value => itemIdInput = value)"
+                                IsItemIdReadOnly="@(!IsCreate)"
+                                IsItemIdRequired="@IsCreate" />
 
                 <section>
                     <div class="section-title-row">
@@ -112,35 +64,6 @@
                     }
                 </section>
 
-                <section>
-                    <div class="section-title-row">
-                        <div>
-                            <h2 class="section-heading">@L["Editor.LocalizedDescriptions"]</h2>
-                            <p class="section-hint">@L["Editor.ItemDescriptionsHint"]</p>
-                        </div>
-                        <FluentSwitch @bind-Value="syncOriginalText" Label='@L["Editor.SyncOriginalText"]' />
-                    </div>
-                    <FluentStack Orientation="Orientation.Vertical" VerticalGap="16" HorizontalAlignment="HorizontalAlignment.Stretch">
-                        @foreach (var language in DefaultLanguages)
-                        {
-                            <div>
-                                <h3 class="lang-heading">@language</h3>
-                                <FluentGrid Spacing="2">
-                                    <FluentGridItem xs="12" md="4">
-                                        <FluentTextField style="width: 100%;" @bind-Value="currentItem!.NamesByLanguage[language]" Label="Name" />
-                                    </FluentGridItem>
-                                    <FluentGridItem xs="12" md="4">
-                                        <FluentTextField style="width: 100%;" @bind-Value="currentItem!.DescriptionsByLanguage[language]" Label="Description" />
-                                    </FluentGridItem>
-                                    <FluentGridItem xs="12" md="4">
-                                        <FluentTextField style="width: 100%;" @bind-Value="currentItem!.SummariesByLanguage[language]" Label="Summary" />
-                                    </FluentGridItem>
-                                </FluentGrid>
-                            </div>
-                        }
-                    </FluentStack>
-                </section>
-
                 <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8" VerticalAlignment="VerticalAlignment.Center">
                     <FluentButton Appearance="Appearance.Accent" Type="ButtonType.Submit" Disabled="@isBusy">@L["Editor.SaveItem"]</FluentButton>
                     <FluentButton Appearance="Appearance.Neutral" OnClick="NavigateBack">@L["Common.Cancel"]</FluentButton>
@@ -161,7 +84,6 @@
 @code {
     [Parameter] public string ItemId { get; set; } = default!;
 
-    private static readonly string[] DefaultLanguages = ["CN", "JP", "KR", "TW", "US"];
     private bool IsCreate => ItemId.Equals("new", StringComparison.OrdinalIgnoreCase);
     private Item? currentItem;
     private string itemIdInput = string.Empty;
@@ -169,21 +91,6 @@
     private string errorMessage = string.Empty;
     private bool isBusy;
     private IngameItemEffect? effectDraft;
-    private bool _syncOriginalText;
-
-    private bool syncOriginalText
-    {
-        get => _syncOriginalText;
-        set
-        {
-            _syncOriginalText = value;
-            if (value) SyncOriginalToAllLanguages();
-        }
-    }
-
-    private string itemName { get => currentItem?.ItemName ?? string.Empty; set => SetOriginalField(item => item.ItemName = value); }
-    private string itemDescription { get => currentItem?.Description ?? string.Empty; set => SetOriginalField(item => item.Description = value); }
-    private string itemSummary { get => currentItem?.Summary ?? string.Empty; set => SetOriginalField(item => item.Summary = value); }
 
     private IReadOnlyList<Item> Catalog =>
         State.CurrentPackage is null ? [] : ItemCatalog.BuildCatalog(State.CurrentPackage, State.SelectedExportPlatform);
@@ -194,7 +101,6 @@
         {
             currentItem ??= new Item { Id = string.Empty };
             effectDraft = null;
-            EnsureLanguageFields(currentItem);
             return;
         }
 
@@ -204,38 +110,6 @@
         effectDraft = source is null || State.CurrentPackage is null
             ? null
             : ItemEditSvc.CreateEffectDraft(State.CurrentPackage, source.Id, State.SelectedExportPlatform);
-        if (currentItem is not null)
-            EnsureLanguageFields(currentItem);
-    }
-
-    private static void EnsureLanguageFields(Item item)
-    {
-        foreach (var language in DefaultLanguages)
-        {
-            item.NamesByLanguage.TryAdd(language, string.Empty);
-            item.DescriptionsByLanguage.TryAdd(language, string.Empty);
-            item.SummariesByLanguage.TryAdd(language, string.Empty);
-        }
-    }
-
-    private void SetOriginalField(Action<Item> update)
-    {
-        if (currentItem is null) return;
-        update(currentItem);
-        if (_syncOriginalText) SyncOriginalToAllLanguages();
-    }
-
-    private void SyncOriginalToAllLanguages()
-    {
-        if (currentItem is null) return;
-
-        EnsureLanguageFields(currentItem);
-        foreach (var language in DefaultLanguages)
-        {
-            currentItem.NamesByLanguage[language] = currentItem.ItemName;
-            currentItem.DescriptionsByLanguage[language] = currentItem.Description;
-            currentItem.SummariesByLanguage[language] = currentItem.Summary;
-        }
     }
 
     private void NavigateBack() => Navigation.NavigateTo("/items");
