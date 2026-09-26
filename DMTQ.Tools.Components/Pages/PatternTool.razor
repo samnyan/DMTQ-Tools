@@ -61,12 +61,27 @@
                 <FluentGridItem xs="12" sm="6" md="3">
                     <FluentCard><span class="metric-label">@L["Pattern.SourceFormat"]</span><strong>@FormatName(pattern.SourceFormat)</strong></FluentCard>
                 </FluentGridItem>
-                <FluentGridItem xs="12" sm="6" md="3">
-                    <FluentCard><span class="metric-label">@L["Pattern.Encrypted"]</span><strong>@(pattern.WasEncrypted ? L["Pattern.Yes"] : L["Pattern.No"])</strong></FluentCard>
-                </FluentGridItem>
-                <FluentGridItem xs="12" sm="6" md="3">
-                    <FluentCard><span class="metric-label">@L["Pattern.Version"]</span><strong>@pattern.Header.PtVersion</strong></FluentCard>
-                </FluentGridItem>
+                @if (pattern.SourceFormat == PatternFormat.Pt)
+                {
+                    <FluentGridItem xs="12" sm="6" md="3">
+                        <FluentCard><span class="metric-label">@L["Pattern.Encrypted"]</span><strong>@(pattern.WasEncrypted ? L["Pattern.Yes"] : L["Pattern.No"])</strong></FluentCard>
+                    </FluentGridItem>
+                    <FluentGridItem xs="12" sm="6" md="3">
+                        <FluentCard><span class="metric-label">@L["Pattern.Version"]</span><strong>@pattern.Header.PtVersion</strong></FluentCard>
+                    </FluentGridItem>
+                    <FluentGridItem xs="12" sm="6" md="3">
+                        <FluentCard><span class="metric-label">@L["Pattern.PtRawHeaderFieldB"]</span><strong>@pattern.Header.TagB</strong></FluentCard>
+                    </FluentGridItem>
+                }
+                @if (pattern.SourceFormat == PatternFormat.Bytes || pattern.Header.BytesTick != 0 || pattern.Header.BytesPlayTime != 0)
+                {
+                    <FluentGridItem xs="12" sm="6" md="3">
+                        <FluentCard><span class="metric-label">@L["Pattern.BytesTick"]</span><strong>@pattern.Header.BytesTick</strong></FluentCard>
+                    </FluentGridItem>
+                    <FluentGridItem xs="12" sm="6" md="3">
+                        <FluentCard><span class="metric-label">@L["Pattern.BytesPlayTime"]</span><strong>@pattern.Header.BytesPlayTime.ToString("0.###", CultureInfo.InvariantCulture)</strong></FluentCard>
+                    </FluentGridItem>
+                }
                 <FluentGridItem xs="12" sm="6" md="3">
                     <FluentCard><span class="metric-label">@L["Pattern.PositionsPerMeasure"]</span><strong>@pattern.Header.PositionsPerMeasure</strong></FluentCard>
                 </FluentGridItem>
@@ -84,12 +99,6 @@
                 </FluentGridItem>
                 <FluentGridItem xs="12" sm="6" md="3">
                     <FluentCard><span class="metric-label">@L["Pattern.Sounds"]</span><strong>@pattern.Sounds.Count</strong></FluentCard>
-                </FluentGridItem>
-                <FluentGridItem xs="12" sm="6" md="3">
-                    <FluentCard><span class="metric-label">@L["Pattern.TagB"]</span><strong>@pattern.Header.TagB</strong></FluentCard>
-                </FluentGridItem>
-                <FluentGridItem xs="12" sm="6" md="3">
-                    <FluentCard><span class="metric-label">@L["Pattern.TagC"]</span><strong>@pattern.Header.TagC</strong></FluentCard>
                 </FluentGridItem>
             </FluentGrid>
         </section>

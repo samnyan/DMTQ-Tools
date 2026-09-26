@@ -12,7 +12,8 @@ public sealed class PatternBinarySerializer
 {
     private const int BytesHeaderSize = 8;
     private const int BytesSoundEntrySize = 0x43;
-    private const int BytesTrackHeaderSize = 0x3D;
+    private const int BytesTrackHeaderSizeLegacy = 0x3D;
+    private const int BytesTrackHeaderSizeUnity = 74;
     private const int BytesCommandSize = 0x0D;
     private const int BytesInfoSize = 0x1A;
     private const int PtHeaderSize = 0x18;
@@ -167,10 +168,10 @@ public sealed class PatternBinarySerializer
         var trackCount = ReadNonNegativeCount(reader.ReadInt16(), "track");
         document.Header.PositionsPerMeasure = reader.ReadInt16();
         document.Header.InitialBpm = reader.ReadSingle();
-        document.Header.EndPosition = reader.ReadInt32();
-        document.Header.TagB = reader.ReadInt32();
-        document.Header.TagC = reader.ReadInt32();
-        document.Header.DeclaredCommandCount = reader.ReadInt32();
+        var fieldA = reader.ReadUInt32();
+        var fieldB = reader.ReadInt32();
+        var fieldC = reader.ReadUInt32();
+        var declaredCommandCount = reader.ReadUInt32();
 
         reader.Position = BytesHeaderSize;
         for (var i = 0; i < soundCount; i++)
@@ -184,9 +185,26 @@ public sealed class PatternBinarySerializer
             });
         }
 
+        var tracksStart = reader.Position;
+        if (TryReadUnityBytesTracks(reader, document, infoOffset, trackCount, declaredCommandCount))
+        {
+            document.Header.BytesTick = fieldA;
+            document.Header.BytesPlayTime = BitConverter.Int32BitsToSingle(fieldB);
+            document.Header.EndPosition = checked((int)fieldC);
+            document.Header.TagB = fieldB;
+            document.Header.TagC = checked((int)fieldC);
+            document.Header.DeclaredCommandCount = checked((int)declaredCommandCount);
+            return document;
+        }
+
+        document.Header.EndPosition = unchecked((int)fieldA);
+        document.Header.TagB = fieldB;
+        document.Header.TagC = unchecked((int)fieldC);
+        document.Header.DeclaredCommandCount = checked((int)declaredCommandCount);
+        reader.Position = tracksStart;
         while (reader.Position < infoOffset)
         {
-            EnsureRemaining(reader, BytesTrackHeaderSize + BytesCommandSize, "track");
+            EnsureRemaining(reader, BytesTrackHeaderSizeLegacy + BytesCommandSize, "track");
             var track = new PatternTrack
             {
                 Id = reader.ReadInt16(),
@@ -231,16 +249,105 @@ public sealed class PatternBinarySerializer
         return document;
     }
 
+    private static bool TryReadUnityBytesTracks(
+        PatternByteReader reader,
+        PatternDocument document,
+        int infoOffset,
+        int declaredTrackCount,
+        uint declaredCommandCount)
+    {
+        var tracksStart = reader.Position;
+        document.Tracks.Clear();
+
+        try
+        {
+            for (var trackIndex = 0; trackIndex < declaredTrackCount; trackIndex++)
+            {
+                if (infoOffset - reader.Position < BytesTrackHeaderSizeUnity)
+                {
+                    throw new InvalidDataException("Unity bytes track header is truncated.");
+                }
+
+                var track = new PatternTrack
+                {
+                    Id = checked((short)reader.ReadUInt16()),
+                    Name = reader.ReadFixedAscii(64),
+                    EndPosition = checked((int)reader.ReadUInt32())
+                };
+                var commandCount = reader.ReadUInt32();
+                var availableEvents = (infoOffset - reader.Position) / BytesCommandSize;
+                if (commandCount > availableEvents || commandCount > int.MaxValue)
+                {
+                    throw new InvalidDataException($"Invalid event count {commandCount} in Unity bytes track.");
+                }
+
+                track.DeclaredCommandCount = (int)commandCount;
+                for (var commandIndex = 0; commandIndex < track.DeclaredCommandCount; commandIndex++)
+                {
+                    track.Commands.Add(ReadFixedCommand(reader, padded: false));
+                }
+
+                track.StartPosition = track.Commands.Count == 0 ? 0 : track.Commands[0].Position;
+                document.Tracks.Add(track);
+            }
+
+            if (reader.Position != infoOffset ||
+                (declaredCommandCount != 0 && (uint)document.CommandCount != declaredCommandCount))
+            {
+                throw new InvalidDataException("Unity bytes tracks do not match the declared header data.");
+            }
+
+            return true;
+        }
+        catch (Exception exception) when (exception is InvalidDataException or OverflowException)
+        {
+            document.Tracks.Clear();
+            reader.Position = tracksStart;
+            return false;
+        }
+    }
+
     private static PatternDocument ReadPt(ReadOnlySpan<byte> sourceData)
     {
-        var data = sourceData.ToArray();
-        var wasEncrypted = data.Length > 0x18 && data[0x18] != 1;
-        if (wasEncrypted)
+        if (sourceData.Length < PtHeaderSize)
         {
-            data = PtCipher.Decrypt(data);
+            throw new InvalidDataException("PT pattern header is truncated.");
         }
 
-        var reader = new PatternByteReader(data);
+        if (Encoding.ASCII.GetString(sourceData[..4]) != "PTFF")
+        {
+            throw new InvalidDataException("PT pattern does not start with PTFF.");
+        }
+
+        var version = BinaryPrimitives.ReadInt16LittleEndian(sourceData[4..]);
+        if (!IsSupportedPtVersion(version))
+        {
+            throw new InvalidDataException($"Unsupported PT version {version}.");
+        }
+
+        try
+        {
+            return ReadPtData(sourceData, wasEncrypted: false);
+        }
+        catch (InvalidDataException plaintextError)
+        {
+            var decryptedData = PtCipher.Decrypt(sourceData);
+            try
+            {
+                return ReadPtData(decryptedData, wasEncrypted: true);
+            }
+            catch (InvalidDataException decryptedError)
+            {
+                throw new InvalidDataException(
+                    "PT pattern data could not be parsed.",
+                    new AggregateException(plaintextError, decryptedError));
+            }
+        }
+    }
+
+    private static PatternDocument ReadPtData(ReadOnlySpan<byte> data, bool wasEncrypted)
+    {
+        var reader = new PatternByteReader(data.ToArray());
         var document = new PatternDocument
         {
             SourceFormat = PatternFormat.Pt,
@@ -253,6 +360,11 @@ public sealed class PatternBinarySerializer
         }
 
         document.Header.PtVersion = reader.ReadInt16();
+        if (!IsSupportedPtVersion(document.Header.PtVersion))
+        {
+            throw new InvalidDataException($"Unsupported PT version {document.Header.PtVersion}.");
+        }
+
         var padded = IsPaddedPtVersion(document.Header.PtVersion);
         document.Header.PositionsPerMeasure = reader.ReadInt16();
         document.Header.InitialBpm = reader.ReadSingle();
@@ -333,20 +445,18 @@ public sealed class PatternBinarySerializer
 
         foreach (var sound in pattern.Sounds)
         {
-            EnsureByteSized(sound.Flags, "bytes sound flags");
             writer.WriteUInt16(sound.Id);
+            // Bytes stores a one-byte stream value while padded PT stores a 16-bit field.
             writer.WriteByte((byte)sound.Flags);
             writer.WriteFixedAscii(sound.FileName, 0x40);
         }
 
         foreach (var track in pattern.Tracks)
         {
-            writer.WriteInt16(track.Id);
-            writer.WriteFixedAscii(track.Name, 0x3B);
-            writer.WriteInt32(track.StartPosition);
-            writer.WriteByte((byte)PatternCommandType.TrackStart);
-            writer.WriteInt32(checked(track.Commands.Count << 4));
-            writer.WriteInt32(track.Commands.Count);
+            writer.WriteUInt16(unchecked((ushort)track.Id));
+            writer.WriteFixedAscii(track.Name, 64);
+            writer.WriteUInt32(checked((uint)(track.EndPosition != 0 ? track.EndPosition : GetTrackEndPosition(track))));
+            writer.WriteUInt32(checked((uint)track.Commands.Count));
 
             foreach (var command in track.Commands)
             {
@@ -364,10 +474,14 @@ public sealed class PatternBinarySerializer
         writer.WriteInt16(checked((short)pattern.Tracks.Count));
         writer.WriteInt16(pattern.Header.PositionsPerMeasure);
         writer.WriteSingle(pattern.Header.InitialBpm);
-        writer.WriteInt32(pattern.Header.EndPosition);
-        writer.WriteInt32(pattern.Header.TagB);
-        writer.WriteInt32(pattern.Header.TagC);
-        writer.WriteInt32(pattern.CommandCount);
+        writer.WriteUInt32(pattern.Header.BytesTick != 0
+            ? pattern.Header.BytesTick
+            : checked((uint)pattern.Header.EndPosition));
+        writer.WriteSingle(pattern.Header.BytesPlayTime != 0
+            ? pattern.Header.BytesPlayTime
+            : BitConverter.Int32BitsToSingle(pattern.Header.TagB));
+        writer.WriteUInt32(checked((uint)pattern.Header.EndPosition));
+        writer.WriteUInt32(checked((uint)pattern.CommandCount));
         writer.PatchInt32(infoOffsetPosition, checked((int)infoOffset));
     }
 
@@ -653,6 +767,14 @@ public sealed class PatternBinarySerializer
             return value;
         }
 
+        public uint ReadUInt32()
+        {
+            Ensure(4);
+            var value = BinaryPrimitives.ReadUInt32LittleEndian(_data.AsSpan(Position, 4));
+            Position += 4;
+            return value;
+        }
+
         public float ReadSingle() => BitConverter.Int32BitsToSingle(ReadInt32());
 
         public byte[] ReadBytes(int count)
@@ -706,6 +828,13 @@ public sealed class PatternBinarySerializer
         {
             Span<byte> bytes = stackalloc byte[4];
             BinaryPrimitives.WriteInt32LittleEndian(bytes, value);
+            Write(bytes);
+        }
+
+        public void WriteUInt32(uint value)
+        {
+            Span<byte> bytes = stackalloc byte[4];
+            BinaryPrimitives.WriteUInt32LittleEndian(bytes, value);
             Write(bytes);
         }
 

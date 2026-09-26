@@ -1,7 +1,9 @@
+using System.Buffers.Binary;
+
 namespace DMTQ.Tools.Core.Services.Pattern;
 
 /// <summary>
-/// Offline transformation used by encrypted DJMAX PT files.
+/// Decrypts encrypted DJMAX PT data using the file's clear header as key material.
 /// </summary>
 public sealed class PtCipher
 {
@@ -12,8 +14,7 @@ public sealed class PtCipher
     private readonly uint[] _key1State = new uint[2];
 
     /// <summary>
-    /// Decrypts an encrypted PT byte array. Applying the same transformation to
-    /// a plaintext PT array produces the encrypted representation.
+    /// Decrypts an encrypted PT byte array. The 24-byte PT header is preserved.
     /// </summary>
     /// <param name="input">The complete PT file bytes.</param>
     /// <returns>The transformed PT file bytes.</returns>
@@ -40,9 +41,6 @@ public sealed class PtCipher
             return input;
         }
 
-        var dataFlag = BitConverter.ToUInt32(data, 0);
-        var encodeMode = dataFlag <= 10;
-
         FillData(header);
         var key2First = CalculateParam2();
         var key2Second = CalculateParam2();
@@ -55,17 +53,8 @@ public sealed class PtCipher
         var blockIndex = 0;
         for (var index = 0; index < data.Length; index++)
         {
-            var originalByte = data[index];
-            if (encodeMode)
-            {
-                plainBlock[blockIndex] = originalByte;
-            }
-
             data[index] ^= (byte)(_key2Bytes[blockIndex] ^ _key1Bytes[blockIndex]);
-            if (!encodeMode)
-            {
-                plainBlock[blockIndex] = data[index];
-            }
+            plainBlock[blockIndex] = data[index];
 
             blockIndex++;
             if (blockIndex != 8)
@@ -88,14 +77,14 @@ public sealed class PtCipher
 
     private void SetKey1(uint first, uint second)
     {
-        Buffer.BlockCopy(BitConverter.GetBytes(first), 0, _key1Bytes, 0, 4);
-        Buffer.BlockCopy(BitConverter.GetBytes(second), 0, _key1Bytes, 4, 4);
+        BinaryPrimitives.WriteUInt32LittleEndian(_key1Bytes.AsSpan(0, 4), first);
+        BinaryPrimitives.WriteUInt32LittleEndian(_key1Bytes.AsSpan(4, 4), second);
     }
 
     private void SetKey2(uint first, uint second)
     {
-        Buffer.BlockCopy(BitConverter.GetBytes(first), 0, _key2Bytes, 0, 4);
-        Buffer.BlockCopy(BitConverter.GetBytes(second), 0, _key2Bytes, 4, 4);
+        BinaryPrimitives.WriteUInt32LittleEndian(_key2Bytes.AsSpan(0, 4), first);
+        BinaryPrimitives.WriteUInt32LittleEndian(_key2Bytes.AsSpan(4, 4), second);
     }
 
     private void UpdateKey1(byte[] plainBlock)
@@ -103,8 +92,8 @@ public sealed class PtCipher
         var first = _key1State[0];
         var second = _key1State[1];
         uint delta = 0;
-        var blockFirst = BitConverter.ToUInt32(plainBlock, 0);
-        var blockSecond = BitConverter.ToUInt32(plainBlock, 4);
+        var blockFirst = BinaryPrimitives.ReadUInt32LittleEndian(plainBlock.AsSpan(0, 4));
+        var blockSecond = BinaryPrimitives.ReadUInt32LittleEndian(plainBlock.AsSpan(4, 4));
 
         for (var round = 0; round < 32; round++)
         {
@@ -131,7 +120,7 @@ public sealed class PtCipher
         var headerIndex = 0;
         for (var count = 624; count > 0; count--)
         {
-            var headerValue = BitConverter.ToUInt32(header, 4 * headerIndex);
+            var headerValue = BinaryPrimitives.ReadUInt32LittleEndian(header.AsSpan(4 * headerIndex, 4));
             var previous = _mtState[stateIndex - 1];
             _mtState[stateIndex] = unchecked((uint)headerIndex + headerValue +
                 (_mtState[stateIndex] ^ (1664525 * (previous ^ (previous >> 30)))));

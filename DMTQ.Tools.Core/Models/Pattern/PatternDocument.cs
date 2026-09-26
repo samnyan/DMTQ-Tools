@@ -32,6 +32,12 @@ public sealed class PatternHeader
     /// <summary>Gets or sets the bytes-format leading marker.</summary>
     public int BytesMagic { get; set; }
 
+    /// <summary>Gets or sets the native bytes-format tick value.</summary>
+    public uint BytesTick { get; set; }
+
+    /// <summary>Gets or sets the native bytes-format play time in seconds.</summary>
+    public float BytesPlayTime { get; set; }
+
     /// <summary>Gets or sets the PT format version. Version 1 is the padded layout.</summary>
     public short PtVersion { get; set; } = 1;
 

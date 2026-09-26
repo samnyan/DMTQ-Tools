@@ -173,8 +173,11 @@
   <data name="Pattern.BasicInfo" xml:space="preserve"><value>Pattern information</value></data>
   <data name="Pattern.File" xml:space="preserve"><value>File</value></data>
   <data name="Pattern.SourceFormat" xml:space="preserve"><value>Source format</value></data>
-  <data name="Pattern.Encrypted" xml:space="preserve"><value>Encrypted PT</value></data>
+  <data name="Pattern.Encrypted" xml:space="preserve"><value>Source PT is encrypted</value></data>
   <data name="Pattern.Version" xml:space="preserve"><value>PT version</value></data>
+  <data name="Pattern.PtRawHeaderFieldB" xml:space="preserve"><value>PT raw header field B</value></data>
+  <data name="Pattern.BytesTick" xml:space="preserve"><value>Bytes tick</value></data>
+  <data name="Pattern.BytesPlayTime" xml:space="preserve"><value>Bytes play time (seconds)</value></data>
   <data name="Pattern.PositionsPerMeasure" xml:space="preserve"><value>Positions per measure</value></data>
   <data name="Pattern.InitialBpm" xml:space="preserve"><value>Initial BPM</value></data>
   <data name="Pattern.EndPosition" xml:space="preserve"><value>End position</value></data>

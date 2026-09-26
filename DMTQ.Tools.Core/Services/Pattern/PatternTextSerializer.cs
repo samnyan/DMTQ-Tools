@@ -83,6 +83,12 @@ public sealed class PatternTextSerializer
                 case "BYTES_MAGIC":
                     document.Header.BytesMagic = ParseInt(tokens, 1, keyword);
                     break;
+                case "BYTES_TICK":
+                    document.Header.BytesTick = ParseUInt(tokens, 1, keyword);
+                    break;
+                case "BYTES_PLAY_TIME":
+                    document.Header.BytesPlayTime = ParseFloat(tokens, 1, keyword);
+                    break;
                 case "PT_VERSION":
                     document.Header.PtVersion = checked((short)ParseInt(tokens, 1, keyword));
                     break;
@@ -160,6 +166,8 @@ public sealed class PatternTextSerializer
         builder.AppendLine("#FORMAT DMTQ_PATTERN_TEXT 1");
         builder.AppendLine($"#SOURCE_FORMAT {pattern.SourceFormat}");
         builder.AppendLine($"#BYTES_MAGIC {pattern.Header.BytesMagic}");
+        builder.AppendLine($"#BYTES_TICK {pattern.Header.BytesTick}");
+        builder.AppendLine($"#BYTES_PLAY_TIME {pattern.Header.BytesPlayTime.ToString("R", CultureInfo.InvariantCulture)}");
         builder.AppendLine($"#PT_VERSION {pattern.Header.PtVersion}");
         builder.AppendLine($"#SOUND_COUNT {pattern.Sounds.Count}");
         builder.AppendLine($"#TRACK_COUNT {pattern.Tracks.Count}");
@@ -497,6 +505,7 @@ public sealed class PatternTextSerializer
         var tokens = new List<string>();
         var token = new StringBuilder();
         char quote = '\0';
+        var tokenStarted = false;
 
         for (var index = 0; index < value.Length; index++)
         {
@@ -526,24 +535,27 @@ public sealed class PatternTextSerializer
             if (character is '\'' or '"')
             {
                 quote = character;
+                tokenStarted = true;
             }
             else if (char.IsWhiteSpace(character))
             {
-                if (token.Length > 0)
+                if (tokenStarted)
                 {
                     tokens.Add(token.ToString());
                     token.Clear();
+                    tokenStarted = false;
                 }
             }
             else
             {
                 token.Append(character);
+                tokenStarted = true;
             }
         }
 
         if (quote != '\0')
             throw new InvalidDataException("Pattern text contains an unterminated quoted value.");
-        if (token.Length > 0)
+        if (tokenStarted)
             tokens.Add(token.ToString());
         return tokens;
     }
@@ -556,6 +568,11 @@ public sealed class PatternTextSerializer
 
     private static int ParseInt(IReadOnlyList<string> tokens, int index, string name)
         => ParseIntValue(GetRequired(tokens, index, name), name);
+
+    private static uint ParseUInt(IReadOnlyList<string> tokens, int index, string name)
+        => uint.TryParse(GetRequired(tokens, index, name), NumberStyles.Integer, CultureInfo.InvariantCulture, out var result)
+            ? result
+            : throw new InvalidDataException($"Invalid {name} value '{tokens[index]}'.");
 
     private static int ParseIntValue(string value, string name)
         => int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var result)

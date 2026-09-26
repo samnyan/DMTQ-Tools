@@ -1,467 +1,518 @@
 using System;
+using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
 
 namespace bytes_to_text
 {
-    class Program
+    internal static class Program
     {
-        static void Main(string[] args)
+        private const int SoundEntrySize = 67;
+        private const int UnityTrackHeaderSize = 74;
+        private const int LegacyTrackHeaderSize = 74;
+        private const int EventSize = 13;
+
+        private static int Main(string[] args)
         {
-            Console.WriteLine("DMTQ Tools - bytes to text");
-            Console.WriteLine("This tool can help you better understanding the bytes format.");
-            Console.WriteLine("Usage: bytes_to_text.exe <anyfile>  - Convert from bytes to text interchange format.");
-            Console.WriteLine("Usage: bytes_to_text.exe <filename>.txt  - Convert from the file create by this tool back to .bytes file.");
-            Console.WriteLine("");
-            Console.WriteLine(@"For the detailed explain please check the github repository");
-
-            // 遍历传入的所有文件参数，支持拖拽多个文件进行批量处理
-            foreach(string arg in args)
+            if (args.Length == 0)
             {
-                FileInfo file = new FileInfo(arg);
-                
-                // 根据文件扩展名判断：如果不是 .txt，则认为是二进制谱面文件，进行解包 (Decode)
-                if(!file.Extension.Equals(".txt", StringComparison.OrdinalIgnoreCase))
+                Console.WriteLine("DMTQ Tools - Bytes converter");
+                Console.WriteLine("Usage: bytes_to_text.exe <file.bytes> [more files...]  - Convert Bytes to text.");
+                Console.WriteLine("Usage: bytes_to_text.exe <file.txt> [more files...]     - Convert text to Unity Bytes.");
+                return 0;
+            }
+
+            var failures = 0;
+            foreach (var inputPath in args)
+            {
+                try
                 {
-                    // ==========================================
-                    //               解码阶段 (Bytes -> Txt)
-                    // ==========================================
-                    using (FileStream ifs = new FileStream(file.FullName, FileMode.Open))
-                    using (BinaryReader reader = new BinaryReader(ifs))
-                    using (FileStream ofs = new FileStream(Path.Combine(file.DirectoryName, Path.GetFileNameWithoutExtension(file.Name) + ".txt"), FileMode.Create))
-                    using (StreamWriter writer = new StreamWriter(ofs))
+                    var fullPath = Path.GetFullPath(inputPath);
+                    if (String.Equals(Path.GetExtension(fullPath), ".txt", StringComparison.OrdinalIgnoreCase))
                     {
-                        // 1. 读取文件最开头的两个重要偏移量
-                        int header = reader.ReadInt32();      // 未知标识或文件头魔数
-                        int infoOffset = reader.ReadInt32();  // 谱面元数据（头信息）所在的字节偏移量
-
-                        // 2. 将流指针跳转到信息段开始处，读取基础属性
-                        ifs.Seek(infoOffset, SeekOrigin.Begin);
-
-                        int soundCount = reader.ReadInt16();            // 音效文件总数
-                        int trackCount = reader.ReadInt16();            // 轨道总数
-                        int positionsPerMeasure = reader.ReadInt16();   // 每小节的位置数 (通常代表谱面的解析精度，如 192)
-                        float initialBpm = reader.ReadSingle();         // 初始 BPM
-                        int endPosition = reader.ReadInt32();           // 谱面结束的绝对位置
-                        int tagB = reader.ReadInt32();                  // 未知标签B (可能是时间戳或校验和)
-                        int tagC = reader.ReadInt32();                  // 未知标签C (经查证，常与 endPosition 保持一致)
-                        int totalCommandCount = reader.ReadInt32();     // 全局指令/音符总数
-                        
-                        // 3. 将这些基础信息写入 .txt 文件
-                        writer.WriteLine("#SOUND_COUNT " + soundCount);
-                        writer.WriteLine("#TRACK_COUNT " + trackCount);
-                        writer.WriteLine("#POSITION_PER_MEASURE " + positionsPerMeasure);
-                        writer.WriteLine("#BPM " + Math.Round((decimal)initialBpm, 2)); // 修正：保留正常10进制小数
-                        writer.WriteLine("#END_POSITION " + endPosition);
-                        writer.WriteLine("#TAGB " + tagB);
-                        writer.WriteLine("#TAGC " + tagC);
-                        writer.WriteLine("#TOTOAL_CMD_COUNT " + totalCommandCount);
-
-
-                        // 4. 读取音效表 (WAV 表)
-                        long currentOffset = 0x8; // 音效表从文件的 0x8 位置开始
-                        for (int i = 0; i < soundCount; i++)
-                        {
-                            ifs.Seek(currentOffset, SeekOrigin.Begin);
-                            int id = reader.ReadInt16();           // 读取音效 ID (2字节)
-                            reader.ReadByte();                     // 跳过一个未知字节
-                            char[] fileNameChars = reader.ReadChars(0x40); // 读取固定64字节长度的文件名
-                            // 去除字符串末尾多余的空字符(\0)和空格
-                            string fileName = new string(fileNameChars).Replace("\0", string.Empty).Trim();
-                            
-                            // 格式化输出为 16进制ID + 文件名
-                            writer.WriteLine("#WAV" + id.ToString("X4") + " " + fileName);
-
-                            currentOffset += 0x43; // 每条音效记录固定长 0x43 (67) 字节，指针往后推
-                        }
-
-                        // 5. 开始解析轨道和音符指令
-                        writer.WriteLine("POSITION COMMAND PARAMETER");
-                        int currentTrackCount = 0;
-                        
-                        // 当还没读到文件尾部(infoOffset)时，循环读取每个轨道
-                        while (currentOffset < infoOffset)
-                        {
-                            int trackHeader = reader.ReadInt16();      // 轨道头部标识
-                            char[] trackName = reader.ReadChars(0x3B); // 轨道名称 (通常为空)
-
-                            int trackPosition = reader.ReadInt32();    // 轨道的起始位置
-                            byte cmd = reader.ReadByte();              // 读取第一条指令类型
-                            
-                            if (cmd == 0x0) // 指令 0x0 代表 TRACK_START (轨道开始)
-                            {
-                                int shiftedNoteCount = reader.ReadInt32(); // 可能是带偏移的计数
-                                int noteCount = reader.ReadInt32();        // 当前轨道包含的音符/指令数量
-                                
-                                Console.WriteLine("#" + trackPosition + " " + "TRACK_START " + currentTrackCount + " '" + new string(trackName).Replace("\0", string.Empty).Trim() + "' " + noteCount);
-                                writer.WriteLine("#" + trackPosition + " " + "TRACK_START " + currentTrackCount + " '" + new string(trackName).Replace("\0", string.Empty).Trim() + "' " + noteCount);
-
-                                currentOffset = ifs.Position;
-                                
-                                // 遍历当前轨道内的所有指令
-                                for (int i = 0; i < noteCount; i++)
-                                {
-                                    int position = reader.ReadInt32(); // 指令所在的绝对位置 (时间轴)
-                                    cmd = reader.ReadByte();           // 指令类型代码
-                                    
-                                    // 根据指令类型进行解析
-                                    switch (cmd)
-                                    {
-                                        case 0x0: // 异常情况：上个轨道没结束就遇到了新的 Track Start
-                                            {
-                                                char[] temp = reader.ReadChars(0x8);
-                                                Console.WriteLine("Warning: New track start before track end");
-                                                writer.WriteLine("#" + trackPosition + " " + "TRACK_START " + currentTrackCount + " '" + new string(trackName).Replace("\0", string.Empty).Trim() + "' " + noteCount);
-                                                break;
-                                            }
-                                        case 0x1: // NOTE (常规音符)
-                                            {
-                                                int soundIndex = reader.ReadInt16(); // 引用的音效ID
-                                                int volume = reader.ReadByte();      // 音量
-                                                int pan = reader.ReadByte();         // 声相 (左右声道平衡)
-                                                int type = reader.ReadByte();        // 音符类型 (如普攻、长按等)
-                                                int length = reader.ReadByte();      // 音符长度
-                                                int unknown = reader.ReadInt16();    // 未知保留字
-                                                writer.WriteLine(
-                                                    "#" + position + " " +
-                                                    "NOTE" + " " +
-                                                    soundIndex.ToString("X4") + " " +
-                                                    volume + " " +
-                                                    pan + " " +
-                                                    type + " " +
-                                                    length + " " +
-                                                    unknown);
-                                                break;
-                                            }
-                                        case 0x2: // VOLUME (音量变化)
-                                            {
-                                                int volume = reader.ReadByte();
-                                                int unknown1 = reader.ReadByte();
-                                                int unknown2 = reader.ReadByte();
-                                                int unknown3 = reader.ReadByte();
-                                                int unknown4 = reader.ReadInt32();
-                                                writer.WriteLine("#" + position + " " + "VOLUME" + " " + volume + " " + unknown1 + " " + unknown2 + " " + unknown3 + " " + unknown4);
-                                                break;
-                                            }
-                                        case 0x3: // BPM_CHANGE (变速指令)
-                                            {
-                                                float bpm = reader.ReadSingle(); // 读出的是单精度浮点数
-                                                int unknown = reader.ReadInt32();
-                                                writer.WriteLine("#" + position + " " + "BPM_CHANGE" + " " + Math.Round((decimal)bpm, 2) + " " + unknown);
-                                                break;
-                                            }
-                                        default: // 其他未知的自定义指令
-                                            {
-                                                long unknown1 = reader.ReadInt64();
-                                                writer.WriteLine("#" + position + " " + cmd + " " + unknown1);
-                                                break;
-                                            }
-                                    }
-                                    currentOffset = ifs.Position; // 更新当前指针
-                                }
-                            }
-                            currentTrackCount++;
-                            currentOffset = ifs.Position;
-                        }
+                        var pattern = ReadText(File.ReadAllText(fullPath, Encoding.UTF8));
+                        var outputPath = Path.Combine(Path.GetDirectoryName(fullPath), Path.GetFileNameWithoutExtension(fullPath) + "_converted.bytes");
+                        File.WriteAllBytes(outputPath, WriteBytes(pattern));
+                        Console.WriteLine("Converted {0} -> {1}", Path.GetFileName(fullPath), Path.GetFileName(outputPath));
                     }
-                } else
-                {
-                    // ==========================================
-                    //               编码阶段 (Txt -> Bytes)
-                    // ==========================================
-                    using (FileStream ifs = new FileStream(file.FullName, FileMode.Open))
-                    using (StreamReader reader = new StreamReader(ifs))
-                    using (FileStream ofs = new FileStream(Path.Combine(file.DirectoryName, Path.GetFileNameWithoutExtension(file.Name) + "_converted.bytes"), FileMode.Create))
-                    using (BinaryWriter writer = new BinaryWriter(ofs))
-                    
-                    // 为了方便处理，程序使用三个内存流分别暂存不同区域的数据，最后拼接到一起
-                    using (MemoryStream track = new MemoryStream(100))  // 轨道和指令区
-                    using (MemoryStream sounds = new MemoryStream(100)) // 音效表区
-                    using (MemoryStream info = new MemoryStream(100))   // 头信息区
+                    else
                     {
-                        string line;
-                        int commandCounter = 0; // 当前轨道的指令计数器
-                        int trackCounter = -1;  // 当前轨道的ID
-                        long trackOffset = 0;   // 记录当前轨道头部的位置，用于之后回去写入 commandCounter
-                        long commandPos = -1;   // 指令所在的时间位置
-                        
-                        int globalCommandCount = 0; // 全局指令总数
-                        int globalEndPosition = 0;  // 全局结束位置
+                        var pattern = ReadBytes(File.ReadAllBytes(fullPath));
+                        var outputPath = Path.ChangeExtension(fullPath, ".txt");
+                        File.WriteAllText(outputPath, WriteText(pattern), new UTF8Encoding(false));
+                        Console.WriteLine("Converted {0} -> {1}", Path.GetFileName(fullPath), Path.GetFileName(outputPath));
+                    }
+                }
+                catch (Exception exception)
+                {
+                    failures++;
+                    Console.Error.WriteLine("Failed to convert {0}: {1}", inputPath, exception.Message);
+                }
+            }
 
-                        // 逐行解析 txt 文件
-                        while ((line = reader.ReadLine())!=null)
+            return failures == 0 ? 0 : 1;
+        }
+
+        private static Pattern ReadBytes(byte[] data)
+        {
+            if (data == null || data.Length < 8)
+                throw new InvalidDataException("Bytes file is shorter than its leading header.");
+
+            var magic = BitConverter.ToInt32(data, 0);
+            var infoOffset = BitConverter.ToInt32(data, 4);
+            if (infoOffset < 8 || infoOffset > data.Length - 26)
+                throw new InvalidDataException("Bytes header offset is outside the file.");
+
+            using (var stream = new MemoryStream(data, false))
+            using (var reader = new BinaryReader(stream))
+            {
+                stream.Position = infoOffset;
+                var pattern = new Pattern();
+                pattern.Magic = magic;
+                pattern.SoundCount = reader.ReadUInt16();
+                pattern.TrackCount = reader.ReadUInt16();
+                pattern.PositionsPerMeasure = reader.ReadUInt16();
+                pattern.Bpm = reader.ReadSingle();
+                pattern.Tick = reader.ReadUInt32();
+                pattern.PlayTime = reader.ReadSingle();
+                pattern.EndPosition = reader.ReadUInt32();
+                pattern.DeclaredCommandCount = reader.ReadUInt32();
+
+                stream.Position = 8;
+                for (var index = 0; index < pattern.SoundCount; index++)
+                {
+                    EnsureRange(stream.Position, SoundEntrySize, infoOffset, "sound table");
+                    var sound = new Sound { Id = reader.ReadUInt16(), Flags = reader.ReadByte(), Name = ReadFixedAscii(reader, 64) };
+                    pattern.Sounds.Add(sound);
+                }
+
+                var trackStart = stream.Position;
+                if (TryReadUnityTracks(reader, pattern, infoOffset))
+                    return pattern;
+
+                pattern.Tracks.Clear();
+                stream.Position = trackStart;
+                ReadLegacyTracks(reader, pattern, infoOffset);
+                return pattern;
+            }
+        }
+
+        private static bool TryReadUnityTracks(BinaryReader reader, Pattern pattern, int infoOffset)
+        {
+            var start = reader.BaseStream.Position;
+            try
+            {
+                for (var trackIndex = 0; trackIndex < pattern.TrackCount; trackIndex++)
+                {
+                    EnsureRange(reader.BaseStream.Position, UnityTrackHeaderSize, infoOffset, "Unity track header");
+                    var track = new Track
+                    {
+                        Id = reader.ReadUInt16(),
+                        Name = ReadFixedAscii(reader, 64),
+                        EndPosition = reader.ReadUInt32()
+                    };
+                    var eventCount = reader.ReadUInt32();
+                    var availableEvents = (infoOffset - reader.BaseStream.Position) / EventSize;
+                    if (eventCount > availableEvents || eventCount > Int32.MaxValue)
+                        throw new InvalidDataException("Unity track event count exceeds the track data.");
+
+                    track.DeclaredCount = (int)eventCount;
+                    for (var eventIndex = 0; eventIndex < eventCount; eventIndex++)
+                        track.Events.Add(ReadEvent(reader));
+                    track.StartPosition = track.Events.Count == 0 ? 0 : track.Events[0].Position;
+                    pattern.Tracks.Add(track);
+                }
+
+                if (reader.BaseStream.Position != infoOffset)
+                    throw new InvalidDataException("Unity track data does not end at the declared header offset.");
+                var actualEventCount = pattern.Tracks.Sum(track => (long)track.Events.Count);
+                if (pattern.DeclaredCommandCount != 0 && actualEventCount != pattern.DeclaredCommandCount)
+                    throw new InvalidDataException("Unity event count does not match the Bytes header.");
+                return true;
+            }
+            catch (Exception exception) when (exception is IOException || exception is ArgumentOutOfRangeException || exception is OverflowException)
+            {
+                pattern.Tracks.Clear();
+                reader.BaseStream.Position = start;
+                return false;
+            }
+        }
+
+        private static void ReadLegacyTracks(BinaryReader reader, Pattern pattern, int infoOffset)
+        {
+            for (var trackIndex = 0; trackIndex < pattern.TrackCount; trackIndex++)
+            {
+                EnsureRange(reader.BaseStream.Position, LegacyTrackHeaderSize, infoOffset, "legacy track header");
+                var track = new Track
+                {
+                    Id = reader.ReadUInt16(),
+                    Name = ReadFixedAscii(reader, 59),
+                    StartPosition = reader.ReadInt32()
+                };
+                if (reader.ReadByte() != 0)
+                    throw new InvalidDataException("Legacy track start marker is invalid.");
+                track.ShiftedCount = reader.ReadInt32();
+                track.DeclaredCount = reader.ReadInt32();
+                if (track.DeclaredCount < 0 || track.DeclaredCount > (infoOffset - reader.BaseStream.Position) / EventSize)
+                    throw new InvalidDataException("Legacy track event count exceeds the track data.");
+
+                for (var eventIndex = 0; eventIndex < track.DeclaredCount; eventIndex++)
+                    track.Events.Add(ReadEvent(reader));
+                track.EndPosition = track.Events.Count == 0 ? (uint)Math.Max(0, track.StartPosition) : (uint)track.Events.Max(item => item.Position);
+                pattern.Tracks.Add(track);
+            }
+
+            if (reader.BaseStream.Position != infoOffset)
+                throw new InvalidDataException("Legacy track data does not end at the declared header offset.");
+        }
+
+        private static Event ReadEvent(BinaryReader reader)
+        {
+            var item = new Event { Position = reader.ReadInt32(), Type = reader.ReadByte(), Data = reader.ReadBytes(8) };
+            if (item.Data.Length != 8)
+                throw new EndOfStreamException("Pattern event data is truncated.");
+            return item;
+        }
+
+        private static Pattern ReadText(string text)
+        {
+            var pattern = new Pattern();
+            Track currentTrack = null;
+            foreach (var sourceLine in text.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries))
+            {
+                var line = sourceLine.Trim();
+                if (!line.StartsWith("#", StringComparison.Ordinal))
+                    continue;
+                var tokens = Tokenize(line.Substring(1).TrimStart());
+                if (tokens.Count == 0)
+                    continue;
+
+                var key = tokens[0].ToUpperInvariant();
+                if (key.StartsWith("WAV", StringComparison.Ordinal))
+                {
+                    var id = ParseHex(key.Substring(3));
+                    var nameStart = line.IndexOf(' ');
+                    pattern.Sounds.Add(new Sound { Id = (ushort)id, Name = nameStart < 0 ? String.Empty : line.Substring(nameStart + 1).Trim() });
+                    continue;
+                }
+
+                var value = tokens.Count > 1 ? tokens[1] : "0";
+                switch (key)
+                {
+                    case "SOUND_COUNT": pattern.SoundCount = ParseUShort(value); break;
+                    case "TRACK_COUNT": pattern.TrackCount = ParseUShort(value); break;
+                    case "BYTES_MAGIC": pattern.Magic = ParseInt(value); break;
+                    case "BYTES_TICK": pattern.Tick = ParseUInt(value); break;
+                    case "BYTES_PLAY_TIME": pattern.PlayTime = ParseFloat(value); break;
+                    case "POSITION_PER_MEASURE": pattern.PositionsPerMeasure = ParseUShort(value); break;
+                    case "BPM": pattern.Bpm = ParseFloat(value); break;
+                    case "END_POSITION": pattern.EndPosition = ParseUInt(value); break;
+                    case "TAGB": pattern.LegacyTagB = ParseInt(value); break;
+                    case "TAGC": pattern.LegacyTagC = ParseInt(value); break;
+                    case "TOTOAL_CMD_COUNT":
+                    case "TOTAL_CMD_COUNT": pattern.DeclaredCommandCount = ParseUInt(value); break;
+                    case "SOUND_FLAGS":
+                        if (tokens.Count > 2)
                         {
-                            // 忽略非 # 开头的注释或空行
-                            if(line.StartsWith("#"))
+                            var sound = pattern.Sounds.FirstOrDefault(item => item.Id == ParseHex(tokens[1]));
+                            if (sound != null) sound.Flags = checked((byte)ParseUInt(tokens[2]));
+                        }
+                        break;
+                    default:
+                        int position;
+                        if (!Int32.TryParse(key, NumberStyles.Integer, CultureInfo.InvariantCulture, out position) || tokens.Count < 2)
+                            break;
+                        if (String.Equals(tokens[1], "TRACK_START", StringComparison.OrdinalIgnoreCase))
+                        {
+                            currentTrack = new Track
                             {
-                                string[] par = line.Split(' ');
-                                
-                                if(par[0].StartsWith("#WAV"))
-                                {
-                                    // ---- 解析音频表 ----
-                                    // 截取 #WAV 后面的 16 进制 ID 并转为整数
-                                    int id = Int32.Parse(par[0].Substring(4), System.Globalization.NumberStyles.HexNumber);
-                                    sounds.Write(BitConverter.GetBytes(id), 0, 2);
-                                    sounds.Write(new byte[]{ 0x0 }, 0, 1); // 未知填充字节
-
-                                    byte[] fileNameBytes = new byte[0x40];
-                                    
-                                    // 修正：支持带空格的文件名。直接找第一个空格，后面全部作为文件名
-                                    string fileName = line.Substring(line.IndexOf(' ') + 1);
-                                    byte[] fileNameTemp = Encoding.ASCII.GetBytes(fileName);
-                                    if (fileNameTemp.Length > 0x40)
-                                    {
-                                        Console.WriteLine("Warning: File name too long: " + fileName);
-                                    }
-
-                                    // 保证文件名强制只占 64 字节，不足的保留 0x00
-                                    for (int i = 0; i < fileNameTemp.Length && i < 0x80; i++)
-                                    {
-                                        fileNameBytes[i] = fileNameTemp[i];
-                                    }
-                                    sounds.Write(fileNameBytes, 0, 0x40);
-                                } 
-                                // ---- 以下为写入头部基础信息的各种属性 ----
-                                else if(par[0].StartsWith("#SOUND_COUNT"))
-                                {
-                                    info.Seek(0x0, SeekOrigin.Begin);
-                                    int soundCount = Int32.Parse(par[1]);
-                                    info.Write(BitConverter.GetBytes(soundCount), 0, 2);
-                                }
-                                else if (par[0].StartsWith("#TRACK_COUNT"))
-                                {
-                                    info.Seek(0x2, SeekOrigin.Begin);
-                                    int trackCount = Int32.Parse(par[1]);
-                                    info.Write(BitConverter.GetBytes(trackCount), 0, 2);
-                                }
-                                else if (par[0].StartsWith("#POSITION_PER_MEASURE"))
-                                {
-                                    info.Seek(0x4, SeekOrigin.Begin);
-                                    int PPM = Int32.Parse(par[1]);
-                                    info.Write(BitConverter.GetBytes(PPM), 0, 2);
-                                }
-                                else if (par[0].StartsWith("#BPM"))
-                                {
-                                    info.Seek(0x6, SeekOrigin.Begin);
-                                    float BPM = Single.Parse(par[1]);
-                                    info.Write(BitConverter.GetBytes(BPM), 0, 4);
-                                }
-                                else if (par[0].StartsWith("#END_POSITION"))
-                                {
-                                    info.Seek(0xA, SeekOrigin.Begin);
-                                    int endPos = Int32.Parse(par[1]);
-                                    info.Write(BitConverter.GetBytes(endPos), 0, 4);
-                                    globalEndPosition = endPos; // 保存一份用于同步给 TAGC
-                                }
-                                else if (par[0].StartsWith("#TAGB"))
-                                {
-                                    info.Seek(0xE, SeekOrigin.Begin);
-                                    int tagB = Int32.Parse(par[1]);
-                                    info.Write(BitConverter.GetBytes(tagB), 0, 4);
-                                }
-                                else if (par[0].StartsWith("#TAGC"))
-                                {
-                                    info.Seek(0x12, SeekOrigin.Begin);
-                                    int tagC = Int32.Parse(par[1]);
-                                    info.Write(BitConverter.GetBytes(tagC), 0, 4);
-                                }
-                                else if (par[0].StartsWith("#TOTOAL_CMD_COUNT"))
-                                {
-                                    info.Seek(0x16, SeekOrigin.Begin);
-                                    int cmdCount = Int32.Parse(par[1]);
-                                    info.Write(BitConverter.GetBytes(cmdCount), 0, 4);
-                                }
-                                // ---- 以下为指令解析区 ----
-                                // 判断行首是否以带数字的 # 开头 (例如 #432 NOTE ...)
-                                else if (par[0].Length > 1 && long.TryParse(par[0].Substring(1), out commandPos))
-                                {
-                                    switch(par[1])
-                                    {
-                                        case "TRACK_START": // 0x0
-                                            {
-                                                long currentPos = track.Position;
-                                                
-                                                // 如果不是第一条轨道，需要将上一个轨道的总指令数写回其头部的占位符中
-                                                if(commandCounter > 0)
-                                                {
-                                                    track.Seek(trackOffset, SeekOrigin.Begin); // 返回轨道头
-                                                    track.Seek(4, SeekOrigin.Current);         // 跳过前4字节
-                                                    track.Seek(1, SeekOrigin.Current);         // 再跳过1字节
-                                                    track.Write(BitConverter.GetBytes(commandCounter << 4), 0, 4); // 写入带偏移的个数
-                                                    track.Write(BitConverter.GetBytes(commandCounter), 0, 4);      // 写入真实的个数
-                                                    
-                                                    // 操作完后把流指针归位，继续写新轨道
-                                                    track.Seek(currentPos, SeekOrigin.Begin);
-                                                }
-                                                // 计数器清零，开始新的轨道
-                                                commandCounter = 0;
-                                                trackCounter++;
-                                                
-                                                // 修正：从文本中动态读取轨道 ID，解决原版全部写死为 0 导致被覆盖瞬间结算的 bug
-                                                short currentTrackId = short.Parse(par[2]);
-                                                track.Write(BitConverter.GetBytes(currentTrackId), 0, 2);
-                                                
-                                                // 填充 0x3B 字节的空轨道名称
-                                                byte[] emptyName = Enumerable.Repeat((byte)0x0, 0x3B).ToArray();
-                                                track.Write(emptyName, 0, 0x3B);
-
-                                                // 记录下此时的位置，用于下个轨道开始时回来填写本轨的指令总数
-                                                trackOffset = track.Position;
-
-                                                // 写入指令时间位置
-                                                track.Write(BitConverter.GetBytes(commandPos), 0, 4);
-                                                track.Write(new byte[] { 0 }, 0, 1); // cmd: 0
-                                                track.Write(new byte[] { 0, 0, 0, 0 }, 0, 4);
-                                                track.Write(new byte[] { 0, 0, 0, 0 }, 0, 4);
-                                                break;
-                                            }
-                                        case "NOTE": // 0x1
-                                            {
-                                                commandCounter++;
-                                                globalCommandCount++; // 更新全局指令数
-                                                
-                                                track.Write(BitConverter.GetBytes(commandPos), 0, 4);
-                                                track.Write(new byte[] { 1 }, 0, 1); // cmd: 1
-                                                
-                                                // 将文本转回对应的各种字节长度
-                                                int soundIndex = int.Parse(par[2], System.Globalization.NumberStyles.HexNumber); 
-                                                int volume = int.Parse(par[3]);
-                                                int pan = int.Parse(par[4]);
-                                                int attribute = int.Parse(par[5]);
-                                                int length = int.Parse(par[6]); 
-                                                int unknown = int.Parse(par[7]);
-                                                
-                                                track.Write(BitConverter.GetBytes(soundIndex), 0, 2);
-                                                track.Write(BitConverter.GetBytes(volume), 0, 1);
-                                                track.Write(BitConverter.GetBytes(pan), 0, 1);
-                                                track.Write(BitConverter.GetBytes(attribute), 0, 1);
-                                                track.Write(BitConverter.GetBytes(length), 0, 1);
-                                                track.Write(BitConverter.GetBytes(unknown), 0, 2);
-                                                break;
-                                            }
-                                        case "VOLUME": // 0x2
-                                            {
-                                                commandCounter++;
-                                                globalCommandCount++;
-                                                
-                                                track.Write(BitConverter.GetBytes(commandPos), 0, 4);
-                                                track.Write(new byte[] { 2 }, 0, 1); // cmd: 2
-                                                
-                                                int vol = int.Parse(par[2]);
-                                                int unknown1 = int.Parse(par[3]);
-                                                int unknown2 = int.Parse(par[4]);
-                                                int unknown3 = int.Parse(par[5]);
-                                                int unknown4 = int.Parse(par[6]); 
-                                                
-                                                track.Write(BitConverter.GetBytes(vol), 0, 1);
-                                                track.Write(BitConverter.GetBytes(unknown1), 0, 1);
-                                                track.Write(BitConverter.GetBytes(unknown2), 0, 1);
-                                                track.Write(BitConverter.GetBytes(unknown3), 0, 1);
-                                                track.Write(BitConverter.GetBytes(unknown4), 0, 4);
-                                                break;
-                                            }
-                                        case "BPM_CHANGE": // 0x3
-                                            {
-                                                commandCounter++;
-                                                globalCommandCount++;
-                                                
-                                                track.Write(BitConverter.GetBytes(commandPos), 0, 4);
-                                                track.Write(new byte[] { 3 }, 0, 1); // cmd: 3
-                                                
-                                                float bpm = Single.Parse(par[2]); 
-                                                
-                                                // 修正：兼容由旧版或有缺陷解析器产生的巨大 BPM 数值
-                                                // 当遇到 >10000 的数字时，通常是因为工具错误地将 float 二进制值转成了 int
-                                                // 这里重新将其对应的二进制 bit 转换回正确的 float
-                                                if (bpm > 10000f) 
-                                                {
-                                                    int rawInt;
-                                                    if (Int32.TryParse(par[2], out rawInt)) {
-                                                        bpm = BitConverter.ToSingle(BitConverter.GetBytes(rawInt), 0);
-                                                    }
-                                                }
-                                                
-                                                track.Write(BitConverter.GetBytes(bpm), 0, 4);
-                                                track.Write(new byte[] { 0, 0, 0, 0 }, 0, 4);
-                                                break;
-                                            }
-                                        default: // 自定义/未知指令
-                                            {
-                                                int cmdCode;
-                                                if(int.TryParse(par[1], out cmdCode))
-                                                {
-                                                    commandCounter++;
-                                                    globalCommandCount++;
-                                                    
-                                                    long value = long.Parse(par[2]);
-                                                    track.Write(BitConverter.GetBytes(commandPos), 0, 4);
-                                                    track.Write(BitConverter.GetBytes(cmdCode), 0, 1);
-                                                    track.Write(BitConverter.GetBytes(value), 0, 8);
-                                                }
-                                                break;
-                                            }
-                                    }
-                                }
+                                StartPosition = position,
+                                Id = tokens.Count > 2 ? ParseUShort(tokens[2]) : (ushort)pattern.Tracks.Count,
+                                Name = tokens.Count > 3 ? tokens[3] : String.Empty,
+                                DeclaredCount = tokens.Count > 4 ? ParseInt(tokens[4]) : 0,
+                                ShiftedCount = tokens.Count > 5 ? ParseInt(tokens[5]) : 0
+                            };
+                            foreach (var token in tokens.Skip(6))
+                            {
+                                if (token.StartsWith("end=", StringComparison.OrdinalIgnoreCase)) currentTrack.EndPosition = ParseUInt(token.Substring(4));
                             }
+                            pattern.Tracks.Add(currentTrack);
                         }
-                        
-                        // 修正：txt 遍历结束后，最后一条轨道由于没有后续的 TRACK_START 触发写回，
-                        // 会导致最后一条轨道的 Note 数为 0。在这里额外触发一次写回。
-                        if(commandCounter > 0)
+                        else
                         {
-                            long currentPos = track.Position;
-                            track.Seek(trackOffset, SeekOrigin.Begin);
-                            track.Seek(4, SeekOrigin.Current);
-                            track.Seek(1, SeekOrigin.Current);
-                            track.Write(BitConverter.GetBytes(commandCounter << 4), 0, 4);
-                            track.Write(BitConverter.GetBytes(commandCounter), 0, 4);
-                            track.Seek(currentPos, SeekOrigin.Begin);
+                            if (currentTrack == null)
+                                throw new InvalidDataException("A pattern event appears before TRACK_START.");
+                            currentTrack.Events.Add(ParseEvent(position, tokens));
                         }
+                        break;
+                }
+            }
 
-                        // ==========================================
-                        //          数据合并：将内存流写入文件
-                        // ==========================================
+            pattern.SoundCount = (ushort)pattern.Sounds.Count;
+            pattern.TrackCount = (ushort)pattern.Tracks.Count;
+            foreach (var track in pattern.Tracks)
+            {
+                if (track.EndPosition == 0)
+                    track.EndPosition = track.Events.Count == 0 ? (uint)Math.Max(0, track.StartPosition) : (uint)track.Events.Max(item => item.Position);
+                if (track.DeclaredCount == 0)
+                    track.DeclaredCount = track.Events.Count;
+                if (track.ShiftedCount == 0)
+                    track.ShiftedCount = track.Events.Count << 4;
+            }
+            return pattern;
+        }
 
-                        // 1. 将音频表数据放在文件头 0x8 的位置
-                        ofs.Seek(0x8, SeekOrigin.Begin);
-                        sounds.Seek(0x0, SeekOrigin.Begin);
-                        sounds.CopyTo(ofs);
+        private static Event ParseEvent(int position, IList<string> tokens)
+        {
+            var typeName = tokens[1];
+            var item = new Event { Position = position };
+            var raw = tokens.FirstOrDefault(token => token.StartsWith("raw=", StringComparison.OrdinalIgnoreCase));
+            if (raw != null)
+            {
+                item.Data = ParseHexBytes(raw.Substring(4));
+                if (item.Data.Length != 8) throw new InvalidDataException("raw= must contain eight bytes.");
+            }
 
-                        // 2. 紧接着音频表，拼接所有的轨道和指令数据
-                        track.Seek(0, SeekOrigin.Begin);
-                        track.CopyTo(ofs);
+            if (String.Equals(typeName, "NOTE", StringComparison.OrdinalIgnoreCase))
+            {
+                item.Type = 1;
+                item.Data = new byte[8];
+                WriteUShort(item.Data, 0, (ushort)ParseHex(tokens[2]));
+                item.Data[2] = ParseByte(tokens[3]);
+                item.Data[3] = ParseByte(tokens[4]);
+                item.Data[4] = ParseByte(tokens[5]);
+                item.Data[5] = ParseByte(tokens[6]);
+                WriteUShort(item.Data, 6, ParseUShort(tokens[7]));
+            }
+            else if (String.Equals(typeName, "VOLUME", StringComparison.OrdinalIgnoreCase))
+            {
+                item.Type = 2;
+                if (raw == null)
+                {
+                    item.Data = new byte[8];
+                    item.Data[0] = ParseByte(tokens[2]);
+                    for (var index = 0; index < 3 && tokens.Count > index + 3; index++) item.Data[index + 1] = ParseByte(tokens[index + 3]);
+                    if (tokens.Count > 6) WriteInt(item.Data, 4, ParseInt(tokens[6]));
+                }
+                else item.Data[0] = ParseByte(tokens[2]);
+            }
+            else if (String.Equals(typeName, "BPM_CHANGE", StringComparison.OrdinalIgnoreCase))
+            {
+                item.Type = 3;
+                if (raw == null) item.Data = new byte[8];
+                WriteFloat(item.Data, 0, ParseFloat(tokens[2]));
+            }
+            else if (String.Equals(typeName, "BEAT", StringComparison.OrdinalIgnoreCase) || typeName == "4")
+            {
+                item.Type = 4;
+                if (raw == null) item.Data = new byte[8];
+                item.Data[0] = ParseByte(tokens[2]);
+            }
+            else
+            {
+                item.Type = checked((byte)ParseByte(typeName));
+                if (raw == null)
+                {
+                    item.Data = new byte[8];
+                    if (tokens.Count > 2) WriteLong(item.Data, 0, Int64.Parse(tokens[2], CultureInfo.InvariantCulture));
+                }
+            }
+            return item;
+        }
 
-                        // 3. 计算此时的位置，也就是头部信息 (Info) 需要放在哪
-                        long infoOffset = ofs.Position;
-                        
-                        // 确保 Info 块至少有 0x1A 这么大
-                        info.Seek(0, SeekOrigin.End);
-                        while (info.Length < 0x1A) {
-                            info.WriteByte(0x0);
-                        }
-
-                        // 修正：直接把计算出的全局 EndPosition 注入到 TAGC 位置 (0x12)
-                        info.Seek(0x12, SeekOrigin.Begin);
-                        info.Write(BitConverter.GetBytes(globalEndPosition), 0, 4);
-                        
-                        // 修正：直接把全局总指令数注入到 TOTOAL_CMD_COUNT 位置 (0x16)
-                        info.Seek(0x16, SeekOrigin.Begin);
-                        info.Write(BitConverter.GetBytes(globalCommandCount), 0, 4);
-
-                        // 4. 将 Info 块拼接到文件末尾
-                        info.Seek(0, SeekOrigin.Begin);
-                        info.CopyTo(ofs);
-
-                        // 5. 最后，返回文件头部 0x4 的位置，写入 Info 块的起始偏移量
-                        ofs.Seek(0x4, SeekOrigin.Begin);
-                        ofs.Write(BitConverter.GetBytes(infoOffset), 0, 4);
+        private static byte[] WriteBytes(Pattern pattern)
+        {
+            using (var stream = new MemoryStream())
+            using (var writer = new BinaryWriter(stream))
+            {
+                writer.Write(pattern.Magic);
+                writer.Write(0);
+                foreach (var sound in pattern.Sounds)
+                {
+                    writer.Write(sound.Id);
+                    writer.Write(sound.Flags);
+                    WriteFixedAscii(writer, sound.Name, 64);
+                }
+                foreach (var track in pattern.Tracks)
+                {
+                    writer.Write(track.Id);
+                    WriteFixedAscii(writer, track.Name, 64);
+                    writer.Write(track.EndPosition != 0 ? track.EndPosition : (uint)Math.Max(0, track.StartPosition));
+                    writer.Write((uint)track.Events.Count);
+                    foreach (var item in track.Events)
+                    {
+                        writer.Write(item.Position);
+                        writer.Write(item.Type);
+                        writer.Write(item.Data);
                     }
                 }
 
+                var infoOffset = checked((int)stream.Position);
+                writer.Write(checked((ushort)pattern.Sounds.Count));
+                writer.Write(checked((ushort)pattern.Tracks.Count));
+                writer.Write(pattern.PositionsPerMeasure);
+                writer.Write(pattern.Bpm);
+                writer.Write(pattern.Tick != 0 ? pattern.Tick : pattern.EndPosition);
+                writer.Write(pattern.PlayTime != 0 ? pattern.PlayTime : BitConverter.ToSingle(BitConverter.GetBytes(pattern.LegacyTagB), 0));
+                writer.Write(pattern.EndPosition != 0 ? pattern.EndPosition : unchecked((uint)pattern.LegacyTagC));
+                writer.Write(pattern.DeclaredCommandCount != 0 ? pattern.DeclaredCommandCount : (uint)pattern.Tracks.Sum(track => track.Events.Count));
+                stream.Position = 4;
+                writer.Write(infoOffset);
+                return stream.ToArray();
             }
-            Console.WriteLine("Done");
-            Console.ReadLine();
         }
+
+        private static string WriteText(Pattern pattern)
+        {
+            var builder = new StringBuilder();
+            builder.AppendLine("#FORMAT DMTQ_PATTERN_TEXT 1");
+            builder.AppendLine("#BYTES_MAGIC " + pattern.Magic.ToString(CultureInfo.InvariantCulture));
+            builder.AppendLine("#BYTES_TICK " + pattern.Tick.ToString(CultureInfo.InvariantCulture));
+            builder.AppendLine("#BYTES_PLAY_TIME " + pattern.PlayTime.ToString("R", CultureInfo.InvariantCulture));
+            builder.AppendLine("#SOUND_COUNT " + pattern.Sounds.Count.ToString(CultureInfo.InvariantCulture));
+            builder.AppendLine("#TRACK_COUNT " + pattern.Tracks.Count.ToString(CultureInfo.InvariantCulture));
+            builder.AppendLine("#POSITION_PER_MEASURE " + pattern.PositionsPerMeasure.ToString(CultureInfo.InvariantCulture));
+            builder.AppendLine("#BPM " + pattern.Bpm.ToString("R", CultureInfo.InvariantCulture));
+            builder.AppendLine("#END_POSITION " + pattern.EndPosition.ToString(CultureInfo.InvariantCulture));
+            builder.AppendLine("#TAGB " + BitConverter.ToInt32(BitConverter.GetBytes(pattern.PlayTime), 0).ToString(CultureInfo.InvariantCulture));
+            builder.AppendLine("#TAGC " + pattern.EndPosition.ToString(CultureInfo.InvariantCulture));
+            builder.AppendLine("#TOTOAL_CMD_COUNT " + pattern.DeclaredCommandCount.ToString(CultureInfo.InvariantCulture));
+            foreach (var sound in pattern.Sounds)
+            {
+                builder.AppendLine("#WAV" + sound.Id.ToString("X4", CultureInfo.InvariantCulture) + " " + sound.Name);
+                builder.AppendLine("#SOUND_FLAGS " + sound.Id.ToString("X4", CultureInfo.InvariantCulture) + " " + sound.Flags.ToString(CultureInfo.InvariantCulture));
+            }
+            builder.AppendLine("POSITION COMMAND PARAMETER");
+            foreach (var track in pattern.Tracks)
+            {
+                builder.Append('#').Append(track.StartPosition).Append(" TRACK_START ").Append(track.Id)
+                    .Append(" '").Append(track.Name.Replace("'", "''")).Append("' ")
+                    .Append(track.DeclaredCount).Append(' ').Append(track.ShiftedCount)
+                    .Append(" end=").Append(track.EndPosition).AppendLine(" data=0");
+                foreach (var item in track.Events) AppendEvent(builder, item);
+            }
+            return builder.ToString();
+        }
+
+        private static void AppendEvent(StringBuilder builder, Event item)
+        {
+            builder.Append('#').Append(item.Position).Append(' ');
+            if (item.Type == 1)
+            {
+                builder.Append("NOTE ").Append(ReadUShort(item.Data, 0).ToString("X4", CultureInfo.InvariantCulture))
+                    .Append(' ').Append(item.Data[2]).Append(' ').Append(item.Data[3]).Append(' ').Append(item.Data[4]).Append(' ')
+                    .Append(item.Data[5]).Append(' ').Append(ReadUShort(item.Data, 6));
+            }
+            else if (item.Type == 2)
+                builder.Append("VOLUME ").Append(item.Data[0]).Append(' ').Append(item.Data[1]).Append(' ').Append(item.Data[2]).Append(' ').Append(item.Data[3]).Append(' ').Append(BitConverter.ToInt32(item.Data, 4));
+            else if (item.Type == 3)
+                builder.Append("BPM_CHANGE ").Append(BitConverter.ToSingle(item.Data, 0).ToString("R", CultureInfo.InvariantCulture)).Append(' ').Append(BitConverter.ToInt32(item.Data, 4));
+            else if (item.Type == 4)
+                builder.Append("4 ").Append(item.Data[0]);
+            else
+                builder.Append(item.Type).Append(' ').Append(BitConverter.ToInt64(item.Data, 0));
+            builder.Append(" raw=").Append(BitConverter.ToString(item.Data).Replace("-", String.Empty)).AppendLine();
+        }
+
+        private static List<string> Tokenize(string value)
+        {
+            var result = new List<string>();
+            var token = new StringBuilder();
+            var quote = '\0';
+            var started = false;
+            for (var index = 0; index < value.Length; index++)
+            {
+                var current = value[index];
+                if (quote != '\0')
+                {
+                    if (current == quote)
+                    {
+                        if (index + 1 < value.Length && value[index + 1] == quote) { token.Append(quote); index++; }
+                        else quote = '\0';
+                    }
+                    else token.Append(current);
+                }
+                else if (current == '\'' || current == '"') { quote = current; started = true; }
+                else if (Char.IsWhiteSpace(current))
+                {
+                    if (started) { result.Add(token.ToString()); token.Length = 0; started = false; }
+                }
+                else { token.Append(current); started = true; }
+            }
+            if (quote != '\0') throw new InvalidDataException("Text contains an unterminated quoted value.");
+            if (started) result.Add(token.ToString());
+            return result;
+        }
+
+        private static string ReadFixedAscii(BinaryReader reader, int length)
+        {
+            var bytes = reader.ReadBytes(length);
+            if (bytes.Length != length) throw new EndOfStreamException("Fixed-width string is truncated.");
+            var value = Encoding.ASCII.GetString(bytes);
+            var nullIndex = value.IndexOf('\0');
+            return (nullIndex < 0 ? value : value.Substring(0, nullIndex)).TrimEnd();
+        }
+
+        private static void WriteFixedAscii(BinaryWriter writer, string value, int length)
+        {
+            var bytes = Encoding.ASCII.GetBytes(value ?? String.Empty);
+            var output = new byte[length];
+            Array.Copy(bytes, output, Math.Min(bytes.Length, output.Length));
+            writer.Write(output);
+        }
+
+        private static void EnsureRange(long position, int size, int limit, string name)
+        {
+            if (position < 0 || size < 0 || position > limit - size) throw new InvalidDataException("Truncated " + name + ".");
+        }
+        private static byte[] ParseHexBytes(string value)
+        {
+            if (value.Length % 2 != 0) throw new InvalidDataException("Hex data must contain complete bytes.");
+            var bytes = new byte[value.Length / 2];
+            for (var index = 0; index < bytes.Length; index++) bytes[index] = Byte.Parse(value.Substring(index * 2, 2), NumberStyles.HexNumber, CultureInfo.InvariantCulture);
+            return bytes;
+        }
+        private static int ParseHex(string value) { return Int32.Parse(value, NumberStyles.HexNumber, CultureInfo.InvariantCulture); }
+        private static int ParseInt(string value) { return Int32.Parse(value, NumberStyles.Integer, CultureInfo.InvariantCulture); }
+        private static uint ParseUInt(string value) { return UInt32.Parse(value, NumberStyles.Integer, CultureInfo.InvariantCulture); }
+        private static ushort ParseUShort(string value) { return UInt16.Parse(value, NumberStyles.Integer, CultureInfo.InvariantCulture); }
+        private static byte ParseByte(string value) { return Byte.Parse(value, NumberStyles.Integer, CultureInfo.InvariantCulture); }
+        private static float ParseFloat(string value) { return Single.Parse(value, NumberStyles.Float, CultureInfo.InvariantCulture); }
+        private static ushort ReadUShort(byte[] bytes, int offset) { return BitConverter.ToUInt16(bytes, offset); }
+        private static void WriteUShort(byte[] bytes, int offset, ushort value) { Array.Copy(BitConverter.GetBytes(value), 0, bytes, offset, 2); }
+        private static void WriteInt(byte[] bytes, int offset, int value) { Array.Copy(BitConverter.GetBytes(value), 0, bytes, offset, 4); }
+        private static void WriteLong(byte[] bytes, int offset, long value) { Array.Copy(BitConverter.GetBytes(value), 0, bytes, offset, 8); }
+        private static void WriteFloat(byte[] bytes, int offset, float value) { Array.Copy(BitConverter.GetBytes(value), 0, bytes, offset, 4); }
+
+        private sealed class Pattern
+        {
+            public int Magic;
+            public ushort SoundCount;
+            public ushort TrackCount;
+            public ushort PositionsPerMeasure;
+            public float Bpm;
+            public uint Tick;
+            public float PlayTime;
+            public uint EndPosition;
+            public uint DeclaredCommandCount;
+            public int LegacyTagB;
+            public int LegacyTagC;
+            public readonly List<Sound> Sounds = new List<Sound>();
+            public readonly List<Track> Tracks = new List<Track>();
+        }
+        private sealed class Sound { public ushort Id; public byte Flags; public string Name = String.Empty; }
+        private sealed class Track
+        {
+            public ushort Id;
+            public string Name = String.Empty;
+            public int StartPosition;
+            public uint EndPosition;
+            public int DeclaredCount;
+            public int ShiftedCount;
+            public readonly List<Event> Events = new List<Event>();
+        }
+        private sealed class Event { public int Position; public byte Type; public byte[] Data = new byte[8]; }
     }
 }
