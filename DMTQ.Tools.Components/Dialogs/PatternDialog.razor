@@ -9,7 +9,7 @@
 
     <FluentGrid Spacing="3">
         <FluentGridItem xs="12" sm="6">
-            <FluentNumberField @bind-Value="Content.PatternId" Label="Pattern ID *"
+            <FluentNumberField @bind-Value="Content.PatternId" Label='@(L["Fields.PatternId"].Value + " *")'
                              Disabled="@(originalId is not null)" Required />
         </FluentGridItem>
         <FluentGridItem xs="12" sm="6">
@@ -25,13 +25,13 @@
             <FluentSelect Items="PointTypeOptions" @bind-SelectedOption="selectedPointType" Label='@L["Fields.PointType"]' />
         </FluentGridItem>
         <FluentGridItem xs="12" sm="6">
-            <FluentNumberField @bind-Value="Content.PointValue" Label="Point Value" />
+            <FluentNumberField @bind-Value="Content.PointValue" Label='@L["Fields.PointValue"]' />
         </FluentGridItem>
         <FluentGridItem xs="12" sm="6">
-            <FluentTextField @bind-Value="Content.Name" Label="Pattern Name" />
+            <FluentTextField @bind-Value="Content.Name" Label='@L["Fields.PatternName"]' />
         </FluentGridItem>
         <FluentGridItem xs="12">
-            <FluentSwitch @bind-Value="flgChecked" Label='@L["Lists.Yes"]' />
+            <FluentSwitch @bind-Value="flgChecked" Label='@L["Fields.PatternEnabled"]' />
         </FluentGridItem>
     </FluentGrid>
 
@@ -44,7 +44,7 @@
     private int? originalId;
 
     private string[] LineOptions =>
-        IncludeExisting([$"2 — {L["Options.PatternLine2"].Value}", $"3 — {L["Options.PatternLine3"].Value}", $"4 — {L["Options.PatternLine4"].Value}"], Content.Line);
+        IncludeExisting([$"3 — {L["Options.PatternLine2"].Value}", $"4 — {L["Options.PatternLine3"].Value}", $"5 — {L["Options.PatternLine4"].Value}"], Content.Line);
     private string[] SignatureOptions =>
         IncludeExisting([$"0 — {L["Options.PatternEasy"].Value}", $"1 — {L["Options.PatternNormal"].Value}",
             $"2 — {L["Options.PatternHard"].Value}", $"3 — {L["Options.PatternExpert"].Value}"], Content.Signature);

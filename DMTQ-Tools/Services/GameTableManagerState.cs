@@ -161,6 +161,7 @@ public sealed class GameTableManagerState : IProjectState
         LastExportManifest = null;
         LastValidationResult = null;
         LastPlatformExportResult = null;
+        IsDirty = false;
         Diagnostics.Add($"Opened project: {ProjectRoot}");
         Diagnostics.Add($"Loaded package: {snapshot.Package.Resources.Count} resources, {snapshot.Package.Tables.Tables.Count} tables.");
         StateChanged?.Invoke();

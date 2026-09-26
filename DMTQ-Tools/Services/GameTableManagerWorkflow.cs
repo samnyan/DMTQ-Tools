@@ -50,6 +50,7 @@ public sealed class GameTableManagerWorkflow : IProjectWorkflow
                 projectRoot,
                 CancellationToken.None)
             .ConfigureAwait(false);
+        _state.IsDirty = false;
         _state.Diagnostics.Add("Empty project created and saved.");
     }
 
@@ -79,6 +80,7 @@ public sealed class GameTableManagerWorkflow : IProjectWorkflow
         }
 
         await _repository.SaveAsync(_state.CurrentPackage!, _state.ExportCompressionMode, _state.CreateExportOptions(), _state.ProjectRoot!, cancellationToken).ConfigureAwait(false);
+        _state.IsDirty = false;
         _state.Diagnostics.Add("Auto-saved after import.");
     }
 

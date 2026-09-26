@@ -18,6 +18,11 @@
   <data name="Nav.Diagnostics" xml:space="preserve"><value>Diagnostics</value></data>
   <data name="Header.UnsavedChanges" xml:space="preserve"><value>Unsaved changes</value></data>
   <data name="Header.Saving" xml:space="preserve"><value>Saving...</value></data>
+  <data name="Header.SaveProject" xml:space="preserve"><value>Save Project</value></data>
+  <data name="Header.AutoSave" xml:space="preserve"><value>Auto-save</value></data>
+  <data name="Header.AutoSaveFailed" xml:space="preserve"><value>Auto-save failed</value></data>
+  <data name="Header.AutoSaveHint" xml:space="preserve"><value>Automatically saves dirty project data after a short pause.</value></data>
+  <data name="Header.SaveFailed" xml:space="preserve"><value>Save failed</value></data>
   <data name="Common.Save" xml:space="preserve"><value>Save</value></data>
   <data name="Common.Cancel" xml:space="preserve"><value>Cancel</value></data>
   <data name="Common.Delete" xml:space="preserve"><value>Delete</value></data>
@@ -284,6 +289,44 @@
   <data name="Fields.ExistingValue" xml:space="preserve"><value>Existing value</value></data>
   <data name="Editor.CopyBaseToLanguages" xml:space="preserve"><value>Copy base values to all languages</value></data>
   <data name="Editor.GameItemLink" xml:space="preserve"><value>Linked game item</value></data>
+  <data name="Editor.SyncAllLanguages" xml:space="preserve"><value>Sync all language information</value></data>
+  <data name="Editor.SyncAllLanguagesHint" xml:space="preserve"><value>Song metadata will be copied to all five language tables when you save.</value></data>
+  <data name="Editor.LanguageOverrides" xml:space="preserve"><value>Language-specific values</value></data>
+  <data name="Editor.Language.CN" xml:space="preserve"><value>Simplified Chinese (CN)</value></data>
+  <data name="Editor.Language.JP" xml:space="preserve"><value>Japanese (JP)</value></data>
+  <data name="Editor.Language.KR" xml:space="preserve"><value>Korean (KR)</value></data>
+  <data name="Editor.Language.TW" xml:space="preserve"><value>Traditional Chinese (TW)</value></data>
+  <data name="Editor.Language.US" xml:space="preserve"><value>English (US)</value></data>
+  <data name="Editor.NoGameItemMatches" xml:space="preserve"><value>No matching game items.</value></data>
+  <data name="Editor.CancelLinkedGameItem" xml:space="preserve"><value>Cancel new item</value></data>
+  <data name="Editor.SongCodesHint" xml:space="preserve"><value>Status and flag are game table codes; “disabled” is recognized as an unavailable song. Track ID selects the game's audio asset.</value></data>
+  <data name="Fields.SongId" xml:space="preserve"><value>Song ID</value></data>
+  <data name="Fields.SongName" xml:space="preserve"><value>Internal song key</value></data>
+  <data name="Fields.FullName" xml:space="preserve"><value>Song title</value></data>
+  <data name="Fields.Genre" xml:space="preserve"><value>Genre</value></data>
+  <data name="Fields.Artist" xml:space="preserve"><value>Artist</value></data>
+  <data name="Fields.OriginalBga" xml:space="preserve"><value>Original background video</value></data>
+  <data name="Fields.LoopBga" xml:space="preserve"><value>Loop background video</value></data>
+  <data name="Fields.Composer" xml:space="preserve"><value>Composer</value></data>
+  <data name="Fields.Singer" xml:space="preserve"><value>Vocalist</value></data>
+  <data name="Fields.FeaturedArtist" xml:space="preserve"><value>Featured artist</value></data>
+  <data name="Fields.Arranger" xml:space="preserve"><value>Arranger</value></data>
+  <data name="Fields.Visualizer" xml:space="preserve"><value>Video artist</value></data>
+  <data name="Fields.CostGamePoint" xml:space="preserve"><value>Unlock cost (game points)</value></data>
+  <data name="Fields.CostGameCash" xml:space="preserve"><value>Unlock cost (game cash)</value></data>
+  <data name="Fields.SongFlag" xml:space="preserve"><value>Song flag code</value></data>
+  <data name="Fields.SongStatus" xml:space="preserve"><value>Song status code</value></data>
+  <data name="Fields.FreeSong" xml:space="preserve"><value>Free to play</value></data>
+  <data name="Fields.HiddenSong" xml:space="preserve"><value>Hidden from song list</value></data>
+  <data name="Fields.OpenSong" xml:space="preserve"><value>Available to play</value></data>
+  <data name="Fields.TrackId" xml:space="preserve"><value>Music track ID</value></data>
+  <data name="Fields.ModDate" xml:space="preserve"><value>Modification timestamp</value></data>
+  <data name="Fields.UpdateValue" xml:space="preserve"><value>Update version</value></data>
+  <data name="Fields.PatternId" xml:space="preserve"><value>Pattern ID</value></data>
+  <data name="Fields.PointValue" xml:space="preserve"><value>Play reward amount</value></data>
+  <data name="Fields.PatternName" xml:space="preserve"><value>Pattern name</value></data>
+  <data name="Fields.PatternEnabled" xml:space="preserve"><value>Enabled</value></data>
+  <data name="Common.Actions" xml:space="preserve"><value>Actions</value></data>
   <data name="Editor.SongItemHint" xml:space="preserve"><value>Choose an existing game item by ID or name. If it is missing, add it here and it will be saved with the song.</value></data>
   <data name="Editor.SongItemIdRequired" xml:space="preserve"><value>Select an existing game item or add a new one before saving the song.</value></data>
   <data name="Editor.SelectGameItem" xml:space="preserve"><value>Linked game item</value></data>

@@ -1,6 +1,7 @@
 ﻿@inherits LayoutComponentBase
 @inject IProjectState State
 @inject IProjectWorkflow Workflow
+@inject ILanguagePreferenceStore PreferenceStore
 @implements IDisposable
 
 <FluentDesignTheme Mode="DesignThemeModes.System"
@@ -16,48 +17,50 @@
 <div @key="Language.CurrentCulture.Name" style="height: 100%; display: flex; flex-direction: column; overflow: hidden;">
 
     @* ── Sticky Header ── *@
-    <FluentHeader Height="48" Style="border-bottom: 1px solid var(--neutral-stroke-rest); padding: 0 1.25rem;">
-        <div style="font-weight: 600; font-size: 1rem;">@L["App.Title"]</div>
+    <FluentHeader class="app-header" Height="48" Style="border-bottom: 1px solid rgba(255,255,255,.24); padding: 0 1rem; background-color: #6264a7; color: white;">
+        <div class="header-brand">@L["App.Title"]</div>
 
-        <GlobalBreadcrumb />
+        <div class="header-breadcrumb"><GlobalBreadcrumb /></div>
 
         <FluentSpacer />
 
         @if (EditablePlatforms.Count > 1)
         {
-            <div style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.8rem;">
+            <div class="header-platform">
                 <span>@L["Header.DataPlatform"]</span>
                 <FluentSelect Items="@EditablePlatforms"
                               @bind-Value="State.SelectedExportPlatform"
-                              Style="min-width: 7rem;" />
+                              Style="min-width: 6rem;" />
             </div>
         }
 
         @if (State.HasProject)
         {
-            <div Style="display: flex; align-items: center; gap: 0.5rem;">
-                @if (State.IsDirty)
-                {
-                    <span style="color: var(--error); font-size: 0.85rem; font-weight: 500;" title='@L["Header.UnsavedChanges"]'>
-                        @ProjectDisplayName
-                    </span>
-                }
-                else
-                {
-                    <span style="font-size: 0.85rem; color: var(--neutral-foreground-rest); max-width: 20rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="@State.ProjectRoot">
-                        @ProjectDisplayName
-                    </span>
-                }
-                <FluentButton Appearance="@(State.IsDirty ? Appearance.Accent : Appearance.Neutral)"
+            <div class="header-project">
+                <span class="header-project-name @(State.IsDirty ? "is-dirty" : null)"
+                      title="@(State.IsDirty ? L["Header.UnsavedChanges"].Value : State.ProjectRoot)">
+                    @ProjectDisplayName
+                </span>
+                <FluentButton class="header-save-button"
+                              Appearance="Appearance.Neutral"
                               OnClick="SaveProjectAsync"
                               Disabled="@(!State.HasPackage || _isSaving)"
-                              Style="font-size: 0.8rem; min-width: 4rem;">
-                    @(_isSaving ? L["Header.Saving"] : L["Common.Save"])
+                              Title='@L["Header.SaveProject"]'>
+                    @(_isSaving ? L["Header.Saving"] : L["Header.SaveProject"])
                 </FluentButton>
             </div>
+            <FluentSwitch class="header-auto-save"
+                          Value="@_autoSaveEnabled"
+                          ValueChanged="SetAutoSaveEnabled"
+                          Label='@L["Header.AutoSave"]'
+                          Title='@L["Header.AutoSaveHint"]' />
+            @if (!string.IsNullOrWhiteSpace(_saveError))
+            {
+                <span class="header-save-error" title="@_saveError">@(_autoSaveFailure ? L["Header.AutoSaveFailed"] : L["Header.SaveFailed"])</span>
+            }
         }
 
-        <FluentMenuButton Text="@CurrentLanguageLabel" ButtonAppearance="Appearance.Neutral"
+        <FluentMenuButton class="header-language" Text="@CurrentLanguageLabel" ButtonAppearance="Appearance.Neutral"
                           IconStart="@(new Icons.Regular.Size20.Globe())"
                           Title='@L["Language.Title"]'>
             <FluentMenuItem Label='@L["Language.English"]' Checked='@(Language.CurrentCulture.Name == "en-US")'
@@ -102,7 +105,14 @@
 <FluentKeyCodeProvider />
 
 @code {
+    private const string AutoSavePreferenceKey = "project.autoSave";
+    private static readonly TimeSpan AutoSaveDelay = TimeSpan.FromMilliseconds(700);
+    private readonly SemaphoreSlim _saveGate = new(1, 1);
+    private CancellationTokenSource? _autoSaveCancellation;
     private bool _isSaving;
+    private bool _autoSaveEnabled;
+    private bool _autoSaveFailure;
+    private string? _saveError;
 
     private string ProjectDisplayName =>
         State.ProjectRoot is { Length: > 0 } root
@@ -120,11 +130,20 @@
 
     protected override void OnInitialized()
     {
+        _autoSaveEnabled = bool.TryParse(PreferenceStore.Get(AutoSavePreferenceKey), out var enabled) && enabled;
         State.StateChanged += OnStateChanged;
         Language.LanguageChanged += OnLanguageChanged;
+        if (_autoSaveEnabled && State.IsDirty) QueueAutoSave();
     }
 
-    private void OnStateChanged() => InvokeAsync(StateHasChanged);
+    private void OnStateChanged() => InvokeAsync(() =>
+    {
+        StateHasChanged();
+        if (_autoSaveEnabled && State.IsDirty)
+            QueueAutoSave();
+        else
+            CancelAutoSave();
+    });
 
     private void OnLanguageChanged() => InvokeAsync(StateHasChanged);
 
@@ -132,24 +151,82 @@
 
     private void UseChinese() => Language.SetLanguage("zh-CN");
 
-    private async Task SaveProjectAsync()
+    private void SetAutoSaveEnabled(bool enabled)
     {
-        _isSaving = true;
-        StateHasChanged();
+        _autoSaveEnabled = enabled;
+        PreferenceStore.Set(AutoSavePreferenceKey, enabled.ToString());
+        _saveError = null;
+        if (enabled && State.IsDirty)
+            QueueAutoSave();
+        else
+            CancelAutoSave();
+    }
+
+    private Task SaveProjectAsync() => SaveProjectCoreAsync(isAutoSave: false);
+
+    private void QueueAutoSave()
+    {
+        CancelAutoSave();
+        var cancellation = new CancellationTokenSource();
+        _autoSaveCancellation = cancellation;
+        _ = SaveAfterDelayAsync(cancellation);
+    }
+
+    private async Task SaveAfterDelayAsync(CancellationTokenSource cancellation)
+    {
         try
         {
+            await Task.Delay(AutoSaveDelay, cancellation.Token);
+            if (_autoSaveEnabled && State.IsDirty && State.HasProject && State.HasPackage)
+                await InvokeAsync(() => SaveProjectCoreAsync(isAutoSave: true));
+        }
+        catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { }
+        finally
+        {
+            if (ReferenceEquals(_autoSaveCancellation, cancellation))
+                _autoSaveCancellation = null;
+            cancellation.Dispose();
+        }
+    }
+
+    private async Task SaveProjectCoreAsync(bool isAutoSave)
+    {
+        await _saveGate.WaitAsync();
+        try
+        {
+            if (!State.HasProject || !State.HasPackage || (isAutoSave && (!_autoSaveEnabled || !State.IsDirty)))
+                return;
+
+            _isSaving = true;
+            _saveError = null;
+            _autoSaveFailure = false;
+            StateHasChanged();
             await Workflow.SaveProjectAsync();
+        }
+        catch (Exception ex)
+        {
+            _saveError = ex.Message;
+            _autoSaveFailure = isAutoSave;
         }
         finally
         {
             _isSaving = false;
+            _saveGate.Release();
             StateHasChanged();
         }
+    }
+
+    private void CancelAutoSave()
+    {
+        if (_autoSaveCancellation is null) return;
+        _autoSaveCancellation.Cancel();
+        _autoSaveCancellation = null;
     }
 
     public void Dispose()
     {
         State.StateChanged -= OnStateChanged;
         Language.LanguageChanged -= OnLanguageChanged;
+        CancelAutoSave();
     }
 }
