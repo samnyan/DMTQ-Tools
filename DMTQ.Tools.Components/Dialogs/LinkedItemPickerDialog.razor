@@ -31,22 +31,29 @@
         {
             <FluentTextInput Value="@State.SearchText" ValueChanged="SetSearchText" Immediate="true"
                              Placeholder='@L["Editor.SearchGameItem"]' Style="width: 100%;" />
-            <div class="linked-item-catalog" role="list">
-                @foreach (var item in FilteredItems)
-                {
-                    <div class="linked-item-catalog-row" @key="item.Id">
-                        <div class="linked-item-catalog-main">
+            @if (FilteredItems.Any())
+            {
+                <FluentListbox TOption="Item" TValue="Item"
+                               Items="@FilteredItems"
+                               OptionValue="@(item => item)"
+                               OptionValueToString="@(item => item.Id)"
+                               ValueChanged="ChooseItem"
+                               Height="320px"
+                               Width="100%"
+                               Appearance="ListAppearance.Outline"
+                               AriaLabel='@L["Editor.SelectGameItem"]'>
+                    <OptionTemplate Context="item">
+                        <div class="linked-item-option">
                             <strong>@item.Id — @DisplayName(item)</strong>
                             <span>@Summary(item)</span>
                         </div>
-                        <FluentButton Appearance="ButtonAppearance.Default" OnClick="() => ChooseItem(item)">@L["Editor.SelectLinkedItem"]</FluentButton>
-                    </div>
-                }
-                @if (!FilteredItems.Any())
-                {
-                    <p class="section-hint">@L["Editor.NoGameItemMatches"]</p>
-                }
-            </div>
+                    </OptionTemplate>
+                </FluentListbox>
+            }
+            else
+            {
+                <p class="section-hint">@L["Editor.NoGameItemMatches"]</p>
+            }
         }
     </FluentStack>
 </FluentDialogBody>
@@ -85,8 +92,10 @@
         return Task.CompletedTask;
     }
 
-    private async Task ChooseItem(Item item)
+    private async Task ChooseItem(Item? item)
     {
+        if (item is null)
+            return;
         State.ResultItem = item;
         State.ResultIsNew = false;
         State.Accepted = true;
