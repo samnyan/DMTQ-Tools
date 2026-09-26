@@ -137,7 +137,10 @@
   <data name="Editor.NotFound" xml:space="preserve"><value>{0} '{1}' not found.</value></data>
   <data name="Editor.BackTo" xml:space="preserve"><value>Back to {0}</value></data>
   <data name="Editor.BasicInfo" xml:space="preserve"><value>Basic Info</value></data>
+  <data name="Editor.Credits" xml:space="preserve"><value>Credits</value></data>
   <data name="Editor.GameplaySettings" xml:space="preserve"><value>Gameplay Settings</value></data>
+  <data name="Editor.ItemText" xml:space="preserve"><value>Descriptions and summary</value></data>
+  <data name="Editor.ItemRules" xml:space="preserve"><value>Item settings</value></data>
   <data name="Editor.LocalizedDescriptions" xml:space="preserve"><value>Localized Descriptions</value></data>
   <data name="Editor.SyncOriginalText" xml:space="preserve"><value>Sync original text</value></data>
   <data name="Editor.SaveItem" xml:space="preserve"><value>Save Item</value></data>
@@ -293,6 +296,16 @@
   <data name="Fields.ExistingValue" xml:space="preserve"><value>Existing value</value></data>
   <data name="Editor.CopyBaseToLanguages" xml:space="preserve"><value>Copy base values to all languages</value></data>
   <data name="Editor.GameItemLink" xml:space="preserve"><value>Linked game item</value></data>
+  <data name="Editor.ExistingLinkedItem" xml:space="preserve"><value>Existing item</value></data>
+  <data name="Editor.NewLinkedItem" xml:space="preserve"><value>New item</value></data>
+  <data name="Editor.ChangeOrCreateLinkedItem" xml:space="preserve"><value>Change or create linked item</value></data>
+  <data name="Editor.SelectLinkedItem" xml:space="preserve"><value>Select item</value></data>
+  <data name="Editor.CreateLinkedItem" xml:space="preserve"><value>Create item</value></data>
+  <data name="Editor.NewLinkedItemHint" xml:space="preserve"><value>Create a new item draft. It will be saved together with the song.</value></data>
+  <data name="Editor.NoGameItemSelected" xml:space="preserve"><value>No game item is linked.</value></data>
+  <data name="Editor.MissingLinkedItem" xml:space="preserve"><value>Linked item is missing</value></data>
+  <data name="Editor.LinkedItemMissingHint" xml:space="preserve"><value>The song refers to this item ID, but it is not in the item catalog. Create it or choose another item.</value></data>
+  <data name="Editor.LinkedItemIdExists" xml:space="preserve"><value>An item with this ID already exists. Select it from the existing items list.</value></data>
   <data name="Editor.SyncAllLanguages" xml:space="preserve"><value>Sync all language information</value></data>
   <data name="Editor.SyncAllLanguagesHint" xml:space="preserve"><value>Song metadata will be copied to all five language tables when you save.</value></data>
   <data name="Editor.LanguageOverrides" xml:space="preserve"><value>Language-specific values</value></data>

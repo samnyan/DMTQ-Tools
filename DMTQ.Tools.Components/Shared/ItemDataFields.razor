@@ -9,21 +9,33 @@
                 <FluentTextInput style="width: 100%;" Value="@ItemId" ValueChanged="ItemIdChanged" Label='@L["Fields.ItemId"]' Required="@IsItemIdRequired" ReadOnly="@IsItemIdReadOnly" />
             </FluentGridItem>
         }
-        <FluentGridItem Xs="12" Md="6">
+        <FluentGridItem Xs="12" Sm="6" Md="4">
             <FluentTextInput style="width: 100%;" @bind-Value="itemName" Label='@L["Fields.ItemName"]' Immediate="true" />
         </FluentGridItem>
-        <FluentGridItem Xs="12" Md="6">
+        <FluentGridItem Xs="12" Sm="6" Md="4">
             <FluentTextInput style="width: 100%;" @bind-Value="Content.ImgUrl1" Label='@L["Fields.ImageUrl1"]' />
         </FluentGridItem>
-        <FluentGridItem Xs="12" Md="6">
+        <FluentGridItem Xs="12" Sm="6" Md="4">
             <FluentTextInput style="width: 100%;" @bind-Value="Content.ImgUrl2" Label='@L["Fields.ImageUrl2"]' />
         </FluentGridItem>
+    </FluentGrid>
+</section>
+
+<section>
+    <h3 class="section-subheading">@L["Editor.ItemText"]</h3>
+    <FluentGrid Spacing="3">
         <FluentGridItem Xs="12" Md="6">
-            <FluentTextInput style="width: 100%;" @bind-Value="itemDescription" Label='@L["Fields.Description"]' Immediate="true" />
+            <FluentTextArea style="width: 100%;" @bind-Value="itemDescription" Label='@L["Fields.Description"]' Immediate="true" Height="120px" Resize="TextAreaResize.Vertical" />
         </FluentGridItem>
         <FluentGridItem Xs="12" Md="6">
-            <FluentTextInput style="width: 100%;" @bind-Value="itemSummary" Label='@L["Fields.Summary"]' Immediate="true" />
+            <FluentTextArea style="width: 100%;" @bind-Value="itemSummary" Label='@L["Fields.Summary"]' Immediate="true" Height="120px" Resize="TextAreaResize.Vertical" />
         </FluentGridItem>
+    </FluentGrid>
+</section>
+
+<section>
+    <h3 class="section-subheading">@L["Editor.ItemRules"]</h3>
+    <FluentGrid Spacing="3">
         <FluentGridItem Xs="12" Md="4">
             <FluentTextInput style="width: 100%;" @bind-Value="Content.RepeatCount" Label='@L["Fields.RepeatCount"]' />
         </FluentGridItem>

@@ -113,6 +113,19 @@
   <data name="Fields.ExistingValue" xml:space="preserve"><value>现有值</value></data>
   <data name="Editor.CopyBaseToLanguages" xml:space="preserve"><value>将基本信息复制到所有语言</value></data>
   <data name="Editor.GameItemLink" xml:space="preserve"><value>关联游戏道具</value></data>
+  <data name="Editor.ExistingLinkedItem" xml:space="preserve"><value>现有道具</value></data>
+  <data name="Editor.NewLinkedItem" xml:space="preserve"><value>新建道具</value></data>
+  <data name="Editor.ChangeOrCreateLinkedItem" xml:space="preserve"><value>更换/创建关联道具</value></data>
+  <data name="Editor.SelectLinkedItem" xml:space="preserve"><value>选择道具</value></data>
+  <data name="Editor.CreateLinkedItem" xml:space="preserve"><value>创建道具</value></data>
+  <data name="Editor.NewLinkedItemHint" xml:space="preserve"><value>创建的新道具会作为草稿，并与歌曲一起保存。</value></data>
+  <data name="Editor.NoGameItemSelected" xml:space="preserve"><value>尚未关联游戏道具。</value></data>
+  <data name="Editor.MissingLinkedItem" xml:space="preserve"><value>关联道具不存在</value></data>
+  <data name="Editor.LinkedItemMissingHint" xml:space="preserve"><value>歌曲引用了此道具 ID，但当前项目中没有该道具。可以创建道具或更换关联。</value></data>
+  <data name="Editor.LinkedItemIdExists" xml:space="preserve"><value>该 ID 的道具已存在，请从现有道具列表中选择。</value></data>
+  <data name="Editor.Credits" xml:space="preserve"><value>演职员</value></data>
+  <data name="Editor.ItemText" xml:space="preserve"><value>描述与摘要</value></data>
+  <data name="Editor.ItemRules" xml:space="preserve"><value>道具设置</value></data>
   <data name="Editor.SyncAllLanguages" xml:space="preserve"><value>同步所有语言信息</value></data>
   <data name="Editor.SyncAllLanguagesHint" xml:space="preserve"><value>保存时会将歌曲信息同步到全部五种语言的数据表。</value></data>
   <data name="Editor.LanguageOverrides" xml:space="preserve"><value>按语言单独填写</value></data>

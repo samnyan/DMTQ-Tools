@@ -1,18 +1,14 @@
 @using DMTQ.Tools.Core.Models.Entity
 
 <section>
-    <div class="section-title-row">
-        <div>
-            <h2 class="section-heading">@L["Editor.LocalizedDescriptions"]</h2>
-            <p class="section-hint">@L["Editor.ItemDescriptionsHint"]</p>
-        </div>
-        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8" VerticalAlignment="VerticalAlignment.Center">
+    <h2 class="section-heading">@L["Editor.LocalizedDescriptions"]</h2>
+    <p class="section-hint">@L["Editor.ItemDescriptionsHint"]</p>
+    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8" VerticalAlignment="VerticalAlignment.Center" class="localized-item-actions">
             <FluentButton Appearance="ButtonAppearance.Default" OnClick="CopyBaseToAllLanguages">
                 @L["Editor.CopyBaseToLanguages"]
             </FluentButton>
             <FluentSwitch @bind-Value="syncOriginalText" Label='@L["Editor.SyncOriginalText"]' />
-        </FluentStack>
-    </div>
+    </FluentStack>
     <FluentStack Orientation="Orientation.Vertical" VerticalGap="16" HorizontalAlignment="HorizontalAlignment.Stretch">
         @foreach (var language in Languages)
         {
@@ -22,11 +18,11 @@
                     <FluentGridItem Xs="12" Md="4">
                         <FluentTextInput style="width: 100%;" @bind-Value="Content.NamesByLanguage[language]" Label='@L["Fields.Name"]' />
                     </FluentGridItem>
-                    <FluentGridItem Xs="12" Md="4">
-                        <FluentTextInput style="width: 100%;" @bind-Value="Content.DescriptionsByLanguage[language]" Label='@L["Fields.Description"]' />
+                    <FluentGridItem Xs="12" Md="6">
+                        <FluentTextArea style="width: 100%;" @bind-Value="Content.DescriptionsByLanguage[language]" Label='@L["Fields.Description"]' Height="100px" Resize="TextAreaResize.Vertical" />
                     </FluentGridItem>
-                    <FluentGridItem Xs="12" Md="4">
-                        <FluentTextInput style="width: 100%;" @bind-Value="Content.SummariesByLanguage[language]" Label='@L["Fields.Summary"]' />
+                    <FluentGridItem Xs="12" Md="6">
+                        <FluentTextArea style="width: 100%;" @bind-Value="Content.SummariesByLanguage[language]" Label='@L["Fields.Summary"]' Height="100px" Resize="TextAreaResize.Vertical" />
                     </FluentGridItem>
                 </FluentGrid>
             </div>

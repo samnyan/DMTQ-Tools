@@ -1,0 +1,126 @@
+@using DMTQ.Tools.Core.Models.Entity
+@using DMTQ.Tools.Components.Models
+@using DMTQ.Tools.Core.Services
+@inject ItemCatalogService ItemCatalog
+@inherits FluentDialogInstance
+
+<FluentDialogBody>
+    <FluentStack Orientation="Orientation.Vertical" VerticalGap="16" class="linked-item-picker-dialog">
+        <div class="linked-item-mode-switch" role="tablist">
+            <FluentButton Appearance="@(State.IsCreateMode ? ButtonAppearance.Subtle : ButtonAppearance.Primary)"
+                          OnClick="() => State.IsCreateMode = false">@L["Editor.ExistingLinkedItem"]</FluentButton>
+            <FluentButton Appearance="@(State.IsCreateMode ? ButtonAppearance.Primary : ButtonAppearance.Subtle)"
+                          OnClick="() => State.IsCreateMode = true">@L["Editor.NewLinkedItem"]</FluentButton>
+        </div>
+
+        @if (State.IsCreateMode)
+        {
+            <FluentStack Orientation="Orientation.Vertical" VerticalGap="12">
+                <p class="section-hint">@L["Editor.NewLinkedItemHint"]</p>
+                <FluentTextInput @bind-Value="State.ItemId" Label='@(L["Fields.ItemId"].Value + " *")' Placeholder="123" />
+                @if (!string.IsNullOrWhiteSpace(validationMessage))
+                {
+                    <FluentMessageBar Title="@validationMessage" Intent="MessageBarIntent.Warning" />
+                }
+                <div class="linked-item-dialog-actions">
+                    <FluentButton Appearance="ButtonAppearance.Primary" OnClick="CreateItem">@L["Editor.CreateLinkedItem"]</FluentButton>
+                </div>
+            </FluentStack>
+        }
+        else
+        {
+            <FluentTextInput Value="@State.SearchText" ValueChanged="SetSearchText" Immediate="true"
+                             Placeholder='@L["Editor.SearchGameItem"]' Style="width: 100%;" />
+            <div class="linked-item-catalog" role="list">
+                @foreach (var item in FilteredItems)
+                {
+                    <div class="linked-item-catalog-row" @key="item.Id">
+                        <div class="linked-item-catalog-main">
+                            <strong>@item.Id — @DisplayName(item)</strong>
+                            <span>@Summary(item)</span>
+                        </div>
+                        <FluentButton Appearance="ButtonAppearance.Default" OnClick="() => ChooseItem(item)">@L["Editor.SelectLinkedItem"]</FluentButton>
+                    </div>
+                }
+                @if (!FilteredItems.Any())
+                {
+                    <p class="section-hint">@L["Editor.NoGameItemMatches"]</p>
+                }
+            </div>
+        }
+    </FluentStack>
+</FluentDialogBody>
+
+@code {
+    [Parameter, EditorRequired] public LinkedItemPickerState State { get; set; } = default!;
+
+    private string validationMessage = string.Empty;
+    private string ItemLanguage => Language.CurrentCulture.Name == "zh-CN" ? "CN" : "US";
+
+    protected override Task OnActionClickedAsync(bool primary) => DialogInstance.CancelAsync();
+
+    private IEnumerable<Item> FilteredItems
+    {
+        get
+        {
+            var query = State.SearchText.Trim();
+            var items = State.Items.Where(item => int.TryParse(item.Id, out var id) && id > 0);
+            if (query.Length > 0)
+            {
+                items = items.Where(item =>
+                    item.Id.Contains(query, StringComparison.OrdinalIgnoreCase)
+                    || item.ItemName.Contains(query, StringComparison.OrdinalIgnoreCase)
+                    || item.NamesByLanguage.Values.Any(name => !string.IsNullOrWhiteSpace(name) && name.Contains(query, StringComparison.OrdinalIgnoreCase)));
+            }
+            return items.OrderBy(item => item.Id, StringComparer.OrdinalIgnoreCase).Take(100);
+        }
+    }
+
+    private string DisplayName(Item item) => ItemCatalog.GetDisplayName(item, ItemLanguage);
+    private string Summary(Item item) => ItemCatalog.GetLocalizedSummary(item, ItemLanguage);
+
+    private Task SetSearchText(string? value)
+    {
+        State.SearchText = value ?? string.Empty;
+        return Task.CompletedTask;
+    }
+
+    private async Task ChooseItem(Item item)
+    {
+        State.ResultItem = item;
+        State.ResultIsNew = false;
+        State.Accepted = true;
+        await DialogInstance.CloseAsync(true);
+    }
+
+    private async Task CreateItem()
+    {
+        if (!int.TryParse(State.ItemId, out var id) || id < 1)
+        {
+            validationMessage = L["Editor.SongItemIdRequired"].Value;
+            return;
+        }
+        var normalizedId = id.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        if (State.Items.Any(item => item.Id.Equals(normalizedId, StringComparison.OrdinalIgnoreCase)))
+        {
+            validationMessage = L["Editor.LinkedItemIdExists"].Value;
+            return;
+        }
+
+        State.ResultItem = new Item
+        {
+            Id = normalizedId,
+            ItemType = "S",
+            RepeatCount = "0",
+            LimitMinute = "0",
+            Status = "N",
+            BuyLevel = "0",
+            BuyLimitCount = "1",
+            BuyLimitType = "F",
+            Update = "0"
+        };
+        State.ResultIsNew = true;
+        State.Accepted = true;
+        await DialogInstance.CloseAsync(true);
+    }
+}

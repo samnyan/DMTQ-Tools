@@ -1,4 +1,5 @@
 @page "/songs/editor/{SongId}"
+@using DMTQ.Tools.Components.Models
 @using Icons = Microsoft.FluentUI.AspNetCore.Components.Icons
 @inject NavigationManager Navigation
 @inject IProjectState State
@@ -26,56 +27,55 @@
             <div class="song-editor-scroll">
                 <FluentStack Orientation="Orientation.Vertical" VerticalGap="24" HorizontalAlignment="HorizontalAlignment.Stretch">
 
-                @* ════════════════════════════════════════════
-                   Row 1: Basic Info | Gameplay Settings
-                   ════════════════════════════════════════════ *@
-                <FluentGrid Spacing="3">
-                    <FluentGridItem Xs="12" Md="6">
-                        <section>
-                            <h2 class="section-heading">@L["Editor.BasicInfo"]</h2>
-                            <FluentStack Orientation="Orientation.Vertical" VerticalGap="8">
-                                @if (IsCreate)
-                                {
-                                    <FluentTextInput style="width: 100%;" Value="@songIdInput" ValueChanged="SetSongIdInput" Label='@(L["Fields.SongId"].Value + " *")' Placeholder="1" Required />
-                                }
-                                else
-                                {
-                                    <FluentTextInput style="width: 100%;" Value="@(currentSong?.Id.ToString() ?? "")" Label='@L["Fields.SongId"]' ReadOnly="true" />
-                                }
-                                <FluentTextInput style="width: 100%;" @bind-Value="currentSong!.Name" Label='@L["Fields.SongName"]' />
-                                <FluentTextInput style="width: 100%;" @bind-Value="songFullName" Label='@L["Fields.FullName"]' Immediate="true" />
-                                <FluentTextInput style="width: 100%;" @bind-Value="songGenre" Label='@L["Fields.Genre"]' Immediate="true" />
-                                <FluentTextInput style="width: 100%;" @bind-Value="songArtistName" Label='@L["Fields.Artist"]' Immediate="true" />
-                                <FluentTextInput style="width: 100%;" @bind-Value="songComposedBy" Label='@L["Fields.Composer"]' Immediate="true" />
-                                <FluentTextInput style="width: 100%;" @bind-Value="songSinger" Label='@L["Fields.Singer"]' Immediate="true" />
-                                <FluentTextInput style="width: 100%;" @bind-Value="songFeatBy" Label='@L["Fields.FeaturedArtist"]' Immediate="true" />
-                                <FluentTextInput style="width: 100%;" @bind-Value="songArrangedBy" Label='@L["Fields.Arranger"]' Immediate="true" />
-                                <FluentTextInput style="width: 100%;" @bind-Value="songVisualizedBy" Label='@L["Fields.Visualizer"]' Immediate="true" />
-                            </FluentStack>
-                        </section>
-                    </FluentGridItem>
+                <section>
+                    <h2 class="section-heading">@L["Editor.BasicInfo"]</h2>
+                    <FluentGrid Spacing="3">
+                        <FluentGridItem Xs="12" Sm="6" Md="3">
+                            @if (IsCreate)
+                            {
+                                <FluentTextInput style="width: 100%;" Value="@songIdInput" ValueChanged="SetSongIdInput" Label='@(L["Fields.SongId"].Value + " *")' Placeholder="1" Required />
+                            }
+                            else
+                            {
+                                <FluentTextInput style="width: 100%;" Value="@(currentSong?.Id.ToString() ?? "")" Label='@L["Fields.SongId"]' ReadOnly="true" />
+                            }
+                        </FluentGridItem>
+                        <FluentGridItem Xs="12" Sm="6" Md="3"><FluentTextInput style="width: 100%;" @bind-Value="currentSong!.Name" Label='@L["Fields.SongName"]' /></FluentGridItem>
+                        <FluentGridItem Xs="12" Sm="6" Md="3"><FluentTextInput style="width: 100%;" @bind-Value="songFullName" Label='@L["Fields.FullName"]' Immediate="true" /></FluentGridItem>
+                        <FluentGridItem Xs="12" Sm="6" Md="3"><FluentTextInput style="width: 100%;" @bind-Value="songGenre" Label='@L["Fields.Genre"]' Immediate="true" /></FluentGridItem>
+                    </FluentGrid>
+                </section>
 
-                    <FluentGridItem Xs="12" Md="6">
-                        <section>
-                            <h2 class="section-heading">@L["Editor.GameplaySettings"]</h2>
-                            <p class="section-hint">@L["Editor.SongCodesHint"]</p>
-                            <FluentStack Orientation="Orientation.Vertical" VerticalGap="8">
-                                <FluentSwitch @bind-Value="bgaOriginal" Label='@L["Fields.OriginalBga"]' />
-                                <FluentSwitch @bind-Value="bgaLoop" Label='@L["Fields.LoopBga"]' />
-                                <FluentNumberInput @bind-Value="costPoint" Label='@L["Fields.CostGamePoint"]' />
-                                <FluentNumberInput @bind-Value="costCash" Label='@L["Fields.CostGameCash"]' />
-                                <FluentNumberInput @bind-Value="currentSong!.Flag" Label='@L["Fields.SongFlag"]' />
-                                <FluentTextInput style="width: 100%;" @bind-Value="currentSong!.Status" Label='@L["Fields.SongStatus"]' />
-                                <FluentSwitch @bind-Value="freeYn" Label='@L["Fields.FreeSong"]' />
-                                <FluentSwitch @bind-Value="hiddenYn" Label='@L["Fields.HiddenSong"]' />
-                                <FluentSwitch @bind-Value="openYn" Label='@L["Fields.OpenSong"]' />
-                                <FluentNumberInput @bind-Value="currentSong!.TrackId" Label='@L["Fields.TrackId"]' />
-                                <FluentTextInput style="width: 100%;" @bind-Value="currentSong!.ModDate" Label='@L["Fields.ModDate"]' />
-                                <FluentTextInput style="width: 100%;" @bind-Value="currentSong!.Update" Label='@L["Fields.UpdateValue"]' />
-                            </FluentStack>
-                        </section>
-                    </FluentGridItem>
-                </FluentGrid>
+                <section>
+                    <h2 class="section-heading">@L["Editor.Credits"]</h2>
+                    <FluentGrid Spacing="3">
+                        <FluentGridItem Xs="12" Sm="6" Md="4"><FluentTextInput style="width: 100%;" @bind-Value="songArtistName" Label='@L["Fields.Artist"]' Immediate="true" /></FluentGridItem>
+                        <FluentGridItem Xs="12" Sm="6" Md="4"><FluentTextInput style="width: 100%;" @bind-Value="songComposedBy" Label='@L["Fields.Composer"]' Immediate="true" /></FluentGridItem>
+                        <FluentGridItem Xs="12" Sm="6" Md="4"><FluentTextInput style="width: 100%;" @bind-Value="songSinger" Label='@L["Fields.Singer"]' Immediate="true" /></FluentGridItem>
+                        <FluentGridItem Xs="12" Sm="6" Md="4"><FluentTextInput style="width: 100%;" @bind-Value="songFeatBy" Label='@L["Fields.FeaturedArtist"]' Immediate="true" /></FluentGridItem>
+                        <FluentGridItem Xs="12" Sm="6" Md="4"><FluentTextInput style="width: 100%;" @bind-Value="songArrangedBy" Label='@L["Fields.Arranger"]' Immediate="true" /></FluentGridItem>
+                        <FluentGridItem Xs="12" Sm="6" Md="4"><FluentTextInput style="width: 100%;" @bind-Value="songVisualizedBy" Label='@L["Fields.Visualizer"]' Immediate="true" /></FluentGridItem>
+                    </FluentGrid>
+                </section>
+
+                <section>
+                    <h2 class="section-heading">@L["Editor.GameplaySettings"]</h2>
+                    <p class="section-hint">@L["Editor.SongCodesHint"]</p>
+                    <FluentGrid Spacing="3">
+                        <FluentGridItem Xs="12" Sm="6" Md="4"><FluentSwitch @bind-Value="bgaOriginal" Label='@L["Fields.OriginalBga"]' /></FluentGridItem>
+                        <FluentGridItem Xs="12" Sm="6" Md="4"><FluentSwitch @bind-Value="bgaLoop" Label='@L["Fields.LoopBga"]' /></FluentGridItem>
+                        <FluentGridItem Xs="12" Sm="6" Md="4"><FluentNumberInput @bind-Value="costPoint" Label='@L["Fields.CostGamePoint"]' /></FluentGridItem>
+                        <FluentGridItem Xs="12" Sm="6" Md="4"><FluentNumberInput @bind-Value="costCash" Label='@L["Fields.CostGameCash"]' /></FluentGridItem>
+                        <FluentGridItem Xs="12" Sm="6" Md="4"><FluentNumberInput @bind-Value="currentSong!.Flag" Label='@L["Fields.SongFlag"]' /></FluentGridItem>
+                        <FluentGridItem Xs="12" Sm="6" Md="4"><FluentTextInput style="width: 100%;" @bind-Value="currentSong!.Status" Label='@L["Fields.SongStatus"]' /></FluentGridItem>
+                        <FluentGridItem Xs="12" Sm="6" Md="4"><FluentSwitch @bind-Value="freeYn" Label='@L["Fields.FreeSong"]' /></FluentGridItem>
+                        <FluentGridItem Xs="12" Sm="6" Md="4"><FluentSwitch @bind-Value="hiddenYn" Label='@L["Fields.HiddenSong"]' /></FluentGridItem>
+                        <FluentGridItem Xs="12" Sm="6" Md="4"><FluentSwitch @bind-Value="openYn" Label='@L["Fields.OpenSong"]' /></FluentGridItem>
+                        <FluentGridItem Xs="12" Sm="6" Md="4"><FluentNumberInput @bind-Value="currentSong!.TrackId" Label='@L["Fields.TrackId"]' /></FluentGridItem>
+                        <FluentGridItem Xs="12" Sm="6" Md="4"><FluentTextInput style="width: 100%;" @bind-Value="currentSong!.ModDate" Label='@L["Fields.ModDate"]' /></FluentGridItem>
+                        <FluentGridItem Xs="12" Sm="6" Md="4"><FluentTextInput style="width: 100%;" @bind-Value="currentSong!.Update" Label='@L["Fields.UpdateValue"]' /></FluentGridItem>
+                    </FluentGrid>
+                </section>
 
                 @* ════════════════════════════════════════════
                    Row 2: Link ID (full width)
@@ -83,48 +83,40 @@
                 <section>
                     <h2 class="section-heading">@L["Editor.GameItemLink"]</h2>
                     <p class="section-hint">@L["Editor.SongItemHint"]</p>
-                    <div class="linked-item-picker">
-                        @if (linkedItemDraft is null)
+                    <div class="linked-item-card">
+                        <div class="linked-item-card-header">
+                            <span class="linked-item-state">@(linkedItemDraft is not null ? L["Editor.NewLinkedItem"] : selectedLinkedItem is not null ? L["Editor.ExistingLinkedItem"] : !IsCreate && currentSong!.ItemId > 0 ? L["Editor.MissingLinkedItem"] : L["Editor.NoGameItemSelected"])</span>
+                            <FluentButton Appearance="ButtonAppearance.Default" OnClick="OpenLinkedItemPickerAsync">@L["Editor.ChangeOrCreateLinkedItem"]</FluentButton>
+                        </div>
+                        @if (linkedItemDraft is { } linkedDraft)
                         {
-                            <FluentTextInput Value="@linkedItemSearchText"
-                                             ValueChanged="SearchLinkedItems"
-                                             Immediate="true"
-                                             Label='@L["Editor.SelectGameItem"]'
-                                             Placeholder='@L["Editor.SearchGameItem"]'
-                                             Style="width: 100%;" />
-                            @if (MatchingGameItems.Count > 0)
-                            {
-                                <div class="linked-item-results" role="listbox" aria-label='@L["Editor.SelectGameItem"]'>
-                                    @foreach (var item in MatchingGameItems)
-                                    {
-                                        <button type="button" class="linked-item-result" role="option" @onclick="() => SelectLinkedItem(item)">
-                                            <span class="linked-item-result-id">@item.Id</span>
-                                            <span>@ItemDisplayName(item)</span>
-                                        </button>
-                                    }
-                                </div>
-                            }
-                            else if (!string.IsNullOrWhiteSpace(linkedItemSearchText))
-                            {
-                                <p class="section-hint">@L["Editor.NoGameItemMatches"]</p>
-                            }
-
-                            @if (SelectedLinkedItem is null)
-                            {
-                                <FluentButton Appearance="ButtonAppearance.Default"
-                                              IconStart="@(new Icons.Regular.Size20.Add())"
-                                              OnClick="BeginLinkedItemCreation"
-                                              Disabled="@(!TryGetSuggestedItemId(out _))">
-                                    @L["Editor.AddLinkedGameItem"]
-                                </FluentButton>
-                            }
+                            <dl class="linked-item-details">
+                                <dt>@L["Fields.ItemId"]</dt><dd>@linkedDraft.Id</dd>
+                                <dt>@L["Fields.Name"]</dt><dd>@ItemDisplayName(linkedDraft)</dd>
+                                <dt>@L["Fields.Summary"]</dt><dd>@ItemCatalog.GetLocalizedSummary(linkedDraft, CurrentItemLanguage)</dd>
+                            </dl>
+                        }
+                        else if (selectedLinkedItem is { } existingItem)
+                        {
+                            <dl class="linked-item-details">
+                                <dt>@L["Fields.ItemId"]</dt><dd>@existingItem.Id</dd>
+                                <dt>@L["Fields.Name"]</dt><dd>@ItemDisplayName(existingItem)</dd>
+                                <dt>@L["Fields.Summary"]</dt><dd>@ItemCatalog.GetLocalizedSummary(existingItem, CurrentItemLanguage)</dd>
+                            </dl>
                         }
                         else
                         {
-                            <div class="linked-item-draft-header">
-                                <span>@L["Editor.AddLinkedGameItem"] (@linkedItemDraft.Id)</span>
-                                <FluentButton Appearance="ButtonAppearance.Default" OnClick="CancelLinkedItemCreation">@L["Editor.CancelLinkedGameItem"]</FluentButton>
-                            </div>
+                            @if (!IsCreate && currentSong!.ItemId > 0)
+                            {
+                                <dl class="linked-item-details">
+                                    <dt>@L["Fields.ItemId"]</dt><dd>@currentSong.ItemId</dd>
+                                </dl>
+                                <p class="section-hint">@L["Editor.LinkedItemMissingHint"]</p>
+                            }
+                            else
+                            {
+                                <p class="section-hint">@L["Editor.NoGameItemSelected"]</p>
+                            }
                         }
                     </div>
                 </section>
@@ -142,13 +134,11 @@
                    Row 3: Descriptions (multi-language, full width)
                    ════════════════════════════════════════════ *@
                 <section>
-                    <div class="section-title-row">
-                        <div>
-                            <h2 class="section-heading">@L["Editor.LocalizedDescriptions"]</h2>
-                            <p class="section-hint">@(syncOriginalText ? L["Editor.SyncAllLanguagesHint"] : L["Editor.DescriptionsHint"])</p>
-                        </div>
+                    <h2 class="section-heading">@L["Editor.LocalizedDescriptions"]</h2>
+                    <div class="section-inline-control">
                         <FluentSwitch @bind-Value="syncOriginalText" Label='@L["Editor.SyncAllLanguages"]' />
                     </div>
+                    <p class="section-hint">@(syncOriginalText ? L["Editor.SyncAllLanguagesHint"] : L["Editor.DescriptionsHint"])</p>
                     @if (!syncOriginalText)
                     {
                         <FluentStack Orientation="Orientation.Vertical" VerticalGap="16" HorizontalAlignment="HorizontalAlignment.Stretch">
@@ -275,7 +265,6 @@
     private bool _syncOriginalText = true;
     private Item? linkedItemDraft;
     private Item? selectedLinkedItem;
-    private string linkedItemSearchText = string.Empty;
 
     private bool syncOriginalText
     {
@@ -351,7 +340,6 @@
             selectedLinkedItem = currentSong is null
                 ? null
                 : AvailableGameItems.FirstOrDefault(item => item.Id.Equals(currentSong.ItemId.ToString(System.Globalization.CultureInfo.InvariantCulture), StringComparison.OrdinalIgnoreCase));
-            linkedItemSearchText = selectedLinkedItem is null ? string.Empty : FormatItemOption(selectedLinkedItem);
         }
     }
 
@@ -386,47 +374,9 @@
 
     private Item? SelectedLinkedItem => linkedItemDraft is null ? selectedLinkedItem : null;
 
-    private IReadOnlyList<Item> MatchingGameItems
-    {
-        get
-        {
-            var query = linkedItemSearchText.Trim();
-            if (query.Length == 0) return [];
-
-            return AvailableGameItems
-                .Select(item => new { Item = item, Rank = MatchRank(item, query) })
-                .Where(match => match.Rank < 3)
-                .OrderBy(match => match.Rank)
-                .ThenBy(match => match.Item.Id, StringComparer.OrdinalIgnoreCase)
-                .Take(5)
-                .Select(match => match.Item)
-                .ToArray();
-        }
-    }
-
-    private string FormatItemOption(Item item)
-    {
-        var name = ItemDisplayName(item);
-        return name.Equals(item.Id, StringComparison.OrdinalIgnoreCase) ? item.Id : $"{item.Id} — {name}";
-    }
-
+    private string CurrentItemLanguage => Language.CurrentCulture.Name == "zh-CN" ? "CN" : "US";
     private string ItemDisplayName(Item item)
-        => ItemCatalog.GetDisplayName(item, Language.CurrentCulture.Name == "zh-CN" ? "CN" : "US");
-
-    private int MatchRank(Item item, string query)
-    {
-        var terms = new[] { item.Id, item.ItemName }
-            .Concat(item.NamesByLanguage.Values)
-            .Where(value => !string.IsNullOrWhiteSpace(value));
-        var rank = 3;
-        foreach (var term in terms)
-        {
-            if (term.Equals(query, StringComparison.OrdinalIgnoreCase)) return 0;
-            if (term.StartsWith(query, StringComparison.OrdinalIgnoreCase)) rank = Math.Min(rank, 1);
-            else if (term.Contains(query, StringComparison.OrdinalIgnoreCase)) rank = Math.Min(rank, 2);
-        }
-        return rank;
-    }
+        => ItemCatalog.GetDisplayName(item, CurrentItemLanguage);
 
     private Task SetSongIdInput(string? value)
     {
@@ -436,43 +386,9 @@
         {
             currentSong!.ItemId = songId;
             selectedLinkedItem = AvailableGameItems.FirstOrDefault(item => item.Id.Equals(songIdInput, StringComparison.OrdinalIgnoreCase));
-            linkedItemSearchText = selectedLinkedItem is null ? string.Empty : FormatItemOption(selectedLinkedItem);
         }
 
         return Task.CompletedTask;
-    }
-
-    private Task SelectLinkedItem(Item? item)
-    {
-        if (currentSong is null || item is null || !int.TryParse(item.Id, out var itemId))
-            return Task.CompletedTask;
-
-        currentSong.ItemId = itemId;
-        selectedLinkedItem = item;
-        linkedItemSearchText = FormatItemOption(item);
-        hasExplicitLinkedItemChoice = true;
-        linkedItemDraft = null;
-        return Task.CompletedTask;
-    }
-
-    private Task SearchLinkedItems(string? value)
-    {
-        linkedItemSearchText = value ?? string.Empty;
-        if (selectedLinkedItem is not null
-            && !FormatItemOption(selectedLinkedItem).Equals(linkedItemSearchText, StringComparison.OrdinalIgnoreCase))
-        {
-            selectedLinkedItem = null;
-            hasExplicitLinkedItemChoice = false;
-        }
-        return Task.CompletedTask;
-    }
-
-    private void CancelLinkedItemCreation()
-    {
-        linkedItemDraft = null;
-        selectedLinkedItem = null;
-        linkedItemSearchText = string.Empty;
-        hasExplicitLinkedItemChoice = false;
     }
 
     private string LanguageLabel(string language) => L[$"Editor.Language.{language}"].Value;
@@ -509,31 +425,50 @@
             : currentSong.ItemId > 0
                 ? currentSong.ItemId.ToString(System.Globalization.CultureInfo.InvariantCulture)
                 : currentSong.Id.ToString(System.Globalization.CultureInfo.InvariantCulture);
-        itemId = SelectedLinkedItem?.Id ?? (IsCreate ? songIdInput : existingSongItemId);
+        itemId = linkedItemDraft?.Id ?? SelectedLinkedItem?.Id ?? (IsCreate ? songIdInput : existingSongItemId);
         return int.TryParse(itemId, out var parsedId) && parsedId > 0;
     }
 
-    private void BeginLinkedItemCreation()
+    private async Task OpenLinkedItemPickerAsync()
     {
-        if (currentSong is null || !TryGetSuggestedItemId(out var itemId))
+        if (currentSong is null)
             return;
 
-        linkedItemDraft = new Item
+        TryGetSuggestedItemId(out var suggestedId);
+        var pickerState = new LinkedItemPickerState
         {
-            Id = itemId,
-            ItemType = "S",
-            RepeatCount = "0",
-            LimitMinute = "0",
-            Status = "N",
-            BuyLevel = "0",
-            BuyLimitCount = "1",
-            BuyLimitType = "F",
-            Update = "0"
+            Items = AvailableGameItems,
+            ItemId = suggestedId,
+            IsCreateMode = selectedLinkedItem is null && linkedItemDraft is not null
         };
-        currentSong.ItemId = int.Parse(itemId, System.Globalization.CultureInfo.InvariantCulture);
-        selectedLinkedItem = null;
-        linkedItemSearchText = string.Empty;
+
+        var result = await DialogService.ShowDialogAsync<LinkedItemPickerDialog>(options =>
+        {
+            options.Header.Title = L["Editor.ChangeOrCreateLinkedItem"].Value;
+            options.Footer.PrimaryAction.Visible = false;
+            options.Footer.SecondaryAction.Label = L["Common.Cancel"].Value;
+            options.Width = "760px";
+            options.Parameters = new Dictionary<string, object?>
+            {
+                [nameof(LinkedItemPickerDialog.State)] = pickerState
+            };
+        });
+
+        if (result.Cancelled || !pickerState.Accepted || pickerState.ResultItem is null)
+            return;
+
         hasExplicitLinkedItemChoice = true;
+        if (pickerState.ResultIsNew)
+        {
+            linkedItemDraft = pickerState.ResultItem;
+            selectedLinkedItem = null;
+        }
+        else
+        {
+            linkedItemDraft = null;
+            selectedLinkedItem = pickerState.ResultItem;
+        }
+        currentSong.ItemId = int.Parse(pickerState.ResultItem.Id, System.Globalization.CultureInfo.InvariantCulture);
     }
 
     private void SetOriginalField(Action<Song> update)
