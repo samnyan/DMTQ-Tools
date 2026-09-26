@@ -1,162 +1,237 @@
-# FluentDataGrid
-
-`FluentDataGrid<TGridItem>` is a strongly-typed generic component for displaying tabular data.
+# FluentDataGrid — Advanced Patterns
 
 ## Basic Usage
 
 ```razor
-<FluentDataGrid Items="@people" TGridItem="Person">
+<FluentDataGrid Items="@people">
     <PropertyColumn Property="@(p => p.Name)" Sortable="true" />
     <PropertyColumn Property="@(p => p.Email)" />
     <PropertyColumn Property="@(p => p.BirthDate)" Format="yyyy-MM-dd" />
-    <TemplateColumn Title="Actions">
-        <FluentButton OnClick="@(() => Edit(context))">Edit</FluentButton>
-    </TemplateColumn>
-</FluentDataGrid>
-```
-
-**Critical**: Columns are child components, NOT properties. Use `PropertyColumn`, `TemplateColumn`, and `SelectColumn` within the grid.
-
-## Column Types
-
-### PropertyColumn
-
-Binds to a property expression. Auto-derives title from property name or `[Display]` attribute.
-
-```razor
-<PropertyColumn Property="@(p => p.Name)" Sortable="true" />
-<PropertyColumn Property="@(p => p.Price)" Format="C2" Title="Unit Price" />
-<PropertyColumn Property="@(p => p.Category)" Comparer="@StringComparer.OrdinalIgnoreCase" />
-```
-
-Parameters: `Property` (required), `Format`, `Title`, `Sortable`, `SortBy`, `Comparer`, `IsDefaultSortColumn`, `InitialSortDirection`, `Class`, `Tooltip`.
-
-### TemplateColumn
-
-Full custom rendering via render fragment. `context` is the `TGridItem`.
-
-```razor
-<TemplateColumn Title="Status" SortBy="@statusSort">
-    <FluentBadge Appearance="Appearance.Accent"
-                 BackgroundColor="@(context.IsActive ? "green" : "red")">
-        @(context.IsActive ? "Active" : "Inactive")
-    </FluentBadge>
-</TemplateColumn>
-```
-
-### SelectColumn
-
-Checkbox selection column.
-
-```razor
-<SelectColumn TGridItem="Person"
-              SelectMode="DataGridSelectMode.Multiple"
-              @bind-SelectedItems="@selectedPeople" />
-```
-
-Modes: `DataGridSelectMode.Single`, `DataGridSelectMode.Multiple`.
-
-## Data Sources
-
-Two mutually exclusive approaches:
-
-### In-memory (IQueryable)
-
-```razor
-<FluentDataGrid Items="@people.AsQueryable()" TGridItem="Person">
-    ...
-</FluentDataGrid>
-```
-
-### Server-side / Custom (ItemsProvider)
-
-```razor
-<FluentDataGrid ItemsProvider="@peopleProvider" TGridItem="Person">
-    ...
 </FluentDataGrid>
 
 @code {
-    private GridItemsProvider<Person> peopleProvider = async request =>
-    {
-        var result = await PeopleService.GetPeopleAsync(
-            request.StartIndex,
-            request.Count ?? 50,
-            request.GetSortByProperties().FirstOrDefault());
-
-        return GridItemsProviderResult.From(result.Items, result.TotalCount);
-    };
+    private IQueryable<Person> people = GetPeople().AsQueryable();
 }
 ```
 
-### EF Core Adapter
+## Sorting by More Than One Column
 
-```csharp
-// Program.cs
-builder.Services.AddDataGridEntityFrameworkAdapter();
-```
+`SortMode="DataGridSortMode.Multiple"` lets the grid be sorted by several columns at once. Users add a column with
+Shift+click (Shift+Enter from the keyboard) or from the column header, which lists the sort actions.
 
 ```razor
-<FluentDataGrid Items="@dbContext.People" TGridItem="Person">
-    ...
+<FluentDataGrid Items="@people" SortMode="DataGridSortMode.Multiple" OnSortChanged="@HandleSortChanged">
+    <PropertyColumn Property="@(p => p.City)" Sortable="true" IsDefaultSortColumn="true" />
+    <PropertyColumn Property="@(p => p.Name)" Sortable="true" />
 </FluentDataGrid>
+
+@code {
+    private void HandleSortChanged(DataGridSortEventArgs<Person> args)
+    {
+        // Every sorted column, in priority order
+        foreach (var level in args.SortColumns)
+        {
+            Console.WriteLine($"{level.Column.Title} {(level.Ascending ? "asc" : "desc")}");
+        }
+    }
+}
 ```
+
+The sort is a list of `DataGridSortColumn<TGridItem>` everywhere it is exposed: `FluentDataGrid.SortColumns`,
+`DataGridSortEventArgs.SortColumns` and `GridItemsProviderRequest.SortColumns`. There are no single-column
+`SortByColumn` / `SortByAscending` properties; use `SortColumns.FirstOrDefault()` for the primary sort
+(`null` when the grid is not sorted).
+
+Methods: `SortByColumnAsync` (sort by one column), `AddSortByColumnAsync` (add a level, or change the direction of a
+column already sorted on), `RemoveSortByColumnAsync` (drop one level), `SetSortAsync` (replace the whole sort),
+`ClearSortAsync` (leave the grid unsorted) and `ResetSortAsync` (back to the columns' `IsDefaultSortColumn` sort).
+
+`ShowMultiSortActions="false"` hides the sort actions from the column headers, leaving only the Shift shortcuts and
+these methods - which touch users cannot reach, so only use it alongside your own sorting UI.
 
 ## Pagination
 
 ```razor
-<FluentDataGrid Items="@people" Pagination="@pagination" TGridItem="Person">
-    ...
+<FluentDataGrid Items="@people" Pagination="@pagination">
+    <PropertyColumn Property="@(p => p.Name)" Sortable="true" />
+    <PropertyColumn Property="@(p => p.Email)" />
 </FluentDataGrid>
 
 <FluentPaginator State="@pagination" />
 
 @code {
+    private IQueryable<Person> people = GetPeople().AsQueryable();
     private PaginationState pagination = new() { ItemsPerPage = 10 };
 }
 ```
 
 ## Virtualization
 
-For large datasets, enable virtualization:
+For large datasets without pagination, use virtualization to render only
+visible rows:
 
 ```razor
-<FluentDataGrid Items="@people" Virtualize="true" ItemSize="46" TGridItem="Person">
+<FluentDataGrid Items="@people"
+                Virtualize="true"
+                ItemSize="46"
+                OverscanCount="5"
+                style="height: 500px; overflow-y: auto;">
+    <PropertyColumn Property="@(p => p.Name)" />
+</FluentDataGrid>
+```
+
+- `ItemSize` — expected row height in pixels (default: 32)
+- `OverscanCount` — extra rows rendered above/below viewport (default: 3)
+
+## Remote Data — ItemsProvider
+
+For server-side data loading (API calls, EF Core via adapter):
+
+```razor
+<FluentDataGrid ItemsProvider="@dataProvider" Virtualize="true" ItemSize="46">
+    <PropertyColumn Property="@(p => p.Name)" Sortable="true" />
+    <PropertyColumn Property="@(p => p.City)" Sortable="true" />
+</FluentDataGrid>
+
+@code {
+    private GridItemsProvider<Person> dataProvider = default!;
+
+    protected override void OnInitialized()
+    {
+        dataProvider = async request =>
+        {
+            // request.StartIndex, request.Count, request.SortColumns,
+            // request.CancellationToken
+            var result = await FetchFromApi(request);
+            return GridItemsProviderResult.From(result.Items, result.TotalCount);
+        };
+    }
+}
+```
+
+## Entity Framework Adapter
+
+Install: `Microsoft.FluentUI.AspNetCore.Components.DataGrid.EntityFrameworkAdapter`
+
+```csharp
+// Program.cs
+builder.Services.AddDataGridEntityFrameworkAdapter();
+```
+
+Then pass an `IQueryable<T>` from your `DbContext` directly to `Items`:
+
+```razor
+<FluentDataGrid Items="@db.People.AsNoTracking()">
+    <PropertyColumn Property="@(p => p.Name)" Sortable="true" />
+</FluentDataGrid>
+```
+
+The adapter translates sort/filter/page operations into efficient SQL queries.
+
+## OData Adapter
+
+Install: `Microsoft.FluentUI.AspNetCore.Components.DataGrid.ODataAdapter`
+
+## TemplateColumn
+
+For custom cell rendering:
+
+```razor
+<FluentDataGrid Items="@people">
+    <PropertyColumn Property="@(p => p.Name)" Sortable="true" />
+
+    <TemplateColumn Title="Status">
+        <FluentBadge Color="@(context.IsActive ? BadgeColor.Success : BadgeColor.Danger)">
+            @(context.IsActive ? "Active" : "Inactive")
+        </FluentBadge>
+    </TemplateColumn>
+
+    <TemplateColumn Title="Actions" Align="Align.End">
+        <FluentButton Size="ButtonSize.Small"
+                      IconStart="@(new Icons.Regular.Size16.Edit())"
+                      OnClick="@(() => Edit(context))">
+            Edit
+        </FluentButton>
+        <FluentButton Size="ButtonSize.Small"
+                      IconStart="@(new Icons.Regular.Size16.Delete())"
+                      Appearance="ButtonAppearance.Outline"
+                      OnClick="@(() => Delete(context))">
+            Delete
+        </FluentButton>
+    </TemplateColumn>
+</FluentDataGrid>
+```
+
+## Column Options (Filter UI)
+
+```razor
+<PropertyColumn Property="@(p => p.City)" Sortable="true" Title="City">
+    <ColumnOptions>
+        <FluentTextField @bind-Value="cityFilter"
+                         @bind-Value:after="@(() => StateHasChanged())"
+                         Placeholder="Filter by city..." />
+    </ColumnOptions>
+</PropertyColumn>
+```
+
+The column options UI is accessible via a header button.
+
+## Resizable Columns
+
+```razor
+<FluentDataGrid Items="@people"
+                ResizableColumns="true"
+                ResizeType="DataGridResizeType.Discrete">
+    <PropertyColumn Property="@(p => p.Name)" />
+    <PropertyColumn Property="@(p => p.Email)" />
+</FluentDataGrid>
+```
+
+- `ResizableColumns="true"` — enables drag handles
+- `ResizeType` — `Discrete` (10px steps) or `Exact` (pixel-precise) for keyboard resize
+- `ResizeColumnOnAllRows` — when `true` (default), resize handles span full grid height
+
+## Empty, Loading, and Error Content
+
+```razor
+<FluentDataGrid Items="@people" Loading="@isLoading">
+    <PropertyColumn Property="@(p => p.Name)" />
+
+    <EmptyContent>
+        <p>No records found.</p>
+    </EmptyContent>
+
+    <LoadingContent>
+        <FluentProgressBar />
+    </LoadingContent>
+</FluentDataGrid>
+```
+
+## Refresh Data Programmatically
+
+```csharp
+@code {
+    private FluentDataGrid<Person> grid = default!;
+
+    private async Task RefreshGrid()
+    {
+        await grid.RefreshDataAsync();
+    }
+}
+```
+
+```razor
+<FluentDataGrid @ref="grid" Items="@people">
     ...
 </FluentDataGrid>
 ```
 
-`ItemSize` is the estimated row height in pixels (default varies). Important for scroll position calculations.
+## Manual Grid (No Auto-Columns)
 
-## Key Parameters
-
-| Parameter | Type | Description |
-|---|---|---|
-| `Items` | `IQueryable<TGridItem>?` | In-memory data source |
-| `ItemsProvider` | `GridItemsProvider<TGridItem>?` | Async data provider |
-| `Pagination` | `PaginationState?` | Pagination state |
-| `Virtualize` | `bool` | Enable virtualization |
-| `ItemSize` | `float` | Estimated row height (px) |
-| `ItemKey` | `Func<TGridItem, object>?` | Stable key for `@key` |
-| `ResizableColumns` | `bool` | Enable column resize |
-| `HeaderCellAsButtonWithMenu` | `bool` | Sortable header UI |
-| `GridTemplateColumns` | `string?` | CSS grid-template-columns |
-| `Loading` | `bool` | Show loading indicator |
-| `ShowHover` | `bool` | Highlight rows on hover |
-| `OnRowClick` | `EventCallback<FluentDataGridRow<TGridItem>>` | Row click handler |
-| `OnRowDoubleClick` | `EventCallback<FluentDataGridRow<TGridItem>>` | Row double-click handler |
-| `OnRowFocus` | `EventCallback<FluentDataGridRow<TGridItem>>` | Row focus handler |
-
-## Sorting
+For full control over grid template columns:
 
 ```razor
-<PropertyColumn Property="@(p => p.Name)" Sortable="true" IsDefaultSortColumn="true"
-                InitialSortDirection="SortDirection.Ascending" />
-```
-
-Or with a custom sort:
-
-```razor
-<TemplateColumn Title="Full Name" SortBy="@(GridSort<Person>.ByAscending(p => p.LastName).ThenAscending(p => p.FirstName))">
-    @context.LastName, @context.FirstName
-</TemplateColumn>
+<FluentDataGrid Items="@people" GridTemplateColumns="200px 1fr 100px">
+    ...
+</FluentDataGrid>
 ```
