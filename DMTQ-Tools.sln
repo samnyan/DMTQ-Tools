@@ -28,6 +28,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DMTQ.Tools.UITests", "DMTQ.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DMTQ.Tools.Components", "DMTQ.Tools.Components\DMTQ.Tools.Components.csproj", "{9D5E3544-D6AE-4A50-A3D5-BA8977733BCD}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Assets.Lib", "Assets.Lib\Assets.Lib.csproj", "{4FB8E551-2334-44E9-AB9E-70A51708BC01}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -171,6 +173,18 @@ Global
 		{9D5E3544-D6AE-4A50-A3D5-BA8977733BCD}.Release|x64.Build.0 = Release|Any CPU
 		{9D5E3544-D6AE-4A50-A3D5-BA8977733BCD}.Release|x86.ActiveCfg = Release|Any CPU
 		{9D5E3544-D6AE-4A50-A3D5-BA8977733BCD}.Release|x86.Build.0 = Release|Any CPU
+		{4FB8E551-2334-44E9-AB9E-70A51708BC01}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4FB8E551-2334-44E9-AB9E-70A51708BC01}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4FB8E551-2334-44E9-AB9E-70A51708BC01}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{4FB8E551-2334-44E9-AB9E-70A51708BC01}.Debug|x64.Build.0 = Debug|Any CPU
+		{4FB8E551-2334-44E9-AB9E-70A51708BC01}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{4FB8E551-2334-44E9-AB9E-70A51708BC01}.Debug|x86.Build.0 = Debug|Any CPU
+		{4FB8E551-2334-44E9-AB9E-70A51708BC01}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4FB8E551-2334-44E9-AB9E-70A51708BC01}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4FB8E551-2334-44E9-AB9E-70A51708BC01}.Release|x64.ActiveCfg = Release|Any CPU
+		{4FB8E551-2334-44E9-AB9E-70A51708BC01}.Release|x64.Build.0 = Release|Any CPU
+		{4FB8E551-2334-44E9-AB9E-70A51708BC01}.Release|x86.ActiveCfg = Release|Any CPU
+		{4FB8E551-2334-44E9-AB9E-70A51708BC01}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

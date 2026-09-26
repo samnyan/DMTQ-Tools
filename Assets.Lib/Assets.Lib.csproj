@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\libs\AssetsTools.NET\AssetTools.NET\AssetsTools.NET.csproj" />
+    <ProjectReference Include="..\libs\AssetsTools.NET\AssetsTools.NET.Texture\AssetsTools.NET.Texture.csproj" />
+    <PackageReference Include="StbImageSharp" Version="2.27.13" />
+    <PackageReference Include="StbImageWriteSharp" Version="1.16.7" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <AssetsToolsNativeBuildDir>$(MSBuildThisFileDirectory)..\libs\AssetsTools.NET\build</AssetsToolsNativeBuildDir>
+    <AssetsToolsNativeOutputDir>$(AssetsToolsNativeBuildDir)\TextureEncoder\$(Configuration)</AssetsToolsNativeOutputDir>
+  </PropertyGroup>
+
+  <ItemGroup Condition="$([MSBuild]::IsOSPlatform('Windows'))">
+    <Content Include="$(AssetsToolsNativeOutputDir)\textureencoder.dll" Link="textureencoder.dll" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="$(AssetsToolsNativeOutputDir)\cuttlefish.dll" Link="cuttlefish.dll" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="$(AssetsToolsNativeOutputDir)\PVRTexLib.dll" Link="PVRTexLib.dll" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <Target Name="BuildAssetsToolsTextureEncoder" BeforeTargets="PrepareForBuild" Condition="$([MSBuild]::IsOSPlatform('Windows'))">
+    <Exec Command="cmake -S &quot;$(MSBuildThisFileDirectory)..\libs\AssetsTools.NET&quot; -B &quot;$(AssetsToolsNativeBuildDir)&quot; -A x64 -DPVRTL_ENABLED=ON" />
+    <Exec Command="cmake --build &quot;$(AssetsToolsNativeBuildDir)&quot; --config $(Configuration)" />
+  </Target>
+
+</Project>
