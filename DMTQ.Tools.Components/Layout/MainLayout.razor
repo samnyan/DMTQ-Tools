@@ -15,77 +15,88 @@
 <div @key="Language.CurrentCulture.Name" style="height: 100%; display: flex; flex-direction: column; overflow: hidden;">
 
     @* ── Sticky Header ── *@
-    <header class="app-header" style="height: 48px; border-bottom: 1px solid rgba(255,255,255,.24); padding: 0 1rem; background-color: #6264a7; color: white;">
-        <div class="header-brand">@L["App.Title"]</div>
+    <header class="app-header">
+        <div class="header-identity">
+            <FluentButton class="header-nav-toggle"
+                          Appearance="ButtonAppearance.Subtle"
+                          IconStart="@(new Icons.Regular.Size20.Navigation())"
+                          Title='@L["Header.ToggleNavigation"]'
+                          aria-label='@L["Header.ToggleNavigation"]'
+                          aria-expanded="@(_isNavigationExpanded ? "true" : "false")"
+                          OnClick="ToggleNavigation" />
+            <span class="header-brand">@L["App.Title"]</span>
+        </div>
 
         <div class="header-breadcrumb"><GlobalBreadcrumb /></div>
 
-        <div style="flex: 1;"></div>
-
-        @if (EditablePlatforms.Count > 1)
-        {
-            <div class="header-platform">
-                <span>@L["Header.DataPlatform"]</span>
-                <FluentSelect Items="@EditablePlatforms"
-                              @bind-Value="State.SelectedExportPlatform"
-                              Style="min-width: 6rem;" />
-            </div>
-        }
-
-        @if (State.HasProject)
-        {
-            <div class="header-project">
-                <span class="header-project-name @(State.IsDirty ? "is-dirty" : null)"
-                      title="@(State.IsDirty ? L["Header.UnsavedChanges"].Value : State.ProjectRoot)">
-                    @ProjectDisplayName
-                </span>
-                <FluentButton class="header-save-button"
-                              Appearance="ButtonAppearance.Default"
-                              OnClick="SaveProjectAsync"
-                              Disabled="@(!State.HasPackage || _isSaving)"
-                              Title='@L["Header.SaveProject"]'>
-                    @(_isSaving ? L["Header.Saving"] : L["Header.SaveProject"])
-                </FluentButton>
-            </div>
-            <FluentSwitch class="header-auto-save"
-                          Value="@_autoSaveEnabled"
-                          ValueChanged="SetAutoSaveEnabled"
-                          Label='@L["Header.AutoSave"]'
-                          Title='@L["Header.AutoSaveHint"]' />
-            @if (!string.IsNullOrWhiteSpace(_saveError))
+        <div class="header-actions">
+            @if (EditablePlatforms.Count > 1)
             {
-                <span class="header-save-error" title="@_saveError">@(_autoSaveFailure ? L["Header.AutoSaveFailed"] : L["Header.SaveFailed"])</span>
+                <div class="header-platform">
+                    <span>@L["Header.DataPlatform"]</span>
+                    <FluentSelect Items="@EditablePlatforms"
+                                  @bind-Value="State.SelectedExportPlatform"
+                                  Style="min-width: 6rem;" />
+                </div>
             }
-        }
 
-        <FluentMenu>
-            <FluentMenuButton class="header-language" Label="@CurrentLanguageLabel" Appearance="ButtonAppearance.Default"
-                              IconStart="@(new Icons.Regular.Size20.Globe())"
-                              Title='@L["Language.Title"]' />
-            <FluentMenuItem Label='@L["Language.English"]' Checked='@(Language.CurrentCulture.Name == "en-US")'
-                            OnClick="UseEnglish" />
-            <FluentMenuItem Label='@L["Language.Chinese"]' Checked='@(Language.CurrentCulture.Name == "zh-CN")'
-                            OnClick="UseChinese" />
-        </FluentMenu>
+            @if (State.HasProject)
+            {
+                <div class="header-project-actions">
+                    <span class="header-project-name @(State.IsDirty ? "is-dirty" : null)"
+                          title="@(State.IsDirty ? L["Header.UnsavedChanges"].Value : State.ProjectRoot)">
+                        @ProjectDisplayName
+                    </span>
+                    <FluentButton class="header-save-button"
+                                  Appearance="ButtonAppearance.Default"
+                                  OnClick="SaveProjectAsync"
+                                  Disabled="@(!State.HasPackage || _isSaving)"
+                                  Title='@L["Header.SaveProject"]'>
+                        @(_isSaving ? L["Header.Saving"] : L["Header.SaveProject"])
+                    </FluentButton>
+                    <FluentSwitch class="header-auto-save"
+                                  Value="@_autoSaveEnabled"
+                                  ValueChanged="SetAutoSaveEnabled"
+                                  Label='@L["Header.AutoSave"]'
+                                  Title='@L["Header.AutoSaveHint"]' />
+                    @if (!string.IsNullOrWhiteSpace(_saveError))
+                    {
+                        <span class="header-save-error" title="@_saveError">@(_autoSaveFailure ? L["Header.AutoSaveFailed"] : L["Header.SaveFailed"])</span>
+                    }
+                </div>
+            }
+
+            <FluentMenu>
+                <FluentMenuButton class="header-language" Label="@CurrentLanguageLabel" Appearance="ButtonAppearance.Subtle"
+                                  IconStart="@(new Icons.Regular.Size20.Globe())"
+                                  Title='@L["Language.Title"]' />
+                <FluentMenuItem Label='@L["Language.English"]' Checked='@(Language.CurrentCulture.Name == "en-US")'
+                                OnClick="UseEnglish" />
+                <FluentMenuItem Label='@L["Language.Chinese"]' Checked='@(Language.CurrentCulture.Name == "zh-CN")'
+                                OnClick="UseChinese" />
+            </FluentMenu>
+        </div>
     </header>
 
     @* ── Sidebar + Content (row flex, constrained by parent column) ── *@
-    <div style="flex: 1; min-height: 0; display: flex; overflow: hidden;">
-        <FluentNav Width="250px"
-                       Style="flex-shrink: 0; border-right: 1px solid var(--colorNeutralStroke1);">
-            <FluentNavItem Href="" IconRest="@(new Icons.Regular.Size20.Home())" Match="NavLinkMatch.All">@L["Nav.Project"]</FluentNavItem>
-            <FluentNavItem Href="import" IconRest="@(new Icons.Regular.Size20.ArrowDownload())">@L["Nav.Import"]</FluentNavItem>
-            <FluentNavItem Href="songs" IconRest="@(new Icons.Regular.Size20.MusicNote1())">@L["Nav.Songs"]</FluentNavItem>
-            <FluentNavItem Href="patterns" IconRest="@(new Icons.Regular.Size20.MusicNote1())">@L["Nav.PatternTool"]</FluentNavItem>
-            <FluentNavItem Href="products" IconRest="@(new Icons.Regular.Size20.Table())">@L["Nav.Products"]</FluentNavItem>
-            <FluentNavItem Href="items" IconRest="@(new Icons.Regular.Size20.Table())">@L["Nav.Items"]</FluentNavItem>
-            <FluentNavItem Href="achievements" IconRest="@(new Icons.Regular.Size20.Table())">@L["Nav.Achievements"]</FluentNavItem>
-            <FluentNavItem Href="quests" IconRest="@(new Icons.Regular.Size20.Table())">@L["Nav.Quests"]</FluentNavItem>
-            <FluentNavItem Href="slang" IconRest="@(new Icons.Regular.Size20.Table())">@L["Nav.Slang"]</FluentNavItem>
-            <FluentNavItem Href="resources" IconRest="@(new Icons.Regular.Size20.Folder())">@L["Nav.Resources"]</FluentNavItem>
-            <FluentNavItem Href="export" IconRest="@(new Icons.Regular.Size20.ArrowUpload())">@L["Nav.Export"]</FluentNavItem>
-            <FluentNavItem Href="diagnostics" IconRest="@(new Icons.Regular.Size20.Wrench())">@L["Nav.Diagnostics"]</FluentNavItem>
-        </FluentNav>
+    <div class="app-workspace">
+        <aside class="app-sidebar @(_isNavigationExpanded ? "is-expanded" : "is-collapsed")"
+               aria-hidden="@(!_isNavigationExpanded)">
+            <FluentNav class="app-navigation" Width="100%">
+                <FluentNavItem Href="" IconRest="@(new Icons.Regular.Size20.Home())" Match="NavLinkMatch.All">@L["Nav.Project"]</FluentNavItem>
+                <FluentNavItem Href="import" IconRest="@(new Icons.Regular.Size20.ArrowDownload())">@L["Nav.Import"]</FluentNavItem>
+                <FluentNavItem Href="songs" IconRest="@(new Icons.Regular.Size20.MusicNote1())">@L["Nav.Songs"]</FluentNavItem>
+                <FluentNavItem Href="patterns" IconRest="@(new Icons.Regular.Size20.MusicNote1())">@L["Nav.PatternTool"]</FluentNavItem>
+                <FluentNavItem Href="products" IconRest="@(new Icons.Regular.Size20.Table())">@L["Nav.Products"]</FluentNavItem>
+                <FluentNavItem Href="items" IconRest="@(new Icons.Regular.Size20.Table())">@L["Nav.Items"]</FluentNavItem>
+                <FluentNavItem Href="achievements" IconRest="@(new Icons.Regular.Size20.Table())">@L["Nav.Achievements"]</FluentNavItem>
+                <FluentNavItem Href="quests" IconRest="@(new Icons.Regular.Size20.Table())">@L["Nav.Quests"]</FluentNavItem>
+                <FluentNavItem Href="slang" IconRest="@(new Icons.Regular.Size20.Table())">@L["Nav.Slang"]</FluentNavItem>
+                <FluentNavItem Href="resources" IconRest="@(new Icons.Regular.Size20.Folder())">@L["Nav.Resources"]</FluentNavItem>
+                <FluentNavItem Href="export" IconRest="@(new Icons.Regular.Size20.ArrowUpload())">@L["Nav.Export"]</FluentNavItem>
+                <FluentNavItem Href="diagnostics" IconRest="@(new Icons.Regular.Size20.Wrench())">@L["Nav.Diagnostics"]</FluentNavItem>
+            </FluentNav>
+        </aside>
 
         <main class="app-main">
             <div class="route-viewport">
@@ -104,6 +115,7 @@
     private readonly SemaphoreSlim _saveGate = new(1, 1);
     private CancellationTokenSource? _autoSaveCancellation;
     private bool _isSaving;
+    private bool _isNavigationExpanded = true;
     private bool _autoSaveEnabled;
     private bool _autoSaveFailure;
     private string? _saveError;
@@ -140,6 +152,8 @@
     });
 
     private void OnLanguageChanged() => InvokeAsync(StateHasChanged);
+
+    private void ToggleNavigation() => _isNavigationExpanded = !_isNavigationExpanded;
 
     private void UseEnglish() => Language.SetLanguage("en-US");
 

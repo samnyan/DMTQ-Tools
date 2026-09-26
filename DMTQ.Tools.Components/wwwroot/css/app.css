@@ -41,8 +41,12 @@ fluent-data-grid {
     box-sizing: border-box;
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    flex: 0 0 3.5rem;
+    gap: 1rem;
+    height: 3.5rem;
+    padding: 0 1rem;
     min-width: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.22);
     background-color: var(--colorBrandBackground, #6264a7);
     color: #fff;
     --colorNeutralForeground1: #fff;
@@ -52,6 +56,14 @@ fluent-data-grid {
 
 body {
     --colorBrandBackground: #6264a7;
+}
+
+.header-identity {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 0;
 }
 
 .header-brand {
@@ -64,9 +76,17 @@ body {
     white-space: nowrap;
 }
 
+.header-nav-toggle {
+    flex: 0 0 auto;
+    color: #fff;
+    --colorNeutralForeground1: #fff;
+    --colorNeutralBackground1Hover: rgba(255, 255, 255, 0.14);
+    --colorNeutralBackground1Pressed: rgba(255, 255, 255, 0.2);
+}
+
 .header-breadcrumb {
     flex: 1 1 8rem;
-    min-width: 3rem;
+    min-width: 0;
     overflow: hidden;
 }
 
@@ -78,10 +98,18 @@ body {
 
 .global-breadcrumb ol {
     display: flex;
+    min-width: 0;
     gap: 0.5rem;
     margin: 0;
     padding: 0;
     list-style: none;
+}
+
+.global-breadcrumb li {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .global-breadcrumb li + li::before {
@@ -90,30 +118,43 @@ body {
     opacity: 0.7;
 }
 
+.header-actions,
 .header-platform,
-.header-project,
-.header-auto-save {
+.header-project-actions {
     flex: 0 0 auto;
 }
 
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 0;
+}
+
 .header-platform,
-.header-project {
+.header-project-actions {
     display: flex;
     align-items: center;
     gap: 0.5rem;
     white-space: nowrap;
 }
 
+.header-project-actions {
+    min-width: 0;
+    padding-left: 0.75rem;
+    border-left: 1px solid rgba(255, 255, 255, 0.28);
+}
+
 .header-platform {
     font-size: 0.8rem;
 }
 
-.header-project {
-    max-width: min(28vw, 24rem);
+.header-platform > span {
+    color: rgba(255, 255, 255, 0.84);
 }
 
 .header-project-name {
-    max-width: min(18vw, 16rem);
+    max-width: min(16vw, 14rem);
     overflow: hidden;
     color: #fff;
     font-size: 0.85rem;
@@ -142,9 +183,22 @@ body {
     --colorNeutralStroke1: rgba(0, 0, 0, 0.18);
 }
 
+.app-header .header-nav-toggle,
+.app-header .header-language {
+    color: #fff;
+    --colorNeutralForeground1: #fff;
+    --colorNeutralBackground1Hover: rgba(255, 255, 255, 0.14);
+    --colorNeutralBackground1Pressed: rgba(255, 255, 255, 0.2);
+    --colorNeutralStroke1: transparent;
+}
+
 .app-header fluent-switch {
     color: #fff;
     --colorNeutralForeground1: #fff;
+}
+
+.app-header .header-auto-save {
+    flex: 0 0 auto;
 }
 
 .app-header .header-save-button {
@@ -168,6 +222,65 @@ body {
 
 .header-language {
     flex: 0 0 auto;
+}
+
+.app-workspace {
+    display: flex;
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.app-sidebar {
+    box-sizing: border-box;
+    flex: 0 0 15.5rem;
+    width: 15.5rem;
+    min-width: 0;
+    max-width: 15.5rem;
+    overflow: hidden;
+    border-right: 1px solid var(--colorNeutralStroke1);
+    background: var(--colorNeutralBackground2, #f5f5f5);
+    transition: flex-basis 160ms ease, width 160ms ease, border-color 160ms ease;
+}
+
+.app-sidebar.is-collapsed {
+    flex-basis: 0;
+    width: 0;
+    border-right-width: 0;
+    border-right-color: transparent;
+    visibility: hidden;
+}
+
+.app-sidebar .app-navigation {
+    display: block;
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 15.5rem;
+    max-width: 100%;
+    height: 100%;
+    overflow-y: auto;
+}
+
+@media (max-width: 960px) {
+    .app-header {
+        gap: 0.65rem;
+        padding: 0 0.65rem;
+    }
+
+    .header-breadcrumb {
+        display: none;
+    }
+
+    .header-actions {
+        margin-left: auto;
+        gap: 0.5rem;
+    }
+
+    .header-project-name,
+    .header-platform > span {
+        display: none;
+    }
 }
 
 .song-editor-page {

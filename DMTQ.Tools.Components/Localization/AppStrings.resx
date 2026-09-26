@@ -4,7 +4,7 @@
   <resheader name="version"><value>2.0</value></resheader>
   <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
   <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
-  <data name="App.Title" xml:space="preserve"><value>UpdatePatchManager</value></data>
+  <data name="App.Title" xml:space="preserve"><value>DMTQ-Tools</value></data>
   <data name="Language.Title" xml:space="preserve"><value>Language</value></data>
   <data name="Language.English" xml:space="preserve"><value>English</value></data>
   <data name="Language.Chinese" xml:space="preserve"><value>中文</value></data>
@@ -23,6 +23,7 @@
   <data name="Header.AutoSaveFailed" xml:space="preserve"><value>Auto-save failed</value></data>
   <data name="Header.AutoSaveHint" xml:space="preserve"><value>Automatically saves dirty project data after a short pause.</value></data>
   <data name="Header.SaveFailed" xml:space="preserve"><value>Save failed</value></data>
+  <data name="Header.ToggleNavigation" xml:space="preserve"><value>Toggle navigation</value></data>
   <data name="Common.Save" xml:space="preserve"><value>Save</value></data>
   <data name="Common.Cancel" xml:space="preserve"><value>Cancel</value></data>
   <data name="Common.Delete" xml:space="preserve"><value>Delete</value></data>
