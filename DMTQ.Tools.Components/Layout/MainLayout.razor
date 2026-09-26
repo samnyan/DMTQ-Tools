@@ -19,6 +19,8 @@
     <FluentHeader Height="48" Style="border-bottom: 1px solid var(--neutral-stroke-rest); padding: 0 1.25rem;">
         <div style="font-weight: 600; font-size: 1rem;">@L["App.Title"]</div>
 
+        <GlobalBreadcrumb />
+
         <FluentSpacer />
 
         @if (EditablePlatforms.Count > 1)
@@ -83,8 +85,10 @@
             <FluentNavLink Href="diagnostics" Icon="@(new Icons.Regular.Size20.Wrench())">@L["Nav.Diagnostics"]</FluentNavLink>
         </FluentNavMenu>
 
-        <main style="flex: 1; min-width: 0; overflow-y: auto; overflow-x: hidden; padding: 1.25rem 1.5rem;">
-            @Body
+        <main class="app-main">
+            <div class="route-viewport">
+                @Body
+            </div>
         </main>
     </div>
 

@@ -9,7 +9,7 @@
                   EmptyMessage='@L["Lists.NoSlang"]' FilteredItems="@FilteredItems" Pagination="@pagination"
                   Message="@message" ErrorMessage="@errorMessage">
     <Toolbar><FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween">
-        <FluentTextField @bind-Value="filter" Immediate="true" Placeholder='@L["Lists.FilterSlang"]' Style="min-width:320px" />
+        <FluentTextField Value="@filter" ValueChanged="SetFilterAsync" Immediate="true" Placeholder='@L["Lists.FilterSlang"]' Style="min-width:320px" />
         <FluentButton Appearance="Appearance.Accent" IconStart="@(new Icons.Regular.Size20.Add())" OnClick="CreateNew">@L["Lists.AddSlang"]</FluentButton>
     </FluentStack></Toolbar>
     <Metrics><FluentGrid Spacing="3"><FluentGridItem xs="12" sm="6" md="3"><FluentCard><span class="metric-label">@L["Lists.SlangEntries"]</span><strong>@Catalog.Count</strong></FluentCard></FluentGridItem></FluentGrid></Metrics>
@@ -24,13 +24,21 @@
 
 @code {
     private readonly PaginationState pagination = new() { ItemsPerPage = 50 };
-    private string filter = string.Empty;
+    [SupplyParameterFromQuery(Name = "q")] public string? SearchQuery { get; set; }
+    private string filter => SearchQuery ?? string.Empty;
     private string? message;
     private string? errorMessage;
     private IReadOnlyList<SlangEntry> Catalog => State.CurrentPackage is null ? [] : EditService.BuildCatalog(State.CurrentPackage);
     private IEnumerable<SlangEntry> FilteredItems => string.IsNullOrWhiteSpace(filter) ? Catalog : Catalog.Where(entry => entry.Value.Contains(filter, StringComparison.OrdinalIgnoreCase));
-    private void CreateNew() => Navigation.NavigateTo("/slang/editor/new");
-    private void Edit(string id) => Navigation.NavigateTo($"/slang/editor/{id}");
+    private Task SetFilterAsync(string? value)
+    {
+        SearchQuery = value;
+        TableNavigationState.UpdateQuery(Navigation, ("q", value), ("page", "1"));
+        return Task.CompletedTask;
+    }
+
+    private void CreateNew() => Navigation.NavigateTo(TableNavigationState.CreateEditorUrl(Navigation, "/slang/editor/new"));
+    private void Edit(string id) => Navigation.NavigateTo(TableNavigationState.CreateEditorUrl(Navigation, $"/slang/editor/{Uri.EscapeDataString(id)}"));
     private async Task DeleteAsync(SlangEntry entry)
     {
         if (State.CurrentPackage is null) return;

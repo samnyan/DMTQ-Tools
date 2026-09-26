@@ -112,8 +112,11 @@
   <data name="Fields.ExistingValue" xml:space="preserve"><value>现有值</value></data>
   <data name="Editor.CopyBaseToLanguages" xml:space="preserve"><value>将基本信息复制到所有语言</value></data>
   <data name="Editor.GameItemLink" xml:space="preserve"><value>关联游戏道具</value></data>
-  <data name="Editor.SongItemHint" xml:space="preserve"><value>歌曲通过 song_song.item_id 关联游戏道具。保存时会同时创建对应的 product_item 行；商店商品 ID 需要时可单独配置。</value></data>
-  <data name="Editor.SongItemIdRequired" xml:space="preserve"><value>请输入大于零的游戏道具 ID，以便歌曲关联必需的道具。</value></data>
+  <data name="Editor.SongItemHint" xml:space="preserve"><value>按道具 ID 或名称搜索并选择已有道具。若尚不存在，可在此新增并与歌曲一起保存。</value></data>
+  <data name="Editor.SongItemIdRequired" xml:space="preserve"><value>保存歌曲前，请选择已有游戏道具或新增一个道具。</value></data>
+  <data name="Editor.SelectGameItem" xml:space="preserve"><value>关联游戏道具</value></data>
+  <data name="Editor.SearchGameItem" xml:space="preserve"><value>按道具 ID 或名称搜索</value></data>
+  <data name="Editor.AddLinkedGameItem" xml:space="preserve"><value>新增游戏道具</value></data>
   <data name="Editor.PatternDraftSavedWithSong" xml:space="preserve"><value>谱面改动属于尚未保存的歌曲，会在保存歌曲时一并写入。</value></data>
   <data name="Editor.CategoryIdExplanation" xml:space="preserve"><value>类别 ID 由游戏服务器提供。CSV 只保存 ID 和商品关联，不包含类别名称。已有 ID 来自导入的数据；仅在确定服务器 ID 时添加自定义值。</value></data>
   <data name="Options.ItemTypeMusic" xml:space="preserve"><value>音乐</value></data>
@@ -136,4 +139,11 @@
   <data name="Options.PointNone" xml:space="preserve"><value>无奖励</value></data>
   <data name="Options.PointMax" xml:space="preserve"><value>MAX 点数</value></data>
   <data name="Options.PointQ" xml:space="preserve"><value>Q 点数</value></data>
+  <data name="Lists.Pagination" xml:space="preserve"><value>表格分页</value></data>
+  <data name="Lists.PaginationSummary" xml:space="preserve"><value>共 {0} 项</value></data>
+  <data name="Lists.PageOf" xml:space="preserve"><value>第 {0} / {1} 页</value></data>
+  <data name="Lists.FirstPage" xml:space="preserve"><value>第一页</value></data>
+  <data name="Lists.PreviousPage" xml:space="preserve"><value>上一页</value></data>
+  <data name="Lists.NextPage" xml:space="preserve"><value>下一页</value></data>
+  <data name="Lists.LastPage" xml:space="preserve"><value>最后一页</value></data>
 </root>

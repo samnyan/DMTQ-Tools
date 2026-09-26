@@ -6,10 +6,6 @@
 @inject AchievementEditService EditService
 
 <FluentStack Orientation="Orientation.Vertical" VerticalGap="20" HorizontalAlignment="HorizontalAlignment.Stretch">
-    <FluentBreadcrumb>
-        <FluentBreadcrumbItem Href="/achievements">@L["Nav.Achievements"]</FluentBreadcrumbItem>
-        <FluentBreadcrumbItem>@(IsCreate ? L["Editor.NewAchievement"] : L["Editor.Edit", draft?.Id ?? string.Empty])</FluentBreadcrumbItem>
-    </FluentBreadcrumb>
     @if (State.CurrentPackage is null)
     {
         <FluentMessageBar Title='@L["Editor.OpenProjectFirst"]' Intent="MessageIntent.Warning" />
@@ -67,6 +63,7 @@
 
 @code {
     [Parameter] public string AchievementId { get; set; } = string.Empty;
+    [SupplyParameterFromQuery(Name = "returnUrl")] public string? ReturnUrl { get; set; }
     private static readonly string[] Languages = ["CN", "JP", "KR", "TW", "US"];
     private bool IsCreate => AchievementId.Equals("new", StringComparison.OrdinalIgnoreCase);
     private Achievement? draft;
@@ -97,7 +94,7 @@
         }
     }
 
-    private void NavigateBack() => Navigation.NavigateTo("/achievements");
+    private void NavigateBack() => Navigation.NavigateTo(TableNavigationState.ResolveReturnUrl(Navigation, ReturnUrl, "/achievements"));
 
     private async Task SaveAsync()
     {
@@ -111,13 +108,13 @@
                 var created = EditService.CreateDraft(draft, idInput.Trim());
                 EditService.AddAchievement(State.CurrentPackage, created, State.SelectedExportPlatform);
                 await Workflow.SaveProjectAsync();
-                Navigation.NavigateTo($"/achievements/editor/{Uri.EscapeDataString(created.Id)}");
+                NavigateBack();
             }
             else
             {
                 EditService.UpdateAchievement(State.CurrentPackage, draft, State.SelectedExportPlatform);
                 await Workflow.SaveProjectAsync();
-                message = L["Editor.Saved", L["Nav.Achievements"].Value].Value;
+                NavigateBack();
             }
         }
         catch (Exception ex) { errorMessage = ex.Message; }

@@ -5,7 +5,6 @@
 @inject SlangEditService EditService
 
 <FluentStack Orientation="Orientation.Vertical" VerticalGap="20" HorizontalAlignment="HorizontalAlignment.Stretch">
-    <FluentBreadcrumb><FluentBreadcrumbItem Href="/slang">@L["Nav.Slang"]</FluentBreadcrumbItem><FluentBreadcrumbItem>@(IsCreate ? L["Editor.NewSlang"] : L["Common.Edit"])</FluentBreadcrumbItem></FluentBreadcrumb>
     @if (State.CurrentPackage is null) { <FluentMessageBar Title='@L["Editor.OpenProjectFirst"]' Intent="MessageIntent.Warning" /> }
     else if (entry is null && !IsCreate) { <FluentMessageBar Title='@L["Editor.NotFound", L["Nav.Slang"].Value, EntryId]' Intent="MessageIntent.Error" /> }
     else
@@ -26,6 +25,7 @@
 
 @code {
     [Parameter] public string EntryId { get; set; } = string.Empty;
+    [SupplyParameterFromQuery(Name = "returnUrl")] public string? ReturnUrl { get; set; }
     private bool IsCreate => EntryId.Equals("new", StringComparison.OrdinalIgnoreCase);
     private SlangEntry? entry;
     private SlangEditModel editModel = new();
@@ -39,7 +39,7 @@
         editModel = new SlangEditModel { Value = entry?.Value ?? string.Empty };
     }
 
-    private void NavigateBack() => Navigation.NavigateTo("/slang");
+    private void NavigateBack() => Navigation.NavigateTo(TableNavigationState.ResolveReturnUrl(Navigation, ReturnUrl, "/slang"));
     private async Task SaveAsync()
     {
         if (State.CurrentPackage is null) return;

@@ -1,6 +1,7 @@
 @page "/resources"
 @using DMTQ.Tools.Components.Models
 @using DMTQ.Tools.Core.Services
+@inject NavigationManager Navigation
 @inject IProjectState State
 @inject IProjectWorkflow Workflow
 @inject ResourceManagerService ResourceMgr
@@ -21,9 +22,10 @@
                               OptionText="@(i => i == "All" ? L["Lists.AllCategories"].Value : i)"
                               OptionValue="@(i => i)"
                               @bind-SelectedOption="categoryFilter"
+                              @bind-SelectedOption:after="UpdateCategoryQueryAsync"
                               Label='@L["Lists.Category"]'
                               Style="min-width: 140px;" />
-                <FluentTextField @bind-Value="filter" Immediate="true" Placeholder='@L["Lists.FilterResources"]'
+                <FluentTextField Value="@filter" ValueChanged="SetFilterAsync" Immediate="true" Placeholder='@L["Lists.FilterResources"]'
                                  Style="min-width: 280px;" />
             </FluentStack>
             <FluentButton Appearance="Appearance.Accent"
@@ -85,8 +87,14 @@
 </ProjectListShell>
 
 @code {
-    private string filter = string.Empty;
-    private string categoryFilter = "All";
+    [SupplyParameterFromQuery(Name = "q")] public string? SearchQuery { get; set; }
+    [SupplyParameterFromQuery(Name = "category")] public string? CategoryQuery { get; set; }
+    private string filter => SearchQuery ?? string.Empty;
+    private string categoryFilter
+    {
+        get => CategoryQuery ?? "All";
+        set => CategoryQuery = value;
+    }
     private string? message;
     private string? errorMessage;
     private PaginationState pagination = new() { ItemsPerPage = 25 };
@@ -120,6 +128,19 @@
             }
             return query;
         }
+    }
+
+    private Task SetFilterAsync(string? value)
+    {
+        SearchQuery = value;
+        TableNavigationState.UpdateQuery(Navigation, ("q", value), ("page", "1"));
+        return Task.CompletedTask;
+    }
+
+    private Task UpdateCategoryQueryAsync()
+    {
+        TableNavigationState.UpdateQuery(Navigation, ("category", categoryFilter == "All" ? null : categoryFilter), ("page", "1"));
+        return Task.CompletedTask;
     }
 
     private static string FormatFileSize(long bytes)

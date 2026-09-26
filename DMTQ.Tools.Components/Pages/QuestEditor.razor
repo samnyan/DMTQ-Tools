@@ -6,7 +6,6 @@
 @inject QuestEditService EditService
 
 <FluentStack Orientation="Orientation.Vertical" VerticalGap="20" HorizontalAlignment="HorizontalAlignment.Stretch">
-    <FluentBreadcrumb><FluentBreadcrumbItem Href="/quests">@L["Nav.Quests"]</FluentBreadcrumbItem><FluentBreadcrumbItem>@(IsCreate ? L["Editor.NewQuest"] : L["Editor.Edit", draft?.Id ?? string.Empty])</FluentBreadcrumbItem></FluentBreadcrumb>
     @if (State.CurrentPackage is null) { <FluentMessageBar Title='@L["Editor.OpenProjectFirst"]' Intent="MessageIntent.Warning" /> }
     else if (draft is null && !IsCreate) { <FluentMessageBar Title='@L["Editor.NotFound", L["Nav.Quests"].Value, QuestId]' Intent="MessageIntent.Error" /> }
     else
@@ -60,6 +59,7 @@
 
 @code {
     [Parameter] public string QuestId { get; set; } = string.Empty;
+    [SupplyParameterFromQuery(Name = "returnUrl")] public string? ReturnUrl { get; set; }
     private static readonly string[] Languages = ["CN", "JP", "KR", "TW", "US"];
     private bool IsCreate => QuestId.Equals("new", StringComparison.OrdinalIgnoreCase);
     private Quest? draft;
@@ -88,7 +88,7 @@
     private void AddMission() { if (draft is null) return; EditService.AddMission(draft); EnsureLanguages(draft); }
     private void RemoveMission(QuestMission mission) { if (draft is not null) EditService.RemoveMission(draft, mission); }
     private void MoveMission(QuestMission mission, int offset) { if (draft is not null) EditService.MoveMission(draft, mission, offset); }
-    private void NavigateBack() => Navigation.NavigateTo("/quests");
+    private void NavigateBack() => Navigation.NavigateTo(TableNavigationState.ResolveReturnUrl(Navigation, ReturnUrl, "/quests"));
     private async Task SaveAsync()
     {
         if (State.CurrentPackage is null || draft is null) return;
@@ -101,13 +101,13 @@
                 var created = EditService.CreateDraft(draft, idInput.Trim());
                 EditService.AddQuest(State.CurrentPackage, created, State.SelectedExportPlatform);
                 await Workflow.SaveProjectAsync();
-                Navigation.NavigateTo($"/quests/editor/{Uri.EscapeDataString(created.Id)}");
+                NavigateBack();
             }
             else
             {
                 EditService.UpdateQuest(State.CurrentPackage, draft, State.SelectedExportPlatform);
                 await Workflow.SaveProjectAsync();
-                message = L["Editor.Saved", L["Nav.Quests"].Value].Value;
+                NavigateBack();
             }
         }
         catch (Exception ex) { errorMessage = ex.Message; }

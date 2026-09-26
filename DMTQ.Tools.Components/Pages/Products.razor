@@ -16,7 +16,7 @@
                   ErrorMessage="@errorMessage">
     <Toolbar>
         <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center">
-            <FluentTextField @bind-Value="filter" Immediate="true" Placeholder='@L["Lists.FilterProducts"]'
+            <FluentTextField Value="@filter" ValueChanged="SetFilterAsync" Immediate="true" Placeholder='@L["Lists.FilterProducts"]'
                              Style="min-width: 320px;" />
             <FluentButton Appearance="Appearance.Accent"
                           IconStart="@(new Icons.Regular.Size20.Add())"
@@ -66,7 +66,8 @@
 </ProjectListShell>
 
 @code {
-    private string filter = string.Empty;
+    [SupplyParameterFromQuery(Name = "q")] public string? SearchQuery { get; set; }
+    private string filter => SearchQuery ?? string.Empty;
     private string? message;
     private string? errorMessage;
     private PaginationState pagination = new() { ItemsPerPage = 25 };
@@ -103,8 +104,15 @@
         }
     }
 
-    private void CreateNewProduct() => Navigation.NavigateTo("/products/editor/new");
-    private void EditProduct(string productId) => Navigation.NavigateTo($"/products/editor/{Uri.EscapeDataString(productId)}");
+    private Task SetFilterAsync(string? value)
+    {
+        SearchQuery = value;
+        TableNavigationState.UpdateQuery(Navigation, ("q", value), ("page", "1"));
+        return Task.CompletedTask;
+    }
+
+    private void CreateNewProduct() => Navigation.NavigateTo(TableNavigationState.CreateEditorUrl(Navigation, "/products/editor/new"));
+    private void EditProduct(string productId) => Navigation.NavigateTo(TableNavigationState.CreateEditorUrl(Navigation, $"/products/editor/{Uri.EscapeDataString(productId)}"));
 
     private async Task DeleteProductAsync(Product product)
     {

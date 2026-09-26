@@ -5,15 +5,11 @@
 @inject IProjectWorkflow Workflow
 @inject SongEditService SongEditSvc
 @inject SongCatalogService SongCatalog
+@inject ItemCatalogService ItemCatalog
+@inject ItemEditService ItemEditSvc
 @inject IDialogService DialogService
 
 <FluentStack Orientation="Orientation.Vertical" VerticalGap="20" HorizontalAlignment="HorizontalAlignment.Stretch">
-
-    @* ── Header ── *@
-    <FluentBreadcrumb>
-        <FluentBreadcrumbItem Href="/songs">@L["Nav.Songs"]</FluentBreadcrumbItem>
-        <FluentBreadcrumbItem>@(IsCreate ? L["Editor.NewSong"] : L["Editor.Edit", currentSong?.Id.ToString() ?? string.Empty])</FluentBreadcrumbItem>
-    </FluentBreadcrumb>
 
     @if (State.CurrentPackage is null)
     {
@@ -39,7 +35,7 @@
                             <FluentStack Orientation="Orientation.Vertical" VerticalGap="8">
                                 @if (IsCreate)
                                 {
-                                    <FluentTextField style="width: 100%;" @bind-Value="songIdInput" Label="Song ID *" Placeholder="e.g. 1" Required />
+                                    <FluentTextField style="width: 100%;" Value="@songIdInput" ValueChanged="SetSongIdInput" Label="Song ID *" Placeholder="e.g. 1" Required />
                                 }
                                 else
                                 {
@@ -85,12 +81,36 @@
                 <section>
                     <h2 class="section-heading">@L["Editor.GameItemLink"]</h2>
                     <p class="section-hint">@L["Editor.SongItemHint"]</p>
-                    <FluentNumberField style="width: 100%;" @bind-Value="linkedItemId" Label='@L["Fields.GameItemId"]' Required="@IsCreate" />
+                    <div class="linked-item-picker">
+                        <FluentCombobox TOption="Item"
+                                        Items="@AvailableGameItems"
+                                        OptionText="@FormatItemOption"
+                                        OptionValue="@(item => item.Id)"
+                                        SelectedOption="@SelectedLinkedItem"
+                                        SelectedOptionChanged="SelectLinkedItem"
+                                        Autocomplete="ComboboxAutocomplete.Both"
+                                        Label='@L["Editor.SelectGameItem"]'
+                                        Placeholder='@L["Editor.SearchGameItem"]'
+                                        Style="width: 100%;" />
+                        @if (SelectedLinkedItem is null && linkedItemDraft is null)
+                        {
+                            <FluentButton Appearance="Appearance.Neutral"
+                                          IconStart="@(new Icons.Regular.Size20.Add())"
+                                          OnClick="BeginLinkedItemCreation"
+                                          Disabled="@(!TryGetSuggestedItemId(out _))">
+                                @L["Editor.AddLinkedGameItem"]
+                            </FluentButton>
+                        }
+                    </div>
                 </section>
 
-                @if (IsCreate && linkedItemDraft is not null)
+                @if (linkedItemDraft is not null)
                 {
-                    <ItemDataFields Content="@linkedItemDraft" />
+                    <ItemDataFields Content="@linkedItemDraft"
+                                    ShowItemId="true"
+                                    ItemId="@linkedItemDraft.Id"
+                                    IsItemIdReadOnly="true"
+                                    IsItemIdRequired="true" />
                 }
 
                 @* ════════════════════════════════════════════
@@ -154,28 +174,30 @@
 
                     @if (currentSong?.Patterns.Count > 0)
                     {
-                        <FluentDataGrid Items="@SortedPatterns.AsQueryable()" TGridItem="SongPattern"
-                                        ShowHover="true" ResizableColumns="true">
-                            <PropertyColumn Property="@(p => p.PatternId)" Title="ID" Sortable="true" />
-                            <PropertyColumn Property="@(p => p.Line)" Title="Line" />
-                            <PropertyColumn Property="@(p => p.Signature)" Title="Difficulty" />
-                            <PropertyColumn Property="@(p => p.Difficulty)" Title="Stars" />
-                            <PropertyColumn Property="@(p => p.PointType)" Title="PointType" />
-                            <PropertyColumn Property="@(p => p.PointValue)" Title="PointValue" />
-                            <TemplateColumn Title="Enable" Context="p">
-                                @(p.Flg == "Y" ? "✓" : "")
-                            </TemplateColumn>
-                            <TemplateColumn Title="Actions" Context="p">
-                                <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="4">
-                                    <FluentButton IconStart="@(new Icons.Regular.Size20.Edit())"
-                                                  Appearance="Appearance.Neutral" Size="FluentUI.AspNetCore.Components.Size.Small"
-                                                  OnClick="() => OpenEditPatternDialog(p)" />
-                                    <FluentButton IconStart="@(new Icons.Regular.Size20.Delete())"
-                                                  Appearance="Appearance.Neutral" Size="FluentUI.AspNetCore.Components.Size.Small"
-                                                  OnClick="() => RemovePatternAsync(p)" />
-                                </FluentStack>
-                            </TemplateColumn>
-                        </FluentDataGrid>
+                        <div class="grid-scroll">
+                            <FluentDataGrid Items="@SortedPatterns.AsQueryable()" TGridItem="SongPattern"
+                                            ShowHover="true" ResizableColumns="true">
+                                <PropertyColumn Property="@(p => p.PatternId)" Title="ID" Sortable="true" />
+                                <PropertyColumn Property="@(p => p.Line)" Title="Line" />
+                                <PropertyColumn Property="@(p => p.Signature)" Title="Difficulty" />
+                                <PropertyColumn Property="@(p => p.Difficulty)" Title="Stars" />
+                                <PropertyColumn Property="@(p => p.PointType)" Title="PointType" />
+                                <PropertyColumn Property="@(p => p.PointValue)" Title="PointValue" />
+                                <TemplateColumn Title="Enable" Context="p">
+                                    @(p.Flg == "Y" ? "✓" : "")
+                                </TemplateColumn>
+                                <TemplateColumn Title="Actions" Context="p">
+                                    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="4">
+                                        <FluentButton IconStart="@(new Icons.Regular.Size20.Edit())"
+                                                      Appearance="Appearance.Neutral" Size="FluentUI.AspNetCore.Components.Size.Small"
+                                                      OnClick="() => OpenEditPatternDialog(p)" />
+                                        <FluentButton IconStart="@(new Icons.Regular.Size20.Delete())"
+                                                      Appearance="Appearance.Neutral" Size="FluentUI.AspNetCore.Components.Size.Small"
+                                                      OnClick="() => RemovePatternAsync(p)" />
+                                    </FluentStack>
+                                </TemplateColumn>
+                            </FluentDataGrid>
+                        </div>
                     }
                     else
                     {
@@ -204,13 +226,14 @@
 
 @code {
     [Parameter] public string SongId { get; set; } = default!;
+    [SupplyParameterFromQuery(Name = "returnUrl")] public string? ReturnUrl { get; set; }
 
     private static readonly string[] DefaultLanguages = ["CN", "JP", "KR", "TW", "US"];
 
     private bool IsCreate => SongId == "new";
     private Song? currentSong;
     private string songIdInput = string.Empty;
-    private bool linkedItemIdWasEdited;
+    private bool hasExplicitLinkedItemChoice;
     private string message = string.Empty;
     private string errorMessage = string.Empty;
     private bool isBusy;
@@ -247,22 +270,12 @@
     private int? costPoint { get => currentSong?.CostGamePoint; set { if (currentSong is not null && value.HasValue) currentSong.CostGamePoint = value.Value; } }
     private int? costCash { get => currentSong?.CostGameCash; set { if (currentSong is not null && value.HasValue) currentSong.CostGameCash = value.Value; } }
 
-    private int? linkedItemId
-    {
-        get => linkedItemIdWasEdited || !IsCreate
-            ? currentSong?.ItemId
-            : int.TryParse(songIdInput, out var songId) ? songId : null;
-        set
-        {
-            if (currentSong is null || !value.HasValue) return;
-            currentSong.ItemId = value.Value;
-            linkedItemIdWasEdited = true;
-        }
-    }
-
     private PatchPackage? _lastPackage;
     private string? _lastPlatform;
     private IReadOnlyList<Song> _catalog = [];
+    private PatchPackage? _lastItemPackage;
+    private string? _lastItemPlatform;
+    private IReadOnlyList<Item> _itemOptions = [];
 
     private IReadOnlyList<Song> Catalog
     {
@@ -293,18 +306,6 @@
         if (IsCreate)
         {
             currentSong ??= new Song { Id = 0 };
-            linkedItemDraft ??= new Item
-            {
-                Id = string.Empty,
-                ItemType = "S",
-                RepeatCount = "0",
-                LimitMinute = "0",
-                Status = "N",
-                BuyLevel = "0",
-                BuyLimitCount = "1",
-                BuyLimitType = "F",
-                Update = "0"
-            };
         }
         else if (int.TryParse(SongId, out var id) && currentSong?.Id != id)
         {
@@ -321,6 +322,102 @@
             currentSong.Localizations[lang] = loc;
         }
         return loc;
+    }
+
+    private IReadOnlyList<Item> AvailableGameItems
+    {
+        get
+        {
+            if (ReferenceEquals(State.CurrentPackage, _lastItemPackage)
+                && string.Equals(State.SelectedExportPlatform, _lastItemPlatform, StringComparison.OrdinalIgnoreCase))
+            {
+                return _itemOptions;
+            }
+
+            _lastItemPackage = State.CurrentPackage;
+            _lastItemPlatform = State.SelectedExportPlatform;
+            _itemOptions = State.CurrentPackage is null
+                ? []
+                : ItemCatalog.BuildCatalog(State.CurrentPackage, State.SelectedExportPlatform);
+            return _itemOptions;
+        }
+    }
+
+    private Item? SelectedLinkedItem
+    {
+        get
+        {
+            if (linkedItemDraft is not null || currentSong is null)
+                return null;
+
+            var itemId = IsCreate && !hasExplicitLinkedItemChoice
+                ? songIdInput
+                : currentSong.ItemId.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            return AvailableGameItems.FirstOrDefault(item => item.Id.Equals(itemId, StringComparison.OrdinalIgnoreCase));
+        }
+    }
+
+    private string FormatItemOption(Item item)
+    {
+        var name = ItemCatalog.GetDisplayName(item, "CN");
+        return string.IsNullOrWhiteSpace(name) || name.Equals(item.Id, StringComparison.OrdinalIgnoreCase)
+            ? item.Id
+            : $"{item.Id} — {name}";
+    }
+
+    private Task SetSongIdInput(string? value)
+    {
+        songIdInput = value ?? string.Empty;
+        if (!hasExplicitLinkedItemChoice && linkedItemDraft is null
+            && int.TryParse(songIdInput, out var songId))
+        {
+            currentSong!.ItemId = songId;
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private Task SelectLinkedItem(Item? item)
+    {
+        if (currentSong is null || item is null || !int.TryParse(item.Id, out var itemId))
+            return Task.CompletedTask;
+
+        currentSong.ItemId = itemId;
+        hasExplicitLinkedItemChoice = true;
+        linkedItemDraft = null;
+        return Task.CompletedTask;
+    }
+
+    private bool TryGetSuggestedItemId(out string itemId)
+    {
+        var existingSongItemId = currentSong is null
+            ? string.Empty
+            : currentSong.ItemId > 0
+                ? currentSong.ItemId.ToString(System.Globalization.CultureInfo.InvariantCulture)
+                : currentSong.Id.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        itemId = SelectedLinkedItem?.Id ?? (IsCreate ? songIdInput : existingSongItemId);
+        return int.TryParse(itemId, out var parsedId) && parsedId > 0;
+    }
+
+    private void BeginLinkedItemCreation()
+    {
+        if (currentSong is null || !TryGetSuggestedItemId(out var itemId))
+            return;
+
+        linkedItemDraft = new Item
+        {
+            Id = itemId,
+            ItemType = "S",
+            RepeatCount = "0",
+            LimitMinute = "0",
+            Status = "N",
+            BuyLevel = "0",
+            BuyLimitCount = "1",
+            BuyLimitType = "F",
+            Update = "0"
+        };
+        currentSong.ItemId = int.Parse(itemId, System.Globalization.CultureInfo.InvariantCulture);
+        hasExplicitLinkedItemChoice = true;
     }
 
     private void SetOriginalField(Action<Song> update)
@@ -348,7 +445,7 @@
         }
     }
 
-    private void NavigateBack() => Navigation.NavigateTo("/songs");
+    private void NavigateBack() => Navigation.NavigateTo(TableNavigationState.ResolveReturnUrl(Navigation, ReturnUrl, "/songs"));
 
     // ── Save Song ──
 
@@ -369,27 +466,46 @@
                     errorMessage = L["Editor.SongIdRequired"].Value;
                     return;
                 }
-                var linkedId = linkedItemId;
-                if (!linkedId.HasValue || linkedId.Value < 1)
+                var linkedItem = SelectedLinkedItem;
+                var linkedItemId = linkedItemDraft?.Id ?? linkedItem?.Id;
+                if (string.IsNullOrWhiteSpace(linkedItemId)
+                    || !int.TryParse(linkedItemId, out var parsedLinkedItemId)
+                    || parsedLinkedItemId < 1)
                 {
                     errorMessage = L["Editor.SongItemIdRequired"].Value;
                     return;
                 }
-                currentSong!.ItemId = linkedId.Value;
+                currentSong!.ItemId = parsedLinkedItemId;
                 var song = SongEditSvc.CreateDraft(currentSong, newId);
-                SongEditSvc.AddSongWithItem(State.CurrentPackage, song, linkedItemDraft!, State.SelectedExportPlatform);
+                if (linkedItemDraft is not null)
+                    SongEditSvc.AddSongWithItem(State.CurrentPackage, song, linkedItemDraft, State.SelectedExportPlatform);
+                else
+                    SongEditSvc.AddSong(State.CurrentPackage, song, State.SelectedExportPlatform);
                 await Workflow.SaveProjectAsync();
                 State.Diagnostics.Add($"Song added: {song.Id}");
                 _lastPackage = null;
-                Navigation.NavigateTo($"/songs/editor/{song.Id}");
+                NavigateBack();
             }
             else if (currentSong is not null)
             {
+                var linkedItem = SelectedLinkedItem;
+                var linkedItemId = linkedItemDraft?.Id ?? linkedItem?.Id;
+                if (string.IsNullOrWhiteSpace(linkedItemId)
+                    || !int.TryParse(linkedItemId, out var parsedLinkedItemId)
+                    || parsedLinkedItemId < 1)
+                {
+                    errorMessage = L["Editor.SongItemIdRequired"].Value;
+                    return;
+                }
+
+                currentSong.ItemId = parsedLinkedItemId;
+                if (linkedItemDraft is not null)
+                    ItemEditSvc.AddItem(State.CurrentPackage, linkedItemDraft, State.SelectedExportPlatform);
                 SongEditSvc.UpdateSong(State.CurrentPackage, currentSong, State.SelectedExportPlatform);
                 await Workflow.SaveProjectAsync();
                 _lastPackage = null;
                 State.Diagnostics.Add($"Song edited: {currentSong.Id}");
-                message = L["Editor.Saved", L["Nav.Songs"].Value].Value;
+                NavigateBack();
             }
         }
         catch (Exception ex)

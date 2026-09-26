@@ -17,12 +17,13 @@
     <Toolbar>
         <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center">
             <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" VerticalAlignment="VerticalAlignment.Center">
-                <FluentTextField @bind-Value="filter" Immediate="true" Placeholder='@L["Lists.FilterSongs"]'
+                <FluentTextField Value="@filter" ValueChanged="SetFilterAsync" Immediate="true" Placeholder='@L["Lists.FilterSongs"]'
                                  Style="min-width: 280px;" />
                 <FluentSelect Items="Languages"
                               OptionText="@(l => l)"
                               OptionValue="@(l => l)"
                               @bind-SelectedOption="selectedLanguage"
+                              @bind-SelectedOption:after="UpdateLanguageQueryAsync"
                               Label='@L["Lists.PreviewLanguage"]'
                               Style="min-width: 100px;" />
             </FluentStack>
@@ -86,8 +87,14 @@
 </ProjectListShell>
 
 @code {
-    private string filter = string.Empty;
-    private string selectedLanguage = "CN";
+    [SupplyParameterFromQuery(Name = "q")] public string? SearchQuery { get; set; }
+    [SupplyParameterFromQuery(Name = "lang")] public string? LanguageQuery { get; set; }
+    private string filter => SearchQuery ?? string.Empty;
+    private string selectedLanguage
+    {
+        get => LanguageQuery ?? "CN";
+        set => LanguageQuery = value;
+    }
     private string? message;
     private string? errorMessage;
     private PaginationState pagination = new() { ItemsPerPage = 25 };
@@ -133,8 +140,21 @@
         return string.IsNullOrWhiteSpace(song.Name) ? song.Id.ToString() : song.Name;
     }
 
-    private void CreateNewSong() => Navigation.NavigateTo("/songs/editor/new");
-    private void EditSong(string songId) => Navigation.NavigateTo($"/songs/editor/{songId}");
+    private Task SetFilterAsync(string? value)
+    {
+        SearchQuery = value;
+        TableNavigationState.UpdateQuery(Navigation, ("q", value), ("page", "1"));
+        return Task.CompletedTask;
+    }
+
+    private Task UpdateLanguageQueryAsync()
+    {
+        TableNavigationState.UpdateQuery(Navigation, ("lang", selectedLanguage), ("page", "1"));
+        return Task.CompletedTask;
+    }
+
+    private void CreateNewSong() => Navigation.NavigateTo(TableNavigationState.CreateEditorUrl(Navigation, "/songs/editor/new"));
+    private void EditSong(string songId) => Navigation.NavigateTo(TableNavigationState.CreateEditorUrl(Navigation, $"/songs/editor/{Uri.EscapeDataString(songId)}"));
 
     private async Task DeleteSongAsync(Song song)
     {

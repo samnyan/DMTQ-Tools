@@ -1,0 +1,93 @@
+@implements IDisposable
+@inject NavigationManager Navigation
+
+<FluentBreadcrumb class="global-breadcrumb">
+    @if (_parentLabel is not null)
+    {
+        <FluentBreadcrumbItem Href="@_parentUrl">@L[_parentLabel]</FluentBreadcrumbItem>
+        <FluentBreadcrumbItem>@_currentLabel</FluentBreadcrumbItem>
+    }
+    else if (_currentLabel is not null)
+    {
+        <FluentBreadcrumbItem>@_currentLabel</FluentBreadcrumbItem>
+    }
+</FluentBreadcrumb>
+
+@code {
+    private string? _parentLabel;
+    private string? _currentLabel;
+    private string? _parentUrl;
+
+    protected override void OnInitialized()
+    {
+        Navigation.LocationChanged += OnLocationChanged;
+        UpdateBreadcrumb();
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs args)
+        => InvokeAsync(() =>
+        {
+            UpdateBreadcrumb();
+            StateHasChanged();
+        });
+
+    private void UpdateBreadcrumb()
+    {
+        var uri = Navigation.ToAbsoluteUri(Navigation.Uri);
+        var relativePath = Navigation.ToBaseRelativePath(uri.ToString()).Split('?', '#')[0].Trim('/');
+        var segments = relativePath.Split('/', StringSplitOptions.RemoveEmptyEntries);
+        _parentLabel = null;
+        _parentUrl = null;
+        _currentLabel = null;
+
+        if (segments.Length == 0)
+        {
+            _currentLabel = L["Nav.Project"].Value;
+            return;
+        }
+
+        var route = segments[0].ToLowerInvariant();
+        string? listLabel = route switch
+        {
+            "songs" => "Nav.Songs",
+            "items" => "Nav.Items",
+            "products" => "Nav.Products",
+            "achievements" => "Nav.Achievements",
+            "quests" => "Nav.Quests",
+            "slang" => "Nav.Slang",
+            "resources" => "Nav.Resources",
+            "patterns" => "Nav.PatternTool",
+            "import" => "Nav.Import",
+            "export" => "Nav.Export",
+            "diagnostics" => "Nav.Diagnostics",
+            _ => null
+        };
+
+        if (segments.Length >= 3 && segments[1].Equals("editor", StringComparison.OrdinalIgnoreCase))
+        {
+            _parentLabel = listLabel;
+            _parentUrl = TableNavigationState.ResolveCurrentReturnUrl(Navigation, $"/{route}");
+            var entityId = Uri.UnescapeDataString(segments[2]);
+            string? editorKey = route switch
+            {
+                "songs" => entityId.Equals("new", StringComparison.OrdinalIgnoreCase) ? "Editor.NewSong" : "Editor.Edit",
+                "items" => entityId.Equals("new", StringComparison.OrdinalIgnoreCase) ? "Editor.NewItem" : "Editor.Edit",
+                "products" => entityId.Equals("new", StringComparison.OrdinalIgnoreCase) ? "Editor.NewProduct" : "Editor.Edit",
+                "achievements" => entityId.Equals("new", StringComparison.OrdinalIgnoreCase) ? "Editor.NewAchievement" : "Editor.Edit",
+                "quests" => entityId.Equals("new", StringComparison.OrdinalIgnoreCase) ? "Editor.NewQuest" : "Editor.Edit",
+                "slang" => entityId.Equals("new", StringComparison.OrdinalIgnoreCase) ? "Editor.NewSlang" : "Common.Edit",
+                _ => null
+            };
+            _currentLabel = editorKey is null
+                ? entityId
+                : editorKey == "Editor.Edit"
+                    ? L[editorKey, entityId].Value
+                    : L[editorKey].Value;
+            return;
+        }
+
+        _currentLabel = listLabel is null ? null : L[listLabel].Value;
+    }
+
+    public void Dispose() => Navigation.LocationChanged -= OnLocationChanged;
+}

@@ -33,6 +33,54 @@ fluent-data-grid {
     width: 100%;
 }
 
+.global-breadcrumb {
+    min-width: 0;
+    margin-left: 1.25rem;
+    overflow: hidden;
+}
+
+.list-page {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+    gap: 0.75rem;
+    overflow: hidden;
+}
+
+.list-page > h1 {
+    flex: 0 0 auto;
+    margin: 0;
+}
+
+.list-toolbar,
+.list-metrics,
+.list-message-area,
+.url-paginator,
+.list-page > fluent-message-bar {
+    flex: 0 0 auto;
+}
+
+.list-grid-scroll {
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 0;
+    overflow: auto;
+}
+
+.url-paginator {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 2.5rem;
+}
+
+.url-paginator-summary {
+    margin-right: auto;
+}
+
 /* ── Error UI ── */
 #blazor-error-ui {
     background: lightyellow;
@@ -147,7 +195,7 @@ fluent-card:has(.metric-label) {
 }
 
 .pattern-grid {
-    max-height: 30rem;
+    max-height: min(30rem, 40vh);
 }
 
 .pattern-value {
@@ -233,8 +281,12 @@ section {
 /* ── Data grid (used by legacy editable tables) ── */
 .grid-scroll {
     overflow: auto;
-    max-height: 34rem;
+    max-height: min(34rem, 40vh);
     min-width: 0;
+}
+
+.compact-grid-scroll {
+    max-height: min(24rem, 35vh);
 }
 
 .data-grid th,

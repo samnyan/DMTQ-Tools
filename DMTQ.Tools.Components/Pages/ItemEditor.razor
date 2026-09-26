@@ -6,11 +6,6 @@
 @inject ItemCatalogService ItemCatalog
 
 <FluentStack Orientation="Orientation.Vertical" VerticalGap="20" HorizontalAlignment="HorizontalAlignment.Stretch">
-    <FluentBreadcrumb>
-        <FluentBreadcrumbItem Href="/items">@L["Nav.Items"]</FluentBreadcrumbItem>
-        <FluentBreadcrumbItem>@(IsCreate ? L["Editor.NewItem"] : L["Editor.Edit", currentItem?.Id ?? string.Empty])</FluentBreadcrumbItem>
-    </FluentBreadcrumb>
-
     @if (State.CurrentPackage is null)
     {
         <FluentMessageBar Title='@L["Editor.OpenProjectFirst"]' Intent="MessageIntent.Warning" />
@@ -83,6 +78,7 @@
 
 @code {
     [Parameter] public string ItemId { get; set; } = default!;
+    [SupplyParameterFromQuery(Name = "returnUrl")] public string? ReturnUrl { get; set; }
 
     private bool IsCreate => ItemId.Equals("new", StringComparison.OrdinalIgnoreCase);
     private Item? currentItem;
@@ -112,7 +108,7 @@
             : ItemEditSvc.CreateEffectDraft(State.CurrentPackage, source.Id, State.SelectedExportPlatform);
     }
 
-    private void NavigateBack() => Navigation.NavigateTo("/items");
+    private void NavigateBack() => Navigation.NavigateTo(TableNavigationState.ResolveReturnUrl(Navigation, ReturnUrl, "/items"));
 
     private async Task SaveAsync()
     {
@@ -137,7 +133,7 @@
                 ItemEditSvc.ApplyEffectDraft(State.CurrentPackage, item.Id, effectDraft, State.SelectedExportPlatform);
                 await Workflow.SaveProjectAsync();
                 State.Diagnostics.Add($"Item added: {item.Id}");
-                Navigation.NavigateTo($"/items/editor/{Uri.EscapeDataString(item.Id)}");
+                NavigateBack();
             }
             else
             {
@@ -145,7 +141,7 @@
                 ItemEditSvc.ApplyEffectDraft(State.CurrentPackage, currentItem.Id, effectDraft, State.SelectedExportPlatform);
                 await Workflow.SaveProjectAsync();
                 State.Diagnostics.Add($"Item edited: {currentItem.Id}");
-                message = L["Editor.Saved", L["Nav.Items"].Value].Value;
+                NavigateBack();
             }
         }
         catch (Exception ex)

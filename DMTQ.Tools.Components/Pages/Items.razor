@@ -17,12 +17,13 @@
     <Toolbar>
         <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center">
             <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" VerticalAlignment="VerticalAlignment.Center">
-                <FluentTextField @bind-Value="filter" Immediate="true" Placeholder='@L["Lists.FilterItems"]'
+                <FluentTextField Value="@filter" ValueChanged="SetFilterAsync" Immediate="true" Placeholder='@L["Lists.FilterItems"]'
                                  Style="min-width: 320px;" />
                 <FluentSelect Items="Languages"
                               OptionText="@(language => language)"
                               OptionValue="@(language => language)"
                               @bind-SelectedOption="selectedLanguage"
+                              @bind-SelectedOption:after="UpdateLanguageQueryAsync"
                               Label='@L["Lists.Language"]'
                               Style="min-width: 100px;" />
             </FluentStack>
@@ -77,8 +78,14 @@
 
 @code {
     private static readonly IReadOnlyList<string> Languages = ["CN", "JP", "KR", "TW", "US"];
-    private string filter = string.Empty;
-    private string selectedLanguage = "CN";
+    [SupplyParameterFromQuery(Name = "q")] public string? SearchQuery { get; set; }
+    [SupplyParameterFromQuery(Name = "lang")] public string? LanguageQuery { get; set; }
+    private string filter => SearchQuery ?? string.Empty;
+    private string selectedLanguage
+    {
+        get => LanguageQuery ?? "CN";
+        set => LanguageQuery = value;
+    }
     private string? message;
     private string? errorMessage;
     private PaginationState pagination = new() { ItemsPerPage = 25 };
@@ -114,8 +121,21 @@
         }
     }
 
-    private void CreateNewItem() => Navigation.NavigateTo("/items/editor/new");
-    private void EditItem(string itemId) => Navigation.NavigateTo($"/items/editor/{Uri.EscapeDataString(itemId)}");
+    private Task SetFilterAsync(string? value)
+    {
+        SearchQuery = value;
+        TableNavigationState.UpdateQuery(Navigation, ("q", value), ("page", "1"));
+        return Task.CompletedTask;
+    }
+
+    private Task UpdateLanguageQueryAsync()
+    {
+        TableNavigationState.UpdateQuery(Navigation, ("lang", selectedLanguage), ("page", "1"));
+        return Task.CompletedTask;
+    }
+
+    private void CreateNewItem() => Navigation.NavigateTo(TableNavigationState.CreateEditorUrl(Navigation, "/items/editor/new"));
+    private void EditItem(string itemId) => Navigation.NavigateTo(TableNavigationState.CreateEditorUrl(Navigation, $"/items/editor/{Uri.EscapeDataString(itemId)}"));
 
     private async Task DeleteItemAsync(Item item)
     {

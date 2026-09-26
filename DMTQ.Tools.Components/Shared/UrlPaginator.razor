@@ -1,0 +1,60 @@
+@inject NavigationManager Navigation
+@implements IDisposable
+
+<div class="url-paginator" role="navigation" aria-label='@L["Lists.Pagination"]'>
+    <span class="url-paginator-summary">
+        @L["Lists.PaginationSummary", Pagination.TotalItemCount ?? 0, Pagination.CurrentPageIndex + 1, PageCount]
+    </span>
+    <FluentButton Appearance="Appearance.Neutral" IconStart="@(new Icons.Regular.Size20.ChevronDoubleLeft())"
+                  Disabled="@(Pagination.CurrentPageIndex == 0)" OnClick="GoToFirstAsync" Title='@L["Lists.FirstPage"]' />
+    <FluentButton Appearance="Appearance.Neutral" IconStart="@(new Icons.Regular.Size20.ChevronLeft())"
+                  Disabled="@(Pagination.CurrentPageIndex == 0)" OnClick="GoToPreviousAsync" Title='@L["Lists.PreviousPage"]' />
+    <span>@L["Lists.PageOf", Pagination.CurrentPageIndex + 1, PageCount]</span>
+    <FluentButton Appearance="Appearance.Neutral" IconStart="@(new Icons.Regular.Size20.ChevronRight())"
+                  Disabled="@(Pagination.LastPageIndex is null || Pagination.CurrentPageIndex >= Pagination.LastPageIndex)"
+                  OnClick="GoToNextAsync" Title='@L["Lists.NextPage"]' />
+    <FluentButton Appearance="Appearance.Neutral" IconStart="@(new Icons.Regular.Size20.ChevronDoubleRight())"
+                  Disabled="@(Pagination.LastPageIndex is null || Pagination.CurrentPageIndex >= Pagination.LastPageIndex)"
+                  OnClick="GoToLastAsync" Title='@L["Lists.LastPage"]' />
+</div>
+
+@code {
+    [Parameter, EditorRequired] public PaginationState Pagination { get; set; } = default!;
+
+    private PaginationState? _observedPagination;
+    private int PageCount => Math.Max(1, (Pagination.LastPageIndex ?? 0) + 1);
+
+    protected override void OnParametersSet()
+    {
+        if (ReferenceEquals(_observedPagination, Pagination))
+            return;
+
+        if (_observedPagination is not null)
+            _observedPagination.TotalItemCountChanged -= OnTotalItemCountChanged;
+
+        _observedPagination = Pagination;
+        _observedPagination.TotalItemCountChanged += OnTotalItemCountChanged;
+    }
+
+    private Task GoToFirstAsync() => ChangePageAsync(0);
+    private Task GoToPreviousAsync() => ChangePageAsync(Math.Max(0, Pagination.CurrentPageIndex - 1));
+    private Task GoToNextAsync() => ChangePageAsync(Pagination.CurrentPageIndex + 1);
+    private Task GoToLastAsync() => Pagination.LastPageIndex is { } lastPage
+        ? ChangePageAsync(lastPage)
+        : Task.CompletedTask;
+
+    private async Task ChangePageAsync(int pageIndex)
+    {
+        await Pagination.SetCurrentPageIndexAsync(pageIndex);
+        TableNavigationState.UpdateQuery(Navigation, ("page", (pageIndex + 1).ToString(System.Globalization.CultureInfo.InvariantCulture)));
+    }
+
+    private void OnTotalItemCountChanged(object? sender, int? totalItemCount)
+        => InvokeAsync(StateHasChanged);
+
+    public void Dispose()
+    {
+        if (_observedPagination is not null)
+            _observedPagination.TotalItemCountChanged -= OnTotalItemCountChanged;
+    }
+}

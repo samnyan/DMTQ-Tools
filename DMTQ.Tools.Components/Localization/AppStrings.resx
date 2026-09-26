@@ -284,8 +284,11 @@
   <data name="Fields.ExistingValue" xml:space="preserve"><value>Existing value</value></data>
   <data name="Editor.CopyBaseToLanguages" xml:space="preserve"><value>Copy base values to all languages</value></data>
   <data name="Editor.GameItemLink" xml:space="preserve"><value>Linked game item</value></data>
-  <data name="Editor.SongItemHint" xml:space="preserve"><value>A song references its game item through song_song.item_id. The matching product_item row is created and saved with this song; store product IDs are configured separately when needed.</value></data>
-  <data name="Editor.SongItemIdRequired" xml:space="preserve"><value>Enter a positive game item ID so the song can link to its required item.</value></data>
+  <data name="Editor.SongItemHint" xml:space="preserve"><value>Choose an existing game item by ID or name. If it is missing, add it here and it will be saved with the song.</value></data>
+  <data name="Editor.SongItemIdRequired" xml:space="preserve"><value>Select an existing game item or add a new one before saving the song.</value></data>
+  <data name="Editor.SelectGameItem" xml:space="preserve"><value>Linked game item</value></data>
+  <data name="Editor.SearchGameItem" xml:space="preserve"><value>Search by item ID or name</value></data>
+  <data name="Editor.AddLinkedGameItem" xml:space="preserve"><value>Add new game item</value></data>
   <data name="Editor.PatternDraftSavedWithSong" xml:space="preserve"><value>Pattern changes are part of this unsaved song and will be saved with it.</value></data>
   <data name="Editor.CategoryIdExplanation" xml:space="preserve"><value>Category IDs are supplied by the game server. This CSV stores only the ID and product link, not category names. Existing IDs come from imported rows; add a custom ID only when you know the server value.</value></data>
   <data name="Options.ItemTypeMusic" xml:space="preserve"><value>Music</value></data>
@@ -308,4 +311,11 @@
   <data name="Options.PointNone" xml:space="preserve"><value>No reward</value></data>
   <data name="Options.PointMax" xml:space="preserve"><value>MAX point</value></data>
   <data name="Options.PointQ" xml:space="preserve"><value>Q point</value></data>
+  <data name="Lists.Pagination" xml:space="preserve"><value>Table pagination</value></data>
+  <data name="Lists.PaginationSummary" xml:space="preserve"><value>{0} items</value></data>
+  <data name="Lists.PageOf" xml:space="preserve"><value>Page {0} of {1}</value></data>
+  <data name="Lists.FirstPage" xml:space="preserve"><value>First page</value></data>
+  <data name="Lists.PreviousPage" xml:space="preserve"><value>Previous page</value></data>
+  <data name="Lists.NextPage" xml:space="preserve"><value>Next page</value></data>
+  <data name="Lists.LastPage" xml:space="preserve"><value>Last page</value></data>
 </root>

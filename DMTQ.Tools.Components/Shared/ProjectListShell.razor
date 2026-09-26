@@ -1,38 +1,46 @@
 @typeparam TItem
+@implements IDisposable
 @inject IProjectState State
+@inject NavigationManager Navigation
 
-<h1>@Title</h1>
+<div class="list-page">
+    <h1>@Title</h1>
 
-@if (State.CurrentPackage is null)
-{
-    <FluentStack Orientation="Orientation.Vertical" Style="margin-bottom: 1rem;">
-        <FluentMessageBar Title="@ProjectMissingMessage" Intent="MessageIntent.Warning" />
-    </FluentStack>
-}
-else
-{
-    <FluentStack Orientation="Orientation.Vertical" VerticalGap="16">
-        @Toolbar
+    @if (State.CurrentPackage is null)
+    {
+        <div class="list-message-area">
+            <FluentMessageBar Title="@ProjectMissingMessage" Intent="MessageIntent.Warning" />
+        </div>
+    }
+    else
+    {
+        <div class="list-toolbar">@Toolbar</div>
 
         @if (Metrics is not null)
         {
-            @Metrics
+            <div class="list-metrics">@Metrics</div>
         }
 
-        @if (FilteredItems.Any())
+        <div class="list-grid-scroll">
+            @if (_visibleItems.Length > 0)
+            {
+                <FluentDataGrid Items="@_visibleItems.AsQueryable()" TGridItem="TItem"
+                                ShowHover="true"
+                                Pagination="@Pagination"
+                                ResizableColumns="true"
+                                HeaderCellAsButtonWithMenu="true">
+                    @Columns
+                </FluentDataGrid>
+            }
+            else
+            {
+                <FluentMessageBar Title="@EmptyMessage" Intent="MessageIntent.Info" />
+            }
+        </div>
+
+        @if (_visibleItems.Length > 0)
         {
-            <FluentDataGrid Items="@FilteredItems.AsQueryable()" TGridItem="TItem"
-                            ShowHover="true"
-                            Pagination="@Pagination"
-                            ResizableColumns="true"
-                            HeaderCellAsButtonWithMenu="true">
-                @Columns
-            </FluentDataGrid>
-            <FluentPaginator State="@Pagination" />
-        }
-        else
-        {
-            <FluentMessageBar Title="@EmptyMessage" Intent="MessageIntent.Info" />
+            <UrlPaginator Pagination="@Pagination" />
         }
 
         @if (!string.IsNullOrEmpty(Message))
@@ -43,8 +51,8 @@ else
         {
             <FluentMessageBar Title="@ErrorMessage" Intent="MessageIntent.Error" />
         }
-    </FluentStack>
-}
+    }
+</div>
 
 @code {
     [Parameter] public string Title { get; set; } = string.Empty;
@@ -57,4 +65,24 @@ else
     [Parameter] public RenderFragment? Columns { get; set; }
     [Parameter] public string? Message { get; set; }
     [Parameter] public string? ErrorMessage { get; set; }
+
+    private TItem[] _visibleItems = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        Navigation.LocationChanged += OnLocationChanged;
+        await Pagination.SetCurrentPageIndexAsync(TableNavigationState.ReadPageIndex(Navigation));
+    }
+
+    protected override void OnParametersSet()
+        => _visibleItems = FilteredItems.ToArray();
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs args)
+        => InvokeAsync(async () =>
+        {
+            await Pagination.SetCurrentPageIndexAsync(TableNavigationState.ReadPageIndex(Navigation));
+            StateHasChanged();
+        });
+
+    public void Dispose() => Navigation.LocationChanged -= OnLocationChanged;
 }
