@@ -119,7 +119,14 @@ fluent-data-grid {
 
 .app-header fluent-button,
 .app-header fluent-select,
-.app-header fluent-menu-button,
+.app-header fluent-menu-button {
+    color: #242424;
+    --neutral-foreground-rest: #242424;
+    --neutral-fill-rest: #fff;
+    --neutral-fill-hover: #f3f3f3;
+    --neutral-stroke-rest: rgba(0, 0, 0, 0.18);
+}
+
 .app-header fluent-switch {
     color: #fff;
     --neutral-foreground-rest: #fff;
@@ -127,11 +134,11 @@ fluent-data-grid {
 
 .app-header .header-save-button {
     min-width: 7rem;
-    color: #fff;
-    --neutral-foreground-rest: #fff;
-    --neutral-fill-rest: rgba(255, 255, 255, 0.12);
-    --neutral-fill-hover: rgba(255, 255, 255, 0.2);
-    --neutral-stroke-rest: rgba(255, 255, 255, 0.5);
+    color: #242424;
+    --neutral-foreground-rest: #242424;
+    --neutral-fill-rest: #fff;
+    --neutral-fill-hover: #f3f3f3;
+    --neutral-stroke-rest: rgba(0, 0, 0, 0.18);
 }
 
 .header-save-error {
