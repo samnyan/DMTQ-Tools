@@ -1,0 +1,3 @@
+[submodule "libs/AssetsTools.NET"]
+	path = libs/AssetsTools.NET
+	url = https://github.com/samnyan/AssetsTools.NET.git
