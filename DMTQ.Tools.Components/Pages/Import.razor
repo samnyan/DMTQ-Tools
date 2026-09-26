@@ -8,17 +8,17 @@
     <FluentSelect Items="@(new[] { "android", "ios" })"
                   OptionText="@(i => i)"
                   OptionValue="@(i => i)"
-                  @bind-SelectedOption="platform"
+                  @bind-Value="platform"
                   Label='@L["Import.Platform"]'
                   Style="max-width: 20rem;" />
 
-    <FluentTextField @bind-Value="packageRoot"
+    <FluentTextInput @bind-Value="packageRoot"
                      Label='@L["Import.SourceDirectory"]'
                      Placeholder="D:\GitHub\DMTQ-Tools\external\patch\phone_new\1.003.005\android"
                      Style="width: 100%;" />
 
     <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8">
-        <FluentButton Appearance="Appearance.Accent"
+        <FluentButton Appearance="ButtonAppearance.Primary"
                       OnClick="ImportPlatformPackage"
                       Disabled="@isBusy">@L["Import.ImportPlatform"]</FluentButton>
     </FluentStack>
@@ -27,32 +27,32 @@
 
     @if (!string.IsNullOrWhiteSpace(message))
     {
-        <FluentMessageBar Title="@message" Intent="MessageIntent.Info" />
+        <FluentMessageBar Title="@message" Intent="MessageBarIntent.Info" />
     }
 </FluentStack>
 
 @if (State.CurrentPackage is not null)
 {
     <FluentGrid Spacing="3" Justify="JustifyContent.Center" AdaptiveRendering="true">
-        <FluentGridItem xs="12" sm="6" md="4" lg="3">
+        <FluentGridItem Xs="12" Sm="6" Md="4" Lg="3">
             <FluentCard>
                 <span style="color: #5f6b7a; font-size: 0.8rem;">@L["Nav.Songs"]</span>
                 <p style="font-weight: 600;">@State.CurrentPackage.Songs.Count</p>
             </FluentCard>
         </FluentGridItem>
-        <FluentGridItem xs="12" sm="6" md="4" lg="3">
+        <FluentGridItem Xs="12" Sm="6" Md="4" Lg="3">
             <FluentCard>
                 <span style="color: #5f6b7a; font-size: 0.8rem;">@L["Home.Tables"]</span>
                 <p style="font-weight: 600;">@State.CurrentPackage.Tables.Tables.Count</p>
             </FluentCard>
         </FluentGridItem>
-        <FluentGridItem xs="12" sm="6" md="4" lg="3">
+        <FluentGridItem Xs="12" Sm="6" Md="4" Lg="3">
             <FluentCard>
                 <span style="color: #5f6b7a; font-size: 0.8rem;">@L["Nav.Resources"]</span>
                 <p style="font-weight: 600;">@State.CurrentPackage.Resources.Count</p>
             </FluentCard>
         </FluentGridItem>
-        <FluentGridItem xs="12" sm="6" md="4" lg="3">
+        <FluentGridItem Xs="12" Sm="6" Md="4" Lg="3">
             <FluentCard>
                 <span style="color: #5f6b7a; font-size: 0.8rem;">@L["Common.Languages"]</span>
                 <p style="font-weight: 600;">@LanguageSummary</p>

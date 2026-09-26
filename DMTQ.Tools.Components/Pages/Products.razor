@@ -16,9 +16,9 @@
                   ErrorMessage="@errorMessage">
     <Toolbar>
         <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center">
-            <FluentTextField Value="@filter" ValueChanged="SetFilterAsync" Immediate="true" Placeholder='@L["Lists.FilterProducts"]'
+            <FluentTextInput Value="@filter" ValueChanged="SetFilterAsync" Immediate="true" Placeholder='@L["Lists.FilterProducts"]'
                              Style="min-width: 320px;" />
-            <FluentButton Appearance="Appearance.Accent"
+            <FluentButton Appearance="ButtonAppearance.Primary"
                           IconStart="@(new Icons.Regular.Size20.Add())"
                           OnClick="CreateNewProduct">@L["Lists.AddProduct"]</FluentButton>
         </FluentStack>
@@ -26,16 +26,16 @@
 
     <Metrics>
         <FluentGrid Spacing="3" AdaptiveRendering="true">
-            <FluentGridItem xs="12" sm="6" md="3">
+            <FluentGridItem Xs="12" Sm="6" Md="3">
                 <FluentCard><span class="metric-label">@L["Lists.Products"]</span><strong>@Catalog.Count</strong></FluentCard>
             </FluentGridItem>
-            <FluentGridItem xs="12" sm="6" md="3">
+            <FluentGridItem Xs="12" Sm="6" Md="3">
                 <FluentCard><span class="metric-label">Active</span><strong>@Catalog.Count(product => product.Status.Equals("Y", StringComparison.OrdinalIgnoreCase))</strong></FluentCard>
             </FluentGridItem>
-            <FluentGridItem xs="12" sm="6" md="3">
+            <FluentGridItem Xs="12" Sm="6" Md="3">
                 <FluentCard><span class="metric-label">@L["Lists.WithStoreSku"]</span><strong>@Catalog.Count(product => !string.IsNullOrWhiteSpace(product.StoreProductId))</strong></FluentCard>
             </FluentGridItem>
-            <FluentGridItem xs="12" sm="6" md="3">
+            <FluentGridItem Xs="12" Sm="6" Md="3">
                 <FluentCard><span class="metric-label">@L["Lists.Categories"]</span><strong>@Catalog.Sum(product => product.CategoryIds.Count)</strong></FluentCard>
             </FluentGridItem>
         </FluentGrid>
@@ -53,11 +53,11 @@
         <TemplateColumn TGridItem="Product" Title="Actions" Context="product">
             <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="4">
                 <FluentButton IconStart="@(new Icons.Regular.Size20.Edit())"
-                              Appearance="Appearance.Neutral"
+                              Appearance="ButtonAppearance.Default"
                               OnClick="() => EditProduct(product.Id)"
                               Title='@L["Common.Edit"]' />
                 <FluentButton IconStart="@(new Icons.Regular.Size20.Delete())"
-                              Appearance="Appearance.Neutral"
+                              Appearance="ButtonAppearance.Default"
                               OnClick="() => DeleteProductAsync(product)"
                               Title='@L["Common.Delete"]' />
             </FluentStack>
@@ -120,10 +120,9 @@
 
         message = null;
         errorMessage = null;
-        var dialog = await DialogService.ShowConfirmationAsync(
+        var result = await DialogService.ShowConfirmationAsync(
             L["Lists.DeleteConfirm", L["Nav.Products"].Value.ToLowerInvariant(), product.Id].Value,
             L["Common.Delete"].Value, L["Common.Cancel"].Value, L["Nav.Products"].Value);
-        var result = await dialog.Result;
         if (result.Cancelled) return;
 
         try

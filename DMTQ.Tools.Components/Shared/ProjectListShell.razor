@@ -9,7 +9,7 @@
     @if (State.CurrentPackage is null)
     {
         <div class="list-message-area">
-            <FluentMessageBar Title="@ProjectMissingMessage" Intent="MessageIntent.Warning" />
+            <FluentMessageBar Title="@ProjectMissingMessage" Intent="MessageBarIntent.Warning" />
         </div>
     }
     else
@@ -34,7 +34,7 @@
             }
             else
             {
-                <FluentMessageBar Title="@EmptyMessage" Intent="MessageIntent.Info" />
+                <FluentMessageBar Title="@EmptyMessage" Intent="MessageBarIntent.Info" />
             }
         </div>
 
@@ -45,11 +45,11 @@
 
         @if (!string.IsNullOrEmpty(Message))
         {
-            <FluentMessageBar Title="@Message" Intent="MessageIntent.Info" />
+            <FluentMessageBar Title="@Message" Intent="MessageBarIntent.Info" />
         }
         @if (!string.IsNullOrEmpty(ErrorMessage))
         {
-            <FluentMessageBar Title="@ErrorMessage" Intent="MessageIntent.Error" />
+            <FluentMessageBar Title="@ErrorMessage" Intent="MessageBarIntent.Error" />
         }
     }
 </div>

@@ -1,7 +1,4 @@
-﻿/* App-specific styles retained after FluentUI migration.
-   FluentUI handles layout (FluentMainLayout, FluentStack, FluentGrid),
-   forms (FluentTextField, FluentSelect, FluentButton, FluentCheckbox),
-   and navigation (FluentNavMenu, FluentNavLink). */
+/* App-specific styles for the MAUI Blazor host and Fluent UI v5 components. */
 
 /* ── Reset: fix MAUI WebView double-scroll + body margins ── */
 html, body {
@@ -46,11 +43,15 @@ fluent-data-grid {
     align-items: center;
     gap: 0.75rem;
     min-width: 0;
-    background-color: var(--accent-fill-rest, #6264a7);
+    background-color: var(--colorBrandBackground, #6264a7);
     color: #fff;
-    --neutral-foreground-rest: #fff;
-    --neutral-foreground-hint: rgba(255, 255, 255, 0.82);
-    --neutral-stroke-rest: rgba(255, 255, 255, 0.3);
+    --colorNeutralForeground1: #fff;
+    --colorNeutralForeground3: rgba(255, 255, 255, 0.82);
+    --colorNeutralStroke1: rgba(255, 255, 255, 0.3);
+}
+
+body {
+    --colorBrandBackground: #6264a7;
 }
 
 .header-brand {
@@ -69,10 +70,24 @@ fluent-data-grid {
     overflow: hidden;
 }
 
-.header-breadcrumb fluent-breadcrumb {
+.header-breadcrumb nav {
     color: #fff;
-    --neutral-foreground-rest: #fff;
-    --neutral-foreground-hint: rgba(255, 255, 255, 0.82);
+    --colorNeutralForeground1: #fff;
+    --colorNeutralForeground3: rgba(255, 255, 255, 0.82);
+}
+
+.global-breadcrumb ol {
+    display: flex;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.global-breadcrumb li + li::before {
+    content: "/";
+    margin-right: 0.5rem;
+    opacity: 0.7;
 }
 
 .header-platform,
@@ -121,24 +136,24 @@ fluent-data-grid {
 .app-header fluent-select,
 .app-header fluent-menu-button {
     color: #242424;
-    --neutral-foreground-rest: #242424;
-    --neutral-fill-rest: #fff;
-    --neutral-fill-hover: #f3f3f3;
-    --neutral-stroke-rest: rgba(0, 0, 0, 0.18);
+    --colorNeutralForeground1: #242424;
+    --colorNeutralBackground1: #fff;
+    --colorNeutralBackground1Hover: #f3f3f3;
+    --colorNeutralStroke1: rgba(0, 0, 0, 0.18);
 }
 
 .app-header fluent-switch {
     color: #fff;
-    --neutral-foreground-rest: #fff;
+    --colorNeutralForeground1: #fff;
 }
 
 .app-header .header-save-button {
     min-width: 7rem;
     color: #242424;
-    --neutral-foreground-rest: #242424;
-    --neutral-fill-rest: #fff;
-    --neutral-fill-hover: #f3f3f3;
-    --neutral-stroke-rest: rgba(0, 0, 0, 0.18);
+    --colorNeutralForeground1: #242424;
+    --colorNeutralBackground1: #fff;
+    --colorNeutralBackground1Hover: #f3f3f3;
+    --colorNeutralStroke1: rgba(0, 0, 0, 0.18);
 }
 
 .header-save-error {
@@ -190,14 +205,14 @@ fluent-data-grid {
     align-items: center;
     flex-wrap: wrap;
     gap: 0.5rem;
-    border-top: 1px solid var(--neutral-stroke-rest, #d8dee6);
-    background: var(--neutral-layer-1, #fff);
+    border-top: 1px solid var(--colorNeutralStroke1, #d8dee6);
+    background: var(--colorNeutralBackground1, #fff);
     padding: 0.55rem 0.25rem;
     box-shadow: 0 -3px 10px rgba(0, 0, 0, 0.06);
 }
 
 .song-editor-status {
-    color: var(--neutral-foreground-hint, #5f6b7a);
+    color: var(--colorNeutralForeground3, #5f6b7a);
     font-size: 0.875rem;
 }
 
@@ -215,9 +230,9 @@ fluent-data-grid {
     width: 100%;
     max-height: 15rem;
     overflow-y: auto;
-    border: 1px solid var(--neutral-stroke-rest, #d8dee6);
+    border: 1px solid var(--colorNeutralStroke1, #d8dee6);
     border-radius: 4px;
-    background: var(--neutral-layer-1, #fff);
+    background: var(--colorNeutralBackground1, #fff);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 }
 
@@ -227,9 +242,9 @@ fluent-data-grid {
     align-items: center;
     gap: 0.75rem;
     border: 0;
-    border-bottom: 1px solid var(--neutral-stroke-divider-rest, #e5e7eb);
+    border-bottom: 1px solid var(--colorNeutralStroke2, #e5e7eb);
     background: transparent;
-    color: var(--neutral-foreground-rest, #242424);
+    color: var(--colorNeutralForeground1, #242424);
     padding: 0.65rem 0.75rem;
     text-align: left;
     cursor: pointer;
@@ -242,12 +257,12 @@ fluent-data-grid {
 .linked-item-result:hover,
 .linked-item-result:focus-visible {
     outline: none;
-    background: var(--neutral-fill-stealth-hover, #f2f2f2);
+    background: var(--colorNeutralBackground1Hover, #f2f2f2);
 }
 
 .linked-item-result-id {
     flex: 0 0 auto;
-    color: var(--neutral-foreground-hint, #5f6b7a);
+    color: var(--colorNeutralForeground3, #5f6b7a);
     font-variant-numeric: tabular-nums;
 }
 
@@ -274,9 +289,9 @@ fluent-data-grid {
 
 .recent-project-list {
     overflow: hidden;
-    border: 1px solid var(--neutral-stroke-rest, #d8dee6);
+    border: 1px solid var(--colorNeutralStroke1, #d8dee6);
     border-radius: 6px;
-    background: var(--neutral-layer-1, #fff);
+    background: var(--colorNeutralBackground1, #fff);
 }
 
 .recent-project-row {
@@ -289,7 +304,7 @@ fluent-data-grid {
 }
 
 .recent-project-row + .recent-project-row {
-    border-top: 1px solid var(--neutral-stroke-divider-rest, #e5e7eb);
+    border-top: 1px solid var(--colorNeutralStroke2, #e5e7eb);
 }
 
 .recent-project-details {
@@ -311,7 +326,7 @@ fluent-data-grid {
 }
 
 .recent-project-details span {
-    color: var(--neutral-foreground-hint, #5f6b7a);
+    color: var(--colorNeutralForeground3, #5f6b7a);
     font-size: 0.8rem;
 }
 
@@ -478,7 +493,7 @@ fluent-card:has(.metric-label) {
 /* ── Pattern tool ── */
 .pattern-toolbar {
     padding: 0.75rem;
-    border: 1px solid var(--neutral-stroke-rest, #d8dee6);
+    border: 1px solid var(--colorNeutralStroke1, #d8dee6);
     border-radius: 6px;
 }
 
@@ -513,13 +528,13 @@ section {
     font-size: 0.9rem;
     font-weight: 600;
     margin: 0 0 0.25rem;
-    color: var(--neutral-foreground-rest);
+    color: var(--colorNeutralForeground1);
 }
 
 .language-panel {
     margin-top: 0.75rem;
     padding: 0.75rem;
-    border: 1px solid var(--neutral-stroke-rest, #d8dee6);
+    border: 1px solid var(--colorNeutralStroke1, #d8dee6);
     border-radius: 6px;
 }
 
@@ -549,9 +564,9 @@ section {
 .mission-card {
     padding: 0.75rem;
     margin-bottom: 0.75rem;
-    border: 1px solid var(--neutral-stroke-rest, #d8dee6);
+    border: 1px solid var(--colorNeutralStroke1, #d8dee6);
     border-radius: 6px;
-    background: var(--neutral-layer-1, #fff);
+    background: var(--colorNeutralBackground1, #fff);
 }
 
 .mission-language-grid {
@@ -593,7 +608,7 @@ section {
 
 /* ── Songs page ── */
 .song-detail {
-    border: 1px solid var(--neutral-stroke-rest, #d8dee6);
+    border: 1px solid var(--colorNeutralStroke1, #d8dee6);
     border-radius: 6px;
     padding: 1rem;
     background: #fff;
@@ -634,7 +649,7 @@ section {
 }
 
 .song-summary-grid > div {
-    border: 1px solid var(--neutral-stroke-rest, #d8dee6);
+    border: 1px solid var(--colorNeutralStroke1, #d8dee6);
     border-radius: 6px;
     padding: 0.75rem;
     min-width: 0;
@@ -648,7 +663,7 @@ section {
 .song-add-section {
     margin-top: 0.75rem;
     padding-top: 0.75rem;
-    border-top: 1px solid var(--neutral-stroke-rest, #d8dee6);
+    border-top: 1px solid var(--colorNeutralStroke1, #d8dee6);
 }
 
 .song-add-form {

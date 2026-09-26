@@ -13,12 +13,12 @@
 
     @if (State.CurrentPackage is null)
     {
-        <FluentMessageBar Title='@L["Editor.OpenSongsProject"]' Intent="MessageIntent.Warning" />
+        <FluentMessageBar Title='@L["Editor.OpenSongsProject"]' Intent="MessageBarIntent.Warning" />
     }
     else if (currentSong is null && !IsCreate)
     {
-        <FluentMessageBar Title='@L["Editor.NotFound", L["Nav.Songs"].Value, SongId]' Intent="MessageIntent.Error" />
-        <FluentButton Appearance="Appearance.Neutral" OnClick="NavigateBack">@L["Editor.BackTo", L["Nav.Songs"].Value]</FluentButton>
+        <FluentMessageBar Title='@L["Editor.NotFound", L["Nav.Songs"].Value, SongId]' Intent="MessageBarIntent.Error" />
+        <FluentButton Appearance="ButtonAppearance.Default" OnClick="NavigateBack">@L["Editor.BackTo", L["Nav.Songs"].Value]</FluentButton>
     }
     else
     {
@@ -30,48 +30,48 @@
                    Row 1: Basic Info | Gameplay Settings
                    ════════════════════════════════════════════ *@
                 <FluentGrid Spacing="3">
-                    <FluentGridItem xs="12" md="6">
+                    <FluentGridItem Xs="12" Md="6">
                         <section>
                             <h2 class="section-heading">@L["Editor.BasicInfo"]</h2>
                             <FluentStack Orientation="Orientation.Vertical" VerticalGap="8">
                                 @if (IsCreate)
                                 {
-                                    <FluentTextField style="width: 100%;" Value="@songIdInput" ValueChanged="SetSongIdInput" Label='@(L["Fields.SongId"].Value + " *")' Placeholder="1" Required />
+                                    <FluentTextInput style="width: 100%;" Value="@songIdInput" ValueChanged="SetSongIdInput" Label='@(L["Fields.SongId"].Value + " *")' Placeholder="1" Required />
                                 }
                                 else
                                 {
-                                    <FluentTextField style="width: 100%;" Value="@(currentSong?.Id.ToString() ?? "")" Label='@L["Fields.SongId"]' ReadOnly="true" />
+                                    <FluentTextInput style="width: 100%;" Value="@(currentSong?.Id.ToString() ?? "")" Label='@L["Fields.SongId"]' ReadOnly="true" />
                                 }
-                                <FluentTextField style="width: 100%;" @bind-Value="currentSong!.Name" Label='@L["Fields.SongName"]' />
-                                <FluentTextField style="width: 100%;" @bind-Value="songFullName" Label='@L["Fields.FullName"]' Immediate="true" />
-                                <FluentTextField style="width: 100%;" @bind-Value="songGenre" Label='@L["Fields.Genre"]' Immediate="true" />
-                                <FluentTextField style="width: 100%;" @bind-Value="songArtistName" Label='@L["Fields.Artist"]' Immediate="true" />
-                                <FluentTextField style="width: 100%;" @bind-Value="songComposedBy" Label='@L["Fields.Composer"]' Immediate="true" />
-                                <FluentTextField style="width: 100%;" @bind-Value="songSinger" Label='@L["Fields.Singer"]' Immediate="true" />
-                                <FluentTextField style="width: 100%;" @bind-Value="songFeatBy" Label='@L["Fields.FeaturedArtist"]' Immediate="true" />
-                                <FluentTextField style="width: 100%;" @bind-Value="songArrangedBy" Label='@L["Fields.Arranger"]' Immediate="true" />
-                                <FluentTextField style="width: 100%;" @bind-Value="songVisualizedBy" Label='@L["Fields.Visualizer"]' Immediate="true" />
+                                <FluentTextInput style="width: 100%;" @bind-Value="currentSong!.Name" Label='@L["Fields.SongName"]' />
+                                <FluentTextInput style="width: 100%;" @bind-Value="songFullName" Label='@L["Fields.FullName"]' Immediate="true" />
+                                <FluentTextInput style="width: 100%;" @bind-Value="songGenre" Label='@L["Fields.Genre"]' Immediate="true" />
+                                <FluentTextInput style="width: 100%;" @bind-Value="songArtistName" Label='@L["Fields.Artist"]' Immediate="true" />
+                                <FluentTextInput style="width: 100%;" @bind-Value="songComposedBy" Label='@L["Fields.Composer"]' Immediate="true" />
+                                <FluentTextInput style="width: 100%;" @bind-Value="songSinger" Label='@L["Fields.Singer"]' Immediate="true" />
+                                <FluentTextInput style="width: 100%;" @bind-Value="songFeatBy" Label='@L["Fields.FeaturedArtist"]' Immediate="true" />
+                                <FluentTextInput style="width: 100%;" @bind-Value="songArrangedBy" Label='@L["Fields.Arranger"]' Immediate="true" />
+                                <FluentTextInput style="width: 100%;" @bind-Value="songVisualizedBy" Label='@L["Fields.Visualizer"]' Immediate="true" />
                             </FluentStack>
                         </section>
                     </FluentGridItem>
 
-                    <FluentGridItem xs="12" md="6">
+                    <FluentGridItem Xs="12" Md="6">
                         <section>
                             <h2 class="section-heading">@L["Editor.GameplaySettings"]</h2>
                             <p class="section-hint">@L["Editor.SongCodesHint"]</p>
                             <FluentStack Orientation="Orientation.Vertical" VerticalGap="8">
                                 <FluentSwitch @bind-Value="bgaOriginal" Label='@L["Fields.OriginalBga"]' />
                                 <FluentSwitch @bind-Value="bgaLoop" Label='@L["Fields.LoopBga"]' />
-                                <FluentNumberField @bind-Value="costPoint" Label='@L["Fields.CostGamePoint"]' />
-                                <FluentNumberField @bind-Value="costCash" Label='@L["Fields.CostGameCash"]' />
-                                <FluentNumberField @bind-Value="currentSong!.Flag" Label='@L["Fields.SongFlag"]' />
-                                <FluentTextField style="width: 100%;" @bind-Value="currentSong!.Status" Label='@L["Fields.SongStatus"]' />
+                                <FluentNumberInput @bind-Value="costPoint" Label='@L["Fields.CostGamePoint"]' />
+                                <FluentNumberInput @bind-Value="costCash" Label='@L["Fields.CostGameCash"]' />
+                                <FluentNumberInput @bind-Value="currentSong!.Flag" Label='@L["Fields.SongFlag"]' />
+                                <FluentTextInput style="width: 100%;" @bind-Value="currentSong!.Status" Label='@L["Fields.SongStatus"]' />
                                 <FluentSwitch @bind-Value="freeYn" Label='@L["Fields.FreeSong"]' />
                                 <FluentSwitch @bind-Value="hiddenYn" Label='@L["Fields.HiddenSong"]' />
                                 <FluentSwitch @bind-Value="openYn" Label='@L["Fields.OpenSong"]' />
-                                <FluentNumberField @bind-Value="currentSong!.TrackId" Label='@L["Fields.TrackId"]' />
-                                <FluentTextField style="width: 100%;" @bind-Value="currentSong!.ModDate" Label='@L["Fields.ModDate"]' />
-                                <FluentTextField style="width: 100%;" @bind-Value="currentSong!.Update" Label='@L["Fields.UpdateValue"]' />
+                                <FluentNumberInput @bind-Value="currentSong!.TrackId" Label='@L["Fields.TrackId"]' />
+                                <FluentTextInput style="width: 100%;" @bind-Value="currentSong!.ModDate" Label='@L["Fields.ModDate"]' />
+                                <FluentTextInput style="width: 100%;" @bind-Value="currentSong!.Update" Label='@L["Fields.UpdateValue"]' />
                             </FluentStack>
                         </section>
                     </FluentGridItem>
@@ -86,7 +86,7 @@
                     <div class="linked-item-picker">
                         @if (linkedItemDraft is null)
                         {
-                            <FluentTextField Value="@linkedItemSearchText"
+                            <FluentTextInput Value="@linkedItemSearchText"
                                              ValueChanged="SearchLinkedItems"
                                              Immediate="true"
                                              Label='@L["Editor.SelectGameItem"]'
@@ -111,7 +111,7 @@
 
                             @if (SelectedLinkedItem is null)
                             {
-                                <FluentButton Appearance="Appearance.Neutral"
+                                <FluentButton Appearance="ButtonAppearance.Default"
                                               IconStart="@(new Icons.Regular.Size20.Add())"
                                               OnClick="BeginLinkedItemCreation"
                                               Disabled="@(!TryGetSuggestedItemId(out _))">
@@ -123,7 +123,7 @@
                         {
                             <div class="linked-item-draft-header">
                                 <span>@L["Editor.AddLinkedGameItem"] (@linkedItemDraft.Id)</span>
-                                <FluentButton Appearance="Appearance.Neutral" OnClick="CancelLinkedItemCreation">@L["Editor.CancelLinkedGameItem"]</FluentButton>
+                                <FluentButton Appearance="ButtonAppearance.Default" OnClick="CancelLinkedItemCreation">@L["Editor.CancelLinkedGameItem"]</FluentButton>
                             </div>
                         }
                     </div>
@@ -158,29 +158,29 @@
                                 <div>
                                     <h3 class="lang-heading">@LanguageLabel(lang)</h3>
                                     <FluentGrid Spacing="2">
-                                        <FluentGridItem xs="12" sm="6" md="4" lg="2">
-                                            <FluentTextField style="width: 100%;" @bind-Value="loc.FullName" Label='@L["Fields.FullName"]' />
+                                        <FluentGridItem Xs="12" Sm="6" Md="4" Lg="2">
+                                            <FluentTextInput style="width: 100%;" @bind-Value="loc.FullName" Label='@L["Fields.FullName"]' />
                                         </FluentGridItem>
-                                        <FluentGridItem xs="12" sm="6" md="4" lg="2">
-                                            <FluentTextField style="width: 100%;" @bind-Value="loc.Genre" Label='@L["Fields.Genre"]' />
+                                        <FluentGridItem Xs="12" Sm="6" Md="4" Lg="2">
+                                            <FluentTextInput style="width: 100%;" @bind-Value="loc.Genre" Label='@L["Fields.Genre"]' />
                                         </FluentGridItem>
-                                        <FluentGridItem xs="12" sm="6" md="4" lg="2">
-                                            <FluentTextField style="width: 100%;" @bind-Value="loc.ArtistName" Label='@L["Fields.Artist"]' />
+                                        <FluentGridItem Xs="12" Sm="6" Md="4" Lg="2">
+                                            <FluentTextInput style="width: 100%;" @bind-Value="loc.ArtistName" Label='@L["Fields.Artist"]' />
                                         </FluentGridItem>
-                                        <FluentGridItem xs="12" sm="6" md="4" lg="2">
-                                            <FluentTextField style="width: 100%;" @bind-Value="loc.ComposedBy" Label='@L["Fields.Composer"]' />
+                                        <FluentGridItem Xs="12" Sm="6" Md="4" Lg="2">
+                                            <FluentTextInput style="width: 100%;" @bind-Value="loc.ComposedBy" Label='@L["Fields.Composer"]' />
                                         </FluentGridItem>
-                                        <FluentGridItem xs="12" sm="6" md="4" lg="2">
-                                            <FluentTextField style="width: 100%;" @bind-Value="loc.Singer" Label='@L["Fields.Singer"]' />
+                                        <FluentGridItem Xs="12" Sm="6" Md="4" Lg="2">
+                                            <FluentTextInput style="width: 100%;" @bind-Value="loc.Singer" Label='@L["Fields.Singer"]' />
                                         </FluentGridItem>
-                                        <FluentGridItem xs="12" sm="6" md="4" lg="2">
-                                            <FluentTextField style="width: 100%;" @bind-Value="loc.FeatBy" Label='@L["Fields.FeaturedArtist"]' />
+                                        <FluentGridItem Xs="12" Sm="6" Md="4" Lg="2">
+                                            <FluentTextInput style="width: 100%;" @bind-Value="loc.FeatBy" Label='@L["Fields.FeaturedArtist"]' />
                                         </FluentGridItem>
-                                        <FluentGridItem xs="12" sm="6" md="4" lg="2">
-                                            <FluentTextField style="width: 100%;" @bind-Value="loc.ArrangedBy" Label='@L["Fields.Arranger"]' />
+                                        <FluentGridItem Xs="12" Sm="6" Md="4" Lg="2">
+                                            <FluentTextInput style="width: 100%;" @bind-Value="loc.ArrangedBy" Label='@L["Fields.Arranger"]' />
                                         </FluentGridItem>
-                                        <FluentGridItem xs="12" sm="6" md="4" lg="2">
-                                            <FluentTextField style="width: 100%;" @bind-Value="loc.VisualizedBy" Label='@L["Fields.Visualizer"]' />
+                                        <FluentGridItem Xs="12" Sm="6" Md="4" Lg="2">
+                                            <FluentTextInput style="width: 100%;" @bind-Value="loc.VisualizedBy" Label='@L["Fields.Visualizer"]' />
                                         </FluentGridItem>
                                     </FluentGrid>
                                 </div>
@@ -195,7 +195,7 @@
                 <section>
                     <div class="table-header">
                         <h2 class="section-heading">@L["Editor.Patterns"]</h2>
-                        <FluentButton Appearance="Appearance.Accent"
+                        <FluentButton Appearance="ButtonAppearance.Primary"
                                       IconStart="@(new Icons.Regular.Size20.Add())"
                                       OnClick="OpenAddPatternDialog">@L["Editor.AddPattern"]</FluentButton>
                     </div>
@@ -223,11 +223,11 @@
                                 <TemplateColumn Title='@L["Common.Actions"]' Context="p">
                                     <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="4">
                                         <FluentButton IconStart="@(new Icons.Regular.Size20.Edit())"
-                                                      Appearance="Appearance.Neutral" Size="FluentUI.AspNetCore.Components.Size.Small"
+                                                      Appearance="ButtonAppearance.Default" Size="ButtonSize.Small"
                                                       Title='@L["Common.Edit"]'
                                                       OnClick="() => OpenEditPatternDialog(p)" />
                                         <FluentButton IconStart="@(new Icons.Regular.Size20.Delete())"
-                                                      Appearance="Appearance.Neutral" Size="FluentUI.AspNetCore.Components.Size.Small"
+                                                      Appearance="ButtonAppearance.Default" Size="ButtonSize.Small"
                                                       Title='@L["Common.Delete"]'
                                                       OnClick="() => RemovePatternAsync(p)" />
                                     </FluentStack>
@@ -237,22 +237,22 @@
                     }
                     else
                     {
-                        <FluentMessageBar Title='@L["Editor.NoPatterns"]' Intent="MessageIntent.Info" />
+                        <FluentMessageBar Title='@L["Editor.NoPatterns"]' Intent="MessageBarIntent.Info" />
                     }
                 </section>
 
                 </FluentStack>
             </div>
             <div class="song-editor-actions">
-                <FluentButton Appearance="Appearance.Accent" Type="ButtonType.Submit" Disabled="@isBusy">@L["Editor.SaveSong"]</FluentButton>
-                <FluentButton Appearance="Appearance.Neutral" OnClick="NavigateBack">@L["Common.Cancel"]</FluentButton>
+                <FluentButton Appearance="ButtonAppearance.Primary" Type="ButtonType.Submit" Disabled="@isBusy">@L["Editor.SaveSong"]</FluentButton>
+                <FluentButton Appearance="ButtonAppearance.Default" OnClick="NavigateBack">@L["Common.Cancel"]</FluentButton>
                 @if (!string.IsNullOrEmpty(message))
                 {
                     <span class="song-editor-status">@message</span>
                 }
                 @if (!string.IsNullOrEmpty(errorMessage))
                 {
-                    <FluentMessageBar Title="@errorMessage" Intent="MessageIntent.Error" />
+                    <FluentMessageBar Title="@errorMessage" Intent="MessageBarIntent.Error" />
                 }
             </div>
         </EditForm>
@@ -647,18 +647,14 @@
             .Max() + 1;
         var pattern = new SongPattern { PatternId = nextPatternId, SongId = currentSong.Id };
 
-        var dialog = await DialogService.ShowDialogAsync<PatternDialog, SongPattern>(
-            pattern,
-            new DialogParameters
-            {
-                Title = L["Editor.AddPattern"].Value,
-                PrimaryAction = L["Common.Save"].Value,
-                SecondaryAction = L["Common.Cancel"].Value,
-                Width = "480px",
-                PreventDismissOnOverlayClick = true,
-            });
-
-        var result = await dialog.Result;
+        var result = await DialogService.ShowDialogAsync<PatternDialog>(options =>
+        {
+            options.Header.Title = L["Editor.AddPattern"].Value;
+            options.Footer.PrimaryAction.Label = L["Common.Save"].Value;
+            options.Footer.SecondaryAction.Label = L["Common.Cancel"].Value;
+            options.Width = "480px";
+            options.Parameters = new Dictionary<string, object?> { [nameof(PatternDialog.Content)] = pattern };
+        });
         if (result.Cancelled || pattern.PatternId == 0)
             return;
 
@@ -708,18 +704,14 @@
             Update = pattern.Update,
         };
 
-        var dialog = await DialogService.ShowDialogAsync<PatternDialog, SongPattern>(
-            clone,
-            new DialogParameters
-            {
-                Title = L["Editor.Edit", pattern.PatternId].Value,
-                PrimaryAction = L["Common.Save"].Value,
-                SecondaryAction = L["Common.Cancel"].Value,
-                Width = "480px",
-                PreventDismissOnOverlayClick = true,
-            });
-
-        var result = await dialog.Result;
+        var result = await DialogService.ShowDialogAsync<PatternDialog>(options =>
+        {
+            options.Header.Title = L["Editor.Edit", pattern.PatternId].Value;
+            options.Footer.PrimaryAction.Label = L["Common.Save"].Value;
+            options.Footer.SecondaryAction.Label = L["Common.Cancel"].Value;
+            options.Width = "480px";
+            options.Parameters = new Dictionary<string, object?> { [nameof(PatternDialog.Content)] = clone };
+        });
         if (result.Cancelled) return;
 
         try
@@ -751,11 +743,9 @@
     {
         if (currentSong is null) return;
 
-        var dialog = await DialogService.ShowConfirmationAsync(
+        var result = await DialogService.ShowConfirmationAsync(
             L["Lists.DeleteConfirm", L["Editor.Patterns"].Value, pattern.PatternId].Value,
             L["Common.Delete"].Value, L["Common.Cancel"].Value, L["Editor.Patterns"].Value);
-
-        var result = await dialog.Result;
         if (result.Cancelled) return;
 
         isBusy = true;

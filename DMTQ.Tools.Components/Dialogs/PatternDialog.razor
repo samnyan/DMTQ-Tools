@@ -3,43 +3,44 @@
 @using DMTQ.Tools.Core.Models.Entity
 @using DMTQ.Tools.Core.Models.Export
 @using DMTQ.Tools.Core.Models.Project
-@implements IDialogContentComponent<SongPattern>
+@inherits FluentDialogInstance
 
-<FluentStack Orientation="Orientation.Vertical" VerticalGap="12" Style="min-width: 360px;">
+<FluentDialogBody>
+    <FluentStack Orientation="Orientation.Vertical" VerticalGap="12" Style="min-width: 360px;">
 
     <FluentGrid Spacing="3">
-        <FluentGridItem xs="12" sm="6">
-            <FluentNumberField @bind-Value="Content.PatternId" Label='@(L["Fields.PatternId"].Value + " *")'
+        <FluentGridItem Xs="12" Sm="6">
+            <FluentNumberInput @bind-Value="Content.PatternId" Label='@(L["Fields.PatternId"].Value + " *")'
                              Disabled="@(originalId is not null)" Required />
         </FluentGridItem>
-        <FluentGridItem xs="12" sm="6">
-            <FluentSelect Items="LineOptions" @bind-SelectedOption="selectedLine" Label='@L["Fields.ChartLine"]' />
+        <FluentGridItem Xs="12" Sm="6">
+            <FluentSelect Items="LineOptions" @bind-Value="selectedLine" Label='@L["Fields.ChartLine"]' />
         </FluentGridItem>
-        <FluentGridItem xs="12" sm="6">
-            <FluentSelect Items="SignatureOptions" @bind-SelectedOption="selectedSignature" Label='@L["Fields.ChartDifficulty"]' />
+        <FluentGridItem Xs="12" Sm="6">
+            <FluentSelect Items="SignatureOptions" @bind-Value="selectedSignature" Label='@L["Fields.ChartDifficulty"]' />
         </FluentGridItem>
-        <FluentGridItem xs="12" sm="6">
-            <FluentNumberField @bind-Value="Content.Difficulty" Label='@L["Fields.StarRating"]' />
+        <FluentGridItem Xs="12" Sm="6">
+            <FluentNumberInput @bind-Value="Content.Difficulty" Label='@L["Fields.StarRating"]' />
         </FluentGridItem>
-        <FluentGridItem xs="12" sm="6">
-            <FluentSelect Items="PointTypeOptions" @bind-SelectedOption="selectedPointType" Label='@L["Fields.PointType"]' />
+        <FluentGridItem Xs="12" Sm="6">
+            <FluentSelect Items="PointTypeOptions" @bind-Value="selectedPointType" Label='@L["Fields.PointType"]' />
         </FluentGridItem>
-        <FluentGridItem xs="12" sm="6">
-            <FluentNumberField @bind-Value="Content.PointValue" Label='@L["Fields.PointValue"]' />
+        <FluentGridItem Xs="12" Sm="6">
+            <FluentNumberInput @bind-Value="Content.PointValue" Label='@L["Fields.PointValue"]' />
         </FluentGridItem>
-        <FluentGridItem xs="12" sm="6">
-            <FluentTextField @bind-Value="Content.Name" Label='@L["Fields.PatternName"]' />
+        <FluentGridItem Xs="12" Sm="6">
+            <FluentTextInput @bind-Value="Content.Name" Label='@L["Fields.PatternName"]' />
         </FluentGridItem>
-        <FluentGridItem xs="12">
+        <FluentGridItem Xs="12">
             <FluentSwitch @bind-Value="flgChecked" Label='@L["Fields.PatternEnabled"]' />
         </FluentGridItem>
     </FluentGrid>
 
 </FluentStack>
+</FluentDialogBody>
 
 @code {
     [Parameter] public SongPattern Content { get; set; } = default!;
-    [CascadingParameter] public FluentDialog Dialog { get; set; } = default!;
 
     private int? originalId;
 
@@ -77,9 +78,13 @@
 
     protected override void OnInitialized()
     {
+        base.OnInitialized();
         if (Content.PatternId > 0)
             originalId = Content.PatternId;
     }
+
+    protected override Task OnActionClickedAsync(bool primary)
+        => primary ? DialogInstance.CloseAsync(Content) : DialogInstance.CancelAsync();
 
     private string GetOption(IReadOnlyList<string> knownOptions, int value)
         => knownOptions.FirstOrDefault(option => GetCode(option) == value)

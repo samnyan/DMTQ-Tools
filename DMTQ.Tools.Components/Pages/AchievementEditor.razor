@@ -8,11 +8,11 @@
 <FluentStack Orientation="Orientation.Vertical" VerticalGap="20" HorizontalAlignment="HorizontalAlignment.Stretch">
     @if (State.CurrentPackage is null)
     {
-        <FluentMessageBar Title='@L["Editor.OpenProjectFirst"]' Intent="MessageIntent.Warning" />
+        <FluentMessageBar Title='@L["Editor.OpenProjectFirst"]' Intent="MessageBarIntent.Warning" />
     }
     else if (draft is null && !IsCreate)
     {
-        <FluentMessageBar Title='@L["Editor.NotFound", L["Nav.Achievements"].Value, AchievementId]' Intent="MessageIntent.Error" />
+        <FluentMessageBar Title='@L["Editor.NotFound", L["Nav.Achievements"].Value, AchievementId]' Intent="MessageBarIntent.Error" />
     }
     else
     {
@@ -21,18 +21,18 @@
                 <section>
                     <h2 class="section-heading">@L["Editor.AchievementRules"]</h2>
                     <FluentGrid Spacing="3">
-                        <FluentGridItem xs="12" md="4">@if (IsCreate) { <FluentTextField style="width:100%" @bind-Value="idInput" Label='@L["Fields.AchievementId"]' Required /> } else { <FluentTextField style="width:100%" Value="@draft!.Id" Label='@L["Fields.AchievementId"]' ReadOnly="true" /> }</FluentGridItem>
-                        <FluentGridItem xs="12" md="4"><FluentTextField style="width:100%" @bind-Value="draft!.ConditionType" Label='@L["Fields.ConditionType"]' /></FluentGridItem>
-                        <FluentGridItem xs="12" md="4"><FluentTextField style="width:100%" @bind-Value="draft!.ConditionValue" Label='@L["Fields.ConditionValue"]' /></FluentGridItem>
-                        <FluentGridItem xs="12" md="4"><FluentTextField style="width:100%" @bind-Value="draft!.ConditionCount" Label='@L["Fields.ConditionCount"]' /></FluentGridItem>
-                        <FluentGridItem xs="12" md="8"><FluentTextField style="width:100%" @bind-Value="draft!.ConditionSpecial" Label='@L["Fields.ConditionSpecial"]' /></FluentGridItem>
-                        <FluentGridItem xs="12" md="4"><FluentTextField style="width:100%" @bind-Value="draft!.ImgUrl" Label='@L["Fields.ImageUrl"]' /></FluentGridItem>
-                        <FluentGridItem xs="12" md="4"><FluentTextField style="width:100%" @bind-Value="draft!.AchievementTier" Label='@L["Fields.Tier"]' /></FluentGridItem>
-                        <FluentGridItem xs="12" md="4"><FluentTextField style="width:100%" @bind-Value="draft!.ObtainPoint" Label='@L["Fields.ObtainPoint"]' /></FluentGridItem>
-                        <FluentGridItem xs="12" md="4"><FluentTextField style="width:100%" @bind-Value="draft!.Name" Label='@L["Fields.BaseName"]' /></FluentGridItem>
-                        <FluentGridItem xs="12" md="4"><FluentTextField style="width:100%" @bind-Value="draft!.PreDescription" Label='@L["Fields.PreDescription"]' /></FluentGridItem>
-                        <FluentGridItem xs="12" md="4"><FluentTextField style="width:100%" @bind-Value="draft!.AfterDescription" Label='@L["Fields.AfterDescription"]' /></FluentGridItem>
-                        <FluentGridItem xs="12" md="4"><FluentTextField style="width:100%" @bind-Value="draft!.Update" Label='@L["Fields.Update"]' /></FluentGridItem>
+                        <FluentGridItem Xs="12" Md="4">@if (IsCreate) { <FluentTextInput style="width:100%" @bind-Value="idInput" Label='@L["Fields.AchievementId"]' Required /> } else { <FluentTextInput style="width:100%" Value="@draft!.Id" Label='@L["Fields.AchievementId"]' ReadOnly="true" /> }</FluentGridItem>
+                        <FluentGridItem Xs="12" Md="4"><FluentTextInput style="width:100%" @bind-Value="draft!.ConditionType" Label='@L["Fields.ConditionType"]' /></FluentGridItem>
+                        <FluentGridItem Xs="12" Md="4"><FluentTextInput style="width:100%" @bind-Value="draft!.ConditionValue" Label='@L["Fields.ConditionValue"]' /></FluentGridItem>
+                        <FluentGridItem Xs="12" Md="4"><FluentTextInput style="width:100%" @bind-Value="draft!.ConditionCount" Label='@L["Fields.ConditionCount"]' /></FluentGridItem>
+                        <FluentGridItem Xs="12" Md="8"><FluentTextInput style="width:100%" @bind-Value="draft!.ConditionSpecial" Label='@L["Fields.ConditionSpecial"]' /></FluentGridItem>
+                        <FluentGridItem Xs="12" Md="4"><FluentTextInput style="width:100%" @bind-Value="draft!.ImgUrl" Label='@L["Fields.ImageUrl"]' /></FluentGridItem>
+                        <FluentGridItem Xs="12" Md="4"><FluentTextInput style="width:100%" @bind-Value="draft!.AchievementTier" Label='@L["Fields.Tier"]' /></FluentGridItem>
+                        <FluentGridItem Xs="12" Md="4"><FluentTextInput style="width:100%" @bind-Value="draft!.ObtainPoint" Label='@L["Fields.ObtainPoint"]' /></FluentGridItem>
+                        <FluentGridItem Xs="12" Md="4"><FluentTextInput style="width:100%" @bind-Value="draft!.Name" Label='@L["Fields.BaseName"]' /></FluentGridItem>
+                        <FluentGridItem Xs="12" Md="4"><FluentTextInput style="width:100%" @bind-Value="draft!.PreDescription" Label='@L["Fields.PreDescription"]' /></FluentGridItem>
+                        <FluentGridItem Xs="12" Md="4"><FluentTextInput style="width:100%" @bind-Value="draft!.AfterDescription" Label='@L["Fields.AfterDescription"]' /></FluentGridItem>
+                        <FluentGridItem Xs="12" Md="4"><FluentTextInput style="width:100%" @bind-Value="draft!.Update" Label='@L["Fields.Update"]' /></FluentGridItem>
                     </FluentGrid>
                 </section>
                 <section>
@@ -43,18 +43,18 @@
                         <div class="language-panel">
                             <h3 class="lang-heading">@language</h3>
                             <FluentGrid Spacing="2">
-                                <FluentGridItem xs="12" md="4"><FluentTextField style="width:100%" @bind-Value="draft!.NamesByLanguage[language]" Label='@L["Fields.Name"]' /></FluentGridItem>
-                                <FluentGridItem xs="12" md="4"><FluentTextField style="width:100%" @bind-Value="draft!.PreDescriptionsByLanguage[language]" Label='@L["Fields.PreDescription"]' /></FluentGridItem>
-                                <FluentGridItem xs="12" md="4"><FluentTextField style="width:100%" @bind-Value="draft!.AfterDescriptionsByLanguage[language]" Label='@L["Fields.AfterDescription"]' /></FluentGridItem>
+                                <FluentGridItem Xs="12" Md="4"><FluentTextInput style="width:100%" @bind-Value="draft!.NamesByLanguage[language]" Label='@L["Fields.Name"]' /></FluentGridItem>
+                                <FluentGridItem Xs="12" Md="4"><FluentTextInput style="width:100%" @bind-Value="draft!.PreDescriptionsByLanguage[language]" Label='@L["Fields.PreDescription"]' /></FluentGridItem>
+                                <FluentGridItem Xs="12" Md="4"><FluentTextInput style="width:100%" @bind-Value="draft!.AfterDescriptionsByLanguage[language]" Label='@L["Fields.AfterDescription"]' /></FluentGridItem>
                             </FluentGrid>
                         </div>
                     }
                 </section>
                 <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8">
-                    <FluentButton Appearance="Appearance.Accent" Type="ButtonType.Submit" Disabled="@isBusy">@L["Editor.SaveAchievement"]</FluentButton>
-                    <FluentButton Appearance="Appearance.Neutral" OnClick="NavigateBack">@L["Common.Cancel"]</FluentButton>
-                    @if (!string.IsNullOrWhiteSpace(message)) { <FluentMessageBar Title="@message" Intent="MessageIntent.Info" /> }
-                    @if (!string.IsNullOrWhiteSpace(errorMessage)) { <FluentMessageBar Title="@errorMessage" Intent="MessageIntent.Error" /> }
+                    <FluentButton Appearance="ButtonAppearance.Primary" Type="ButtonType.Submit" Disabled="@isBusy">@L["Editor.SaveAchievement"]</FluentButton>
+                    <FluentButton Appearance="ButtonAppearance.Default" OnClick="NavigateBack">@L["Common.Cancel"]</FluentButton>
+                    @if (!string.IsNullOrWhiteSpace(message)) { <FluentMessageBar Title="@message" Intent="MessageBarIntent.Info" /> }
+                    @if (!string.IsNullOrWhiteSpace(errorMessage)) { <FluentMessageBar Title="@errorMessage" Intent="MessageBarIntent.Error" /> }
                 </FluentStack>
             </FluentStack>
         </EditForm>

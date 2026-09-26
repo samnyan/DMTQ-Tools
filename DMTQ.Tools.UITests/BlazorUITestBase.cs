@@ -55,14 +55,14 @@ public abstract class BlazorUITestBase : Bunit.TestContext
     }
 
     /// <summary>
-    /// Renders a page that uses FluentDataGrid (needs FluentMenuProvider ancestor).
+    /// Renders a page beneath the Fluent UI provider tree.
     /// </summary>
     protected IRenderedComponent<TComponent> RenderWithProviders<TComponent>()
         where TComponent : IComponent
     {
         var fragment = Render(builder =>
         {
-            builder.OpenComponent<FluentMenuProvider>(0);
+            builder.OpenComponent<FluentProviders>(0);
             builder.CloseComponent();
             builder.OpenComponent<TComponent>(1);
             builder.CloseComponent();

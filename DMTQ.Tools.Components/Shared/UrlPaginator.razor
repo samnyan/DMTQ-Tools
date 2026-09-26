@@ -5,15 +5,15 @@
     <span class="url-paginator-summary">
         @L["Lists.PaginationSummary", Pagination.TotalItemCount ?? 0, Pagination.CurrentPageIndex + 1, PageCount]
     </span>
-    <FluentButton Appearance="Appearance.Neutral" IconStart="@(new Icons.Regular.Size20.ChevronDoubleLeft())"
+    <FluentButton Appearance="ButtonAppearance.Default" IconStart="@(new Icons.Regular.Size20.ChevronDoubleLeft())"
                   Disabled="@(Pagination.CurrentPageIndex == 0)" OnClick="GoToFirstAsync" Title='@L["Lists.FirstPage"]' />
-    <FluentButton Appearance="Appearance.Neutral" IconStart="@(new Icons.Regular.Size20.ChevronLeft())"
+    <FluentButton Appearance="ButtonAppearance.Default" IconStart="@(new Icons.Regular.Size20.ChevronLeft())"
                   Disabled="@(Pagination.CurrentPageIndex == 0)" OnClick="GoToPreviousAsync" Title='@L["Lists.PreviousPage"]' />
     <span>@L["Lists.PageOf", Pagination.CurrentPageIndex + 1, PageCount]</span>
-    <FluentButton Appearance="Appearance.Neutral" IconStart="@(new Icons.Regular.Size20.ChevronRight())"
+    <FluentButton Appearance="ButtonAppearance.Default" IconStart="@(new Icons.Regular.Size20.ChevronRight())"
                   Disabled="@(Pagination.LastPageIndex is null || Pagination.CurrentPageIndex >= Pagination.LastPageIndex)"
                   OnClick="GoToNextAsync" Title='@L["Lists.NextPage"]' />
-    <FluentButton Appearance="Appearance.Neutral" IconStart="@(new Icons.Regular.Size20.ChevronDoubleRight())"
+    <FluentButton Appearance="ButtonAppearance.Default" IconStart="@(new Icons.Regular.Size20.ChevronDoubleRight())"
                   Disabled="@(Pagination.LastPageIndex is null || Pagination.CurrentPageIndex >= Pagination.LastPageIndex)"
                   OnClick="GoToLastAsync" Title='@L["Lists.LastPage"]' />
 </div>
@@ -49,7 +49,7 @@
         TableNavigationState.UpdateQuery(Navigation, ("page", (pageIndex + 1).ToString(System.Globalization.CultureInfo.InvariantCulture)));
     }
 
-    private void OnTotalItemCountChanged(object? sender, int? totalItemCount)
+    private void OnTotalItemCountChanged(object? sender, TotalItemCountChangedEventArgs args)
         => InvokeAsync(StateHasChanged);
 
     public void Dispose()

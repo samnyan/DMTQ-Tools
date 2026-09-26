@@ -1,7 +1,4 @@
-﻿/* App-specific styles retained after FluentUI migration.
-   FluentUI handles layout (FluentMainLayout, FluentStack, FluentGrid),
-   forms (FluentTextField, FluentSelect, FluentButton, FluentCheckbox),
-   and navigation (FluentNavMenu, FluentNavLink). */
+/* App-specific styles for the MAUI Blazor host and Fluent UI v5 components. */
 
 html, body {
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
@@ -158,7 +155,7 @@ html, body {
 
 /* ── Songs page ── */
 .song-detail {
-    border: 1px solid var(--neutral-stroke-rest, #d8dee6);
+    border: 1px solid var(--colorNeutralStroke1, #d8dee6);
     border-radius: 6px;
     padding: 1rem;
     background: #fff;
@@ -199,7 +196,7 @@ html, body {
 }
 
 .song-summary-grid > div {
-    border: 1px solid var(--neutral-stroke-rest, #d8dee6);
+    border: 1px solid var(--colorNeutralStroke1, #d8dee6);
     border-radius: 6px;
     padding: 0.75rem;
     min-width: 0;
@@ -213,7 +210,7 @@ html, body {
 .song-add-section {
     margin-top: 0.75rem;
     padding-top: 0.75rem;
-    border-top: 1px solid var(--neutral-stroke-rest, #d8dee6);
+    border-top: 1px solid var(--colorNeutralStroke1, #d8dee6);
 }
 
 .song-add-form {

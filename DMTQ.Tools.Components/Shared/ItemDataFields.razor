@@ -5,48 +5,48 @@
     <FluentGrid Spacing="3">
         @if (ShowItemId)
         {
-            <FluentGridItem xs="12" md="6">
-                <FluentTextField style="width: 100%;" Value="@ItemId" ValueChanged="ItemIdChanged" Label='@L["Fields.ItemId"]' Required="@IsItemIdRequired" ReadOnly="@IsItemIdReadOnly" />
+            <FluentGridItem Xs="12" Md="6">
+                <FluentTextInput style="width: 100%;" Value="@ItemId" ValueChanged="ItemIdChanged" Label='@L["Fields.ItemId"]' Required="@IsItemIdRequired" ReadOnly="@IsItemIdReadOnly" />
             </FluentGridItem>
         }
-        <FluentGridItem xs="12" md="6">
-            <FluentTextField style="width: 100%;" @bind-Value="itemName" Label='@L["Fields.ItemName"]' Immediate="true" />
+        <FluentGridItem Xs="12" Md="6">
+            <FluentTextInput style="width: 100%;" @bind-Value="itemName" Label='@L["Fields.ItemName"]' Immediate="true" />
         </FluentGridItem>
-        <FluentGridItem xs="12" md="6">
-            <FluentTextField style="width: 100%;" @bind-Value="Content.ImgUrl1" Label='@L["Fields.ImageUrl1"]' />
+        <FluentGridItem Xs="12" Md="6">
+            <FluentTextInput style="width: 100%;" @bind-Value="Content.ImgUrl1" Label='@L["Fields.ImageUrl1"]' />
         </FluentGridItem>
-        <FluentGridItem xs="12" md="6">
-            <FluentTextField style="width: 100%;" @bind-Value="Content.ImgUrl2" Label='@L["Fields.ImageUrl2"]' />
+        <FluentGridItem Xs="12" Md="6">
+            <FluentTextInput style="width: 100%;" @bind-Value="Content.ImgUrl2" Label='@L["Fields.ImageUrl2"]' />
         </FluentGridItem>
-        <FluentGridItem xs="12" md="6">
-            <FluentTextField style="width: 100%;" @bind-Value="itemDescription" Label='@L["Fields.Description"]' Immediate="true" />
+        <FluentGridItem Xs="12" Md="6">
+            <FluentTextInput style="width: 100%;" @bind-Value="itemDescription" Label='@L["Fields.Description"]' Immediate="true" />
         </FluentGridItem>
-        <FluentGridItem xs="12" md="6">
-            <FluentTextField style="width: 100%;" @bind-Value="itemSummary" Label='@L["Fields.Summary"]' Immediate="true" />
+        <FluentGridItem Xs="12" Md="6">
+            <FluentTextInput style="width: 100%;" @bind-Value="itemSummary" Label='@L["Fields.Summary"]' Immediate="true" />
         </FluentGridItem>
-        <FluentGridItem xs="12" md="4">
-            <FluentTextField style="width: 100%;" @bind-Value="Content.RepeatCount" Label='@L["Fields.RepeatCount"]' />
+        <FluentGridItem Xs="12" Md="4">
+            <FluentTextInput style="width: 100%;" @bind-Value="Content.RepeatCount" Label='@L["Fields.RepeatCount"]' />
         </FluentGridItem>
-        <FluentGridItem xs="12" md="4">
-            <FluentSelect Items="ItemTypeOptions" @bind-SelectedOption="selectedItemType" Label='@L["Fields.ItemType"]' />
+        <FluentGridItem Xs="12" Md="4">
+            <FluentSelect Items="ItemTypeOptions" @bind-Value="selectedItemType" Label='@L["Fields.ItemType"]' />
         </FluentGridItem>
-        <FluentGridItem xs="12" md="4">
-            <FluentTextField style="width: 100%;" @bind-Value="Content.LimitMinute" Label='@L["Fields.LimitMinute"]' />
+        <FluentGridItem Xs="12" Md="4">
+            <FluentTextInput style="width: 100%;" @bind-Value="Content.LimitMinute" Label='@L["Fields.LimitMinute"]' />
         </FluentGridItem>
-        <FluentGridItem xs="12" md="4">
-            <FluentTextField style="width: 100%;" @bind-Value="Content.Status" Label='@L["Fields.Status"]' />
+        <FluentGridItem Xs="12" Md="4">
+            <FluentTextInput style="width: 100%;" @bind-Value="Content.Status" Label='@L["Fields.Status"]' />
         </FluentGridItem>
-        <FluentGridItem xs="12" md="4">
-            <FluentTextField style="width: 100%;" @bind-Value="Content.BuyLevel" Label='@L["Fields.BuyLevel"]' />
+        <FluentGridItem Xs="12" Md="4">
+            <FluentTextInput style="width: 100%;" @bind-Value="Content.BuyLevel" Label='@L["Fields.BuyLevel"]' />
         </FluentGridItem>
-        <FluentGridItem xs="12" md="4">
-            <FluentTextField style="width: 100%;" @bind-Value="Content.BuyLimitCount" Label='@L["Fields.BuyLimitCount"]' />
+        <FluentGridItem Xs="12" Md="4">
+            <FluentTextInput style="width: 100%;" @bind-Value="Content.BuyLimitCount" Label='@L["Fields.BuyLimitCount"]' />
         </FluentGridItem>
-        <FluentGridItem xs="12" md="6">
-            <FluentTextField style="width: 100%;" @bind-Value="Content.BuyLimitType" Label='@L["Fields.BuyLimitType"]' />
+        <FluentGridItem Xs="12" Md="6">
+            <FluentTextInput style="width: 100%;" @bind-Value="Content.BuyLimitType" Label='@L["Fields.BuyLimitType"]' />
         </FluentGridItem>
-        <FluentGridItem xs="12" md="6">
-            <FluentTextField style="width: 100%;" @bind-Value="Content.Update" Label='@L["Fields.Update"]' />
+        <FluentGridItem Xs="12" Md="6">
+            <FluentTextInput style="width: 100%;" @bind-Value="Content.Update" Label='@L["Fields.Update"]' />
         </FluentGridItem>
     </FluentGrid>
 </section>

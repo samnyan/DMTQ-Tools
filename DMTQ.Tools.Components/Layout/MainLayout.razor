@@ -1,12 +1,10 @@
-﻿@inherits LayoutComponentBase
+@inherits LayoutComponentBase
 @inject IProjectState State
 @inject IProjectWorkflow Workflow
 @inject ILanguagePreferenceStore PreferenceStore
 @implements IDisposable
 
-<FluentDesignTheme Mode="DesignThemeModes.System"
-                   OfficeColor="OfficeColor.Teams"
-                   StorageName="dmtq-theme" />
+<FluentProviders />
 
 @* ────────────────────────────────────────────────────────────
    Layout: plain HTML flex (no FluentLayout / FluentStack)
@@ -17,12 +15,12 @@
 <div @key="Language.CurrentCulture.Name" style="height: 100%; display: flex; flex-direction: column; overflow: hidden;">
 
     @* ── Sticky Header ── *@
-    <FluentHeader class="app-header" Height="48" Style="border-bottom: 1px solid rgba(255,255,255,.24); padding: 0 1rem; background-color: #6264a7; color: white;">
+    <header class="app-header" style="height: 48px; border-bottom: 1px solid rgba(255,255,255,.24); padding: 0 1rem; background-color: #6264a7; color: white;">
         <div class="header-brand">@L["App.Title"]</div>
 
         <div class="header-breadcrumb"><GlobalBreadcrumb /></div>
 
-        <FluentSpacer />
+        <div style="flex: 1;"></div>
 
         @if (EditablePlatforms.Count > 1)
         {
@@ -42,7 +40,7 @@
                     @ProjectDisplayName
                 </span>
                 <FluentButton class="header-save-button"
-                              Appearance="Appearance.Neutral"
+                              Appearance="ButtonAppearance.Default"
                               OnClick="SaveProjectAsync"
                               Disabled="@(!State.HasPackage || _isSaving)"
                               Title='@L["Header.SaveProject"]'>
@@ -60,33 +58,34 @@
             }
         }
 
-        <FluentMenuButton class="header-language" Text="@CurrentLanguageLabel" ButtonAppearance="Appearance.Neutral"
-                          IconStart="@(new Icons.Regular.Size20.Globe())"
-                          Title='@L["Language.Title"]'>
+        <FluentMenu>
+            <FluentMenuButton class="header-language" Label="@CurrentLanguageLabel" Appearance="ButtonAppearance.Default"
+                              IconStart="@(new Icons.Regular.Size20.Globe())"
+                              Title='@L["Language.Title"]' />
             <FluentMenuItem Label='@L["Language.English"]' Checked='@(Language.CurrentCulture.Name == "en-US")'
                             OnClick="UseEnglish" />
             <FluentMenuItem Label='@L["Language.Chinese"]' Checked='@(Language.CurrentCulture.Name == "zh-CN")'
                             OnClick="UseChinese" />
-        </FluentMenuButton>
-    </FluentHeader>
+        </FluentMenu>
+    </header>
 
     @* ── Sidebar + Content (row flex, constrained by parent column) ── *@
     <div style="flex: 1; min-height: 0; display: flex; overflow: hidden;">
-        <FluentNavMenu Width="250" Collapsible="true" Title="DMTQ Tools"
-                       Style="flex-shrink: 0; border-right: 1px solid var(--neutral-stroke-rest);">
-            <FluentNavLink Href="" Icon="@(new Icons.Regular.Size20.Home())" Match="NavLinkMatch.All">@L["Nav.Project"]</FluentNavLink>
-            <FluentNavLink Href="import" Icon="@(new Icons.Regular.Size20.ArrowDownload())">@L["Nav.Import"]</FluentNavLink>
-            <FluentNavLink Href="songs" Icon="@(new Icons.Regular.Size20.MusicNote1())">@L["Nav.Songs"]</FluentNavLink>
-            <FluentNavLink Href="patterns" Icon="@(new Icons.Regular.Size20.MusicNote1())">@L["Nav.PatternTool"]</FluentNavLink>
-            <FluentNavLink Href="products" Icon="@(new Icons.Regular.Size20.Table())">@L["Nav.Products"]</FluentNavLink>
-            <FluentNavLink Href="items" Icon="@(new Icons.Regular.Size20.Table())">@L["Nav.Items"]</FluentNavLink>
-            <FluentNavLink Href="achievements" Icon="@(new Icons.Regular.Size20.Table())">@L["Nav.Achievements"]</FluentNavLink>
-            <FluentNavLink Href="quests" Icon="@(new Icons.Regular.Size20.Table())">@L["Nav.Quests"]</FluentNavLink>
-            <FluentNavLink Href="slang" Icon="@(new Icons.Regular.Size20.Table())">@L["Nav.Slang"]</FluentNavLink>
-            <FluentNavLink Href="resources" Icon="@(new Icons.Regular.Size20.Folder())">@L["Nav.Resources"]</FluentNavLink>
-            <FluentNavLink Href="export" Icon="@(new Icons.Regular.Size20.ArrowUpload())">@L["Nav.Export"]</FluentNavLink>
-            <FluentNavLink Href="diagnostics" Icon="@(new Icons.Regular.Size20.Wrench())">@L["Nav.Diagnostics"]</FluentNavLink>
-        </FluentNavMenu>
+        <FluentNav Width="250px"
+                       Style="flex-shrink: 0; border-right: 1px solid var(--colorNeutralStroke1);">
+            <FluentNavItem Href="" IconRest="@(new Icons.Regular.Size20.Home())" Match="NavLinkMatch.All">@L["Nav.Project"]</FluentNavItem>
+            <FluentNavItem Href="import" IconRest="@(new Icons.Regular.Size20.ArrowDownload())">@L["Nav.Import"]</FluentNavItem>
+            <FluentNavItem Href="songs" IconRest="@(new Icons.Regular.Size20.MusicNote1())">@L["Nav.Songs"]</FluentNavItem>
+            <FluentNavItem Href="patterns" IconRest="@(new Icons.Regular.Size20.MusicNote1())">@L["Nav.PatternTool"]</FluentNavItem>
+            <FluentNavItem Href="products" IconRest="@(new Icons.Regular.Size20.Table())">@L["Nav.Products"]</FluentNavItem>
+            <FluentNavItem Href="items" IconRest="@(new Icons.Regular.Size20.Table())">@L["Nav.Items"]</FluentNavItem>
+            <FluentNavItem Href="achievements" IconRest="@(new Icons.Regular.Size20.Table())">@L["Nav.Achievements"]</FluentNavItem>
+            <FluentNavItem Href="quests" IconRest="@(new Icons.Regular.Size20.Table())">@L["Nav.Quests"]</FluentNavItem>
+            <FluentNavItem Href="slang" IconRest="@(new Icons.Regular.Size20.Table())">@L["Nav.Slang"]</FluentNavItem>
+            <FluentNavItem Href="resources" IconRest="@(new Icons.Regular.Size20.Folder())">@L["Nav.Resources"]</FluentNavItem>
+            <FluentNavItem Href="export" IconRest="@(new Icons.Regular.Size20.ArrowUpload())">@L["Nav.Export"]</FluentNavItem>
+            <FluentNavItem Href="diagnostics" IconRest="@(new Icons.Regular.Size20.Wrench())">@L["Nav.Diagnostics"]</FluentNavItem>
+        </FluentNav>
 
         <main class="app-main">
             <div class="route-viewport">
@@ -98,11 +97,6 @@
 </div>
 
 @* FluentUI providers — must be after the layout *@
-<FluentToastProvider />
-<FluentDialogProvider />
-<FluentTooltipProvider />
-<FluentMenuProvider />
-<FluentKeyCodeProvider />
 
 @code {
     private const string AutoSavePreferenceKey = "project.autoSave";

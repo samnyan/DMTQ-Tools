@@ -4,7 +4,7 @@ A .NET 10 MAUI Blazor Hybrid app for managing game patch data tables (CSV import
 
 ## Project
 
-- **Stack:** .NET 10 + MAUI + Blazor Hybrid + FluentUI Blazor 4.14 + bUnit 2
+- **Stack:** .NET 10 + MAUI + Blazor Hybrid + FluentUI Blazor 5.0 + bUnit 2
 - **Entry:** `DMTQ-Tools/MauiProgram.cs` → `App.xaml` → `MainPage.xaml` (hosts BlazorWebView)
 - **Blazor root:** `DMTQ-Tools/Components/Routes.razor` — router scans MAUI assembly + RCL assembly
 
@@ -82,8 +82,8 @@ CSV Models (GameTable, GameTableRow, GameTableCell) ← import/export boundary
 - **CSV import/export** uses `GameTable`/`GameTableCell` models. Domain models (Song/SongPattern) are projected from CSV at service layer.
 - **Platform export** supports Full mode (all files written every time). Delta mode (skip unchanged) was removed — always rewrites manifest with computed checksums.
 - **Platform import** validates decompressed MD5 against `patch_new.csv` `checksum` on every file. Mismatched files are logged to `IntegrityErrors` and skipped.
-- **FluentUI Blazor 4.14** integrated in RCL's `_Imports.razor`.
-- **Dialog pattern:** Pages use `IDialogService.ShowDialogAsync<TComponent, TData>(...)` with `IDialogContentComponent<TData>`. Built-in footer (PrimaryAction/SecondaryAction) replaces custom buttons.
+- **FluentUI Blazor 5.0** and its icons package are integrated in the RCL's `_Imports.razor`; `FluentProviders` is mounted once in the app layout and the default v5 stylesheet is linked from the MAUI host.
+- **Dialog pattern:** Pages use `IDialogService.ShowDialogAsync<TComponent>(options => ...)`; dialog components inherit `FluentDialogInstance`, wrap content in `FluentDialogBody`, and configure built-in footer actions through `DialogOptions`.
 
 ## Conventions
 

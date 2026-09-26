@@ -64,10 +64,10 @@ public sealed class SongEditorPageTests : BlazorUITestBase
         RegisterAllServices(state);
         var cut = Render<SongEditor>(parameters => parameters.Add(p => p.SongId, "1001"));
 
-        var syncSwitch = cut.FindAll("fluent-switch")
-            .Single(element => element.TextContent.Contains("Sync original text", StringComparison.Ordinal));
-        syncSwitch.TriggerEvent("onswitchcheckedchange", new CheckboxChangeEventArgs { Checked = true });
-        var originalFields = cut.FindAll("fluent-text-field");
+        var syncSwitch = cut.FindComponents<FluentSwitch>()
+            .Single(component => component.Instance.Label == "Sync original text");
+        syncSwitch.Instance.ValueChanged.InvokeAsync(true).GetAwaiter().GetResult();
+        var originalFields = cut.FindAll("fluent-text-input");
         originalFields[2].Input("Live full name");
         originalFields[4].Input("Live artist");
 
@@ -78,7 +78,7 @@ public sealed class SongEditorPageTests : BlazorUITestBase
             && localization.ArtistName == "Live artist"
             && localization.Genre == "G");
 
-        syncSwitch.TriggerEvent("onswitchcheckedchange", new CheckboxChangeEventArgs { Checked = false });
+        syncSwitch.Instance.ValueChanged.InvokeAsync(false).GetAwaiter().GetResult();
         originalFields[2].Input("Original only");
         draft.Localizations.Values.Should().OnlyContain(localization =>
             localization.FullName == "Live full name");

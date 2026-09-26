@@ -16,25 +16,27 @@
                      HorizontalGap="8"
                      VerticalAlignment="VerticalAlignment.Center"
                      Wrap="true">
-            <FluentButton Appearance="Appearance.Accent"
+            <FluentButton Appearance="ButtonAppearance.Primary"
                           OnClick="LoadPatternAsync"
                           Disabled="@isBusy">
                 @L["Pattern.Open"]
             </FluentButton>
-            <FluentSelect Items="TargetFormats"
-                          OptionText="FormatName"
-                          OptionValue="FormatValue"
-                          @bind-SelectedOption="targetFormat"
+            <FluentSelect TOption="PatternFormat"
+                          TValue="PatternFormat"
+                          Items="TargetFormats"
+                          OptionText="@(format => FormatName(format))"
+                          OptionValue="@(format => format)"
+                          @bind-Value="targetFormat"
                           Label='@L["Pattern.ExportFormat"]'
                           Disabled="@(pattern is null || isBusy)" />
-            <FluentButton Appearance="Appearance.Neutral"
+            <FluentButton Appearance="ButtonAppearance.Default"
                           OnClick="SavePatternAsync"
                           Disabled="@(pattern is null || isBusy)">
                 @L["Pattern.SaveAs"]
             </FluentButton>
             @if (isBusy)
             {
-                <FluentProgressRing />
+                <FluentSpinner />
             }
         </FluentStack>
         <p class="section-hint">@L["Pattern.OpenHintWithText"]</p>
@@ -55,49 +57,49 @@
         <section>
             <h2 class="section-heading">@L["Pattern.BasicInfo"]</h2>
             <FluentGrid Spacing="3" AdaptiveRendering="true">
-                <FluentGridItem xs="12" sm="6" md="3">
+                <FluentGridItem Xs="12" Sm="6" Md="3">
                     <FluentCard><span class="metric-label">@L["Pattern.File"]</span><strong class="pattern-value">@fileName</strong></FluentCard>
                 </FluentGridItem>
-                <FluentGridItem xs="12" sm="6" md="3">
+                <FluentGridItem Xs="12" Sm="6" Md="3">
                     <FluentCard><span class="metric-label">@L["Pattern.SourceFormat"]</span><strong>@FormatName(pattern.SourceFormat)</strong></FluentCard>
                 </FluentGridItem>
                 @if (pattern.SourceFormat == PatternFormat.Pt)
                 {
-                    <FluentGridItem xs="12" sm="6" md="3">
+                    <FluentGridItem Xs="12" Sm="6" Md="3">
                         <FluentCard><span class="metric-label">@L["Pattern.Encrypted"]</span><strong>@(pattern.WasEncrypted ? L["Pattern.Yes"] : L["Pattern.No"])</strong></FluentCard>
                     </FluentGridItem>
-                    <FluentGridItem xs="12" sm="6" md="3">
+                    <FluentGridItem Xs="12" Sm="6" Md="3">
                         <FluentCard><span class="metric-label">@L["Pattern.Version"]</span><strong>@pattern.Header.PtVersion</strong></FluentCard>
                     </FluentGridItem>
-                    <FluentGridItem xs="12" sm="6" md="3">
+                    <FluentGridItem Xs="12" Sm="6" Md="3">
                         <FluentCard><span class="metric-label">@L["Pattern.PtRawHeaderFieldB"]</span><strong>@pattern.Header.TagB</strong></FluentCard>
                     </FluentGridItem>
                 }
                 @if (pattern.SourceFormat == PatternFormat.Bytes || pattern.Header.BytesTick != 0 || pattern.Header.BytesPlayTime != 0)
                 {
-                    <FluentGridItem xs="12" sm="6" md="3">
+                    <FluentGridItem Xs="12" Sm="6" Md="3">
                         <FluentCard><span class="metric-label">@L["Pattern.BytesTick"]</span><strong>@pattern.Header.BytesTick</strong></FluentCard>
                     </FluentGridItem>
-                    <FluentGridItem xs="12" sm="6" md="3">
+                    <FluentGridItem Xs="12" Sm="6" Md="3">
                         <FluentCard><span class="metric-label">@L["Pattern.BytesPlayTime"]</span><strong>@pattern.Header.BytesPlayTime.ToString("0.###", CultureInfo.InvariantCulture)</strong></FluentCard>
                     </FluentGridItem>
                 }
-                <FluentGridItem xs="12" sm="6" md="3">
+                <FluentGridItem Xs="12" Sm="6" Md="3">
                     <FluentCard><span class="metric-label">@L["Pattern.PositionsPerMeasure"]</span><strong>@pattern.Header.PositionsPerMeasure</strong></FluentCard>
                 </FluentGridItem>
-                <FluentGridItem xs="12" sm="6" md="3">
+                <FluentGridItem Xs="12" Sm="6" Md="3">
                     <FluentCard><span class="metric-label">@L["Pattern.InitialBpm"]</span><strong>@pattern.Header.InitialBpm.ToString("0.###", CultureInfo.InvariantCulture)</strong></FluentCard>
                 </FluentGridItem>
-                <FluentGridItem xs="12" sm="6" md="3">
+                <FluentGridItem Xs="12" Sm="6" Md="3">
                     <FluentCard><span class="metric-label">@L["Pattern.EndPosition"]</span><strong>@pattern.Header.EndPosition</strong></FluentCard>
                 </FluentGridItem>
-                <FluentGridItem xs="12" sm="6" md="3">
+                <FluentGridItem Xs="12" Sm="6" Md="3">
                     <FluentCard><span class="metric-label">@L["Pattern.Events"]</span><strong>@pattern.CommandCount</strong></FluentCard>
                 </FluentGridItem>
-                <FluentGridItem xs="12" sm="6" md="3">
+                <FluentGridItem Xs="12" Sm="6" Md="3">
                     <FluentCard><span class="metric-label">@L["Pattern.Tracks"]</span><strong>@pattern.Tracks.Count</strong></FluentCard>
                 </FluentGridItem>
-                <FluentGridItem xs="12" sm="6" md="3">
+                <FluentGridItem Xs="12" Sm="6" Md="3">
                     <FluentCard><span class="metric-label">@L["Pattern.Sounds"]</span><strong>@pattern.Sounds.Count</strong></FluentCard>
                 </FluentGridItem>
             </FluentGrid>
@@ -136,7 +138,7 @@
     private PatternFormat targetFormat = PatternFormat.Pt;
     private string fileName = string.Empty;
     private string? statusMessage;
-    private MessageIntent statusIntent = MessageIntent.Info;
+    private MessageBarIntent statusIntent = MessageBarIntent.Info;
     private bool isBusy;
 
     private IQueryable<PatternSound> SoundItems =>
@@ -171,7 +173,7 @@
         var format = GetFormat(path);
         if (format is null)
         {
-            ShowStatus(L["Pattern.UnsupportedExtensionWithText"].Value, MessageIntent.Warning);
+            ShowStatus(L["Pattern.UnsupportedExtensionWithText"].Value, MessageBarIntent.Warning);
             return;
         }
 
@@ -185,13 +187,13 @@
                 : await Serializer.DeserializeAsync(stream, format.Value);
             fileName = Path.GetFileName(path);
             targetFormat = format.Value;
-            ShowStatus(L["Pattern.Loaded", fileName].Value, MessageIntent.Success);
+            ShowStatus(L["Pattern.Loaded", fileName].Value, MessageBarIntent.Success);
         }
         catch (Exception ex)
         {
             pattern = null;
             fileName = string.Empty;
-            ShowStatus(L["Pattern.LoadFailed", ex.Message].Value, MessageIntent.Error);
+            ShowStatus(L["Pattern.LoadFailed", ex.Message].Value, MessageBarIntent.Error);
         }
         finally
         {
@@ -222,12 +224,12 @@
             if (savedPath is not null)
             {
                 fileName = Path.GetFileName(savedPath);
-                ShowStatus(L["Pattern.Saved", fileName].Value, MessageIntent.Success);
+                ShowStatus(L["Pattern.Saved", fileName].Value, MessageBarIntent.Success);
             }
         }
         catch (Exception ex)
         {
-            ShowStatus(L["Pattern.SaveFailed", ex.Message].Value, MessageIntent.Error);
+            ShowStatus(L["Pattern.SaveFailed", ex.Message].Value, MessageBarIntent.Error);
         }
         finally
         {
@@ -276,7 +278,7 @@
         _ => Convert.ToHexString(command.RawParameters)
     };
 
-    private void ShowStatus(string message, MessageIntent intent)
+    private void ShowStatus(string message, MessageBarIntent intent)
     {
         statusMessage = message;
         statusIntent = intent;

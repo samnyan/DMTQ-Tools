@@ -8,12 +8,12 @@
 <FluentStack Orientation="Orientation.Vertical" VerticalGap="20" HorizontalAlignment="HorizontalAlignment.Stretch">
     @if (State.CurrentPackage is null)
     {
-        <FluentMessageBar Title='@L["Editor.OpenProjectFirst"]' Intent="MessageIntent.Warning" />
+        <FluentMessageBar Title='@L["Editor.OpenProjectFirst"]' Intent="MessageBarIntent.Warning" />
     }
     else if (currentItem is null && !IsCreate)
     {
-        <FluentMessageBar Title='@L["Editor.NotFound", L["Nav.Items"].Value, ItemId]' Intent="MessageIntent.Error" />
-        <FluentButton Appearance="Appearance.Neutral" OnClick="NavigateBack">@L["Editor.BackTo", L["Nav.Items"].Value]</FluentButton>
+        <FluentMessageBar Title='@L["Editor.NotFound", L["Nav.Items"].Value, ItemId]' Intent="MessageBarIntent.Error" />
+        <FluentButton Appearance="ButtonAppearance.Default" OnClick="NavigateBack">@L["Editor.BackTo", L["Nav.Items"].Value]</FluentButton>
     }
     else
     {
@@ -34,41 +34,41 @@
                         </div>
                         @if (effectDraft is null)
                         {
-                            <FluentButton Appearance="Appearance.Neutral" OnClick="AddEffect"
+                            <FluentButton Appearance="ButtonAppearance.Default" OnClick="AddEffect"
                                           IconStart="@(new Icons.Regular.Size20.Add())">@L["Editor.AddEffect"]</FluentButton>
                         }
                         else
                         {
-                            <FluentButton Appearance="Appearance.Neutral" OnClick="RemoveEffect"
+                            <FluentButton Appearance="ButtonAppearance.Default" OnClick="RemoveEffect"
                                           IconStart="@(new Icons.Regular.Size20.Delete())">@L["Editor.RemoveEffect"]</FluentButton>
                         }
                     </div>
                     @if (effectDraft is null)
                     {
-                        <FluentMessageBar Title='@L["Editor.NoItemEffect"]' Intent="MessageIntent.Info" />
+                        <FluentMessageBar Title='@L["Editor.NoItemEffect"]' Intent="MessageBarIntent.Info" />
                     }
                     else
                     {
                         <FluentGrid Spacing="3">
-                            <FluentGridItem xs="12" md="4"><FluentTextField style="width: 100%;" @bind-Value="effectDraft.EffectType" Label='@L["Fields.EffectType"]' /></FluentGridItem>
-                            <FluentGridItem xs="12" md="4"><FluentTextField style="width: 100%;" @bind-Value="effectDraft.EffectPoint" Label='@L["Fields.EffectPoint"]' /></FluentGridItem>
-                            <FluentGridItem xs="12" md="4"><FluentTextField style="width: 100%;" @bind-Value="effectDraft.EffectCount" Label='@L["Fields.EffectCount"]' /></FluentGridItem>
-                            <FluentGridItem xs="12" md="8"><FluentTextField style="width: 100%;" @bind-Value="effectDraft.EffectSpecial" Label='@L["Fields.EffectSpecial"]' /></FluentGridItem>
-                            <FluentGridItem xs="12" md="4"><FluentTextField style="width: 100%;" @bind-Value="effectDraft.Update" Label='@L["Fields.Update"]' /></FluentGridItem>
+                            <FluentGridItem Xs="12" Md="4"><FluentTextInput style="width: 100%;" @bind-Value="effectDraft.EffectType" Label='@L["Fields.EffectType"]' /></FluentGridItem>
+                            <FluentGridItem Xs="12" Md="4"><FluentTextInput style="width: 100%;" @bind-Value="effectDraft.EffectPoint" Label='@L["Fields.EffectPoint"]' /></FluentGridItem>
+                            <FluentGridItem Xs="12" Md="4"><FluentTextInput style="width: 100%;" @bind-Value="effectDraft.EffectCount" Label='@L["Fields.EffectCount"]' /></FluentGridItem>
+                            <FluentGridItem Xs="12" Md="8"><FluentTextInput style="width: 100%;" @bind-Value="effectDraft.EffectSpecial" Label='@L["Fields.EffectSpecial"]' /></FluentGridItem>
+                            <FluentGridItem Xs="12" Md="4"><FluentTextInput style="width: 100%;" @bind-Value="effectDraft.Update" Label='@L["Fields.Update"]' /></FluentGridItem>
                         </FluentGrid>
                     }
                 </section>
 
                 <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8" VerticalAlignment="VerticalAlignment.Center">
-                    <FluentButton Appearance="Appearance.Accent" Type="ButtonType.Submit" Disabled="@isBusy">@L["Editor.SaveItem"]</FluentButton>
-                    <FluentButton Appearance="Appearance.Neutral" OnClick="NavigateBack">@L["Common.Cancel"]</FluentButton>
+                    <FluentButton Appearance="ButtonAppearance.Primary" Type="ButtonType.Submit" Disabled="@isBusy">@L["Editor.SaveItem"]</FluentButton>
+                    <FluentButton Appearance="ButtonAppearance.Default" OnClick="NavigateBack">@L["Common.Cancel"]</FluentButton>
                     @if (!string.IsNullOrEmpty(message))
                     {
-                        <FluentMessageBar Title="@message" Intent="MessageIntent.Info" />
+                        <FluentMessageBar Title="@message" Intent="MessageBarIntent.Info" />
                     }
                     @if (!string.IsNullOrEmpty(errorMessage))
                     {
-                        <FluentMessageBar Title="@errorMessage" Intent="MessageIntent.Error" />
+                        <FluentMessageBar Title="@errorMessage" Intent="MessageBarIntent.Error" />
                     }
                 </FluentStack>
             </FluentStack>

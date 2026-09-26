@@ -2,9 +2,10 @@
 @using DMTQ.Tools.Core.Services
 @using Icons = Microsoft.FluentUI.AspNetCore.Components.Icons
 @inject IProjectFilePicker FilePicker
-@implements IDialogContentComponent<DMTQ.Tools.Components.Models.ResourceDialogData>
+@inherits FluentDialogInstance
 
-<FluentStack Orientation="Orientation.Vertical" VerticalGap="16" Style="min-width: 520px;">
+<FluentDialogBody>
+    <FluentStack Orientation="Orientation.Vertical" VerticalGap="16" Style="min-width: 520px;">
 
     @* Resource path *@
     <section>
@@ -14,16 +15,16 @@
                 <FluentSelect Items="@_categoryOptions"
                               OptionText="@(category => FileUtility.GetCategoryPathPrefix(category) + "/")"
                               OptionValue="@(category => category)"
-                              @bind-SelectedOption="Content.Category"
+                              @bind-Value="Content.Category"
                               Label="Category"
                               Style="min-width: 140px;"
                               Disabled="@(!Content.IsNew)" />
-                <FluentTextField @bind-Value="Content.FileName"
+                <FluentTextInput @bind-Value="Content.FileName"
                                  Label="File Name"
                                  ReadOnly="@(!Content.IsNew)"
                                  Style="flex: 1;" />
             </FluentStack>
-            <div style="font-size: 0.85rem; color: var(--neutral-foreground-rest); padding-left: 4px;">
+            <div style="font-size: 0.85rem; color: var(--colorNeutralForeground1); padding-left: 4px;">
                 Full path: <code style="font-weight: 600;">@FullPathPreview</code>
             </div>
             <FluentSwitch @bind-Value="Content.Compressed" Label="Compressed" />
@@ -36,28 +37,28 @@
         <FluentStack Orientation="Orientation.Vertical" VerticalGap="8">
             @foreach (var card in Content.Platforms.Where(p => !p.MarkedForDeletion))
             {
-                <FluentCard Style="border: 1px solid var(--neutral-stroke-rest);">
+                <FluentCard Style="border: 1px solid var(--colorNeutralStroke1);">
                     <FluentStack Orientation="Orientation.Vertical" VerticalGap="4" Style="padding: 12px;">
                         <div style="font-weight: 600; font-size: 1rem;">@card.Platform</div>
-                        <div style="font-size: 0.85rem; color: var(--neutral-foreground-rest);">
+                        <div style="font-size: 0.85rem; color: var(--colorNeutralForeground1);">
                             @L["Dialog.ExistSizeChecksum", card.Exist ? "✓" : "✗", FormatSize(card.SourceFileSize), card.SourceChecksum]
                         </div>
                         @if (!string.IsNullOrEmpty(card.SourceChecksum))
                         {
-                            <div style="font-size: 0.85rem; color: var(--neutral-foreground-rest);">
+                            <div style="font-size: 0.85rem; color: var(--colorNeutralForeground1);">
                                 @L["Dialog.Source", card.SourceChecksum]
                             </div>
                         }
                         @if (!string.IsNullOrEmpty(card.PendingFilePath))
                         {
-                            <div style="font-size: 0.85rem; color: var(--accent-foreground-rest);">
+                            <div style="font-size: 0.85rem; color: var(--colorBrandForeground1);">
                                 @L["Dialog.WillReplace", card.PendingFilePath]
                             </div>
                         }
                         <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8" Style="margin-top: 8px;">
-                            <FluentButton Appearance="Appearance.Neutral" Size="FluentUI.AspNetCore.Components.Size.Small"
+                            <FluentButton Appearance="ButtonAppearance.Default" Size="ButtonSize.Small"
                                           OnClick="() => PickAndReplaceFile(card)">@L["Dialog.ReplaceFile"]</FluentButton>
-                            <FluentButton Appearance="Appearance.Neutral" Size="FluentUI.AspNetCore.Components.Size.Small"
+                            <FluentButton Appearance="ButtonAppearance.Default" Size="ButtonSize.Small"
                                           OnClick="() => RemovePlatform(card)">@L["Common.Delete"]</FluentButton>
                         </FluentStack>
                     </FluentStack>
@@ -66,7 +67,7 @@
 
             @if (!string.IsNullOrEmpty(_addPlatformMessage))
             {
-                <FluentMessageBar Title="@_addPlatformMessage" Intent="MessageIntent.Warning" />
+                <FluentMessageBar Title="@_addPlatformMessage" Intent="MessageBarIntent.Warning" />
             }
 
             @if (Content.Category.Equals("dlc", StringComparison.OrdinalIgnoreCase) && _showPlatformChoices)
@@ -75,31 +76,31 @@
                     <span style="font-weight: 500;">@L["Dialog.SelectPlatform"]</span>
                     @foreach (var plat in _availablePlatforms)
                     {
-                        <FluentButton Appearance="Appearance.Neutral" Size="FluentUI.AspNetCore.Components.Size.Small"
+                        <FluentButton Appearance="ButtonAppearance.Default" Size="ButtonSize.Small"
                                       OnClick="() => AddPlatformFor(plat)">@plat</FluentButton>
                     }
-                    <FluentButton Appearance="Appearance.Neutral" Size="FluentUI.AspNetCore.Components.Size.Small"
+                    <FluentButton Appearance="ButtonAppearance.Default" Size="ButtonSize.Small"
                                   OnClick="CancelAddPlatform">@L["Common.Cancel"]</FluentButton>
                 </FluentStack>
             }
             else if (Content.Category.Equals("dlc", StringComparison.OrdinalIgnoreCase))
             {
-                <FluentButton Appearance="Appearance.Neutral" OnClick="ShowAddPlatformOptions"
+                <FluentButton Appearance="ButtonAppearance.Default" OnClick="ShowAddPlatformOptions"
                               IconStart="@(new Icons.Regular.Size20.Add())">@L["Dialog.AddPlatform"]</FluentButton>
             }
             else
             {
-                <FluentButton Appearance="Appearance.Neutral" OnClick="PickSharedFileAsync"
+                <FluentButton Appearance="ButtonAppearance.Default" OnClick="PickSharedFileAsync"
                               IconStart="@(new Icons.Regular.Size20.Add())">Select File</FluentButton>
             }
         </FluentStack>
     </section>
 
 </FluentStack>
+</FluentDialogBody>
 
 @code {
     [Parameter] public ResourceDialogData Content { get; set; } = default!;
-    [CascadingParameter] public FluentDialog Dialog { get; set; } = default!;
 
     private static readonly List<string> _categoryOptions = ["dlc", "preview", "slang"];
     private static readonly string[] _allPlatforms = ["android", "ios"];
@@ -107,6 +108,9 @@
     private bool _showPlatformChoices;
     private List<string> _availablePlatforms = [];
     private string _addPlatformMessage = string.Empty;
+
+    protected override Task OnActionClickedAsync(bool primary)
+        => primary ? DialogInstance.CloseAsync(Content) : DialogInstance.CancelAsync();
 
     private string FullPathPreview => string.IsNullOrWhiteSpace(Content.FileName)
         ? "(enter a file name)"

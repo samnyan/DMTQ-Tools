@@ -5,18 +5,18 @@
 @inject SlangEditService EditService
 
 <FluentStack Orientation="Orientation.Vertical" VerticalGap="20" HorizontalAlignment="HorizontalAlignment.Stretch">
-    @if (State.CurrentPackage is null) { <FluentMessageBar Title='@L["Editor.OpenProjectFirst"]' Intent="MessageIntent.Warning" /> }
-    else if (entry is null && !IsCreate) { <FluentMessageBar Title='@L["Editor.NotFound", L["Nav.Slang"].Value, EntryId]' Intent="MessageIntent.Error" /> }
+    @if (State.CurrentPackage is null) { <FluentMessageBar Title='@L["Editor.OpenProjectFirst"]' Intent="MessageBarIntent.Warning" /> }
+    else if (entry is null && !IsCreate) { <FluentMessageBar Title='@L["Editor.NotFound", L["Nav.Slang"].Value, EntryId]' Intent="MessageBarIntent.Error" /> }
     else
     {
         <EditForm Model="@editModel" OnValidSubmit="SaveAsync" FormName="slang-editor">
             <FluentStack Orientation="Orientation.Vertical" VerticalGap="20" HorizontalAlignment="HorizontalAlignment.Stretch">
                 <section><h2 class="section-heading">@L["Editor.SlangEntry"]</h2><p class="section-hint">@L["Editor.SlangHint"]</p>
-                    <FluentTextField style="width:100%" @bind-Value="editModel.Value" Label='@L["Fields.SlangValue"]' Required /></section>
+                    <FluentTextInput style="width:100%" @bind-Value="editModel.Value" Label='@L["Fields.SlangValue"]' Required /></section>
                 <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8">
-                    <FluentButton Appearance="Appearance.Accent" Type="ButtonType.Submit" Disabled="@isBusy">@L["Common.Save"]</FluentButton>
-                    <FluentButton Appearance="Appearance.Neutral" OnClick="NavigateBack">@L["Common.Cancel"]</FluentButton>
-                    @if (!string.IsNullOrWhiteSpace(errorMessage)) { <FluentMessageBar Title="@errorMessage" Intent="MessageIntent.Error" /> }
+                    <FluentButton Appearance="ButtonAppearance.Primary" Type="ButtonType.Submit" Disabled="@isBusy">@L["Common.Save"]</FluentButton>
+                    <FluentButton Appearance="ButtonAppearance.Default" OnClick="NavigateBack">@L["Common.Cancel"]</FluentButton>
+                    @if (!string.IsNullOrWhiteSpace(errorMessage)) { <FluentMessageBar Title="@errorMessage" Intent="MessageBarIntent.Error" /> }
                 </FluentStack>
             </FluentStack>
         </EditForm>

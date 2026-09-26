@@ -1,17 +1,19 @@
 @implements IDisposable
 @inject NavigationManager Navigation
 
-<FluentBreadcrumb class="global-breadcrumb">
+<nav class="global-breadcrumb" aria-label="Breadcrumb">
+    <ol>
     @if (_parentLabel is not null)
     {
-        <FluentBreadcrumbItem Href="@_parentUrl">@L[_parentLabel]</FluentBreadcrumbItem>
-        <FluentBreadcrumbItem>@_currentLabel</FluentBreadcrumbItem>
+        <li><a href="@_parentUrl">@L[_parentLabel]</a></li>
+        <li aria-current="page">@_currentLabel</li>
     }
     else if (_currentLabel is not null)
     {
-        <FluentBreadcrumbItem>@_currentLabel</FluentBreadcrumbItem>
+        <li aria-current="page">@_currentLabel</li>
     }
-</FluentBreadcrumb>
+    </ol>
+</nav>
 
 @code {
     private string? _parentLabel;

@@ -9,15 +9,15 @@
                   EmptyMessage='@L["Lists.NoSlang"]' FilteredItems="@FilteredItems" Pagination="@pagination"
                   Message="@message" ErrorMessage="@errorMessage">
     <Toolbar><FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween">
-        <FluentTextField Value="@filter" ValueChanged="SetFilterAsync" Immediate="true" Placeholder='@L["Lists.FilterSlang"]' Style="min-width:320px" />
-        <FluentButton Appearance="Appearance.Accent" IconStart="@(new Icons.Regular.Size20.Add())" OnClick="CreateNew">@L["Lists.AddSlang"]</FluentButton>
+        <FluentTextInput Value="@filter" ValueChanged="SetFilterAsync" Immediate="true" Placeholder='@L["Lists.FilterSlang"]' Style="min-width:320px" />
+        <FluentButton Appearance="ButtonAppearance.Primary" IconStart="@(new Icons.Regular.Size20.Add())" OnClick="CreateNew">@L["Lists.AddSlang"]</FluentButton>
     </FluentStack></Toolbar>
-    <Metrics><FluentGrid Spacing="3"><FluentGridItem xs="12" sm="6" md="3"><FluentCard><span class="metric-label">@L["Lists.SlangEntries"]</span><strong>@Catalog.Count</strong></FluentCard></FluentGridItem></FluentGrid></Metrics>
+    <Metrics><FluentGrid Spacing="3"><FluentGridItem Xs="12" Sm="6" Md="3"><FluentCard><span class="metric-label">@L["Lists.SlangEntries"]</span><strong>@Catalog.Count</strong></FluentCard></FluentGridItem></FluentGrid></Metrics>
     <Columns>
         <PropertyColumn TGridItem="SlangEntry" TProp="string" Property="@(entry => entry.Value)" Title='@L["Fields.SlangValue"]' Sortable="true" />
         <TemplateColumn TGridItem="SlangEntry" Title='@L["Lists.Actions"]' Context="entry"><FluentStack Orientation="Orientation.Horizontal" HorizontalGap="4">
-            <FluentButton IconStart="@(new Icons.Regular.Size20.Edit())" Appearance="Appearance.Neutral" OnClick="() => Edit(entry.Id)" Title='@L["Common.Edit"]' />
-            <FluentButton IconStart="@(new Icons.Regular.Size20.Delete())" Appearance="Appearance.Neutral" OnClick="() => DeleteAsync(entry)" Title='@L["Common.Delete"]' />
+            <FluentButton IconStart="@(new Icons.Regular.Size20.Edit())" Appearance="ButtonAppearance.Default" OnClick="() => Edit(entry.Id)" Title='@L["Common.Edit"]' />
+            <FluentButton IconStart="@(new Icons.Regular.Size20.Delete())" Appearance="ButtonAppearance.Default" OnClick="() => DeleteAsync(entry)" Title='@L["Common.Delete"]' />
         </FluentStack></TemplateColumn>
     </Columns>
 </ProjectListShell>
@@ -42,9 +42,9 @@
     private async Task DeleteAsync(SlangEntry entry)
     {
         if (State.CurrentPackage is null) return;
-        var dialog = await DialogService.ShowConfirmationAsync(L["Lists.DeleteConfirm", L["Nav.Slang"].Value, entry.Value].Value,
+        var result = await DialogService.ShowConfirmationAsync(L["Lists.DeleteConfirm", L["Nav.Slang"].Value, entry.Value].Value,
             L["Common.Delete"].Value, L["Common.Cancel"].Value, L["Nav.Slang"].Value);
-        if ((await dialog.Result).Cancelled) return;
+        if (result.Cancelled) return;
         try { EditService.Remove(State.CurrentPackage, entry.Id); await Workflow.SaveProjectAsync(); message = L["Lists.Deleted", L["Nav.Slang"].Value, entry.Value].Value; }
         catch (Exception ex) { errorMessage = ex.Message; }
     }

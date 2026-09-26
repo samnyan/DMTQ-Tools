@@ -21,14 +21,14 @@
                 <FluentSelect Items="@(new[] { "All", "dlc", "preview", "slang" })"
                               OptionText="@(i => i == "All" ? L["Lists.AllCategories"].Value : i)"
                               OptionValue="@(i => i)"
-                              @bind-SelectedOption="categoryFilter"
-                              @bind-SelectedOption:after="UpdateCategoryQueryAsync"
+                              @bind-Value="categoryFilter"
+                              @bind-Value:after="UpdateCategoryQueryAsync"
                               Label='@L["Lists.Category"]'
                               Style="min-width: 140px;" />
-                <FluentTextField Value="@filter" ValueChanged="SetFilterAsync" Immediate="true" Placeholder='@L["Lists.FilterResources"]'
+                <FluentTextInput Value="@filter" ValueChanged="SetFilterAsync" Immediate="true" Placeholder='@L["Lists.FilterResources"]'
                                  Style="min-width: 280px;" />
             </FluentStack>
-            <FluentButton Appearance="Appearance.Accent"
+            <FluentButton Appearance="ButtonAppearance.Primary"
                           IconStart="@(new Icons.Regular.Size20.Add())"
                           OnClick="AddNewResource">@L["Lists.AddResource"]</FluentButton>
         </FluentStack>
@@ -36,22 +36,22 @@
 
     <Metrics>
         <FluentGrid Spacing="3" AdaptiveRendering="true">
-            <FluentGridItem xs="12" sm="6" md="3">
+            <FluentGridItem Xs="12" Sm="6" Md="3">
                 <FluentCard>
                     <span class="metric-label">@L["Lists.TotalResources"]</span><strong>@Catalog.Count</strong>
                 </FluentCard>
             </FluentGridItem>
-            <FluentGridItem xs="12" sm="6" md="3">
+            <FluentGridItem Xs="12" Sm="6" Md="3">
                 <FluentCard>
                     <span class="metric-label">dlc</span><strong>@Catalog.Count(r => r.Category == "dlc")</strong>
                 </FluentCard>
             </FluentGridItem>
-            <FluentGridItem xs="12" sm="6" md="3">
+            <FluentGridItem Xs="12" Sm="6" Md="3">
                 <FluentCard>
                     <span class="metric-label">preview</span><strong>@Catalog.Count(r => r.Category == "preview")</strong>
                 </FluentCard>
             </FluentGridItem>
-            <FluentGridItem xs="12" sm="6" md="3">
+            <FluentGridItem Xs="12" Sm="6" Md="3">
                 <FluentCard>
                     <span class="metric-label">@L["Lists.Others"]</span><strong>@Catalog.Count(r => r.Category != "dlc" && r.Category != "preview")</strong>
                 </FluentCard>
@@ -74,11 +74,11 @@
         <TemplateColumn TGridItem="ResourceCatalogEntry" Title="Actions" Context="resource">
             <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="4">
                 <FluentButton IconStart="@(new Icons.Regular.Size20.Edit())"
-                              Appearance="Appearance.Neutral"
+                              Appearance="ButtonAppearance.Default"
                               OnClick="() => OpenEditDialog(resource)"
                               Title='@L["Common.Edit"]' />
                 <FluentButton IconStart="@(new Icons.Regular.Size20.Delete())"
-                              Appearance="Appearance.Neutral"
+                              Appearance="ButtonAppearance.Default"
                               OnClick="() => DeleteResourceAsync(resource)"
                               Title='@L["Common.Delete"]' />
             </FluentStack>
@@ -174,18 +174,16 @@
         message = null;
         errorMessage = null;
         var data = new ResourceDialogData { IsNew = true };
-        var dialog = await DialogService.ShowDialogAsync<ResourceEditDialog, ResourceDialogData>(
-            data,
-            new DialogParameters
-            {
-                Title = L["Dialog.AddResource"].Value,
-                PrimaryAction = L["Common.Save"].Value,
-                SecondaryAction = L["Common.Cancel"].Value,
-                Width = "640px",
-                PreventDismissOnOverlayClick = true
-            });
-        var result = await dialog.Result;
-        await ApplyDialogChanges(result, null);
+        var result = await DialogService.ShowDialogAsync<ResourceEditDialog>(options =>
+        {
+            options.Header.Title = L["Dialog.AddResource"].Value;
+            options.Footer.PrimaryAction.Label = L["Common.Save"].Value;
+            options.Footer.SecondaryAction.Label = L["Common.Cancel"].Value;
+            options.Width = "640px";
+            options.Parameters = new Dictionary<string, object?> { [nameof(ResourceEditDialog.Content)] = data };
+        });
+        if (!result.Cancelled)
+            await ApplyDialogChanges(data, null);
     }
 
     private async Task OpenEditDialog(ResourceCatalogEntry entry)
@@ -193,18 +191,16 @@
         message = null;
         errorMessage = null;
         var data = BuildDialogData(entry);
-        var dialog = await DialogService.ShowDialogAsync<ResourceEditDialog, ResourceDialogData>(
-            data,
-            new DialogParameters
-            {
-                Title = L["Dialog.EditResource"].Value,
-                PrimaryAction = L["Common.Save"].Value,
-                SecondaryAction = L["Common.Cancel"].Value,
-                Width = "640px",
-                PreventDismissOnOverlayClick = true
-            });
-        var result = await dialog.Result;
-        await ApplyDialogChanges(result, entry);
+        var result = await DialogService.ShowDialogAsync<ResourceEditDialog>(options =>
+        {
+            options.Header.Title = L["Dialog.EditResource"].Value;
+            options.Footer.PrimaryAction.Label = L["Common.Save"].Value;
+            options.Footer.SecondaryAction.Label = L["Common.Cancel"].Value;
+            options.Width = "640px";
+            options.Parameters = new Dictionary<string, object?> { [nameof(ResourceEditDialog.Content)] = data };
+        });
+        if (!result.Cancelled)
+            await ApplyDialogChanges(data, entry);
     }
 
     private async Task DeleteResourceAsync(ResourceCatalogEntry entry)
@@ -214,11 +210,9 @@
         message = null;
         errorMessage = null;
 
-        var dialog = await DialogService.ShowConfirmationAsync(
+        var result = await DialogService.ShowConfirmationAsync(
             L["Lists.DeleteConfirm", L["Nav.Resources"].Value.ToLowerInvariant(), entry.FileName].Value,
             L["Common.Delete"].Value, L["Common.Cancel"].Value, L["Nav.Resources"].Value);
-
-        var result = await dialog.Result;
         if (result.Cancelled) return;
 
         try
@@ -235,10 +229,8 @@
         }
     }
 
-    private async Task ApplyDialogChanges(DialogResult result, ResourceCatalogEntry? original)
+    private async Task ApplyDialogChanges(ResourceDialogData data, ResourceCatalogEntry? original)
     {
-        if (result.Cancelled || result.Data is not ResourceDialogData data) return;
-
         if (string.IsNullOrWhiteSpace(data.FileName))
         {
             errorMessage = "File name is required.";

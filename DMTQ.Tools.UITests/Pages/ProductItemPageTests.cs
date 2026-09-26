@@ -87,10 +87,10 @@ public sealed class ProductItemPageTests : BlazorUITestBase
         RegisterAllServices(state);
         var cut = Render<ItemEditor>(parameters => parameters.Add(p => p.ItemId, "ITEM_001"));
 
-        cut.FindAll("fluent-switch")
-            .Single(element => element.TextContent.Contains("Sync original text", StringComparison.Ordinal))
-            .TriggerEvent("onswitchcheckedchange", new CheckboxChangeEventArgs { Checked = true });
-        var originalFields = cut.FindAll("fluent-text-field");
+        cut.FindComponents<FluentSwitch>()
+            .Single(component => component.Instance.Label == "Sync original text")
+            .Instance.ValueChanged.InvokeAsync(true).GetAwaiter().GetResult();
+        var originalFields = cut.FindAll("fluent-text-input");
         originalFields[1].Input("Live item");
         originalFields[4].Input("Live description");
         originalFields[5].Input("Live summary");

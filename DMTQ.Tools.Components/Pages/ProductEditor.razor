@@ -8,12 +8,12 @@
 <FluentStack Orientation="Orientation.Vertical" VerticalGap="20" HorizontalAlignment="HorizontalAlignment.Stretch">
     @if (State.CurrentPackage is null)
     {
-        <FluentMessageBar Title='@L["Editor.OpenProjectFirst"]' Intent="MessageIntent.Warning" />
+        <FluentMessageBar Title='@L["Editor.OpenProjectFirst"]' Intent="MessageBarIntent.Warning" />
     }
     else if (currentProduct is null && !IsCreate)
     {
-        <FluentMessageBar Title='@L["Editor.NotFound", L["Nav.Products"].Value, ProductId]' Intent="MessageIntent.Error" />
-        <FluentButton Appearance="Appearance.Neutral" OnClick="NavigateBack">@L["Editor.BackTo", L["Nav.Products"].Value]</FluentButton>
+        <FluentMessageBar Title='@L["Editor.NotFound", L["Nav.Products"].Value, ProductId]' Intent="MessageBarIntent.Error" />
+        <FluentButton Appearance="ButtonAppearance.Default" OnClick="NavigateBack">@L["Editor.BackTo", L["Nav.Products"].Value]</FluentButton>
     }
     else
     {
@@ -22,33 +22,33 @@
                 <section>
                     <h2 class="section-heading">@L["Editor.ProductInformation"]</h2>
                     <FluentGrid Spacing="3">
-                        <FluentGridItem xs="12" md="6">
+                        <FluentGridItem Xs="12" Md="6">
                             @if (IsCreate)
                             {
-                                <FluentTextField style="width: 100%;" @bind-Value="productIdInput" Label="Product ID *" Placeholder="e.g. PRODUCT_001" Required />
+                                <FluentTextInput style="width: 100%;" @bind-Value="productIdInput" Label="Product ID *" Placeholder="e.g. PRODUCT_001" Required />
                             }
                             else
                             {
-                                <FluentTextField style="width: 100%;" Value="@(currentProduct?.Id ?? string.Empty)" Label="Product ID" ReadOnly="true" />
+                                <FluentTextInput style="width: 100%;" Value="@(currentProduct?.Id ?? string.Empty)" Label="Product ID" ReadOnly="true" />
                             }
                         </FluentGridItem>
-                        <FluentGridItem xs="12" md="6">
-                            <FluentTextField style="width: 100%;" @bind-Value="currentProduct!.ItemId" Label="Item ID" />
+                        <FluentGridItem Xs="12" Md="6">
+                            <FluentTextInput style="width: 100%;" @bind-Value="currentProduct!.ItemId" Label="Item ID" />
                         </FluentGridItem>
-                        <FluentGridItem xs="12" md="6">
-                            <FluentTextField style="width: 100%;" @bind-Value="currentProduct!.PlatformProductId" Label="Platform Product ID" />
+                        <FluentGridItem Xs="12" Md="6">
+                            <FluentTextInput style="width: 100%;" @bind-Value="currentProduct!.PlatformProductId" Label="Platform Product ID" />
                         </FluentGridItem>
-                        <FluentGridItem xs="12" md="6">
-                            <FluentTextField style="width: 100%;" @bind-Value="currentProduct!.StoreProductId" Label="Store Product ID" />
+                        <FluentGridItem Xs="12" Md="6">
+                            <FluentTextInput style="width: 100%;" @bind-Value="currentProduct!.StoreProductId" Label="Store Product ID" />
                         </FluentGridItem>
-                        <FluentGridItem xs="12" md="4">
-                            <FluentTextField style="width: 100%;" @bind-Value="currentProduct!.ProductType" Label="Product Type" />
+                        <FluentGridItem Xs="12" Md="4">
+                            <FluentTextInput style="width: 100%;" @bind-Value="currentProduct!.ProductType" Label="Product Type" />
                         </FluentGridItem>
-                        <FluentGridItem xs="12" md="4">
-                            <FluentTextField style="width: 100%;" @bind-Value="currentProduct!.Status" Label="Status" />
+                        <FluentGridItem Xs="12" Md="4">
+                            <FluentTextInput style="width: 100%;" @bind-Value="currentProduct!.Status" Label="Status" />
                         </FluentGridItem>
-                        <FluentGridItem xs="12" md="4">
-                            <FluentTextField style="width: 100%;" @bind-Value="currentProduct!.Update" Label="Update" />
+                        <FluentGridItem Xs="12" Md="4">
+                            <FluentTextInput style="width: 100%;" @bind-Value="currentProduct!.Update" Label="Update" />
                         </FluentGridItem>
                     </FluentGrid>
                 </section>
@@ -56,17 +56,17 @@
                 <section>
                     <h2 class="section-heading">@L["Editor.PriceSaleWindow"]</h2>
                     <FluentGrid Spacing="3">
-                        <FluentGridItem xs="12" md="6">
-                            <FluentTextField style="width: 100%;" @bind-Value="currentProduct!.CostGamePoint" Label="Cost Game Point" />
+                        <FluentGridItem Xs="12" Md="6">
+                            <FluentTextInput style="width: 100%;" @bind-Value="currentProduct!.CostGamePoint" Label="Cost Game Point" />
                         </FluentGridItem>
-                        <FluentGridItem xs="12" md="6">
-                            <FluentTextField style="width: 100%;" @bind-Value="currentProduct!.CostGameCash" Label="Cost Game Cash" />
+                        <FluentGridItem Xs="12" Md="6">
+                            <FluentTextInput style="width: 100%;" @bind-Value="currentProduct!.CostGameCash" Label="Cost Game Cash" />
                         </FluentGridItem>
-                        <FluentGridItem xs="12" md="6">
-                            <FluentTextField style="width: 100%;" @bind-Value="currentProduct!.SaleStartDate" Label="Sale Start Date" />
+                        <FluentGridItem Xs="12" Md="6">
+                            <FluentTextInput style="width: 100%;" @bind-Value="currentProduct!.SaleStartDate" Label="Sale Start Date" />
                         </FluentGridItem>
-                        <FluentGridItem xs="12" md="6">
-                            <FluentTextField style="width: 100%;" @bind-Value="currentProduct!.SaleEndDate" Label="Sale End Date" />
+                        <FluentGridItem Xs="12" Md="6">
+                            <FluentTextInput style="width: 100%;" @bind-Value="currentProduct!.SaleEndDate" Label="Sale End Date" />
                         </FluentGridItem>
                     </FluentGrid>
                 </section>
@@ -84,8 +84,8 @@
                         }
                     </div>
                     <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8" VerticalAlignment="VerticalAlignment.Center">
-                        <FluentNumberField @bind-Value="newCategoryId" Label='@L["Fields.CategoryId"]' />
-                        <FluentButton Appearance="Appearance.Neutral" OnClick="AddCategory">@L["Common.Add"]</FluentButton>
+                        <FluentNumberInput @bind-Value="newCategoryId" Label='@L["Fields.CategoryId"]' />
+                        <FluentButton Appearance="ButtonAppearance.Default" OnClick="AddCategory">@L["Common.Add"]</FluentButton>
                     </FluentStack>
                 </section>
 
@@ -95,23 +95,23 @@
                             <h2 class="section-heading">@L["Editor.IngameConfigurations"]</h2>
                             <p class="section-hint">@L["Editor.IngameConfigurationsHint"]</p>
                         </div>
-                        <FluentButton Appearance="Appearance.Neutral" OnClick="AddIngameItem"
+                        <FluentButton Appearance="ButtonAppearance.Default" OnClick="AddIngameItem"
                                       IconStart="@(new Icons.Regular.Size20.Add())">@L["Editor.AddConfiguration"]</FluentButton>
                     </div>
                     @if (ingameItemDrafts.Count == 0)
                     {
-                        <FluentMessageBar Title='@L["Editor.NoIngameConfigurations"]' Intent="MessageIntent.Info" />
+                        <FluentMessageBar Title='@L["Editor.NoIngameConfigurations"]' Intent="MessageBarIntent.Info" />
                     }
                     else
                     {
                         @foreach (var ingameItem in ingameItemDrafts)
                         {
                             <div class="related-row" @key="ingameItem">
-                                <FluentTextField @bind-Value="ingameItem.ItemType" Label='@L["Fields.ItemType"]' />
-                                <FluentTextField @bind-Value="ingameItem.ItemLevel" Label='@L["Fields.ItemLevel"]' />
-                                <FluentTextField Value="@(currentProduct?.Id ?? productIdInput)" Label='@L["Fields.ProductId"]' ReadOnly="true" />
-                                <FluentTextField @bind-Value="ingameItem.Update" Label='@L["Fields.Update"]' />
-                                <FluentButton Appearance="Appearance.Neutral" OnClick="() => RemoveIngameItem(ingameItem)"
+                                <FluentTextInput @bind-Value="ingameItem.ItemType" Label='@L["Fields.ItemType"]' />
+                                <FluentTextInput @bind-Value="ingameItem.ItemLevel" Label='@L["Fields.ItemLevel"]' />
+                                <FluentTextInput Value="@(currentProduct?.Id ?? productIdInput)" Label='@L["Fields.ProductId"]' ReadOnly="true" />
+                                <FluentTextInput @bind-Value="ingameItem.Update" Label='@L["Fields.Update"]' />
+                                <FluentButton Appearance="ButtonAppearance.Default" OnClick="() => RemoveIngameItem(ingameItem)"
                                               IconStart="@(new Icons.Regular.Size20.Delete())" Title='@L["Common.Delete"]' />
                             </div>
                         }
@@ -119,15 +119,15 @@
                 </section>
 
                 <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8" VerticalAlignment="VerticalAlignment.Center">
-                    <FluentButton Appearance="Appearance.Accent" Type="ButtonType.Submit" Disabled="@isBusy">@L["Editor.SaveProduct"]</FluentButton>
-                    <FluentButton Appearance="Appearance.Neutral" OnClick="NavigateBack">@L["Common.Cancel"]</FluentButton>
+                    <FluentButton Appearance="ButtonAppearance.Primary" Type="ButtonType.Submit" Disabled="@isBusy">@L["Editor.SaveProduct"]</FluentButton>
+                    <FluentButton Appearance="ButtonAppearance.Default" OnClick="NavigateBack">@L["Common.Cancel"]</FluentButton>
                     @if (!string.IsNullOrEmpty(message))
                     {
-                        <FluentMessageBar Title="@message" Intent="MessageIntent.Info" />
+                        <FluentMessageBar Title="@message" Intent="MessageBarIntent.Info" />
                     }
                     @if (!string.IsNullOrEmpty(errorMessage))
                     {
-                        <FluentMessageBar Title="@errorMessage" Intent="MessageIntent.Error" />
+                        <FluentMessageBar Title="@errorMessage" Intent="MessageBarIntent.Error" />
                     }
                 </FluentStack>
             </FluentStack>

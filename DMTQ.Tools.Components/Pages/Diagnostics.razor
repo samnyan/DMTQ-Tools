@@ -23,7 +23,7 @@
 <section class="toolbar-panel">
     <div class="input-row">
         <h2>@L["Diagnostics.QaCheck"]</h2>
-        <FluentButton Appearance="Appearance.Accent"
+        <FluentButton Appearance="ButtonAppearance.Primary"
                       OnClick="RunQa"
                       Disabled="@(!State.HasPackage || isBusy)">@L["Diagnostics.RunQa"]</FluentButton>
     </div>
@@ -38,10 +38,9 @@
                 <FluentDataGrid Items="@qaReport.Issues.OrderBy(i => i.Severity).ThenBy(i => i.Category).AsQueryable()"
                                 TGridItem="QaIssue">
                     <TemplateColumn Title="Severity">
-                        <FluentBadge Appearance="Appearance.Accent"
-                                     Color="@(context.Severity == QaIssueSeverity.Error ? "error" : context.Severity == QaIssueSeverity.Warning ? "warning" : "info")">
-                            @context.Severity
-                        </FluentBadge>
+                        <FluentBadge Appearance="BadgeAppearance.Filled"
+                                     Color="@(context.Severity == QaIssueSeverity.Error ? BadgeColor.Danger : context.Severity == QaIssueSeverity.Warning ? BadgeColor.Warning : BadgeColor.Informative)"
+                                     Content="@context.Severity.ToString()" />
                     </TemplateColumn>
                     <PropertyColumn Title="Category" Property="@(i => i.Category)" />
                     <TemplateColumn Title="Message">

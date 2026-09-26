@@ -1,4 +1,4 @@
-﻿@page "/"
+@page "/"
 @using Icons = Microsoft.FluentUI.AspNetCore.Components.Icons
 @inject IProjectState State
 @inject IProjectWorkflow Workflow
@@ -11,20 +11,20 @@
 
 <FluentStack Orientation="Orientation.Vertical" VerticalGap="16" Style="margin-bottom: 1.25rem;">
     <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8">
-        <FluentTextField @bind-Value="projectRoot"
+        <FluentTextInput @bind-Value="projectRoot"
                          Label='@L["Home.ProjectFolder"]'
                          Placeholder='@L["Home.ProjectFolderPlaceholder"]'
                          Style="width: 100%;" />
-        <FluentButton Appearance="Appearance.Neutral"
+        <FluentButton Appearance="ButtonAppearance.Default"
                       IconStart="@(new Icons.Regular.Size20.Folder())"
                       OnClick="BrowseFolder">@L["Home.Browse"]</FluentButton>
     </FluentStack>
 
     <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8">
-        <FluentButton Appearance="Appearance.Accent"
+        <FluentButton Appearance="ButtonAppearance.Primary"
                       OnClick="ConfirmProject"
                       Disabled="@(string.IsNullOrWhiteSpace(projectRoot) || isBusy)">@L["Home.Confirm"]</FluentButton>
-        <FluentButton Appearance="Appearance.Neutral"
+        <FluentButton Appearance="ButtonAppearance.Default"
                       OnClick="SaveProject"
                       Disabled="@(!State.HasPackage || isBusy)">@L["Common.Save"]</FluentButton>
     </FluentStack>
@@ -52,12 +52,12 @@
                         }
                     </div>
                     <div class="recent-project-actions">
-                        <FluentButton Appearance="Appearance.Neutral"
+                        <FluentButton Appearance="ButtonAppearance.Default"
                                       OnClick="() => OpenRecentProjectAsync(recentProject)"
                                       Disabled="@isBusy">
                             @L["Home.OpenRecent"]
                         </FluentButton>
-                        <FluentButton Appearance="Appearance.Neutral"
+                        <FluentButton Appearance="ButtonAppearance.Default"
                                       IconStart="@(new Icons.Regular.Size20.Delete())"
                                       Title='@L["Home.RemoveRecent"]'
                                       OnClick="() => RemoveRecentProject(recentProject)"
@@ -70,55 +70,55 @@
 }
 
 <FluentGrid Spacing="3" Justify="JustifyContent.Center" AdaptiveRendering="true">
-    <FluentGridItem xs="12" sm="6" md="4" lg="3">
+    <FluentGridItem Xs="12" Sm="6" Md="4" Lg="3">
         <FluentCard>
             <span style="color: #5f6b7a; font-size: 0.8rem;">@L["Nav.Project"]</span>
             <p style="font-weight: 600; overflow-wrap: anywhere;">@(State.ProjectRoot ?? L["Home.NotSelected"].Value)</p>
         </FluentCard>
     </FluentGridItem>
-    <FluentGridItem xs="12" sm="6" md="4" lg="3">
+    <FluentGridItem Xs="12" Sm="6" Md="4" Lg="3">
         <FluentCard>
             <span style="color: #5f6b7a; font-size: 0.8rem;">@L["Home.Source"]</span>
             <p style="font-weight: 600; overflow-wrap: anywhere;">@(State.CurrentPackage?.ProjectInfo.SourcePackageRoot ?? L["Home.NotImported"].Value)</p>
         </FluentCard>
     </FluentGridItem>
-    <FluentGridItem xs="12" sm="6" md="4" lg="3">
+    <FluentGridItem Xs="12" Sm="6" Md="4" Lg="3">
         <FluentCard>
             <span style="color: #5f6b7a; font-size: 0.8rem;">@L["Home.Version"]</span>
             <p style="font-weight: 600;">@(State.CurrentPackage?.ProjectInfo.Version ?? "-")</p>
         </FluentCard>
     </FluentGridItem>
-    <FluentGridItem xs="12" sm="6" md="4" lg="3">
+    <FluentGridItem Xs="12" Sm="6" Md="4" Lg="3">
         <FluentCard>
             <span style="color: #5f6b7a; font-size: 0.8rem;">@L["Home.PrimaryPlatform"]</span>
             <p style="font-weight: 600;">@(State.CurrentPackage?.ProjectInfo.Platform ?? "-")</p>
         </FluentCard>
     </FluentGridItem>
-    <FluentGridItem xs="12" sm="6" md="4" lg="3">
+    <FluentGridItem Xs="12" Sm="6" Md="4" Lg="3">
         <FluentCard>
             <span style="color: #5f6b7a; font-size: 0.8rem;">@L["Home.ImportedPlatforms"]</span>
             <p style="font-weight: 600;">@PlatformSummary</p>
         </FluentCard>
     </FluentGridItem>
-    <FluentGridItem xs="12" sm="6" md="4" lg="3">
+    <FluentGridItem Xs="12" Sm="6" Md="4" Lg="3">
         <FluentCard>
             <span style="color: #5f6b7a; font-size: 0.8rem;">@L["Nav.Songs"]</span>
             <p style="font-weight: 600;">@(State.CurrentPackage?.Songs.Count ?? 0)</p>
         </FluentCard>
     </FluentGridItem>
-    <FluentGridItem xs="12" sm="6" md="4" lg="3">
+    <FluentGridItem Xs="12" Sm="6" Md="4" Lg="3">
         <FluentCard>
             <span style="color: #5f6b7a; font-size: 0.8rem;">@L["Home.Tables"]</span>
             <p style="font-weight: 600;">@(State.CurrentPackage?.Tables.Tables.Count ?? 0)</p>
         </FluentCard>
     </FluentGridItem>
-    <FluentGridItem xs="12" sm="6" md="4" lg="3">
+    <FluentGridItem Xs="12" Sm="6" Md="4" Lg="3">
         <FluentCard>
             <span style="color: #5f6b7a; font-size: 0.8rem;">@L["Nav.Resources"]</span>
             <p style="font-weight: 600;">@(State.CurrentPackage?.Resources.Count ?? 0)</p>
         </FluentCard>
     </FluentGridItem>
-    <FluentGridItem xs="12" sm="6" md="4" lg="3">
+    <FluentGridItem Xs="12" Sm="6" Md="4" Lg="3">
         <FluentCard>
             <span style="color: #5f6b7a; font-size: 0.8rem;">@L["Home.LastValidation"]</span>
             <p style="font-weight: 600;">@ValidationText</p>
@@ -136,7 +136,7 @@
     private string projectRoot = string.Empty;
     private List<string> recentProjects = [];
     private string? message;
-    private MessageIntent messageIntent = MessageIntent.Info;
+    private MessageBarIntent messageIntent = MessageBarIntent.Info;
     private bool isBusy;
 
     protected override void OnInitialized()
@@ -169,13 +169,13 @@
         var root = projectRoot.Trim();
         if (string.IsNullOrWhiteSpace(root))
         {
-            ShowMessage(L["Home.EnterProjectPath"].Value, MessageIntent.Warning);
+            ShowMessage(L["Home.EnterProjectPath"].Value, MessageBarIntent.Warning);
             return;
         }
 
         if (!Directory.Exists(root))
         {
-            ShowMessage(L["Home.FolderNotFound", root].Value, MessageIntent.Error);
+            ShowMessage(L["Home.FolderNotFound", root].Value, MessageBarIntent.Error);
             return;
         }
 
@@ -192,21 +192,20 @@
                 // Existing project — load it
                 await Workflow.OpenProjectAsync(root);
                 RememberRecentProject(root);
-                ShowMessage(L["Home.ProjectLoaded"].Value, MessageIntent.Info);
+                ShowMessage(L["Home.ProjectLoaded"].Value, MessageBarIntent.Info);
             }
             else if (isEmpty)
             {
                 // Empty directory — ask to create
-                var dialog = await DialogService.ShowConfirmationAsync(
+                var result = await DialogService.ShowConfirmationAsync(
                     L["Home.EmptyFolderConfirm"].Value,
                     L["Home.Confirm"].Value, L["Common.Cancel"].Value,
                     L["Home.NewProject"].Value);
-                var result = await dialog.Result;
                 if (!result.Cancelled)
                 {
                     await Workflow.CreateProjectAsync(root);
                     RememberRecentProject(root);
-                    ShowMessage(L["Home.ProjectCreated"].Value, MessageIntent.Info);
+                    ShowMessage(L["Home.ProjectCreated"].Value, MessageBarIntent.Info);
                 }
             }
             else
@@ -214,12 +213,12 @@
                 // Has files but no project.json
                 ShowMessage(
                     L["Home.InvalidFolder"].Value,
-                    MessageIntent.Error);
+                    MessageBarIntent.Error);
             }
         }
         catch (Exception ex)
         {
-            ShowMessage(ex.Message, MessageIntent.Error);
+            ShowMessage(ex.Message, MessageBarIntent.Error);
             State.Diagnostics.Add("Project error: " + ex.Message);
         }
         finally
@@ -314,11 +313,11 @@
         try
         {
             await Workflow.SaveProjectAsync();
-            ShowMessage(L["Home.ProjectSaved"].Value, MessageIntent.Info);
+            ShowMessage(L["Home.ProjectSaved"].Value, MessageBarIntent.Info);
         }
         catch (Exception ex)
         {
-            ShowMessage(ex.Message, MessageIntent.Error);
+            ShowMessage(ex.Message, MessageBarIntent.Error);
             State.Diagnostics.Add("Save project error: " + ex.Message);
         }
         finally
@@ -327,7 +326,7 @@
         }
     }
 
-    private void ShowMessage(string? text, MessageIntent intent)
+    private void ShowMessage(string? text, MessageBarIntent intent)
     {
         message = text;
         messageIntent = intent;

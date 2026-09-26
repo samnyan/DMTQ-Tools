@@ -17,17 +17,17 @@
     <Toolbar>
         <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center">
             <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" VerticalAlignment="VerticalAlignment.Center">
-                <FluentTextField Value="@filter" ValueChanged="SetFilterAsync" Immediate="true" Placeholder='@L["Lists.FilterItems"]'
+                <FluentTextInput Value="@filter" ValueChanged="SetFilterAsync" Immediate="true" Placeholder='@L["Lists.FilterItems"]'
                                  Style="min-width: 320px;" />
                 <FluentSelect Items="Languages"
                               OptionText="@(language => language)"
                               OptionValue="@(language => language)"
-                              @bind-SelectedOption="selectedLanguage"
-                              @bind-SelectedOption:after="UpdateLanguageQueryAsync"
+                              @bind-Value="selectedLanguage"
+                              @bind-Value:after="UpdateLanguageQueryAsync"
                               Label='@L["Lists.Language"]'
                               Style="min-width: 100px;" />
             </FluentStack>
-            <FluentButton Appearance="Appearance.Accent"
+            <FluentButton Appearance="ButtonAppearance.Primary"
                           IconStart="@(new Icons.Regular.Size20.Add())"
                           OnClick="CreateNewItem">@L["Lists.AddItem"]</FluentButton>
         </FluentStack>
@@ -35,16 +35,16 @@
 
     <Metrics>
         <FluentGrid Spacing="3" AdaptiveRendering="true">
-            <FluentGridItem xs="12" sm="6" md="3">
+            <FluentGridItem Xs="12" Sm="6" Md="3">
                 <FluentCard><span class="metric-label">@L["Nav.Items"]</span><strong>@Catalog.Count</strong></FluentCard>
             </FluentGridItem>
-            <FluentGridItem xs="12" sm="6" md="3">
+            <FluentGridItem Xs="12" Sm="6" Md="3">
                 <FluentCard><span class="metric-label">Active</span><strong>@Catalog.Count(item => item.Status.Equals("Y", StringComparison.OrdinalIgnoreCase))</strong></FluentCard>
             </FluentGridItem>
-            <FluentGridItem xs="12" sm="6" md="3">
+            <FluentGridItem Xs="12" Sm="6" Md="3">
                 <FluentCard><span class="metric-label">@L["Lists.LocalizedNames"]</span><strong>@Catalog.Count(item => item.NamesByLanguage.ContainsKey(selectedLanguage))</strong></FluentCard>
             </FluentGridItem>
-            <FluentGridItem xs="12" sm="6" md="3">
+            <FluentGridItem Xs="12" Sm="6" Md="3">
                 <FluentCard><span class="metric-label">Item types</span><strong>@Catalog.Select(item => item.ItemType).Where(type => !string.IsNullOrWhiteSpace(type)).Distinct(StringComparer.OrdinalIgnoreCase).Count()</strong></FluentCard>
             </FluentGridItem>
         </FluentGrid>
@@ -64,11 +64,11 @@
         <TemplateColumn TGridItem="Item" Title="Actions" Context="item">
             <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="4">
                 <FluentButton IconStart="@(new Icons.Regular.Size20.Edit())"
-                              Appearance="Appearance.Neutral"
+                              Appearance="ButtonAppearance.Default"
                               OnClick="() => EditItem(item.Id)"
                               Title='@L["Common.Edit"]' />
                 <FluentButton IconStart="@(new Icons.Regular.Size20.Delete())"
-                              Appearance="Appearance.Neutral"
+                              Appearance="ButtonAppearance.Default"
                               OnClick="() => DeleteItemAsync(item)"
                               Title='@L["Common.Delete"]' />
             </FluentStack>
@@ -143,10 +143,9 @@
 
         message = null;
         errorMessage = null;
-        var dialog = await DialogService.ShowConfirmationAsync(
+        var result = await DialogService.ShowConfirmationAsync(
             L["Lists.DeleteConfirm", L["Nav.Items"].Value.ToLowerInvariant(), ItemCatalog.GetDisplayName(item, selectedLanguage)].Value,
             L["Common.Delete"].Value, L["Common.Cancel"].Value, L["Nav.Items"].Value);
-        var result = await dialog.Result;
         if (result.Cancelled) return;
 
         try

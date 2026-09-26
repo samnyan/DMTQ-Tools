@@ -17,17 +17,17 @@
     <Toolbar>
         <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center">
             <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" VerticalAlignment="VerticalAlignment.Center">
-                <FluentTextField Value="@filter" ValueChanged="SetFilterAsync" Immediate="true" Placeholder='@L["Lists.FilterSongs"]'
+                <FluentTextInput Value="@filter" ValueChanged="SetFilterAsync" Immediate="true" Placeholder='@L["Lists.FilterSongs"]'
                                  Style="min-width: 280px;" />
                 <FluentSelect Items="Languages"
                               OptionText="@(l => l)"
                               OptionValue="@(l => l)"
-                              @bind-SelectedOption="selectedLanguage"
-                              @bind-SelectedOption:after="UpdateLanguageQueryAsync"
+                              @bind-Value="selectedLanguage"
+                              @bind-Value:after="UpdateLanguageQueryAsync"
                               Label='@L["Lists.PreviewLanguage"]'
                               Style="min-width: 100px;" />
             </FluentStack>
-            <FluentButton Appearance="Appearance.Accent"
+            <FluentButton Appearance="ButtonAppearance.Primary"
                           IconStart="@(new Icons.Regular.Size20.Add())"
                           OnClick="CreateNewSong">@L["Lists.AddSong"]</FluentButton>
         </FluentStack>
@@ -35,22 +35,22 @@
 
     <Metrics>
         <FluentGrid Spacing="3" AdaptiveRendering="true">
-            <FluentGridItem xs="12" sm="6" md="3">
+            <FluentGridItem Xs="12" Sm="6" Md="3">
                 <FluentCard>
                     <span class="metric-label">@L["Nav.Songs"]</span><strong>@Catalog.Count</strong>
                 </FluentCard>
             </FluentGridItem>
-            <FluentGridItem xs="12" sm="6" md="3">
+            <FluentGridItem Xs="12" Sm="6" Md="3">
                 <FluentCard>
                     <span class="metric-label">@L["Lists.Patterns"]</span><strong>@Catalog.Sum(s => s.Patterns.Count)</strong>
                 </FluentCard>
             </FluentGridItem>
-            <FluentGridItem xs="12" sm="6" md="3">
+            <FluentGridItem Xs="12" Sm="6" Md="3">
                 <FluentCard>
                     <span class="metric-label">@L["Lists.WithPreview"]</span><strong>@Catalog.Count(s => s.HasPreview)</strong>
                 </FluentCard>
             </FluentGridItem>
-            <FluentGridItem xs="12" sm="6" md="3">
+            <FluentGridItem Xs="12" Sm="6" Md="3">
                 <FluentCard>
                     <span class="metric-label">@L["Common.Languages"]</span><strong>@Languages.Count</strong>
                 </FluentCard>
@@ -74,11 +74,11 @@
         <TemplateColumn TGridItem="Song" Title="Actions" Context="song">
             <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="4">
                 <FluentButton IconStart="@(new Icons.Regular.Size20.Edit())"
-                              Appearance="Appearance.Neutral"
+                              Appearance="ButtonAppearance.Default"
                               OnClick="() => EditSong(song.Id.ToString())"
                               Title='@L["Common.Edit"]' />
                 <FluentButton IconStart="@(new Icons.Regular.Size20.Delete())"
-                              Appearance="Appearance.Neutral"
+                              Appearance="ButtonAppearance.Default"
                               OnClick="() => DeleteSongAsync(song)"
                               Title='@L["Common.Delete"]' />
             </FluentStack>
@@ -163,11 +163,9 @@
         message = null;
         errorMessage = null;
 
-        var dialog = await DialogService.ShowConfirmationAsync(
+        var result = await DialogService.ShowConfirmationAsync(
             L["Lists.DeleteConfirm", "song", DisplayTitle(song)].Value,
             L["Common.Delete"].Value, L["Common.Cancel"].Value, L["Nav.Songs"].Value);
-
-        var result = await dialog.Result;
         if (result.Cancelled) return;
 
         try
