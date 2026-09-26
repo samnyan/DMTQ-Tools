@@ -67,13 +67,18 @@
             }
 
             <FluentMenu>
-                <FluentMenuButton class="header-language" Label="@CurrentLanguageLabel" Appearance="ButtonAppearance.Subtle"
+                <FluentMenuButton Id="header-language"
+                                  class="header-language"
+                                  Label="@CurrentLanguageLabel"
+                                  Appearance="ButtonAppearance.Subtle"
                                   IconStart="@(new Icons.Regular.Size20.Globe())"
                                   Title='@L["Language.Title"]' />
-                <FluentMenuItem Label='@L["Language.English"]' Checked='@(Language.CurrentCulture.Name == "en-US")'
-                                OnClick="UseEnglish" />
-                <FluentMenuItem Label='@L["Language.Chinese"]' Checked='@(Language.CurrentCulture.Name == "zh-CN")'
-                                OnClick="UseChinese" />
+                <FluentMenuList>
+                    <FluentMenuItem Label='@L["Language.English"]' Checked='@(Language.CurrentCulture.Name == "en-US")'
+                                    OnClick="UseEnglish" />
+                    <FluentMenuItem Label='@L["Language.Chinese"]' Checked='@(Language.CurrentCulture.Name == "zh-CN")'
+                                    OnClick="UseChinese" />
+                </FluentMenuList>
             </FluentMenu>
         </div>
     </header>
@@ -83,7 +88,7 @@
         <aside class="app-sidebar @(_isNavigationExpanded ? "is-expanded" : "is-collapsed")"
                aria-hidden="@(!_isNavigationExpanded)">
             <FluentNav class="app-navigation" Width="100%">
-                <FluentNavItem Href="" IconRest="@(new Icons.Regular.Size20.Home())" Match="NavLinkMatch.All">@L["Nav.Project"]</FluentNavItem>
+                <FluentNavItem Href="/" IconRest="@(new Icons.Regular.Size20.Home())" Match="NavLinkMatch.All">@L["Nav.Project"]</FluentNavItem>
                 <FluentNavItem Href="import" IconRest="@(new Icons.Regular.Size20.ArrowDownload())">@L["Nav.Import"]</FluentNavItem>
                 <FluentNavItem Href="songs" IconRest="@(new Icons.Regular.Size20.MusicNote1())">@L["Nav.Songs"]</FluentNavItem>
                 <FluentNavItem Href="patterns" IconRest="@(new Icons.Regular.Size20.MusicNote1())">@L["Nav.PatternTool"]</FluentNavItem>
