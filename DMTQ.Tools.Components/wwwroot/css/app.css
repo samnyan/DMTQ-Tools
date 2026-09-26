@@ -252,6 +252,74 @@ fluent-data-grid {
     gap: 0.75rem;
 }
 
+.recent-projects {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin: 0 0 1.25rem;
+}
+
+.recent-projects h2 {
+    margin: 0;
+    font-size: 1rem;
+}
+
+.recent-project-list {
+    overflow: hidden;
+    border: 1px solid var(--neutral-stroke-rest, #d8dee6);
+    border-radius: 6px;
+    background: var(--neutral-layer-1, #fff);
+}
+
+.recent-project-row {
+    display: grid;
+    min-width: 0;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.55rem 0.75rem;
+}
+
+.recent-project-row + .recent-project-row {
+    border-top: 1px solid var(--neutral-stroke-divider-rest, #e5e7eb);
+}
+
+.recent-project-details {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.recent-project-details strong,
+.recent-project-details span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.recent-project-details strong {
+    font-weight: 600;
+}
+
+.recent-project-details span {
+    color: var(--neutral-foreground-hint, #5f6b7a);
+    font-size: 0.8rem;
+}
+
+.recent-project-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.recent-project-missing {
+    color: var(--error, #b42318);
+    font-size: 0.8rem;
+    white-space: nowrap;
+}
+
 .list-page {
     display: flex;
     flex-direction: column;

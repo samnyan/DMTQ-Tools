@@ -5,6 +5,7 @@
 @inject IFolderPicker FolderPicker
 @inject NavigationManager Navigation
 @inject IDialogService DialogService
+@inject ILanguagePreferenceStore PreferenceStore
 
 <h1>@L["Nav.Project"]</h1>
 
@@ -33,6 +34,40 @@
         <FluentMessageBar Title="@message" Intent="@messageIntent" />
     }
 </FluentStack>
+
+@if (recentProjects.Count > 0)
+{
+    <section class="recent-projects" aria-labelledby="recent-projects-heading">
+        <h2 id="recent-projects-heading">@L["Home.RecentProjects"]</h2>
+        <div class="recent-project-list">
+            @foreach (var recentProject in recentProjects)
+            {
+                <div class="recent-project-row" @key="recentProject">
+                    <div class="recent-project-details" title="@recentProject">
+                        <strong>@ProjectDisplayName(recentProject)</strong>
+                        <span>@recentProject</span>
+                        @if (!Directory.Exists(recentProject))
+                        {
+                            <span class="recent-project-missing">@L["Home.RecentProjectMissing"]</span>
+                        }
+                    </div>
+                    <div class="recent-project-actions">
+                        <FluentButton Appearance="Appearance.Neutral"
+                                      OnClick="() => OpenRecentProjectAsync(recentProject)"
+                                      Disabled="@isBusy">
+                            @L["Home.OpenRecent"]
+                        </FluentButton>
+                        <FluentButton Appearance="Appearance.Neutral"
+                                      IconStart="@(new Icons.Regular.Size20.Delete())"
+                                      Title='@L["Home.RemoveRecent"]'
+                                      OnClick="() => RemoveRecentProject(recentProject)"
+                                      Disabled="@isBusy" />
+                    </div>
+                </div>
+            }
+        </div>
+    </section>
+}
 
 <FluentGrid Spacing="3" Justify="JustifyContent.Center" AdaptiveRendering="true">
     <FluentGridItem xs="12" sm="6" md="4" lg="3">
@@ -92,10 +127,23 @@
 </FluentGrid>
 
 @code {
+    private const string RecentProjectsPreferenceKey = "project.recentFolders";
+    private const int MaximumRecentProjects = 8;
+    private static StringComparer ProjectPathComparer => OperatingSystem.IsWindows()
+        ? StringComparer.OrdinalIgnoreCase
+        : StringComparer.Ordinal;
+
     private string projectRoot = string.Empty;
+    private List<string> recentProjects = [];
     private string? message;
     private MessageIntent messageIntent = MessageIntent.Info;
     private bool isBusy;
+
+    protected override void OnInitialized()
+    {
+        recentProjects = LoadRecentProjects();
+        projectRoot = State.ProjectRoot ?? recentProjects.FirstOrDefault() ?? string.Empty;
+    }
 
     private string PlatformSummary => State.CurrentPackage is null
         ? "-"
@@ -143,6 +191,7 @@
             {
                 // Existing project — load it
                 await Workflow.OpenProjectAsync(root);
+                RememberRecentProject(root);
                 ShowMessage(L["Home.ProjectLoaded"].Value, MessageIntent.Info);
             }
             else if (isEmpty)
@@ -156,6 +205,7 @@
                 if (!result.Cancelled)
                 {
                     await Workflow.CreateProjectAsync(root);
+                    RememberRecentProject(root);
                     ShowMessage(L["Home.ProjectCreated"].Value, MessageIntent.Info);
                 }
             }
@@ -176,6 +226,85 @@
         {
             isBusy = false;
         }
+    }
+
+    private Task OpenRecentProjectAsync(string path)
+    {
+        projectRoot = path;
+        return ConfirmProject();
+    }
+
+    private void RemoveRecentProject(string path)
+    {
+        recentProjects.RemoveAll(project => ProjectPathComparer.Equals(project, path));
+        PersistRecentProjects();
+    }
+
+    private List<string> LoadRecentProjects()
+    {
+        try
+        {
+            var storedProjects = System.Text.Json.JsonSerializer.Deserialize<List<string>>(
+                PreferenceStore.Get(RecentProjectsPreferenceKey) ?? "[]") ?? [];
+            return storedProjects
+                .Where(path => !string.IsNullOrWhiteSpace(path))
+                .Select(NormalizeProjectPath)
+                .Where(path => path is not null)
+                .Select(path => path!)
+                .Distinct(ProjectPathComparer)
+                .Take(MaximumRecentProjects)
+                .ToList();
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            return [];
+        }
+    }
+
+    private void RememberRecentProject(string path)
+    {
+        var normalizedPath = NormalizeProjectPath(path);
+        if (normalizedPath is null) return;
+
+        recentProjects.RemoveAll(recent => ProjectPathComparer.Equals(recent, normalizedPath));
+        recentProjects.Insert(0, normalizedPath);
+        if (recentProjects.Count > MaximumRecentProjects)
+            recentProjects.RemoveRange(MaximumRecentProjects, recentProjects.Count - MaximumRecentProjects);
+
+        projectRoot = normalizedPath;
+        PersistRecentProjects();
+    }
+
+    private void PersistRecentProjects()
+    {
+        var json = System.Text.Json.JsonSerializer.Serialize(recentProjects);
+        PreferenceStore.Set(RecentProjectsPreferenceKey, json);
+    }
+
+    private static string? NormalizeProjectPath(string path)
+    {
+        try
+        {
+            return Path.GetFullPath(path.Trim());
+        }
+        catch (ArgumentException)
+        {
+            return null;
+        }
+        catch (NotSupportedException)
+        {
+            return null;
+        }
+        catch (PathTooLongException)
+        {
+            return null;
+        }
+    }
+
+    private static string ProjectDisplayName(string path)
+    {
+        var name = Path.GetFileName(path.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+        return string.IsNullOrWhiteSpace(name) ? path : name;
     }
 
     private async Task SaveProject()

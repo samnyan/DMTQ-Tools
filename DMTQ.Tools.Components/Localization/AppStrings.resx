@@ -361,4 +361,8 @@
   <data name="Lists.PreviousPage" xml:space="preserve"><value>Previous page</value></data>
   <data name="Lists.NextPage" xml:space="preserve"><value>Next page</value></data>
   <data name="Lists.LastPage" xml:space="preserve"><value>Last page</value></data>
+  <data name="Home.RecentProjects" xml:space="preserve"><value>Recent Projects</value></data>
+  <data name="Home.OpenRecent" xml:space="preserve"><value>Open</value></data>
+  <data name="Home.RemoveRecent" xml:space="preserve"><value>Remove from recent projects</value></data>
+  <data name="Home.RecentProjectMissing" xml:space="preserve"><value>Folder not found</value></data>
 </root>

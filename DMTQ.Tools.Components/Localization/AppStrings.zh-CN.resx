@@ -185,4 +185,8 @@
   <data name="Lists.PreviousPage" xml:space="preserve"><value>上一页</value></data>
   <data name="Lists.NextPage" xml:space="preserve"><value>下一页</value></data>
   <data name="Lists.LastPage" xml:space="preserve"><value>最后一页</value></data>
+  <data name="Home.RecentProjects" xml:space="preserve"><value>最近使用的项目</value></data>
+  <data name="Home.OpenRecent" xml:space="preserve"><value>打开</value></data>
+  <data name="Home.RemoveRecent" xml:space="preserve"><value>从最近项目中移除</value></data>
+  <data name="Home.RecentProjectMissing" xml:space="preserve"><value>文件夹不存在</value></data>
 </root>
