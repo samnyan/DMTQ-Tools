@@ -168,6 +168,48 @@
   <data name="Editor.NewSong" xml:space="preserve"><value>New Song</value></data><data name="Editor.NewProduct" xml:space="preserve"><value>New Product</value></data><data name="Editor.NewItem" xml:space="preserve"><value>New Item</value></data><data name="Editor.Edit" xml:space="preserve"><value>Edit: {0}</value></data><data name="Editor.ProductInformation" xml:space="preserve"><value>Product Information</value></data><data name="Editor.ItemInformation" xml:space="preserve"><value>Item Information</value></data><data name="Editor.PriceSaleWindow" xml:space="preserve"><value>Price and Sale Window</value></data><data name="Editor.ItemDescriptionsHint" xml:space="preserve"><value>These values are exported to item_desc_&lt;lang&gt;.csv during package export.</value></data>
   <data name="Editor.OpenSongsProject" xml:space="preserve"><value>Open or import a project before editing songs.</value></data>
   <data name="Nav.PatternTool" xml:space="preserve"><value>Pattern Tool</value></data>
+  <data name="Nav.AtlasEditor" xml:space="preserve"><value>Song Jackets</value></data>
+  <data name="AtlasEditor.Title" xml:space="preserve"><value>Song Jacket Atlas</value></data>
+  <data name="AtlasEditor.New" xml:space="preserve"><value>New atlas</value></data>
+  <data name="AtlasEditor.Subtitle" xml:space="preserve"><value>Arrange song covers into an NGUI atlas and export replacement assets or a platform bundle.</value></data>
+  <data name="AtlasEditor.AtlasName" xml:space="preserve"><value>Bundle / prefab name</value></data>
+  <data name="AtlasEditor.Kind" xml:space="preserve"><value>Atlas type</value></data>
+  <data name="AtlasEditor.NGUI2" xml:space="preserve"><value>NGUI2 (d_)</value></data>
+  <data name="AtlasEditor.NGUI3" xml:space="preserve"><value>NGUI3 (d3_)</value></data>
+  <data name="AtlasEditor.Width" xml:space="preserve"><value>Width</value></data>
+  <data name="AtlasEditor.Height" xml:space="preserve"><value>Height</value></data>
+  <data name="AtlasEditor.AddImages" xml:space="preserve"><value>Add images</value></data>
+  <data name="AtlasEditor.DragHint" xml:space="preserve"><value>Drop multiple PNG or JPEG files here, or browse.</value></data>
+  <data name="AtlasEditor.OpenBundle" xml:space="preserve"><value>Open existing bundle</value></data>
+  <data name="AtlasEditor.Repack" xml:space="preserve"><value>Repack atlas</value></data>
+  <data name="AtlasEditor.Preview" xml:space="preserve"><value>Atlas preview</value></data>
+  <data name="AtlasEditor.Sprites" xml:space="preserve"><value>Sprites</value></data>
+  <data name="AtlasEditor.SpriteCount" xml:space="preserve"><value>{0} sprites</value></data>
+  <data name="AtlasEditor.Name" xml:space="preserve"><value>Sprite name</value></data>
+  <data name="AtlasEditor.Region" xml:space="preserve"><value>Region (x, y, width, height)</value></data>
+  <data name="AtlasEditor.X" xml:space="preserve"><value>X</value></data>
+  <data name="AtlasEditor.Y" xml:space="preserve"><value>Y</value></data>
+  <data name="AtlasEditor.Remove" xml:space="preserve"><value>Remove</value></data>
+  <data name="AtlasEditor.ExportAssets" xml:space="preserve"><value>Export PNG + prefab ZIP</value></data>
+  <data name="AtlasEditor.ExportBundle" xml:space="preserve"><value>Export complete bundle</value></data>
+  <data name="AtlasEditor.Platform" xml:space="preserve"><value>Target platform</value></data>
+  <data name="AtlasEditor.SelectTemplate" xml:space="preserve"><value>Select dummy bundle</value></data>
+  <data name="AtlasEditor.Template" xml:space="preserve"><value>Template</value></data>
+  <data name="AtlasEditor.TextureFormat" xml:space="preserve"><value>Output texture format</value></data>
+  <data name="AtlasEditor.KeepOriginal" xml:space="preserve"><value>Keep template format</value></data>
+  <data name="AtlasEditor.RGBA32" xml:space="preserve"><value>RGBA32</value></data>
+  <data name="AtlasEditor.ETC2" xml:space="preserve"><value>ETC2 RGBA8</value></data>
+  <data name="AtlasEditor.ASTC" xml:space="preserve"><value>ASTC RGBA 6x6</value></data>
+  <data name="AtlasEditor.ScriptGuid" xml:space="preserve"><value>Atlas script GUID</value></data>
+  <data name="AtlasEditor.MaterialGuid" xml:space="preserve"><value>Material GUID</value></data>
+  <data name="AtlasEditor.GuidHint" xml:space="preserve"><value>Required for standalone prefab import. Use the matching atlas script and material GUIDs from Unity .meta files.</value></data>
+  <data name="AtlasEditor.Empty" xml:space="preserve"><value>Add images or open a Unity bundle to start.</value></data>
+  <data name="AtlasEditor.Loaded" xml:space="preserve"><value>Loaded {0} ({1}, {2} sprites).</value></data>
+  <data name="AtlasEditor.Exported" xml:space="preserve"><value>Exported {0}.</value></data>
+  <data name="AtlasEditor.Error" xml:space="preserve"><value>Atlas operation failed: {0}</value></data>
+  <data name="AtlasEditor.NoTemplate" xml:space="preserve"><value>Select a platform dummy bundle before exporting a complete bundle.</value></data>
+  <data name="AtlasEditor.TemplatePlatformMismatch" xml:space="preserve"><value>Template path looks like {0}, but the selected target is {1}.</value></data>
+  <data name="AtlasEditor.NoSprites" xml:space="preserve"><value>Add at least one sprite before exporting.</value></data>
   <data name="Pattern.Title" xml:space="preserve"><value>Pattern Tool</value></data>
   <data name="Pattern.Open" xml:space="preserve"><value>Open Pattern</value></data>
   <data name="Pattern.SaveAs" xml:space="preserve"><value>Save As</value></data>

@@ -16,6 +16,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\DMTQ.Tools.Core\DMTQ.Tools.Core.csproj" />
+    <ProjectReference Include="..\Assets.Lib\Assets.Lib.csproj" />
   </ItemGroup>
 
 </Project>

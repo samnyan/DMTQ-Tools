@@ -1,4 +1,5 @@
-﻿using CommunityToolkit.Maui;
+using CommunityToolkit.Maui;
+using Assets.Lib.Services;
 using DMTQ.Tools.Core.Services;
 using DMTQ.Tools.Core.Services.Pattern;
 using DMTQ_Tools.Components.Localization;
@@ -59,6 +60,7 @@ namespace DMTQ_Tools
             builder.Services.AddSingleton<IProjectFileSaver, MauiFileSaver>();
             builder.Services.AddSingleton<PatternBinarySerializer>();
             builder.Services.AddSingleton<PatternTextSerializer>();
+            builder.Services.AddSingleton<SpriteAtlasBundleService>();
 
             var state = new GameTableManagerState();
             builder.Services.AddSingleton<IProjectState>(state);

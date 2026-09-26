@@ -1,0 +1,648 @@
+@page "/atlas-editor"
+@using System.Globalization
+@using System.IO.Compression
+@using Assets.Lib.Models
+@using Assets.Lib.Services
+@using AssetsTools.NET.Texture
+@using Microsoft.JSInterop
+@using StbImageSharp
+@inject SpriteAtlasBundleService BundleService
+@inject IProjectFilePicker FilePicker
+@inject IProjectFileSaver FileSaver
+@inject IJSRuntime JS
+@implements IAsyncDisposable
+
+<div class="atlas-editor-page">
+    <header class="atlas-editor-heading">
+        <div><h1>@L["AtlasEditor.Title"]</h1><p>@L["AtlasEditor.Subtitle"]</p></div>
+        <FluentButton Appearance="ButtonAppearance.Default" OnClick="ResetWorkspace">@L["AtlasEditor.New"]</FluentButton>
+    </header>
+    <section class="atlas-settings panel-surface">
+        <FluentTextInput Label='@L["AtlasEditor.AtlasName"]' @bind-Value="_atlasName" @bind-Value:after="UpdateAtlasName" />
+        <FluentSelect TOption="string" TValue="string" Items="@AtlasKinds" OptionText="AtlasKindLabel" OptionValue="@(kind => kind)"
+                      @bind-Value="_kindValue" @bind-Value:after="UpdateAtlasKind" Label='@L["AtlasEditor.Kind"]' Disabled="@(_templatePath is not null)" />
+        <FluentTextInput Label='@L["AtlasEditor.Width"]' TextInputType="TextInputType.Number" ControlStyle="width:100%" @bind-Value="_atlasWidthText" @bind-Value:after="UpdateAtlasWidth" />
+        <FluentTextInput Label='@L["AtlasEditor.Height"]' TextInputType="TextInputType.Number" ControlStyle="width:100%" @bind-Value="_atlasHeightText" @bind-Value:after="UpdateAtlasHeight" />
+        <FluentButton Appearance="ButtonAppearance.Default" OnClick="OpenBundleAsync" Disabled="@_isBusy">@L["AtlasEditor.OpenBundle"]</FluentButton>
+    </section>
+    <FluentInputFile Id="atlas-image-upload" Class="atlas-dropzone" Mode="InputFileMode.Stream" Multiple="true"
+                     MaximumFileCount="100" MaximumFileSize="@MaxImageBytes" Accept="image/png,image/jpeg"
+                     Disabled="@_isBusy" OnInputFileChange="AddImagesAsync">
+        <ChildContent>
+            <div class="atlas-dropzone-content">
+                <span class="dropzone-title">@L["AtlasEditor.AddImages"]</span>
+                <label class="dropzone-hint" for="atlas-image-upload">@L["AtlasEditor.DragHint"]</label>
+            </div>
+        </ChildContent>
+    </FluentInputFile>
+    @if (!string.IsNullOrWhiteSpace(_status))
+    {
+        <FluentMessageBar Intent="@_statusIntent">@_status</FluentMessageBar>
+    }
+    @if (_document is not null && _sprites.Count > 0 && _previewPng.Length > 0)
+    {
+        <div class="atlas-workspace">
+            <section class="atlas-preview-column panel-surface">
+                <div class="atlas-section-heading">
+                    <div><h2>@L["AtlasEditor.Preview"]</h2><span>@_document.TextureWidth × @_document.TextureHeight · @L["AtlasEditor.SpriteCount", _sprites.Count]</span></div>
+                    <FluentButton Appearance="ButtonAppearance.Default" OnClick="RepackAtlas" Disabled="@_isBusy">@L["AtlasEditor.Repack"]</FluentButton>
+                </div>
+                <div class="atlas-canvas-scroll">
+                    <canvas class="atlas-canvas" aria-label='@L["AtlasEditor.Preview"]' role="img" @ref="_previewCanvas"></canvas>
+                </div>
+            </section>
+            <section class="atlas-sprite-column">
+                <div class="atlas-section-heading sprite-list-heading">
+                    <div><h2>@L["AtlasEditor.Sprites"]</h2><span>@L["AtlasEditor.SpriteCount", _sprites.Count]</span></div>
+                </div>
+                @for (var index = 0; index < _sprites.Count; index++)
+                {
+                    var spriteIndex = index;
+                    var image = _sprites[spriteIndex];
+                    var region = _document.Sprites[spriteIndex];
+                    <article class="atlas-sprite-row @(spriteIndex == _selectedSpriteIndex ? "is-selected" : null)"
+                             @onclick="() => SelectSprite(spriteIndex)">
+                        <img class="sprite-thumb" src="@image.PreviewDataUrl" alt="" />
+                        <div class="sprite-row-content">
+                            <FluentTextInput Class="sprite-name" AriaLabel='@L["AtlasEditor.Name"]' @bind-Value="image.Name"
+                                             @bind-Value:after="() => RenameSprite(spriteIndex)" />
+                            <div class="sprite-region-fields" aria-label='@L["AtlasEditor.Region"]'>
+                                <label>X<FluentTextInput TextInputType="TextInputType.Number" AriaLabel="X" ControlStyle="width:100%" @bind-Value="_regionValues[spriteIndex].X" @bind-Value:after="() => UpdateRegion(spriteIndex, nameof(region.X))" /></label>
+                                <label>Y<FluentTextInput TextInputType="TextInputType.Number" AriaLabel="Y" ControlStyle="width:100%" @bind-Value="_regionValues[spriteIndex].Y" @bind-Value:after="() => UpdateRegion(spriteIndex, nameof(region.Y))" /></label>
+                                <label>W<FluentTextInput TextInputType="TextInputType.Number" AriaLabel="W" ControlStyle="width:100%" @bind-Value="_regionValues[spriteIndex].Width" @bind-Value:after="() => UpdateRegion(spriteIndex, nameof(region.Width))" /></label>
+                                <label>H<FluentTextInput TextInputType="TextInputType.Number" AriaLabel="H" ControlStyle="width:100%" @bind-Value="_regionValues[spriteIndex].Height" @bind-Value:after="() => UpdateRegion(spriteIndex, nameof(region.Height))" /></label>
+                            </div>
+                        </div>
+                        <FluentButton Appearance="ButtonAppearance.Subtle" OnClick="@(() => RemoveSprite(spriteIndex))"
+                                      Title='@L["AtlasEditor.Remove"]' aria-label='@L["AtlasEditor.Remove"]'>×</FluentButton>
+                    </article>
+                }
+            </section>
+        </div>
+        <section class="atlas-export panel-surface">
+            <div class="atlas-section-heading">
+                <div><h2>@L["AtlasEditor.ExportAssets"]</h2><span>@L["AtlasEditor.GuidHint"]</span></div>
+            </div>
+            <div class="atlas-export-grid">
+                <FluentTextInput Label='@L["AtlasEditor.ScriptGuid"]' @bind-Value="_scriptGuid" />
+                <FluentTextInput Label='@L["AtlasEditor.MaterialGuid"]' @bind-Value="_materialGuid" />
+                <FluentButton Appearance="ButtonAppearance.Default" OnClick="ExportAssetsZipAsync" Disabled="@_isBusy">@L["AtlasEditor.ExportAssets"]</FluentButton>
+            </div>
+            <hr />
+            <div class="atlas-export-grid bundle-export-grid">
+                <FluentSelect TOption="UnityTargetPlatform" TValue="UnityTargetPlatform" Items="@Platforms"
+                              OptionText="PlatformLabel" OptionValue="@(platform => platform)" @bind-Value="_platform" Label='@L["AtlasEditor.Platform"]' />
+                <FluentSelect TOption="string" TValue="string" Items="@TextureFormatChoices"
+                              OptionText="FormatLabel" OptionValue="@(choice => choice)" @bind-Value="_formatChoice" Label='@L["AtlasEditor.TextureFormat"]' />
+                <FluentButton Appearance="ButtonAppearance.Default" OnClick="SelectTemplateAsync" Disabled="@_isBusy">@L["AtlasEditor.SelectTemplate"]</FluentButton>
+                <span class="template-name">@(_templatePath is null ? "" : $"{L["AtlasEditor.Template"]}: {Path.GetFileName(_templatePath)}")</span>
+                <FluentButton Appearance="ButtonAppearance.Primary" OnClick="ExportBundleAsync" Disabled="@(_isBusy || _templatePath is null)">@L["AtlasEditor.ExportBundle"]</FluentButton>
+            </div>
+        </section>
+    }
+    else
+    {
+        <section class="atlas-empty panel-surface">@L["AtlasEditor.Empty"]</section>
+    }
+    @if (_isBusy)
+    {
+        <div class="atlas-busy"><FluentSpinner /> <span>@_busyMessage</span></div>
+    }
+</div>
+
+@code {
+    private const long MaxImageBytes = 32 * 1024 * 1024;
+    private static readonly string[] AtlasKinds = ["NGUI2", "NGUI3"];
+    private static readonly UnityTargetPlatform[] Platforms = [UnityTargetPlatform.Android, UnityTargetPlatform.IOS, UnityTargetPlatform.Windows];
+    private static readonly string[] TextureFormatChoices = ["Original", "RGBA32", "ETC2_RGBA8", "ASTC_RGBA_6x6"];
+
+    private readonly List<AtlasEditorImage> _sprites = [];
+    private readonly List<AtlasRegionValues> _regionValues = [];
+    private ElementReference _previewCanvas;
+    private IJSObjectReference? _previewModule;
+    private SpriteAtlasDocument? _document;
+    private byte[] _previewPng = [];
+    private string _atlasName = "d_e10";
+    private string _kindValue = "NGUI2";
+    private int _atlasWidth = 512;
+    private int _atlasHeight = 512;
+    private int _selectedSpriteIndex;
+    private string _scriptGuid = string.Empty;
+    private string _materialGuid = string.Empty;
+    private string _formatChoice = "Original";
+    private UnityTargetPlatform _platform = UnityTargetPlatform.Android;
+    private string? _templatePath;
+    private string? _status;
+    private string _busyMessage = string.Empty;
+    private MessageBarIntent _statusIntent = MessageBarIntent.Info;
+    private bool _isBusy;
+
+    private bool _canvasNeedsRender;
+    private string _atlasWidthText { get => _atlasWidth.ToString(CultureInfo.InvariantCulture); set { if (int.TryParse(value, out var parsed)) _atlasWidth = parsed; } }
+    private string _atlasHeightText { get => _atlasHeight.ToString(CultureInfo.InvariantCulture); set { if (int.TryParse(value, out var parsed)) _atlasHeight = parsed; } }
+
+    protected override void OnInitialized()
+    {
+        _document ??= CreateEmptyDocument();
+        _scriptGuid = AtlasScriptGuid(SelectedKind);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+            _previewModule = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/DMTQ.Tools.Components/atlasPreview.js?v=3");
+
+        if (!_canvasNeedsRender || _previewModule is null || _document is null || _previewPng.Length == 0)
+            return;
+
+        _canvasNeedsRender = false;
+        var entries = _document.Sprites.Select(sprite => new
+        {
+            sprite.Name,
+            sprite.X,
+            sprite.Y,
+            sprite.Width,
+            sprite.Height
+        });
+        await _previewModule.InvokeVoidAsync("drawAtlas", _previewCanvas, Convert.ToBase64String(_previewPng),
+            _document.TextureWidth, _document.TextureHeight, entries, _selectedSpriteIndex);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_previewModule is not null)
+        {
+            try { await _previewModule.DisposeAsync(); }
+            catch (JSDisconnectedException) { }
+        }
+    }
+
+    private string AtlasKindLabel(string value) => value == "NGUI3" ? L["AtlasEditor.NGUI3"].Value : L["AtlasEditor.NGUI2"].Value;
+
+    private string PlatformLabel(UnityTargetPlatform value) => value switch
+    {
+        UnityTargetPlatform.Android => "Android",
+        UnityTargetPlatform.IOS => "iOS",
+        UnityTargetPlatform.Windows => "Windows",
+        _ => value.ToString()
+    };
+
+    private string FormatLabel(string value) => value switch
+    {
+        "Original" => L["AtlasEditor.KeepOriginal"].Value,
+        "RGBA32" => L["AtlasEditor.RGBA32"].Value,
+        "ETC2_RGBA8" => L["AtlasEditor.ETC2"].Value,
+        "ASTC_RGBA_6x6" => L["AtlasEditor.ASTC"].Value,
+        _ => value
+    };
+
+    private async Task AddImagesAsync(InputFileChangeEventArgs args)
+    {
+        _status = null;
+        try
+        {
+            foreach (var file in args.GetMultipleFiles(100))
+            {
+                if (!file.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase)) continue;
+                await using var stream = file.OpenReadStream(MaxImageBytes);
+                using var buffer = new MemoryStream();
+                await stream.CopyToAsync(buffer);
+                var bytes = buffer.ToArray();
+                var dimensions = ImageResult.FromMemory(bytes, ColorComponents.RedGreenBlueAlpha);
+                var name = MakeUniqueName(Path.GetFileNameWithoutExtension(file.Name));
+                _sprites.Add(new AtlasEditorImage(name, bytes, file.ContentType, dimensions.Width, dimensions.Height));
+            }
+            RepackAtlas();
+        }
+        catch (Exception exception)
+        {
+            ShowError(exception);
+        }
+    }
+
+    private string MakeUniqueName(string baseName)
+    {
+        var name = string.IsNullOrWhiteSpace(baseName) ? "sprite" : baseName.Trim();
+        var existing = _sprites.Select(sprite => sprite.Name).ToHashSet(StringComparer.Ordinal);
+        var candidate = name;
+        var suffix = 2;
+        while (existing.Contains(candidate)) candidate = $"{name}_{suffix++}";
+        return candidate;
+    }
+
+    private void RepackAtlas()
+    {
+        if (_sprites.Count == 0)
+        {
+            _document = CreateEmptyDocument();
+            _previewPng = [];
+            _regionValues.Clear();
+            return;
+        }
+
+        try
+        {
+            var oldRegions = _document?.Sprites.ToDictionary(sprite => sprite.Name, StringComparer.Ordinal)
+                ?? new Dictionary<string, SpriteAtlasEntry>(StringComparer.Ordinal);
+            var packed = SpriteAtlasPacker.Pack(_atlasName, SelectedKind, _atlasWidth, _atlasHeight,
+                _sprites.Select(sprite => new SpriteImageSize { Name = sprite.Name, Width = sprite.Width, Height = sprite.Height }));
+            foreach (var region in packed.Sprites)
+            {
+                if (!oldRegions.TryGetValue(region.Name, out var old)) continue;
+                region.InnerX = region.X + old.InnerX - old.X;
+                region.InnerY = region.Y + old.InnerY - old.Y;
+                region.InnerWidth = old.InnerWidth;
+                region.InnerHeight = old.InnerHeight;
+                region.BorderLeft = old.BorderLeft;
+                region.BorderRight = old.BorderRight;
+                region.BorderTop = old.BorderTop;
+                region.BorderBottom = old.BorderBottom;
+                region.PaddingLeft = old.PaddingLeft;
+                region.PaddingRight = old.PaddingRight;
+                region.PaddingTop = old.PaddingTop;
+                region.PaddingBottom = old.PaddingBottom;
+            }
+            _document = packed;
+            _atlasName = packed.AtlasName;
+            _selectedSpriteIndex = Math.Clamp(_selectedSpriteIndex, 0, packed.Sprites.Count - 1);
+            ComposePreview();
+        }
+        catch (Exception exception)
+        {
+            ShowError(exception);
+        }
+    }
+
+    private async Task OpenBundleAsync()
+    {
+        var path = await FilePicker.PickFileAsync();
+        if (string.IsNullOrWhiteSpace(path)) return;
+        _isBusy = true;
+        _busyMessage = L["AtlasEditor.OpenBundle"].Value;
+        try
+        {
+            SetFromBundle(path, BundleService.Read(path, SelectedKind));
+        }
+        catch (Exception exception)
+        {
+            ShowError(exception);
+        }
+        finally
+        {
+            _isBusy = false;
+        }
+    }
+
+    private void SetFromBundle(string path, SpriteAtlasBundleContent content)
+    {
+        _document = content.Document;
+        _atlasName = content.Document.AtlasName;
+        _kindValue = content.Document.Kind.ToString();
+        _scriptGuid = AtlasScriptGuid(content.Document.Kind);
+        _atlasWidth = content.Document.TextureWidth;
+        _atlasHeight = content.Document.TextureHeight;
+        _previewPng = content.AtlasPng;
+        _platform = GuessPlatform(path) ?? _platform;
+        _sprites.Clear();
+        foreach (var sprite in content.Document.Sprites)
+        {
+            var cropped = SpriteAtlasImage.Crop(content.AtlasPng, content.Document.TextureWidth, content.Document.TextureHeight, sprite);
+            var dimensions = ImageResult.FromMemory(cropped, ColorComponents.RedGreenBlueAlpha);
+            _sprites.Add(new AtlasEditorImage(sprite.Name, cropped, "image/png", dimensions.Width, dimensions.Height));
+        }
+        SyncRegionValues();
+        _canvasNeedsRender = true;
+        _templatePath = path;
+        _formatChoice = "Original";
+        _selectedSpriteIndex = 0;
+        _status = L["AtlasEditor.Loaded", Path.GetFileName(path), content.OriginalTextureFormat, _sprites.Count].Value;
+        _statusIntent = MessageBarIntent.Success;
+    }
+
+    private async Task SelectTemplateAsync()
+    {
+        var path = await FilePicker.PickFileAsync();
+        if (string.IsNullOrWhiteSpace(path)) return;
+        _isBusy = true;
+        _busyMessage = L["AtlasEditor.OpenBundle"].Value;
+        try
+        {
+            var content = BundleService.Read(path, SelectedKind);
+            if (GuessPlatform(path) is { } detectedPlatform)
+                _platform = detectedPlatform;
+            _templatePath = path;
+            _formatChoice = "Original";
+            _status = L["AtlasEditor.Loaded", Path.GetFileName(path), content.OriginalTextureFormat, content.Document.Sprites.Count].Value;
+            _statusIntent = MessageBarIntent.Success;
+        }
+        catch (Exception exception)
+        {
+            _templatePath = null;
+            ShowError(exception);
+        }
+        finally
+        {
+            _isBusy = false;
+        }
+    }
+
+    private async Task ExportAssetsZipAsync()
+    {
+        if (!TryValidateDocument(out var document)) return;
+        _isBusy = true;
+        _busyMessage = L["AtlasEditor.ExportAssets"].Value;
+        try
+        {
+            var prefab = SpriteAtlasPrefabYaml.Serialize(document, _scriptGuid.Trim(), _materialGuid.Trim());
+            var prefabGuid = Guid.NewGuid().ToString("N");
+            using var archiveStream = new MemoryStream();
+            using (var archive = new ZipArchive(archiveStream, ZipArchiveMode.Create, leaveOpen: true))
+            {
+                AddZipEntry(archive, document.AtlasName + ".png", _previewPng);
+                AddZipEntry(archive, document.AtlasName + ".prefab", System.Text.Encoding.UTF8.GetBytes(prefab));
+                AddZipEntry(archive, document.AtlasName + ".prefab.meta",
+                    System.Text.Encoding.UTF8.GetBytes(SpriteAtlasPrefabYaml.SerializeMeta(document, prefabGuid)));
+            }
+            archiveStream.Position = 0;
+            var saved = await FileSaver.SaveFileAsync(document.AtlasName + "-assets.zip", archiveStream);
+            if (saved is not null) ShowSuccess(Path.GetFileName(saved));
+        }
+        catch (Exception exception)
+        {
+            ShowError(exception);
+        }
+        finally
+        {
+            _isBusy = false;
+        }
+    }
+
+    private async Task ExportBundleAsync()
+    {
+        if (_templatePath is null)
+        {
+            _status = L["AtlasEditor.NoTemplate"].Value;
+            _statusIntent = MessageBarIntent.Warning;
+            return;
+        }
+        if (GuessPlatform(_templatePath) is { } templatePlatform && templatePlatform != _platform)
+        {
+            _status = L["AtlasEditor.TemplatePlatformMismatch", PlatformLabel(templatePlatform), PlatformLabel(_platform)].Value;
+            _statusIntent = MessageBarIntent.Error;
+            return;
+        }
+        if (!TryValidateDocument(out var document)) return;
+        _isBusy = true;
+        _busyMessage = L["AtlasEditor.ExportBundle"].Value;
+        var temporaryPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N") + ".unity3d");
+        try
+        {
+            var template = new UnityBundleTemplate { Platform = _platform, BundlePath = _templatePath };
+            BundleService.Export(template, document, _previewPng, temporaryPath, SelectedTextureFormat);
+            await using var output = File.OpenRead(temporaryPath);
+            var saved = await FileSaver.SaveFileAsync(document.AtlasName + ".unity3d", output);
+            if (saved is not null) ShowSuccess(Path.GetFileName(saved));
+        }
+        catch (Exception exception)
+        {
+            ShowError(exception);
+        }
+        finally
+        {
+            if (File.Exists(temporaryPath)) File.Delete(temporaryPath);
+            _isBusy = false;
+        }
+    }
+
+    private bool TryValidateDocument(out SpriteAtlasDocument document)
+    {
+        document = _document!;
+        if (_document is null || _sprites.Count == 0)
+        {
+            _status = L["AtlasEditor.NoSprites"].Value;
+            _statusIntent = MessageBarIntent.Warning;
+            return false;
+        }
+        try
+        {
+            document.AtlasName = _atlasName.Trim();
+            document.Validate();
+            var byName = _sprites.ToDictionary(sprite => sprite.Name, StringComparer.Ordinal);
+            if (document.Sprites.Any(sprite => !byName.ContainsKey(sprite.Name)))
+                throw new InvalidDataException("Every atlas region must match an image name.");
+            _previewPng = SpriteAtlasImage.Compose(document,
+                byName.ToDictionary(pair => pair.Key, pair => pair.Value.Png, StringComparer.Ordinal));
+            return true;
+        }
+        catch (Exception exception)
+        {
+            ShowError(exception);
+            return false;
+        }
+    }
+
+    private void RemoveSprite(int index)
+    {
+        if (index < 0 || index >= _sprites.Count) return;
+        _sprites.RemoveAt(index);
+        if (_document is not null && index < _document.Sprites.Count) _document.Sprites.RemoveAt(index);
+        _selectedSpriteIndex = Math.Clamp(_selectedSpriteIndex, 0, Math.Max(0, _sprites.Count - 1));
+        if (_sprites.Count == 0)
+        {
+            _document = CreateEmptyDocument();
+            _previewPng = [];
+            _regionValues.Clear();
+            return;
+        }
+        ComposePreview();
+    }
+
+    private void RenameSprite(int index)
+    {
+        if (_document is null || index >= _sprites.Count) return;
+        _document.Sprites[index].Name = _sprites[index].Name.Trim();
+        ComposePreview();
+    }
+
+    private void UpdateRegion(int index, string field)
+    {
+        if (_document is null || index < 0 || index >= _document.Sprites.Count || index >= _regionValues.Count) return;
+        var values = _regionValues[index];
+        var text = field switch
+        {
+            nameof(SpriteAtlasEntry.X) => values.X,
+            nameof(SpriteAtlasEntry.Y) => values.Y,
+            nameof(SpriteAtlasEntry.Width) => values.Width,
+            nameof(SpriteAtlasEntry.Height) => values.Height,
+            _ => string.Empty
+        };
+        if (!float.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out var value)) return;
+        var sprite = _document.Sprites[index];
+        switch (field)
+        {
+            case nameof(sprite.X): sprite.X = value; break;
+            case nameof(sprite.Y): sprite.Y = value; break;
+            case nameof(sprite.Width): sprite.Width = value; break;
+            case nameof(sprite.Height): sprite.Height = value; break;
+        }
+        sprite.InnerX = sprite.X;
+        sprite.InnerY = sprite.Y;
+        sprite.InnerWidth = sprite.Width;
+        sprite.InnerHeight = sprite.Height;
+        ComposePreview();
+    }
+
+    private void ComposePreview()
+    {
+        if (_document is null || _sprites.Count == 0) return;
+        try
+        {
+            _document.AtlasName = _atlasName.Trim();
+            var images = _sprites.ToDictionary(sprite => sprite.Name.Trim(), sprite => sprite.Png, StringComparer.Ordinal);
+            foreach (var sprite in _document.Sprites) sprite.Name = sprite.Name.Trim();
+            _previewPng = SpriteAtlasImage.Compose(_document, images);
+            SyncRegionValues();
+            _canvasNeedsRender = true;
+            _status = null;
+        }
+        catch (Exception exception)
+        {
+            ShowError(exception);
+        }
+    }
+
+    private void SyncRegionValues()
+    {
+        _regionValues.Clear();
+        if (_document is null) return;
+        _regionValues.AddRange(_document.Sprites.Select(sprite => new AtlasRegionValues
+        {
+            X = PixelValue(sprite.X),
+            Y = PixelValue(sprite.Y),
+            Width = PixelValue(sprite.Width),
+            Height = PixelValue(sprite.Height)
+        }));
+    }
+
+    private void SelectSprite(int index)
+    {
+        _selectedSpriteIndex = index;
+        _canvasNeedsRender = true;
+    }
+
+    private void UpdateAtlasName()
+    {
+        if (_document is null) return;
+        _document.AtlasName = _atlasName.Trim();
+        ComposePreview();
+    }
+
+    private void UpdateAtlasSize()
+    {
+        _atlasWidth = Math.Clamp(_atlasWidth, 32, 4096);
+        _atlasHeight = Math.Clamp(_atlasHeight, 32, 4096);
+        if (_sprites.Count > 0) RepackAtlas();
+        else _document = CreateEmptyDocument();
+    }
+
+    private void UpdateAtlasWidth() => UpdateAtlasSize();
+    private void UpdateAtlasHeight() => UpdateAtlasSize();
+
+    private void UpdateAtlasKind()
+    {
+        if (_templatePath is null && _document is not null)
+        {
+            _document.Kind = SelectedKind;
+            _scriptGuid = AtlasScriptGuid(SelectedKind);
+        }
+    }
+
+    private static string AtlasScriptGuid(SpriteAtlasKind kind) => kind == SpriteAtlasKind.NGUI3
+        ? "03f7db9a480b403690a4a83220213122"
+        : "8595096cf446f04459df6958ed374933";
+
+    private SpriteAtlasKind SelectedKind => _kindValue == "NGUI3" ? SpriteAtlasKind.NGUI3 : SpriteAtlasKind.NGUI2;
+
+    private TextureFormat? SelectedTextureFormat => _formatChoice switch
+    {
+        "RGBA32" => TextureFormat.RGBA32,
+        "ETC2_RGBA8" => TextureFormat.ETC2_RGBA8,
+        "ASTC_RGBA_6x6" => TextureFormat.ASTC_RGBA_6x6,
+        _ => null
+    };
+
+    private void ResetWorkspace()
+    {
+        _sprites.Clear();
+        _templatePath = null;
+        _atlasName = "d_e10";
+        _kindValue = "NGUI2";
+        _scriptGuid = AtlasScriptGuid(SpriteAtlasKind.NGUI2);
+        _atlasWidth = 512;
+        _atlasHeight = 512;
+        _selectedSpriteIndex = 0;
+        _materialGuid = string.Empty;
+        _formatChoice = "Original";
+        _platform = UnityTargetPlatform.Android;
+        _document = CreateEmptyDocument();
+        _previewPng = [];
+        _regionValues.Clear();
+        _status = null;
+    }
+
+    private SpriteAtlasDocument CreateEmptyDocument() => new()
+    {
+        AtlasName = _atlasName,
+        Kind = SelectedKind,
+        TextureWidth = Math.Max(32, _atlasWidth),
+        TextureHeight = Math.Max(32, _atlasHeight)
+    };
+
+    private static string PixelValue(float value) => value.ToString("0.##", CultureInfo.InvariantCulture);
+
+    private static UnityTargetPlatform? GuessPlatform(string path)
+    {
+        var normalized = path.Replace('\\', '/').ToLowerInvariant();
+        if (normalized.Contains("/android/") || normalized.Contains("android")) return UnityTargetPlatform.Android;
+        if (normalized.Contains("/ios/") || normalized.Contains("iphone") || normalized.Contains("ios")) return UnityTargetPlatform.IOS;
+        if (normalized.Contains("/windows/") || normalized.Contains("windows") || normalized.Contains("win64")) return UnityTargetPlatform.Windows;
+        return null;
+    }
+
+    private static void AddZipEntry(ZipArchive archive, string name, byte[] bytes)
+    {
+        var entry = archive.CreateEntry(name, CompressionLevel.Optimal);
+        using var output = entry.Open();
+        output.Write(bytes, 0, bytes.Length);
+    }
+
+    private void ShowSuccess(string fileName)
+    {
+        _status = L["AtlasEditor.Exported", fileName].Value;
+        _statusIntent = MessageBarIntent.Success;
+    }
+
+    private void ShowError(Exception exception)
+    {
+        _status = L["AtlasEditor.Error", exception.Message].Value;
+        _statusIntent = MessageBarIntent.Error;
+    }
+
+    private sealed class AtlasEditorImage(string name, byte[] png, string contentType, int width, int height)
+    {
+        public string Name { get; set; } = name;
+        public byte[] Png { get; } = png;
+        public string ContentType { get; } = contentType;
+        public int Width { get; } = width;
+        public int Height { get; } = height;
+        public string PreviewDataUrl => $"data:{ContentType};base64,{Convert.ToBase64String(Png)}";
+    }
+
+    private sealed class AtlasRegionValues
+    {
+        public string X { get; set; } = "0";
+        public string Y { get; set; } = "0";
+        public string Width { get; set; } = "1";
+        public string Height { get; set; } = "1";
+    }
+}
