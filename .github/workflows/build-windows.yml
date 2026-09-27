@@ -32,16 +32,31 @@ jobs:
         run: >-
           dotnet restore DMTQ-Tools/DMTQ-Tools.csproj
           --runtime ${{ env.RUNTIME_IDENTIFIER }}
+          -p:Configuration=Release
 
-      - name: Build Windows app
+      - name: Publish Windows app
         run: >-
-          dotnet build DMTQ-Tools/DMTQ-Tools.csproj
+          dotnet publish DMTQ-Tools/DMTQ-Tools.csproj
           --configuration Release
           --framework ${{ env.TARGET_FRAMEWORK }}
           --runtime ${{ env.RUNTIME_IDENTIFIER }}
           --no-restore
+          --self-contained false
           --output ${{ env.BUILD_OUTPUT }}
           -p:WindowsPackageType=None
+          -p:WindowsAppSDKSelfContained=false
+
+      - name: Remove release symbols
+        shell: pwsh
+        run: ./scripts/Prune-WindowsPublish.ps1 -PublishDirectory $env:BUILD_OUTPUT
+
+      - name: Validate Windows publish
+        shell: pwsh
+        run: ./scripts/Test-WindowsPublish.ps1 -PublishDirectory $env:BUILD_OUTPUT
+
+      - name: Measure Windows publish output
+        shell: pwsh
+        run: ./scripts/Measure-WindowsPublish.ps1 -PublishDirectory $env:BUILD_OUTPUT
 
       - name: Upload Windows build artifact
         uses: actions/upload-artifact@v4

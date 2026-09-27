@@ -31,6 +31,13 @@
         <DevFlowBlazorVersion>0.1.0-preview.11.26317.2</DevFlowBlazorVersion>
     </PropertyGroup>
 
+    <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+        <SelfContained>false</SelfContained>
+        <PublishSelfContained>false</PublishSelfContained>
+        <WindowsAppSDKSelfContained>false</WindowsAppSDKSelfContained>
+        <SatelliteResourceLanguages>en-US;zh-CN</SatelliteResourceLanguages>
+    </PropertyGroup>
+
     <ItemGroup>
         <!-- App Icon -->
         <MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="#512BD4" />
@@ -55,6 +62,9 @@
         <PackageReference Include="Microsoft.Extensions.Localization" Version="10.0.12" />
         <PackageReference Include="Microsoft.Maui.Controls" Version="10.0.110" />
         <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="10.0.110" />
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(Configuration)' == 'Debug'">
         <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.12" />
         <PackageReference Include="Microsoft.Maui.DevFlow.Agent" Version="0.1.0-preview.11.26317.2" />
         <PackageReference Include="Microsoft.Maui.DevFlow.Blazor" Version="$(DevFlowBlazorVersion)" />
@@ -72,7 +82,7 @@
       framework folder. Copy the assets to the expected location before MAUI
       assigns target paths. This can be removed when the NuGet package is fixed.
     -->
-    <Target Name="_FixDevFlowBlazorWwwroot" BeforeTargets="AssignTargetPaths;_CopySourceItemsToOutputDirectory" Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">
+    <Target Name="_FixDevFlowBlazorWwwroot" BeforeTargets="AssignTargetPaths;_CopySourceItemsToOutputDirectory" Condition="'$(Configuration)' == 'Debug' and $([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">
         <PropertyGroup>
             <_DevFlowPkgRoot>$([System.IO.Path]::Combine('$(NuGetPackageRoot)', 'microsoft.maui.devflow.blazor', '$(DevFlowBlazorVersion)'))</_DevFlowPkgRoot>
             <_DevFlowStaticSrc>$(_DevFlowPkgRoot)\staticwebassets</_DevFlowStaticSrc>

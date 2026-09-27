@@ -6,8 +6,10 @@ using DMTQ_Tools.Components.Localization;
 using DMTQ_Tools.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.FluentUI.AspNetCore.Components;
+#if DEBUG
 using Microsoft.Maui.DevFlow.Agent;
 using Microsoft.Maui.DevFlow.Blazor;
+#endif
 
 namespace DMTQ_Tools
 {
