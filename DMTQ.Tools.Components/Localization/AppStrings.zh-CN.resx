@@ -123,6 +123,7 @@
   <data name="Editor.MissingLinkedItem" xml:space="preserve"><value>关联道具不存在</value></data>
   <data name="Editor.LinkedItemMissingHint" xml:space="preserve"><value>歌曲引用了此道具 ID，但当前项目中没有该道具。可以创建道具或更换关联。</value></data>
   <data name="Editor.LinkedItemIdExists" xml:space="preserve"><value>该 ID 的道具已存在，请从现有道具列表中选择。</value></data>
+  <data name="Editor.LinkedItemNameRequired" xml:space="preserve"><value>请填写关联道具的名称。</value></data>
   <data name="Editor.Credits" xml:space="preserve"><value>演职员</value></data>
   <data name="Editor.ItemText" xml:space="preserve"><value>描述与摘要</value></data>
   <data name="Editor.ItemRules" xml:space="preserve"><value>道具设置</value></data>

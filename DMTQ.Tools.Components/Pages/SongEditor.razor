@@ -429,6 +429,9 @@
         return int.TryParse(itemId, out var parsedId) && parsedId > 0;
     }
 
+    private string SuggestedLinkedItemName
+        => !string.IsNullOrWhiteSpace(currentSong?.FullName) ? currentSong.FullName : currentSong?.Name ?? string.Empty;
+
     private async Task OpenLinkedItemPickerAsync()
     {
         if (currentSong is null)
@@ -439,6 +442,8 @@
         {
             Items = AvailableGameItems,
             ItemId = suggestedId,
+            ItemName = linkedItemDraft?.ItemName ?? SuggestedLinkedItemName,
+            Summary = linkedItemDraft?.Summary ?? string.Empty,
             IsCreateMode = selectedLinkedItem is null && linkedItemDraft is not null
         };
 
@@ -447,7 +452,7 @@
             options.Header.Title = L["Editor.ChangeOrCreateLinkedItem"].Value;
             options.Footer.PrimaryAction.Visible = false;
             options.Footer.SecondaryAction.Label = L["Common.Cancel"].Value;
-            options.Width = "560px";
+            options.Width = "800px";
             options.Parameters = new Dictionary<string, object?>
             {
                 [nameof(LinkedItemPickerDialog.State)] = pickerState

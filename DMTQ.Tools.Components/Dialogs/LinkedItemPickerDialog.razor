@@ -17,7 +17,17 @@
         {
             <FluentStack Orientation="Orientation.Vertical" VerticalGap="12">
                 <p class="section-hint">@L["Editor.NewLinkedItemHint"]</p>
-                <FluentTextInput @bind-Value="State.ItemId" Label='@(L["Fields.ItemId"].Value + " *")' Placeholder="123" />
+                <FluentGrid Spacing="2">
+                    <FluentGridItem Xs="12" Sm="6">
+                        <FluentTextInput style="width: 100%;" @bind-Value="State.ItemId" Label='@(L["Fields.ItemId"].Value + " *")' Placeholder="123" Required />
+                    </FluentGridItem>
+                    <FluentGridItem Xs="12" Sm="6">
+                        <FluentTextInput style="width: 100%;" @bind-Value="State.ItemName" Label='@(L["Fields.ItemName"].Value + " *")' Required />
+                    </FluentGridItem>
+                    <FluentGridItem Xs="12">
+                        <FluentTextArea style="width: 100%;" @bind-Value="State.Summary" Label='@L["Fields.Summary"]' Immediate="true" Height="120px" Resize="TextAreaResize.Vertical" />
+                    </FluentGridItem>
+                </FluentGrid>
                 @if (!string.IsNullOrWhiteSpace(validationMessage))
                 {
                     <FluentMessageBar Title="@validationMessage" Intent="MessageBarIntent.Warning" />
@@ -38,8 +48,9 @@
                                OptionValue="@(item => item)"
                                OptionValueToString="@(item => item.Id)"
                                ValueChanged="ChooseItem"
-                               Height="320px"
+                               Height="min(55vh, 500px)"
                                Width="100%"
+                               OptionClass="linked-item-picker-option"
                                Appearance="ListAppearance.Outline"
                                AriaLabel='@L["Editor.SelectGameItem"]'>
                     <OptionTemplate Context="item">
@@ -115,10 +126,17 @@
             validationMessage = L["Editor.LinkedItemIdExists"].Value;
             return;
         }
+        if (string.IsNullOrWhiteSpace(State.ItemName))
+        {
+            validationMessage = L["Editor.LinkedItemNameRequired"].Value;
+            return;
+        }
 
         State.ResultItem = new Item
         {
             Id = normalizedId,
+            ItemName = State.ItemName.Trim(),
+            Summary = State.Summary.Trim(),
             ItemType = "S",
             RepeatCount = "0",
             LimitMinute = "0",

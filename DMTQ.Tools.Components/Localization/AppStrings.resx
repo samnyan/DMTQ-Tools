@@ -347,6 +347,7 @@
   <data name="Editor.MissingLinkedItem" xml:space="preserve"><value>Linked item is missing</value></data>
   <data name="Editor.LinkedItemMissingHint" xml:space="preserve"><value>The song refers to this item ID, but it is not in the item catalog. Create it or choose another item.</value></data>
   <data name="Editor.LinkedItemIdExists" xml:space="preserve"><value>An item with this ID already exists. Select it from the existing items list.</value></data>
+  <data name="Editor.LinkedItemNameRequired" xml:space="preserve"><value>Enter a name for the linked item.</value></data>
   <data name="Editor.SyncAllLanguages" xml:space="preserve"><value>Sync all language information</value></data>
   <data name="Editor.SyncAllLanguagesHint" xml:space="preserve"><value>Song metadata will be copied to all five language tables when you save.</value></data>
   <data name="Editor.LanguageOverrides" xml:space="preserve"><value>Language-specific values</value></data>
