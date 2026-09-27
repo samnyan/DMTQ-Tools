@@ -85,7 +85,7 @@
                     <p class="section-hint">@L["Editor.SongItemHint"]</p>
                     <div class="linked-item-card">
                         <div class="linked-item-card-header">
-                            <span class="linked-item-state">@(linkedItemDraft is not null ? L["Editor.NewLinkedItem"] : selectedLinkedItem is not null ? L["Editor.ExistingLinkedItem"] : !IsCreate && currentSong!.ItemId > 0 ? L["Editor.MissingLinkedItem"] : L["Editor.NoGameItemSelected"])</span>
+                            <span class="linked-item-state">@(linkedItemDraft is not null ? L["Editor.LinkedItemWillBeCreated"] : selectedLinkedItem is not null ? L["Editor.ExistingLinkedItem"] : !IsCreate && currentSong!.ItemId > 0 ? L["Editor.MissingLinkedItem"] : L["Editor.NoGameItemSelected"])</span>
                             <FluentButton Appearance="ButtonAppearance.Default" OnClick="OpenLinkedItemPickerAsync">@L["Editor.ChangeOrCreateLinkedItem"]</FluentButton>
                         </div>
                         @if (linkedItemDraft is { } linkedDraft)
@@ -256,6 +256,7 @@
     private static readonly string[] DefaultLanguages = ["CN", "JP", "KR", "TW", "US"];
 
     private bool IsCreate => SongId == "new";
+    private string? loadedSongId;
     private Song? currentSong;
     private string songIdInput = string.Empty;
     private bool hasExplicitLinkedItemChoice;
@@ -329,6 +330,16 @@
 
     protected override void OnParametersSet()
     {
+        if (!string.Equals(loadedSongId, SongId, StringComparison.Ordinal))
+        {
+            loadedSongId = SongId;
+            currentSong = null;
+            songIdInput = string.Empty;
+            hasExplicitLinkedItemChoice = false;
+            linkedItemDraft = null;
+            selectedLinkedItem = null;
+        }
+
         if (IsCreate)
         {
             currentSong ??= new Song { Id = 0 };
@@ -446,7 +457,7 @@
             IsCreateMode = selectedLinkedItem is null && linkedItemDraft is not null
         };
 
-        var result = await DialogService.ShowDialogAsync<LinkedItemPickerDialog>(options =>
+        await DialogService.ShowDialogAsync<LinkedItemPickerDialog>(options =>
         {
             options.Header.Title = L["Editor.ChangeOrCreateLinkedItem"].Value;
             options.Footer.PrimaryAction.Visible = false;
@@ -458,7 +469,7 @@
             };
         });
 
-        if (result.Cancelled || !pickerState.Accepted || pickerState.ResultItem is null)
+        if (!pickerState.Accepted || pickerState.ResultItem is null)
             return;
 
         hasExplicitLinkedItemChoice = true;
@@ -523,14 +534,14 @@
                 }
                 var linkedItem = SelectedLinkedItem;
                 var linkedItemId = linkedItemDraft?.Id ?? linkedItem?.Id;
-                if (string.IsNullOrWhiteSpace(linkedItemId)
-                    || !int.TryParse(linkedItemId, out var parsedLinkedItemId)
-                    || parsedLinkedItemId < 1)
+                if (int.TryParse(linkedItemId, out var parsedLinkedItemId) && parsedLinkedItemId > 0)
                 {
-                    errorMessage = L["Editor.SongItemIdRequired"].Value;
-                    return;
+                    currentSong!.ItemId = parsedLinkedItemId;
                 }
-                currentSong!.ItemId = parsedLinkedItemId;
+                else
+                {
+                    currentSong!.ItemId = 0;
+                }
                 if (_syncOriginalText) SyncOriginalToAllLanguages();
                 var song = SongEditSvc.CreateDraft(currentSong, newId);
                 if (linkedItemDraft is not null)
@@ -546,15 +557,8 @@
             {
                 var linkedItem = SelectedLinkedItem;
                 var linkedItemId = linkedItemDraft?.Id ?? linkedItem?.Id;
-                if (string.IsNullOrWhiteSpace(linkedItemId)
-                    || !int.TryParse(linkedItemId, out var parsedLinkedItemId)
-                    || parsedLinkedItemId < 1)
-                {
-                    errorMessage = L["Editor.SongItemIdRequired"].Value;
-                    return;
-                }
-
-                currentSong.ItemId = parsedLinkedItemId;
+                if (int.TryParse(linkedItemId, out var parsedLinkedItemId) && parsedLinkedItemId > 0)
+                    currentSong.ItemId = parsedLinkedItemId;
                 if (_syncOriginalText) SyncOriginalToAllLanguages();
                 if (linkedItemDraft is not null)
                     ItemEditSvc.AddItem(State.CurrentPackage, linkedItemDraft, State.SelectedExportPlatform);

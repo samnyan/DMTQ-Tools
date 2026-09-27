@@ -115,6 +115,7 @@
   <data name="Editor.GameItemLink" xml:space="preserve"><value>关联游戏道具</value></data>
   <data name="Editor.ExistingLinkedItem" xml:space="preserve"><value>现有道具</value></data>
   <data name="Editor.NewLinkedItem" xml:space="preserve"><value>新建道具</value></data>
+  <data name="Editor.LinkedItemWillBeCreated" xml:space="preserve"><value>将随歌曲创建</value></data>
   <data name="Editor.ChangeOrCreateLinkedItem" xml:space="preserve"><value>更换/创建关联道具</value></data>
   <data name="Editor.SelectLinkedItem" xml:space="preserve"><value>选择道具</value></data>
   <data name="Editor.CreateLinkedItem" xml:space="preserve"><value>创建道具</value></data>

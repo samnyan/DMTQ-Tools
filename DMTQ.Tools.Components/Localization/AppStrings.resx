@@ -339,6 +339,7 @@
   <data name="Editor.GameItemLink" xml:space="preserve"><value>Linked game item</value></data>
   <data name="Editor.ExistingLinkedItem" xml:space="preserve"><value>Existing item</value></data>
   <data name="Editor.NewLinkedItem" xml:space="preserve"><value>New item</value></data>
+  <data name="Editor.LinkedItemWillBeCreated" xml:space="preserve"><value>Will be created with this song</value></data>
   <data name="Editor.ChangeOrCreateLinkedItem" xml:space="preserve"><value>Change or create linked item</value></data>
   <data name="Editor.SelectLinkedItem" xml:space="preserve"><value>Select item</value></data>
   <data name="Editor.CreateLinkedItem" xml:space="preserve"><value>Create item</value></data>
