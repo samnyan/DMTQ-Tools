@@ -6,5 +6,5 @@ namespace DMTQ.Tools.Core.Services;
 /// </summary>
 public interface IProjectFilePicker
 {
-    Task<string?> PickFileAsync(CancellationToken ct = default);
+    Task<string?> PickFileAsync(IReadOnlyCollection<string>? allowedExtensions = null, CancellationToken ct = default);
 }

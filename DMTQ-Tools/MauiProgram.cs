@@ -57,6 +57,7 @@ namespace DMTQ_Tools
 
             builder.Services.AddSingleton<IFolderPicker, MauiFolderPicker>();
             builder.Services.AddSingleton<IProjectFilePicker, MauiFilePicker>();
+            builder.Services.AddSingleton<IAtlasDummyTemplateProvider, MauiAtlasDummyTemplateProvider>();
             builder.Services.AddSingleton<IProjectFileSaver, MauiFileSaver>();
             builder.Services.AddSingleton<PatternBinarySerializer>();
             builder.Services.AddSingleton<PatternTextSerializer>();

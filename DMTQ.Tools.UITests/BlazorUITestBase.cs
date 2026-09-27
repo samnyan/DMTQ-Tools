@@ -29,6 +29,7 @@ public abstract class BlazorUITestBase : Bunit.TestContext
         FilePicker = new FakeFilePicker();
         FileSaver = new FakeFileSaver();
         Services.AddSingleton<IProjectFilePicker>(FilePicker);
+        Services.AddSingleton<IAtlasDummyTemplateProvider, FakeAtlasDummyTemplateProvider>();
         Services.AddSingleton<IProjectFileSaver>(FileSaver);
         Services.AddSingleton<PatternBinarySerializer>();
         Services.AddSingleton<PatternTextSerializer>();
@@ -130,7 +131,13 @@ public abstract class BlazorUITestBase : Bunit.TestContext
     protected sealed class FakeFilePicker : IProjectFilePicker
     {
         public string? PickResult { get; set; }
-        public Task<string?> PickFileAsync(CancellationToken ct = default) => Task.FromResult(PickResult);
+        public Task<string?> PickFileAsync(IReadOnlyCollection<string>? allowedExtensions = null, CancellationToken ct = default) => Task.FromResult(PickResult);
+    }
+
+    protected sealed class FakeAtlasDummyTemplateProvider : IAtlasDummyTemplateProvider
+    {
+        public Task<string> GetTemplatePathAsync(string atlasKind, string platform, CancellationToken cancellationToken = default)
+            => Task.FromResult($"{(atlasKind == "NGUI3" ? "d3" : "d")}_{platform}_dummy.unity3d");
     }
 
     protected sealed class FakeFileSaver : IProjectFileSaver

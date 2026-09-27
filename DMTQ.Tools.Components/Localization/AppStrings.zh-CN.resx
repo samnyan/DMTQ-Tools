@@ -205,6 +205,20 @@
   <data name="Nav.AtlasEditor" xml:space="preserve"><value>歌曲封面图集</value></data>
   <data name="AtlasEditor.Title" xml:space="preserve"><value>歌曲封面图集</value></data>
   <data name="AtlasEditor.New" xml:space="preserve"><value>新建图集</value></data>
+  <data name="AtlasEditor.Create" xml:space="preserve"><value>创建图集</value></data>
+  <data name="AtlasEditor.CloseAtlas" xml:space="preserve"><value>关闭图集</value></data>
+  <data name="AtlasEditor.Size" xml:space="preserve"><value>尺寸</value></data>
+  <data name="AtlasEditor.AddSprite" xml:space="preserve"><value>添加 Sprite</value></data>
+  <data name="AtlasEditor.EmptySprite" xml:space="preserve"><value>透明占位</value></data>
+  <data name="AtlasEditor.ReplaceImage" xml:space="preserve"><value>替换图片</value></data>
+  <data name="AtlasEditor.ExportImage" xml:space="preserve"><value>导出图片</value></data>
+  <data name="AtlasEditor.ExportTexture" xml:space="preserve"><value>导出贴图</value></data>
+  <data name="AtlasEditor.DeleteTitle" xml:space="preserve"><value>删除 Sprite</value></data>
+  <data name="AtlasEditor.DeleteConfirm" xml:space="preserve"><value>确定删除 Sprite“{0}”吗？</value></data>
+  <data name="AtlasEditor.Stretch" xml:space="preserve"><value>拉伸适配</value></data>
+  <data name="AtlasEditor.StretchConfirm" xml:space="preserve"><value>图片尺寸为 {0}×{1}，目标区域为 {2}×{3}。是否拉伸适配？</value></data>
+  <data name="AtlasEditor.NoSpriteSlot" xml:space="preserve"><value>没有可以放置 256×149 封面图的空位。</value></data>
+  <data name="AtlasEditor.TemplateForPlatform" xml:space="preserve"><value>平台模板：{0}</value></data>
   <data name="AtlasEditor.Subtitle" xml:space="preserve"><value>将歌曲封面排入 NGUI 图集，可导出替换资源或指定平台的完整资源包。</value></data>
   <data name="AtlasEditor.AtlasName" xml:space="preserve"><value>资源包 / Prefab 名称</value></data>
   <data name="AtlasEditor.Kind" xml:space="preserve"><value>图集类型</value></data>
@@ -212,10 +226,7 @@
   <data name="AtlasEditor.NGUI3" xml:space="preserve"><value>NGUI3（d3_）</value></data>
   <data name="AtlasEditor.Width" xml:space="preserve"><value>宽度</value></data>
   <data name="AtlasEditor.Height" xml:space="preserve"><value>高度</value></data>
-  <data name="AtlasEditor.AddImages" xml:space="preserve"><value>添加图片</value></data>
-  <data name="AtlasEditor.DragHint" xml:space="preserve"><value>拖入多个 PNG 或 JPEG 文件，也可以点击选择。</value></data>
   <data name="AtlasEditor.OpenBundle" xml:space="preserve"><value>打开现有资源包</value></data>
-  <data name="AtlasEditor.Repack" xml:space="preserve"><value>重新排版</value></data>
   <data name="AtlasEditor.Preview" xml:space="preserve"><value>图集预览</value></data>
   <data name="AtlasEditor.Sprites" xml:space="preserve"><value>Sprite 列表</value></data>
   <data name="AtlasEditor.SpriteCount" xml:space="preserve"><value>{0} 个 Sprite</value></data>
@@ -225,24 +236,11 @@
   <data name="AtlasEditor.X" xml:space="preserve"><value>X</value></data>
   <data name="AtlasEditor.Y" xml:space="preserve"><value>Y</value></data>
   <data name="AtlasEditor.Remove" xml:space="preserve"><value>移除</value></data>
-  <data name="AtlasEditor.ExportAssets" xml:space="preserve"><value>导出 PNG + Prefab ZIP</value></data>
   <data name="AtlasEditor.ExportBundle" xml:space="preserve"><value>导出完整资源包</value></data>
   <data name="AtlasEditor.Platform" xml:space="preserve"><value>目标平台</value></data>
-  <data name="AtlasEditor.SelectTemplate" xml:space="preserve"><value>选择 Dummy 资源包</value></data>
   <data name="AtlasEditor.Template" xml:space="preserve"><value>模板</value></data>
-  <data name="AtlasEditor.TextureFormat" xml:space="preserve"><value>输出贴图格式</value></data>
-  <data name="AtlasEditor.KeepOriginal" xml:space="preserve"><value>保留模板原格式</value></data>
-  <data name="AtlasEditor.RGBA32" xml:space="preserve"><value>RGBA32</value></data>
-  <data name="AtlasEditor.ETC2" xml:space="preserve"><value>ETC2 RGBA8</value></data>
-  <data name="AtlasEditor.ASTC" xml:space="preserve"><value>ASTC RGBA 6x6</value></data>
-  <data name="AtlasEditor.ScriptGuid" xml:space="preserve"><value>Atlas 脚本 GUID</value></data>
-  <data name="AtlasEditor.MaterialGuid" xml:space="preserve"><value>材质 GUID</value></data>
-  <data name="AtlasEditor.GuidHint" xml:space="preserve"><value>独立 Prefab 导入需要填写对应 Unity .meta 文件中的图集脚本 GUID 和材质 GUID。</value></data>
-  <data name="AtlasEditor.Empty" xml:space="preserve"><value>添加图片或打开 Unity 资源包以开始。</value></data>
   <data name="AtlasEditor.Loaded" xml:space="preserve"><value>已加载 {0}（{1}，{2} 个 Sprite）。</value></data>
   <data name="AtlasEditor.Exported" xml:space="preserve"><value>已导出 {0}。</value></data>
   <data name="AtlasEditor.Error" xml:space="preserve"><value>图集操作失败：{0}</value></data>
-  <data name="AtlasEditor.NoTemplate" xml:space="preserve"><value>导出完整资源包前，请先选择目标平台的 Dummy 资源包。</value></data>
-  <data name="AtlasEditor.TemplatePlatformMismatch" xml:space="preserve"><value>模板路径看起来属于 {0}，但当前目标平台是 {1}。</value></data>
   <data name="AtlasEditor.NoSprites" xml:space="preserve"><value>导出前请至少添加一个 Sprite。</value></data>
 </root>

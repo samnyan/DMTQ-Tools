@@ -15,6 +15,7 @@ public sealed class SpriteAtlasBundleService
 {
     /// <summary>Reads the atlas prefab state and PNG texture from a UnityFS bundle.</summary>
     /// <param name="bundlePath">Path to a raw UnityFS bundle or platform dummy.</param>
+    /// <param name="preferredKind">Optional NGUI schema to select when a bundle includes multiple atlas components.</param>
     /// <returns>The atlas metadata and a PNG copy of its texture.</returns>
     public SpriteAtlasBundleContent Read(string bundlePath, SpriteAtlasKind? preferredKind = null)
     {
@@ -52,7 +53,7 @@ public sealed class SpriteAtlasBundleService
     }
 
     /// <summary>Replaces one template bundle's atlas texture and sprite data while preserving its target platform structure and bundle compression.</summary>
-    /// <param name="template">The dummy bundle built for the requested game platform.</param>
+    /// <param name="template">The dummy bundle built for the requested game platform and atlas kind.</param>
     /// <param name="document">Updated atlas and sprite state.</param>
     /// <param name="atlasPng">PNG bytes for the complete composed atlas.</param>
     /// <param name="outputPath">Path of the resulting raw UnityFS <c>.unity3d</c> bundle.</param>
@@ -80,11 +81,12 @@ public sealed class SpriteAtlasBundleService
                 throw new InvalidDataException($"The {template.Platform} template contains {atlas.Kind}, but the atlas document is {document.Kind}.");
 
             var texture = FindAtlasTexture(manager, assets, atlas);
+            var materialInfo = ResolveLocalPointer(assets.Instance.file, atlas.Field["material"], "atlas material");
             RewritePrefabName(atlas, document.AtlasName);
             RewriteAtlasArray(atlas, document);
             RewriteTexture(texture, atlasPng, document, textureFormat);
             RewriteMaterialName(manager, assets, atlas);
-            RewriteBundleContainerName(manager, assets, atlas);
+            RewriteBundleContainerNames(manager, assets, atlas, materialInfo, texture.Info);
             assets.Directory.SetNewData(assets.Instance.file);
             WriteBundle(bundle, outputPath);
         }
@@ -157,11 +159,29 @@ public sealed class SpriteAtlasBundleService
     {
         var materialInfo = ResolveLocalPointer(assets.Instance.file, atlas.Field["material"], "atlas material");
         var material = manager.GetBaseField(assets.Instance, materialInfo);
+        ValidateAtlasShader(manager, assets, atlas.Kind, material);
         var texturePointer = FindMainTexturePointer(material);
         var textureInfo = ResolveLocalPointer(assets.Instance.file, texturePointer, "atlas main texture");
         if (textureInfo.TypeId != (int)AssetClassID.Texture2D)
             throw new InvalidDataException("Atlas material's main texture reference is not a Texture2D asset.");
         return new TextureAsset(textureInfo, manager.GetBaseField(assets.Instance, textureInfo));
+    }
+
+    private static void ValidateAtlasShader(AssetsManager manager, SerializedAssets assets, SpriteAtlasKind kind,
+        AssetTypeValueField material)
+    {
+        var shaderInfo = ResolveLocalPointer(assets.Instance.file, material["m_Shader"], "atlas material shader");
+        if (shaderInfo.TypeId != (int)AssetClassID.Shader)
+            throw new InvalidDataException("Atlas material's shader reference is not a Shader asset.");
+        var shader = manager.GetBaseField(assets.Instance, shaderInfo);
+        var shaderName = shader["m_ParsedForm"]["m_Name"].IsDummy
+            ? shader["m_Name"].AsString
+            : shader["m_ParsedForm"]["m_Name"].AsString;
+        var expectedShader = kind == SpriteAtlasKind.NGUI2
+            ? "NGUI2Unlit/Transparent Colored"
+            : "Unlit/Premultiplied Colored";
+        if (!string.Equals(shaderName, expectedShader, StringComparison.Ordinal))
+            throw new InvalidDataException($"The {kind} atlas template uses shader '{shaderName}', expected '{expectedShader}'.");
     }
 
     private static AssetTypeValueField FindMainTexturePointer(AssetTypeValueField material)
@@ -365,7 +385,8 @@ public sealed class SpriteAtlasBundleService
         materialInfo.SetNewData(material);
     }
 
-    private static void RewriteBundleContainerName(AssetsManager manager, SerializedAssets assets, AtlasComponent atlas)
+    private static void RewriteBundleContainerNames(AssetsManager manager, SerializedAssets assets, AtlasComponent atlas,
+        AssetFileInfo materialInfo, AssetFileInfo textureInfo)
     {
         var rootPointer = atlas.Field["m_GameObject"];
         var rootPathId = rootPointer["m_PathID"].AsLong;
@@ -378,30 +399,42 @@ public sealed class SpriteAtlasBundleService
         if (container is null)
             throw new InvalidDataException("Template AssetBundle has no readable prefab container table.");
 
-        var renamed = false;
-        var prefabEntries = new List<AssetTypeValueField>();
+        var renamedRoot = false;
         foreach (var pair in container.Children)
         {
             var path = pair["first"].AsString;
-            if (!string.IsNullOrEmpty(path) && path.EndsWith(".prefab", StringComparison.OrdinalIgnoreCase))
-                prefabEntries.Add(pair);
             var assetPointer = pair["second"]["asset"];
-            if (assetPointer.IsDummy || assetPointer["m_FileID"].AsInt != 0 || assetPointer["m_PathID"].AsLong != rootPathId)
+            if (assetPointer.IsDummy || assetPointer["m_FileID"].AsInt != 0)
                 continue;
-            pair["first"].AsString = "Assets/dlc/" + atlas.RootName + ".prefab";
-            renamed = true;
+
+            var pathId = assetPointer["m_PathID"].AsLong;
+            if (pathId == rootPathId)
+            {
+                pair["first"].AsString = RenameContainerPath(path, atlas.RootName);
+                renamedRoot = true;
+            }
+            else if (pathId == materialInfo.PathId || pathId == textureInfo.PathId)
+            {
+                pair["first"].AsString = RenameContainerPath(path, atlas.RootName);
+            }
         }
 
-        if (!renamed && prefabEntries.Count == 1)
-        {
-            prefabEntries[0]["first"].AsString = "Assets/dlc/" + atlas.RootName + ".prefab";
-            renamed = true;
-        }
-        if (!renamed)
+        if (!renamedRoot)
             throw new InvalidDataException("Template AssetBundle container does not reference the atlas root GameObject.");
         if (!bundleField["m_Name"].IsDummy)
-            bundleField["m_Name"].AsString = atlas.RootName;
+            bundleField["m_Name"].AsString = atlas.RootName + ".unity3d";
         bundleInfo.SetNewData(bundleField);
+    }
+
+    private static string RenameContainerPath(string path, string atlasName)
+    {
+        var separator = path.LastIndexOf('/');
+        var directory = separator >= 0 ? path.Substring(0, separator + 1) : string.Empty;
+        var fileName = separator >= 0 ? path.Substring(separator + 1) : path;
+        var extension = Path.GetExtension(fileName);
+        if (string.IsNullOrEmpty(extension))
+            throw new InvalidDataException($"AssetBundle container path '{path}' has no file extension.");
+        return directory + atlasName + extension;
     }
 
     private static void WriteBundle(BundleFileInstance bundle, string outputPath)
