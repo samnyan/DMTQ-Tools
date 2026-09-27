@@ -45,7 +45,7 @@ jobs:
           --output ${{ env.BUILD_OUTPUT }}
           -p:WindowsPackageType=None
 
-      - name: Remove release symbols
+      - name: Prune release artifacts
         shell: pwsh
         run: ./scripts/Prune-WindowsPublish.ps1 -PublishDirectory $env:BUILD_OUTPUT
 

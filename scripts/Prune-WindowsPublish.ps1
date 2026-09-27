@@ -15,4 +15,12 @@ foreach ($symbol in $symbols) {
     Remove-Item -LiteralPath $symbol.FullName -Force
 }
 
-Write-Output "Removed $($symbols.Count) PDB files from $root"
+$allowedCultures = @('en-US', 'zh-CN')
+$cultureDirectories = @(Get-ChildItem -LiteralPath $root -Directory | Where-Object {
+    $_.Name -match '^[a-zA-Z]{2,3}(-[a-zA-Z0-9]+)*$' -and $_.Name -notin $allowedCultures
+})
+foreach ($cultureDirectory in $cultureDirectories) {
+    Remove-Item -LiteralPath $cultureDirectory.FullName -Recurse -Force
+}
+
+Write-Output "Removed $($symbols.Count) PDB files and $($cultureDirectories.Count) unexpected culture directories from $root"
