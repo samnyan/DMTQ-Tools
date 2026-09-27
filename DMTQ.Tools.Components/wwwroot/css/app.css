@@ -103,12 +103,13 @@ body {
 }
 
 .breadcrumb-parent-link {
-    color: inherit;
+    color: #fff;
     text-decoration: none;
-    --colorNeutralForeground2Link: inherit;
-    --colorNeutralForeground2LinkHover: #fff;
-    --colorBrandForegroundLink: #fff;
-    --colorBrandForegroundLinkHover: #fff;
+}
+
+.breadcrumb-parent-link:hover {
+    color: #fff;
+    text-decoration: underline;
 }
 
 .global-breadcrumb ol {
