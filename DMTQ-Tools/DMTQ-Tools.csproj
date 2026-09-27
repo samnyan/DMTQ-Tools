@@ -29,12 +29,13 @@
         <TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
 
         <DevFlowBlazorVersion>0.1.0-preview.11.26317.2</DevFlowBlazorVersion>
+		<WindowsAppSDKIncludesAI>false</WindowsAppSDKIncludesAI>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(Configuration)' == 'Release'">
         <SelfContained>false</SelfContained>
         <PublishSelfContained>false</PublishSelfContained>
-        <WindowsAppSDKSelfContained>false</WindowsAppSDKSelfContained>
+        <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
         <SatelliteResourceLanguages>en-US;zh-CN</SatelliteResourceLanguages>
     </PropertyGroup>
 
@@ -42,15 +43,11 @@
         <!-- App Icon -->
         <MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="#512BD4" />
 
-        <!-- Splash Screen -->
-        <MauiSplashScreen Include="Resources\Splash\splash.svg" Color="#512BD4" BaseSize="128,128" />
-
         <!-- Images -->
         <MauiImage Include="Resources\Images\*" />
-        <MauiImage Update="Resources\Images\dotnet_bot.svg" BaseSize="168,208" />
 
         <!-- Custom Fonts -->
-        <MauiFont Include="Resources\Fonts\*" />
+		<!-- <MauiFont Include="Resources\Fonts\*" /> -->
 
         <!-- Raw Assets (also remove the "Resources\Raw" prefix) -->
         <MauiAsset Include="Resources\Raw\**" LogicalName="%(RecursiveDir)%(Filename)%(Extension)" />
