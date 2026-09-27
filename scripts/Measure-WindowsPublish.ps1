@@ -1,7 +1,8 @@
 param(
     [Parameter(Mandatory = $true)]
     [string]$PublishDirectory,
-    [string]$SummaryPath = $env:GITHUB_STEP_SUMMARY
+    [string]$SummaryPath = $env:GITHUB_STEP_SUMMARY,
+    [double]$MaximumSizeMiB = 0
 )
 
 $ErrorActionPreference = 'Stop'
@@ -33,12 +34,16 @@ $fluentIcons = Get-FileBytes { $_.Name -match '^Microsoft\.FluentUI\.AspNetCore\
 $wwwrootFiles = Get-FileBytes { $_.FullName.StartsWith((Join-Path $root 'wwwroot') + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase) }
 $nativeTexture = Get-FileBytes { $_.Name -match '^(textureencoder|cuttlefish|PVRTexLib)\.dll$' }
 $totalBytes = [long](($files | Measure-Object -Property Length -Sum).Sum)
+$totalMiB = $totalBytes / 1MB
 
 $lines = [System.Collections.Generic.List[string]]::new()
 $lines.Add('## Windows publish measurements')
 $lines.Add('')
 $lines.Add("- Directory: ``$root``")
-$lines.Add("- Total: $($files.Count) files, $($directories.Count) directories, $([math]::Round($totalBytes / 1MB, 2)) MiB")
+$lines.Add("- Total: $($files.Count) files, $($directories.Count) directories, $([math]::Round($totalMiB, 2)) MiB")
+if ($MaximumSizeMiB -gt 0) {
+    $lines.Add("- Size limit: $MaximumSizeMiB MiB")
+}
 $lines.Add("- DLLs: $($dll.Count) files, $([math]::Round($dll.Bytes / 1MB, 2)) MiB")
 $lines.Add("- PDBs: $($pdb.Count) files, $([math]::Round($pdb.Bytes / 1MB, 2)) MiB")
 $lines.Add("- Windows App SDK named files: $($windowsAppSdk.Count) files, $([math]::Round($windowsAppSdk.Bytes / 1MB, 2)) MiB")
@@ -74,4 +79,8 @@ $report = $lines -join [Environment]::NewLine
 Write-Output $report
 if (-not [string]::IsNullOrWhiteSpace($SummaryPath)) {
     Add-Content -LiteralPath $SummaryPath -Value $report
+}
+
+if ($MaximumSizeMiB -gt 0 -and $totalMiB -gt $MaximumSizeMiB) {
+    throw "Publish size $([math]::Round($totalMiB, 2)) MiB exceeds the $MaximumSizeMiB MiB limit."
 }

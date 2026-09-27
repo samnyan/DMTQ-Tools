@@ -56,7 +56,7 @@ jobs:
 
       - name: Measure Windows publish output
         shell: pwsh
-        run: ./scripts/Measure-WindowsPublish.ps1 -PublishDirectory $env:BUILD_OUTPUT
+        run: ./scripts/Measure-WindowsPublish.ps1 -PublishDirectory $env:BUILD_OUTPUT -MaximumSizeMiB 135
 
       - name: Upload Windows build artifact
         uses: actions/upload-artifact@v4

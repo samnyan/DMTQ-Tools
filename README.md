@@ -8,6 +8,14 @@ I will add the finished tool here.
 
 [release](https://github.com/samnyan/DMTQ-Tools/releases)
 
+### Windows requirements
+
+The unpackaged Windows release is framework-dependent. Install these runtimes before launching it:
+
+* .NET 10 Desktop Runtime (x64)
+* Windows App SDK Runtime
+* Microsoft Edge WebView2 Runtime
+
 ## Currently available
 
 ### fpk tool
