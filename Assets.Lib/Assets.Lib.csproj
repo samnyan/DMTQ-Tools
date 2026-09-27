@@ -1,7 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <!-- AssetsTools.NET.Texture uses a different decoder API per target framework.
+         Target .NET 8 here so .NET 10 consumers resolve its matching decoder assembly. -->
+    <TargetFramework>net8.0</TargetFramework>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
