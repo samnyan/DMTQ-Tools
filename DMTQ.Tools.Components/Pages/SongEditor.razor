@@ -23,13 +23,13 @@
     }
     else
     {
-        <EditForm Model="@currentSong" OnValidSubmit="SaveAsync" FormName="song-editor" class="song-editor-form">
+        <EditForm Model="@currentSong" OnValidSubmit="SaveAsync" FormName="song-editor" class="song-editor-form editor-form">
             <div class="song-editor-scroll">
-                <FluentStack Orientation="Orientation.Vertical" VerticalGap="24" HorizontalAlignment="HorizontalAlignment.Stretch">
+                <FluentStack Orientation="Orientation.Vertical" VerticalGap="16" HorizontalAlignment="HorizontalAlignment.Stretch" class="editor-form-sections">
 
                 <section>
                     <h2 class="section-heading">@L["Editor.BasicInfo"]</h2>
-                    <FluentGrid Spacing="3">
+                    <FluentGrid Spacing="2">
                         <FluentGridItem Xs="12" Sm="6" Md="3">
                             @if (IsCreate)
                             {
@@ -48,7 +48,7 @@
 
                 <section>
                     <h2 class="section-heading">@L["Editor.Credits"]</h2>
-                    <FluentGrid Spacing="3">
+                    <FluentGrid Spacing="2">
                         <FluentGridItem Xs="12" Sm="6" Md="4"><FluentTextInput style="width: 100%;" @bind-Value="songArtistName" Label='@L["Fields.Artist"]' Immediate="true" /></FluentGridItem>
                         <FluentGridItem Xs="12" Sm="6" Md="4"><FluentTextInput style="width: 100%;" @bind-Value="songComposedBy" Label='@L["Fields.Composer"]' Immediate="true" /></FluentGridItem>
                         <FluentGridItem Xs="12" Sm="6" Md="4"><FluentTextInput style="width: 100%;" @bind-Value="songSinger" Label='@L["Fields.Singer"]' Immediate="true" /></FluentGridItem>
@@ -61,7 +61,7 @@
                 <section>
                     <h2 class="section-heading">@L["Editor.GameplaySettings"]</h2>
                     <p class="section-hint">@L["Editor.SongCodesHint"]</p>
-                    <FluentGrid Spacing="3">
+                    <FluentGrid Spacing="2">
                         <FluentGridItem Xs="12" Sm="6" Md="4"><FluentSwitch @bind-Value="bgaOriginal" Label='@L["Fields.OriginalBga"]' /></FluentGridItem>
                         <FluentGridItem Xs="12" Sm="6" Md="4"><FluentSwitch @bind-Value="bgaLoop" Label='@L["Fields.LoopBga"]' /></FluentGridItem>
                         <FluentGridItem Xs="12" Sm="6" Md="4"><FluentNumberInput @bind-Value="costPoint" Label='@L["Fields.CostGamePoint"]' /></FluentGridItem>

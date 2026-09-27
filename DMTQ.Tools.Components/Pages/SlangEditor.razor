@@ -9,8 +9,8 @@
     else if (entry is null && !IsCreate) { <FluentMessageBar Title='@L["Editor.NotFound", L["Nav.Slang"].Value, EntryId]' Intent="MessageBarIntent.Error" /> }
     else
     {
-        <EditForm Model="@editModel" OnValidSubmit="SaveAsync" FormName="slang-editor">
-            <FluentStack Orientation="Orientation.Vertical" VerticalGap="20" HorizontalAlignment="HorizontalAlignment.Stretch">
+        <EditForm Model="@editModel" OnValidSubmit="SaveAsync" FormName="slang-editor" class="editor-form">
+            <FluentStack Orientation="Orientation.Vertical" VerticalGap="16" HorizontalAlignment="HorizontalAlignment.Stretch" class="editor-form-sections">
                 <section><h2 class="section-heading">@L["Editor.SlangEntry"]</h2><p class="section-hint">@L["Editor.SlangHint"]</p>
                     <FluentTextInput style="width:100%" @bind-Value="editModel.Value" Label='@L["Fields.SlangValue"]' Required /></section>
                 <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8">

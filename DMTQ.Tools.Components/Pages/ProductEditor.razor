@@ -17,11 +17,11 @@
     }
     else
     {
-        <EditForm Model="@currentProduct" OnValidSubmit="SaveAsync" FormName="product-editor">
-            <FluentStack Orientation="Orientation.Vertical" VerticalGap="24" HorizontalAlignment="HorizontalAlignment.Stretch">
+        <EditForm Model="@currentProduct" OnValidSubmit="SaveAsync" FormName="product-editor" class="editor-form">
+            <FluentStack Orientation="Orientation.Vertical" VerticalGap="16" HorizontalAlignment="HorizontalAlignment.Stretch" class="editor-form-sections">
                 <section>
                     <h2 class="section-heading">@L["Editor.ProductInformation"]</h2>
-                    <FluentGrid Spacing="3">
+                    <FluentGrid Spacing="2">
                         <FluentGridItem Xs="12" Md="6">
                             @if (IsCreate)
                             {
@@ -55,7 +55,7 @@
 
                 <section>
                     <h2 class="section-heading">@L["Editor.PriceSaleWindow"]</h2>
-                    <FluentGrid Spacing="3">
+                    <FluentGrid Spacing="2">
                         <FluentGridItem Xs="12" Md="6">
                             <FluentTextInput style="width: 100%;" @bind-Value="currentProduct!.CostGamePoint" Label="Cost Game Point" />
                         </FluentGridItem>

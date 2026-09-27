@@ -5,7 +5,7 @@ html, body {
     margin: 0;
     height: 100%;
     overflow: hidden;
-    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-family: var(--font-family-base, "Segoe UI", Arial, sans-serif);
 }
 
 /* Blazor root must fill body height for flex layout chain */
@@ -94,6 +94,21 @@ body {
     color: #fff;
     --colorNeutralForeground1: #fff;
     --colorNeutralForeground3: rgba(255, 255, 255, 0.82);
+    --colorNeutralForeground2Link: rgba(255, 255, 255, 0.9);
+    --colorNeutralForeground2LinkHover: #fff;
+    --colorBrandForegroundLink: #fff;
+    --colorBrandForegroundLinkHover: #fff;
+    --colorBrandForegroundLinkPressed: #fff;
+    --colorBrandForegroundLinkSelected: #fff;
+}
+
+.breadcrumb-parent-link {
+    color: inherit;
+    text-decoration: none;
+    --colorNeutralForeground2Link: inherit;
+    --colorNeutralForeground2LinkHover: #fff;
+    --colorBrandForegroundLink: #fff;
+    --colorBrandForegroundLinkHover: #fff;
 }
 
 .global-breadcrumb ol {
@@ -645,6 +660,35 @@ fluent-card:has(.metric-label) {
 .section-heading {
     font-size: 1rem;
     margin: 1rem 0 0.5rem;
+}
+
+.editor-form {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 88rem;
+    min-width: 0;
+    margin-inline: auto;
+}
+
+.editor-form-sections {
+    width: 100%;
+    gap: 1rem !important;
+}
+
+.editor-form .section-heading {
+    margin: 0 0 0.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.4;
+}
+
+.editor-form fluent-text-field,
+.editor-form fluent-text-area,
+.editor-form fluent-number-field,
+.editor-form fluent-select {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
 }
 
 /* ── Section hint text ── */

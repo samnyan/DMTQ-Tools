@@ -5,7 +5,7 @@
     <ol>
     @if (_parentLabel is not null)
     {
-        <li><a href="@_parentUrl">@L[_parentLabel]</a></li>
+        <li><FluentLink Href="@_parentUrl" Appearance="LinkAppearance.Subtle" Class="breadcrumb-parent-link">@L[_parentLabel]</FluentLink></li>
         <li aria-current="page">@_currentLabel</li>
     }
     else if (_currentLabel is not null)

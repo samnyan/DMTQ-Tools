@@ -16,11 +16,11 @@
     }
     else
     {
-        <EditForm Model="@draft" OnValidSubmit="SaveAsync" FormName="achievement-editor">
-            <FluentStack Orientation="Orientation.Vertical" VerticalGap="24" HorizontalAlignment="HorizontalAlignment.Stretch">
+        <EditForm Model="@draft" OnValidSubmit="SaveAsync" FormName="achievement-editor" class="editor-form">
+            <FluentStack Orientation="Orientation.Vertical" VerticalGap="16" HorizontalAlignment="HorizontalAlignment.Stretch" class="editor-form-sections">
                 <section>
                     <h2 class="section-heading">@L["Editor.AchievementRules"]</h2>
-                    <FluentGrid Spacing="3">
+                    <FluentGrid Spacing="2">
                         <FluentGridItem Xs="12" Md="4">@if (IsCreate) { <FluentTextInput style="width:100%" @bind-Value="idInput" Label='@L["Fields.AchievementId"]' Required /> } else { <FluentTextInput style="width:100%" Value="@draft!.Id" Label='@L["Fields.AchievementId"]' ReadOnly="true" /> }</FluentGridItem>
                         <FluentGridItem Xs="12" Md="4"><FluentTextInput style="width:100%" @bind-Value="draft!.ConditionType" Label='@L["Fields.ConditionType"]' /></FluentGridItem>
                         <FluentGridItem Xs="12" Md="4"><FluentTextInput style="width:100%" @bind-Value="draft!.ConditionValue" Label='@L["Fields.ConditionValue"]' /></FluentGridItem>
