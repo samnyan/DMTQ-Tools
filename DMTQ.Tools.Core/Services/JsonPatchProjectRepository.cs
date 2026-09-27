@@ -31,9 +31,35 @@ public sealed class JsonPatchProjectRepository : IPatchProjectRepository
         Directory.CreateDirectory(projectRoot);
         var document = ProjectDocument.FromPackage(package, exportCompressionMode, exportOptions);
         var jsonPath = Path.Combine(projectRoot, ProjectFileName);
-        await using var stream = File.Create(jsonPath);
-        await JsonSerializer.SerializeAsync(stream, document, JsonOptions, cancellationToken)
-            .ConfigureAwait(false);
+        var tempPath = Path.Combine(projectRoot, $".{ProjectFileName}.{Guid.NewGuid():N}.tmp");
+        try
+        {
+            await using (var stream = new FileStream(
+                tempPath,
+                FileMode.CreateNew,
+                FileAccess.Write,
+                FileShare.None,
+                bufferSize: 81920,
+                FileOptions.Asynchronous | FileOptions.WriteThrough))
+            {
+                await JsonSerializer.SerializeAsync(stream, document, JsonOptions, cancellationToken)
+                    .ConfigureAwait(false);
+                await stream.FlushAsync(cancellationToken).ConfigureAwait(false);
+                stream.Flush(flushToDisk: true);
+            }
+
+            File.Move(tempPath, jsonPath, overwrite: true);
+        }
+        finally
+        {
+            try
+            {
+                if (File.Exists(tempPath))
+                    File.Delete(tempPath);
+            }
+            catch (IOException) { }
+            catch (UnauthorizedAccessException) { }
+        }
     }
 
     public async Task<PatchProjectSnapshot> LoadAsync(

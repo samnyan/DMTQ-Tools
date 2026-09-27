@@ -4,6 +4,7 @@
 @inject IProjectWorkflow Workflow
 @inject ItemEditService ItemEditSvc
 @inject ItemCatalogService ItemCatalog
+@inject EditorDraftStore DraftStore
 
 <FluentStack Orientation="Orientation.Vertical" VerticalGap="20" HorizontalAlignment="HorizontalAlignment.Stretch">
     @if (State.CurrentPackage is null)
@@ -74,6 +75,7 @@
                     {
                         <FluentMessageBar Title="@errorMessage" Intent="MessageBarIntent.Error" />
                     }
+                    <EditorSaveFailure Exception="@saveException" Context="Item editor save" />
                 </FluentStack>
             </FluentStack>
         </EditForm>
@@ -85,10 +87,12 @@
     [SupplyParameterFromQuery(Name = "returnUrl")] public string? ReturnUrl { get; set; }
 
     private bool IsCreate => ItemId.Equals("new", StringComparison.OrdinalIgnoreCase);
+    private string RecoveryKey => $"item:{ItemId}";
     private Item? currentItem;
     private string itemIdInput = string.Empty;
     private string message = string.Empty;
     private string errorMessage = string.Empty;
+    private Exception? saveException;
     private bool isBusy;
     private IngameItemEffect? effectDraft;
 
@@ -143,6 +147,14 @@
 
     protected override void OnParametersSet()
     {
+        if (DraftStore.TryGet<ItemDraft>(RecoveryKey, out var recovered) && recovered is not null)
+        {
+            currentItem = recovered.Item;
+            itemIdInput = recovered.ItemIdInput;
+            effectDraft = recovered.EffectDraft;
+            return;
+        }
+
         if (IsCreate)
         {
             currentItem ??= new Item { Id = string.Empty };
@@ -158,7 +170,17 @@
             : ItemEditSvc.CreateEffectDraft(State.CurrentPackage, source.Id, State.SelectedExportPlatform);
     }
 
-    private void NavigateBack() => Navigation.NavigateTo(TableNavigationState.ResolveReturnUrl(Navigation, ReturnUrl, "/items"));
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (currentItem is not null)
+            DraftStore.Set(RecoveryKey, new ItemDraft(currentItem, itemIdInput, effectDraft));
+    }
+
+    private void NavigateBack()
+    {
+        DraftStore.Remove(RecoveryKey);
+        Navigation.NavigateTo(TableNavigationState.ResolveReturnUrl(Navigation, ReturnUrl, "/items"));
+    }
 
     private async Task SaveAsync()
     {
@@ -167,6 +189,7 @@
         isBusy = true;
         message = string.Empty;
         errorMessage = string.Empty;
+        saveException = null;
 
         try
         {
@@ -180,8 +203,19 @@
 
                 var item = ItemEditSvc.CreateDraft(currentItem, itemIdInput.Trim());
                 ItemEditSvc.AddItem(State.CurrentPackage, item, State.SelectedExportPlatform);
-                ItemEditSvc.ApplyEffectDraft(State.CurrentPackage, item.Id, effectDraft, State.SelectedExportPlatform);
-                await Workflow.SaveProjectAsync();
+                var wasDirty = State.IsDirty;
+                try
+                {
+                    ItemEditSvc.ApplyEffectDraft(State.CurrentPackage, item.Id, effectDraft, State.SelectedExportPlatform);
+                    State.IsDirty = true;
+                    await Workflow.SaveProjectAsync();
+                }
+                catch
+                {
+                    ItemEditSvc.RemoveItem(State.CurrentPackage, item.Id, State.SelectedExportPlatform);
+                    State.IsDirty = wasDirty;
+                    throw;
+                }
                 State.Diagnostics.Add($"Item added: {item.Id}");
                 NavigateBack();
             }
@@ -189,6 +223,7 @@
             {
                 ItemEditSvc.UpdateItem(State.CurrentPackage, currentItem, State.SelectedExportPlatform);
                 ItemEditSvc.ApplyEffectDraft(State.CurrentPackage, currentItem.Id, effectDraft, State.SelectedExportPlatform);
+                State.IsDirty = true;
                 await Workflow.SaveProjectAsync();
                 State.Diagnostics.Add($"Item edited: {currentItem.Id}");
                 NavigateBack();
@@ -196,8 +231,7 @@
         }
         catch (Exception ex)
         {
-            errorMessage = ex.Message;
-            State.Diagnostics.Add("Item save error: " + ex.Message);
+            saveException = ex;
         }
         finally
         {
@@ -212,4 +246,6 @@
         };
 
     private void RemoveEffect() => effectDraft = null;
+
+    private sealed record ItemDraft(Item Item, string ItemIdInput, IngameItemEffect? EffectDraft);
 }

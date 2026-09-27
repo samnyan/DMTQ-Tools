@@ -4,6 +4,7 @@
 @inject IProjectWorkflow Workflow
 @inject QuestCatalogService CatalogService
 @inject QuestEditService EditService
+@inject EditorDraftStore DraftStore
 
 <FluentStack Orientation="Orientation.Vertical" VerticalGap="20" HorizontalAlignment="HorizontalAlignment.Stretch">
     @if (State.CurrentPackage is null) { <FluentMessageBar Title='@L["Editor.OpenProjectFirst"]' Intent="MessageBarIntent.Warning" /> }
@@ -51,6 +52,7 @@
                     <FluentButton Appearance="ButtonAppearance.Default" OnClick="NavigateBack">@L["Common.Cancel"]</FluentButton>
                     @if (!string.IsNullOrWhiteSpace(message)) { <FluentMessageBar Title="@message" Intent="MessageBarIntent.Info" /> }
                     @if (!string.IsNullOrWhiteSpace(errorMessage)) { <FluentMessageBar Title="@errorMessage" Intent="MessageBarIntent.Error" /> }
+                    <EditorSaveFailure Exception="@saveException" Context="Quest editor save" />
                 </FluentStack>
             </FluentStack>
         </EditForm>
@@ -62,14 +64,24 @@
     [SupplyParameterFromQuery(Name = "returnUrl")] public string? ReturnUrl { get; set; }
     private static readonly string[] Languages = ["CN", "JP", "KR", "TW", "US"];
     private bool IsCreate => QuestId.Equals("new", StringComparison.OrdinalIgnoreCase);
+    private string RecoveryKey => $"quest:{QuestId}";
     private Quest? draft;
     private string idInput = string.Empty;
     private string? message;
     private string? errorMessage;
+    private Exception? saveException;
     private bool isBusy;
 
     protected override void OnParametersSet()
     {
+        if (DraftStore.TryGet<QuestDraft>(RecoveryKey, out var recovered) && recovered is not null)
+        {
+            draft = recovered.Draft;
+            idInput = recovered.IdInput;
+            EnsureLanguages(draft);
+            return;
+        }
+
         if (IsCreate) draft ??= new Quest { Id = string.Empty };
         else if (State.CurrentPackage is not null)
         {
@@ -77,6 +89,12 @@
             draft = source is null ? null : EditService.CreateDraft(source);
         }
         if (draft is not null) EnsureLanguages(draft);
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (draft is not null)
+            DraftStore.Set(RecoveryKey, new QuestDraft(draft, idInput));
     }
 
     private static void EnsureLanguages(Quest quest)
@@ -88,11 +106,15 @@
     private void AddMission() { if (draft is null) return; EditService.AddMission(draft); EnsureLanguages(draft); }
     private void RemoveMission(QuestMission mission) { if (draft is not null) EditService.RemoveMission(draft, mission); }
     private void MoveMission(QuestMission mission, int offset) { if (draft is not null) EditService.MoveMission(draft, mission, offset); }
-    private void NavigateBack() => Navigation.NavigateTo(TableNavigationState.ResolveReturnUrl(Navigation, ReturnUrl, "/quests"));
+    private void NavigateBack()
+    {
+        DraftStore.Remove(RecoveryKey);
+        Navigation.NavigateTo(TableNavigationState.ResolveReturnUrl(Navigation, ReturnUrl, "/quests"));
+    }
     private async Task SaveAsync()
     {
         if (State.CurrentPackage is null || draft is null) return;
-        isBusy = true; message = null; errorMessage = null;
+        isBusy = true; message = null; errorMessage = null; saveException = null;
         try
         {
             if (IsCreate)
@@ -100,17 +122,28 @@
                 if (string.IsNullOrWhiteSpace(idInput)) { errorMessage = L["Editor.QuestIdRequired"].Value; return; }
                 var created = EditService.CreateDraft(draft, idInput.Trim());
                 EditService.AddQuest(State.CurrentPackage, created, State.SelectedExportPlatform);
-                await Workflow.SaveProjectAsync();
+                var wasDirty = State.IsDirty;
+                State.IsDirty = true;
+                try { await Workflow.SaveProjectAsync(); }
+                catch
+                {
+                    EditService.RemoveQuest(State.CurrentPackage, created.Id, State.SelectedExportPlatform);
+                    State.IsDirty = wasDirty;
+                    throw;
+                }
                 NavigateBack();
             }
             else
             {
                 EditService.UpdateQuest(State.CurrentPackage, draft, State.SelectedExportPlatform);
+                State.IsDirty = true;
                 await Workflow.SaveProjectAsync();
                 NavigateBack();
             }
         }
-        catch (Exception ex) { errorMessage = ex.Message; }
+        catch (Exception ex) { saveException = ex; }
         finally { isBusy = false; }
     }
+
+    private sealed record QuestDraft(Quest Draft, string IdInput);
 }

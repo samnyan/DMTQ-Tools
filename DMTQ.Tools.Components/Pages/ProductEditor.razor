@@ -4,6 +4,7 @@
 @inject IProjectWorkflow Workflow
 @inject ProductEditService ProductEditSvc
 @inject ProductCatalogService ProductCatalog
+@inject EditorDraftStore DraftStore
 
 <FluentStack Orientation="Orientation.Vertical" VerticalGap="20" HorizontalAlignment="HorizontalAlignment.Stretch">
     @if (State.CurrentPackage is null)
@@ -137,6 +138,7 @@
                     {
                         <FluentMessageBar Title="@errorMessage" Intent="MessageBarIntent.Error" />
                     }
+                    <EditorSaveFailure Exception="@saveException" Context="Product editor save" />
                 </FluentStack>
             </FluentStack>
         </EditForm>
@@ -148,10 +150,12 @@
     [SupplyParameterFromQuery(Name = "returnUrl")] public string? ReturnUrl { get; set; }
 
     private bool IsCreate => ProductId.Equals("new", StringComparison.OrdinalIgnoreCase);
+    private string RecoveryKey => $"product:{ProductId}";
     private Product? currentProduct;
     private string productIdInput = string.Empty;
     private string message = string.Empty;
     private string errorMessage = string.Empty;
+    private Exception? saveException;
     private bool isBusy;
     private int? newCategoryId;
     private List<IngameItem> ingameItemDrafts = [];
@@ -261,6 +265,15 @@
 
     protected override void OnParametersSet()
     {
+        if (DraftStore.TryGet<ProductDraft>(RecoveryKey, out var recovered) && recovered is not null)
+        {
+            currentProduct = recovered.Product;
+            productIdInput = recovered.ProductIdInput;
+            ingameItemDrafts = recovered.IngameItemDrafts;
+            newCategoryId = recovered.NewCategoryId;
+            return;
+        }
+
         if (IsCreate)
         {
             currentProduct ??= new Product { Id = string.Empty };
@@ -276,7 +289,17 @@
             : ProductEditSvc.CreateIngameItemDrafts(State.CurrentPackage, source.Id, State.SelectedExportPlatform);
     }
 
-    private void NavigateBack() => Navigation.NavigateTo(TableNavigationState.ResolveReturnUrl(Navigation, ReturnUrl, "/products"));
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (currentProduct is not null)
+            DraftStore.Set(RecoveryKey, new ProductDraft(currentProduct, productIdInput, ingameItemDrafts, newCategoryId));
+    }
+
+    private void NavigateBack()
+    {
+        DraftStore.Remove(RecoveryKey);
+        Navigation.NavigateTo(TableNavigationState.ResolveReturnUrl(Navigation, ReturnUrl, "/products"));
+    }
 
     private async Task SaveAsync()
     {
@@ -285,6 +308,7 @@
         isBusy = true;
         message = string.Empty;
         errorMessage = string.Empty;
+        saveException = null;
 
         try
         {
@@ -298,13 +322,22 @@
 
                 var product = ProductEditSvc.CreateDraft(currentProduct, productIdInput.Trim());
                 ProductEditSvc.AddProduct(State.CurrentPackage, product, ingameItemDrafts, State.SelectedExportPlatform);
-                await Workflow.SaveProjectAsync();
+                var wasDirty = State.IsDirty;
+                State.IsDirty = true;
+                try { await Workflow.SaveProjectAsync(); }
+                catch
+                {
+                    ProductEditSvc.RemoveProduct(State.CurrentPackage, product.Id, State.SelectedExportPlatform);
+                    State.IsDirty = wasDirty;
+                    throw;
+                }
                 State.Diagnostics.Add($"Product added: {product.Id}");
                 NavigateBack();
             }
             else
             {
                 ProductEditSvc.UpdateProduct(State.CurrentPackage, currentProduct, ingameItemDrafts, State.SelectedExportPlatform);
+                State.IsDirty = true;
                 await Workflow.SaveProjectAsync();
                 State.Diagnostics.Add($"Product edited: {currentProduct.Id}");
                 NavigateBack();
@@ -312,8 +345,7 @@
         }
         catch (Exception ex)
         {
-            errorMessage = ex.Message;
-            State.Diagnostics.Add("Product save error: " + ex.Message);
+            saveException = ex;
         }
         finally
         {
@@ -348,4 +380,6 @@
         });
 
     private void RemoveIngameItem(IngameItem item) => ingameItemDrafts.Remove(item);
+
+    private sealed record ProductDraft(Product Product, string ProductIdInput, List<IngameItem> IngameItemDrafts, int? NewCategoryId);
 }

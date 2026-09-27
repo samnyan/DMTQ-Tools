@@ -684,6 +684,83 @@ body {
     top: 0.5rem;
 }
 
+.global-error-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 20000;
+    display: grid;
+    place-items: center;
+    padding: 1rem;
+    background: rgba(20, 24, 32, 0.58);
+}
+
+.global-error-dialog {
+    box-sizing: border-box;
+    width: min(42rem, 100%);
+    max-height: 90vh;
+    overflow: auto;
+    padding: 1.5rem;
+    border: 1px solid var(--colorNeutralStroke1, #d1d1d1);
+    border-radius: 0.5rem;
+    background: var(--colorNeutralBackground1, #fff);
+    color: var(--colorNeutralForeground1, #242424);
+    box-shadow: 0 1.5rem 4rem rgba(0, 0, 0, 0.28);
+}
+
+.global-error-dialog h1 {
+    margin: 0 0 0.75rem;
+    font-size: 1.25rem;
+}
+
+.global-error-id {
+    color: var(--colorNeutralForeground3, #616161);
+    font-size: 0.875rem;
+}
+
+.global-error-dialog details,
+.editor-save-failure details {
+    margin-top: 0.75rem;
+}
+
+.global-error-dialog pre,
+.editor-save-failure pre {
+    max-height: 18rem;
+    overflow: auto;
+    padding: 0.75rem;
+    border-radius: 0.25rem;
+    background: var(--colorNeutralBackground3, #f5f5f5);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    font-size: 0.8rem;
+}
+
+.global-error-confirm {
+    min-height: 2.5rem;
+    margin-top: 1rem;
+    padding: 0.5rem 1rem;
+    border: 0;
+    border-radius: 0.25rem;
+    background: var(--colorBrandBackground, #5b5fc7);
+    color: var(--colorNeutralForegroundOnBrand, #fff);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.editor-save-failure {
+    min-width: 0;
+    padding: 0.75rem;
+    border: 1px solid var(--colorStatusDangerBorder1, #d13438);
+    border-radius: 0.375rem;
+    color: var(--colorNeutralForeground1, #242424);
+    background: var(--colorStatusDangerBackground1, #fdf3f4);
+}
+
+.editor-save-failure p {
+    margin: 0.4rem 0 0;
+    overflow-wrap: anywhere;
+}
+
 /* ── iOS safe area ── */
 .status-bar-safe-area {
     display: none;

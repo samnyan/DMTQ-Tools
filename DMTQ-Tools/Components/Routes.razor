@@ -1,6 +1,8 @@
 ﻿<Router AppAssembly="@typeof(MauiProgram).Assembly" AdditionalAssemblies="@(new[] { typeof(DMTQ_Tools.Components.Layout.MainLayout).Assembly })">
     <Found Context="routeData">
-        <RouteView RouteData="@routeData" DefaultLayout="@typeof(Layout.MainLayout)" />
+        <DMTQ_Tools.Components.Shared.GlobalErrorBoundary>
+            <RouteView RouteData="@routeData" DefaultLayout="@typeof(Layout.MainLayout)" />
+        </DMTQ_Tools.Components.Shared.GlobalErrorBoundary>
         <FocusOnNavigate RouteData="@routeData" Selector="h1" />
     </Found>
 </Router>

@@ -23,6 +23,12 @@
   <data name="Header.AutoSaveFailed" xml:space="preserve"><value>Auto-save failed</value></data>
   <data name="Header.AutoSaveHint" xml:space="preserve"><value>Automatically saves dirty project data after a short pause.</value></data>
   <data name="Header.SaveFailed" xml:space="preserve"><value>Save failed</value></data>
+  <data name="Errors.SaveFailed" xml:space="preserve"><value>Could not save your changes.</value></data>
+  <data name="Errors.ShowDetails" xml:space="preserve"><value>Show technical details</value></data>
+  <data name="Errors.UnexpectedTitle" xml:space="preserve"><value>Something went wrong</value></data>
+  <data name="Errors.UnexpectedMessage" xml:space="preserve"><value>The current page could not continue. Your project and active editor drafts remain available in this app session. Return to Diagnostics to continue without reloading the app.</value></data>
+  <data name="Errors.ErrorId" xml:space="preserve"><value>Error ID: {0}</value></data>
+  <data name="Errors.ReturnToDiagnostics" xml:space="preserve"><value>Continue to Diagnostics</value></data>
   <data name="Header.ToggleNavigation" xml:space="preserve"><value>Toggle navigation</value></data>
   <data name="Common.Save" xml:space="preserve"><value>Save</value></data>
   <data name="Common.Cancel" xml:space="preserve"><value>Cancel</value></data>

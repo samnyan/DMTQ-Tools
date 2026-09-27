@@ -3,6 +3,7 @@
 @inject IProjectState State
 @inject IProjectWorkflow Workflow
 @inject SlangEditService EditService
+@inject EditorDraftStore DraftStore
 
 <FluentStack Orientation="Orientation.Vertical" VerticalGap="20" HorizontalAlignment="HorizontalAlignment.Stretch">
     @if (State.CurrentPackage is null) { <FluentMessageBar Title='@L["Editor.OpenProjectFirst"]' Intent="MessageBarIntent.Warning" /> }
@@ -17,6 +18,7 @@
                     <FluentButton Appearance="ButtonAppearance.Primary" Type="ButtonType.Submit" Disabled="@isBusy">@L["Common.Save"]</FluentButton>
                     <FluentButton Appearance="ButtonAppearance.Default" OnClick="NavigateBack">@L["Common.Cancel"]</FluentButton>
                     @if (!string.IsNullOrWhiteSpace(errorMessage)) { <FluentMessageBar Title="@errorMessage" Intent="MessageBarIntent.Error" /> }
+                    <EditorSaveFailure Exception="@saveException" Context="Slang editor save" />
                 </FluentStack>
             </FluentStack>
         </EditForm>
@@ -27,33 +29,62 @@
     [Parameter] public string EntryId { get; set; } = string.Empty;
     [SupplyParameterFromQuery(Name = "returnUrl")] public string? ReturnUrl { get; set; }
     private bool IsCreate => EntryId.Equals("new", StringComparison.OrdinalIgnoreCase);
+    private string RecoveryKey => $"slang:{EntryId}";
     private SlangEntry? entry;
     private SlangEditModel editModel = new();
     private bool isBusy;
     private string? errorMessage;
+    private Exception? saveException;
 
     protected override void OnParametersSet()
     {
+        if (DraftStore.TryGet<SlangDraft>(RecoveryKey, out var recovered) && recovered is not null)
+        {
+            entry = recovered.Entry;
+            editModel = recovered.Model;
+            return;
+        }
+
         if (IsCreate) { entry = null; editModel = new(); return; }
         entry = State.CurrentPackage?.SlangEntries.FirstOrDefault(item => item.Id == EntryId);
         editModel = new SlangEditModel { Value = entry?.Value ?? string.Empty };
     }
 
-    private void NavigateBack() => Navigation.NavigateTo(TableNavigationState.ResolveReturnUrl(Navigation, ReturnUrl, "/slang"));
+    protected override void OnAfterRender(bool firstRender)
+        => DraftStore.Set(RecoveryKey, new SlangDraft(entry, editModel));
+
+    private void NavigateBack()
+    {
+        DraftStore.Remove(RecoveryKey);
+        Navigation.NavigateTo(TableNavigationState.ResolveReturnUrl(Navigation, ReturnUrl, "/slang"));
+    }
     private async Task SaveAsync()
     {
         if (State.CurrentPackage is null) return;
-        isBusy = true; errorMessage = null;
+        isBusy = true; errorMessage = null; saveException = null;
+        SlangEntry? created = null;
         try
         {
-            if (IsCreate) EditService.Add(State.CurrentPackage, editModel.Value);
+            if (IsCreate) created = EditService.Add(State.CurrentPackage, editModel.Value);
             else EditService.Update(State.CurrentPackage, EntryId, editModel.Value);
-            await Workflow.SaveProjectAsync();
+            var wasDirty = State.IsDirty;
+            State.IsDirty = true;
+            try { await Workflow.SaveProjectAsync(); }
+            catch
+            {
+                if (created is not null)
+                {
+                    State.CurrentPackage.SlangEntries.Remove(created);
+                    State.IsDirty = wasDirty;
+                }
+                throw;
+            }
             NavigateBack();
         }
-        catch (Exception ex) { errorMessage = ex.Message; }
+        catch (Exception ex) { saveException = ex; }
         finally { isBusy = false; }
     }
 
+    private sealed record SlangDraft(SlangEntry? Entry, SlangEditModel Model);
     private sealed class SlangEditModel { public string Value { get; set; } = string.Empty; }
 }

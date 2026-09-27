@@ -5,6 +5,7 @@
 @inject IProjectState State
 @inject IProjectWorkflow Workflow
 @inject SongEditService SongEditSvc
+@inject EditorDraftStore DraftStore
 @inject SongCatalogService SongCatalog
 @inject ItemCatalogService ItemCatalog
 @inject ItemEditService ItemEditSvc
@@ -244,6 +245,7 @@
                 {
                     <FluentMessageBar Title="@errorMessage" Intent="MessageBarIntent.Error" />
                 }
+                <EditorSaveFailure Exception="@saveException" Context="Song editor save" />
             </div>
         </EditForm>
     }
@@ -256,12 +258,14 @@
     private static readonly string[] DefaultLanguages = ["CN", "JP", "KR", "TW", "US"];
 
     private bool IsCreate => SongId == "new";
+    private string RecoveryKey => $"song:{SongId}";
     private string? loadedSongId;
     private Song? currentSong;
     private string songIdInput = string.Empty;
     private bool hasExplicitLinkedItemChoice;
     private string message = string.Empty;
     private string errorMessage = string.Empty;
+    private Exception? saveException;
     private bool isBusy;
     private bool _syncOriginalText = true;
     private Item? linkedItemDraft;
@@ -340,6 +344,17 @@
             selectedLinkedItem = null;
         }
 
+        if (DraftStore.TryGet<SongDraft>(RecoveryKey, out var recovered) && recovered is not null)
+        {
+            currentSong = recovered.Song;
+            songIdInput = recovered.SongIdInput;
+            hasExplicitLinkedItemChoice = recovered.HasExplicitLinkedItemChoice;
+            linkedItemDraft = recovered.LinkedItemDraft;
+            selectedLinkedItem = recovered.SelectedLinkedItem;
+            _syncOriginalText = recovered.SyncOriginalText;
+            return;
+        }
+
         if (IsCreate)
         {
             currentSong ??= new Song { Id = 0 };
@@ -351,6 +366,20 @@
             selectedLinkedItem = currentSong is null
                 ? null
                 : AvailableGameItems.FirstOrDefault(item => item.Id.Equals(currentSong.ItemId.ToString(System.Globalization.CultureInfo.InvariantCulture), StringComparison.OrdinalIgnoreCase));
+        }
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (currentSong is not null)
+        {
+            DraftStore.Set(RecoveryKey, new SongDraft(
+                currentSong,
+                songIdInput,
+                hasExplicitLinkedItemChoice,
+                linkedItemDraft,
+                selectedLinkedItem,
+                _syncOriginalText));
         }
     }
 
@@ -511,7 +540,11 @@
         }
     }
 
-    private void NavigateBack() => Navigation.NavigateTo(TableNavigationState.ResolveReturnUrl(Navigation, ReturnUrl, "/songs"));
+    private void NavigateBack()
+    {
+        DraftStore.Remove(RecoveryKey);
+        Navigation.NavigateTo(TableNavigationState.ResolveReturnUrl(Navigation, ReturnUrl, "/songs"));
+    }
 
     // ── Save Song ──
 
@@ -522,7 +555,9 @@
         isBusy = true;
         message = string.Empty;
         errorMessage = string.Empty;
+        saveException = null;
 
+        var linkedItemAdded = false;
         try
         {
             if (IsCreate)
@@ -548,7 +583,17 @@
                     SongEditSvc.AddSongWithItem(State.CurrentPackage, song, linkedItemDraft, State.SelectedExportPlatform);
                 else
                     SongEditSvc.AddSong(State.CurrentPackage, song, State.SelectedExportPlatform);
-                await Workflow.SaveProjectAsync();
+                var wasDirty = State.IsDirty;
+                State.IsDirty = true;
+                try { await Workflow.SaveProjectAsync(); }
+                catch
+                {
+                    SongEditSvc.RemoveSong(State.CurrentPackage, song.Id, State.SelectedExportPlatform);
+                    if (linkedItemDraft is not null)
+                        ItemEditSvc.RemoveItem(State.CurrentPackage, song.ItemId.ToString(System.Globalization.CultureInfo.InvariantCulture), State.SelectedExportPlatform);
+                    State.IsDirty = wasDirty;
+                    throw;
+                }
                 State.Diagnostics.Add($"Song added: {song.Id}");
                 _lastPackage = null;
                 NavigateBack();
@@ -560,10 +605,23 @@
                 if (int.TryParse(linkedItemId, out var parsedLinkedItemId) && parsedLinkedItemId > 0)
                     currentSong.ItemId = parsedLinkedItemId;
                 if (_syncOriginalText) SyncOriginalToAllLanguages();
-                if (linkedItemDraft is not null)
-                    ItemEditSvc.AddItem(State.CurrentPackage, linkedItemDraft, State.SelectedExportPlatform);
-                SongEditSvc.UpdateSong(State.CurrentPackage, currentSong, State.SelectedExportPlatform);
-                await Workflow.SaveProjectAsync();
+                try
+                {
+                    if (linkedItemDraft is not null)
+                    {
+                        ItemEditSvc.AddItem(State.CurrentPackage, linkedItemDraft, State.SelectedExportPlatform);
+                        linkedItemAdded = true;
+                    }
+                    SongEditSvc.UpdateSong(State.CurrentPackage, currentSong, State.SelectedExportPlatform);
+                    State.IsDirty = true;
+                    await Workflow.SaveProjectAsync();
+                }
+                catch
+                {
+                    if (linkedItemAdded)
+                        ItemEditSvc.RemoveItem(State.CurrentPackage, linkedItemDraft!.Id, State.SelectedExportPlatform);
+                    throw;
+                }
                 _lastPackage = null;
                 State.Diagnostics.Add($"Song edited: {currentSong.Id}");
                 NavigateBack();
@@ -571,8 +629,7 @@
         }
         catch (Exception ex)
         {
-            errorMessage = ex.Message;
-            State.Diagnostics.Add("Song save error: " + ex.Message);
+            saveException = ex;
         }
         finally { isBusy = false; }
     }
@@ -603,6 +660,7 @@
 
         try
         {
+            saveException = null;
             isBusy = true;
             SongEditSvc.AddPattern(currentSong, pattern);
             if (IsCreate)
@@ -612,6 +670,7 @@
             else
             {
                 SongEditSvc.UpdateSong(State.CurrentPackage!, currentSong, State.SelectedExportPlatform);
+                State.IsDirty = true;
                 await Workflow.SaveProjectAsync();
                 message = L["Editor.Saved", L["Editor.Patterns"].Value].Value;
             }
@@ -620,8 +679,7 @@
         }
         catch (Exception ex)
         {
-            errorMessage = ex.Message;
-            State.Diagnostics.Add("Add pattern error: " + ex.Message);
+            saveException = ex;
         }
         finally { isBusy = false; }
     }
@@ -659,6 +717,7 @@
 
         try
         {
+            saveException = null;
             isBusy = true;
             SongEditSvc.UpdatePattern(currentSong, pattern.PatternId, clone);
             if (IsCreate)
@@ -667,6 +726,7 @@
                 return;
             }
             SongEditSvc.UpdateSong(State.CurrentPackage!, currentSong, State.SelectedExportPlatform);
+            State.IsDirty = true;
             await Workflow.SaveProjectAsync();
             _lastPackage = null;
             message = L["Editor.Saved", L["Editor.Patterns"].Value].Value;
@@ -674,8 +734,7 @@
         }
         catch (Exception ex)
         {
-            errorMessage = ex.Message;
-            State.Diagnostics.Add("Pattern edit error: " + ex.Message);
+            saveException = ex;
         }
         finally { isBusy = false; }
     }
@@ -692,6 +751,7 @@
         if (result.Cancelled) return;
 
         isBusy = true;
+        saveException = null;
         try
         {
             SongEditSvc.RemovePattern(currentSong, pattern.PatternId);
@@ -701,6 +761,7 @@
                 return;
             }
             SongEditSvc.UpdateSong(State.CurrentPackage!, currentSong, State.SelectedExportPlatform);
+            State.IsDirty = true;
             await Workflow.SaveProjectAsync();
             _lastPackage = null;
             message = L["Lists.Deleted", L["Editor.Patterns"].Value, pattern.PatternId].Value;
@@ -708,8 +769,16 @@
         }
         catch (Exception ex)
         {
-            errorMessage = ex.Message;
+            saveException = ex;
         }
         finally { isBusy = false; }
     }
+
+    private sealed record SongDraft(
+        Song Song,
+        string SongIdInput,
+        bool HasExplicitLinkedItemChoice,
+        Item? LinkedItemDraft,
+        Item? SelectedLinkedItem,
+        bool SyncOriginalText);
 }

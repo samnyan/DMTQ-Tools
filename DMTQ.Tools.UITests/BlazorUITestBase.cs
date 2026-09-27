@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Components.Rendering;
 using Microsoft.FluentUI.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 using DMTQ_Tools.Components.Localization;
+using DMTQ_Tools.Components.Shared;
 using Bunit;
 
 namespace DMTQ.Tools.UITests;
@@ -25,6 +26,7 @@ public abstract class BlazorUITestBase : Bunit.TestContext
     protected void RegisterAllServices(GameTableManagerTestState state)
     {
         Services.AddSingleton<IProjectState>(state);
+        Services.AddSingleton<EditorDraftStore>();
         Services.AddSingleton<IProjectWorkflow>(new FakeWorkflow(state));
         Services.AddSingleton<IFolderPicker>(new FakeFolderPicker());
         FilePicker = new FakeFilePicker();

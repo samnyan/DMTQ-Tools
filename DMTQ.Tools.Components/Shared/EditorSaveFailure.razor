@@ -1,0 +1,30 @@
+@using Microsoft.Extensions.Logging
+@inject ILogger<EditorSaveFailure> Logger
+
+@if (Exception is not null)
+{
+    <section class="editor-save-failure" role="alert">
+        <strong>@L["Errors.SaveFailed"]</strong>
+        <p>@Exception.Message</p>
+        <details>
+            <summary>@L["Errors.ShowDetails"]</summary>
+            <pre>@Exception.ToString()</pre>
+        </details>
+    </section>
+}
+
+@code {
+    [Parameter] public Exception? Exception { get; set; }
+    [Parameter] public string Context { get; set; } = "Editor form save";
+
+    private Exception? _loggedException;
+
+    protected override void OnParametersSet()
+    {
+        if (Exception is null || ReferenceEquals(Exception, _loggedException))
+            return;
+
+        _loggedException = Exception;
+        Logger.LogError(Exception, "{Context} failed", Context);
+    }
+}

@@ -4,6 +4,7 @@
 @inject IProjectWorkflow Workflow
 @inject AchievementCatalogService CatalogService
 @inject AchievementEditService EditService
+@inject EditorDraftStore DraftStore
 
 <FluentStack Orientation="Orientation.Vertical" VerticalGap="20" HorizontalAlignment="HorizontalAlignment.Stretch">
     @if (State.CurrentPackage is null)
@@ -55,6 +56,7 @@
                     <FluentButton Appearance="ButtonAppearance.Default" OnClick="NavigateBack">@L["Common.Cancel"]</FluentButton>
                     @if (!string.IsNullOrWhiteSpace(message)) { <FluentMessageBar Title="@message" Intent="MessageBarIntent.Info" /> }
                     @if (!string.IsNullOrWhiteSpace(errorMessage)) { <FluentMessageBar Title="@errorMessage" Intent="MessageBarIntent.Error" /> }
+                    <EditorSaveFailure Exception="@saveException" Context="Achievement editor save" />
                 </FluentStack>
             </FluentStack>
         </EditForm>
@@ -81,10 +83,12 @@
         ("TOTAL_SCORE", "Options.AchievementConditionTotalScore")
     ];
     private bool IsCreate => AchievementId.Equals("new", StringComparison.OrdinalIgnoreCase);
+    private string RecoveryKey => $"achievement:{AchievementId}";
     private Achievement? draft;
     private string idInput = string.Empty;
     private string? message;
     private string? errorMessage;
+    private Exception? saveException;
     private bool isBusy;
 
     private string[] ConditionTypeOptions => IncludeExisting(ConditionTypes
@@ -106,6 +110,14 @@
 
     protected override void OnParametersSet()
     {
+        if (DraftStore.TryGet<AchievementDraft>(RecoveryKey, out var recovered) && recovered is not null)
+        {
+            draft = recovered.Draft;
+            idInput = recovered.IdInput;
+            EnsureLanguages(draft);
+            return;
+        }
+
         if (IsCreate) draft ??= new Achievement { Id = string.Empty };
         else if (State.CurrentPackage is not null)
         {
@@ -114,6 +126,12 @@
             draft = source is null ? null : EditService.CreateDraft(source);
         }
         if (draft is not null) EnsureLanguages(draft);
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (draft is not null)
+            DraftStore.Set(RecoveryKey, new AchievementDraft(draft, idInput));
     }
 
     private static void EnsureLanguages(Achievement achievement)
@@ -126,12 +144,16 @@
         }
     }
 
-    private void NavigateBack() => Navigation.NavigateTo(TableNavigationState.ResolveReturnUrl(Navigation, ReturnUrl, "/achievements"));
+    private void NavigateBack()
+    {
+        DraftStore.Remove(RecoveryKey);
+        Navigation.NavigateTo(TableNavigationState.ResolveReturnUrl(Navigation, ReturnUrl, "/achievements"));
+    }
 
     private async Task SaveAsync()
     {
         if (State.CurrentPackage is null || draft is null) return;
-        isBusy = true; message = null; errorMessage = null;
+        isBusy = true; message = null; errorMessage = null; saveException = null;
         try
         {
             if (IsCreate)
@@ -139,17 +161,28 @@
                 if (string.IsNullOrWhiteSpace(idInput)) { errorMessage = L["Editor.AchievementIdRequired"].Value; return; }
                 var created = EditService.CreateDraft(draft, idInput.Trim());
                 EditService.AddAchievement(State.CurrentPackage, created, State.SelectedExportPlatform);
-                await Workflow.SaveProjectAsync();
+                var wasDirty = State.IsDirty;
+                State.IsDirty = true;
+                try { await Workflow.SaveProjectAsync(); }
+                catch
+                {
+                    EditService.RemoveAchievement(State.CurrentPackage, created.Id, State.SelectedExportPlatform);
+                    State.IsDirty = wasDirty;
+                    throw;
+                }
                 NavigateBack();
             }
             else
             {
                 EditService.UpdateAchievement(State.CurrentPackage, draft, State.SelectedExportPlatform);
+                State.IsDirty = true;
                 await Workflow.SaveProjectAsync();
                 NavigateBack();
             }
         }
-        catch (Exception ex) { errorMessage = ex.Message; }
+        catch (Exception ex) { saveException = ex; }
         finally { isBusy = false; }
     }
+
+    private sealed record AchievementDraft(Achievement Draft, string IdInput);
 }

@@ -1,0 +1,54 @@
+@using Microsoft.Extensions.Logging
+@inherits ErrorBoundary
+@implements IDisposable
+@inject NavigationManager Navigation
+@inject ILogger<GlobalErrorBoundary> Logger
+
+@if (CurrentException is null)
+{
+    @ChildContent
+}
+else
+{
+    <div class="global-error-overlay" role="alertdialog" aria-modal="true" aria-labelledby="global-error-title">
+        <section class="global-error-dialog">
+            <h1 id="global-error-title">@L["Errors.UnexpectedTitle"]</h1>
+            <p>@L["Errors.UnexpectedMessage"]</p>
+            <p class="global-error-id">@L["Errors.ErrorId", _errorId]</p>
+            <details>
+                <summary>@L["Errors.ShowDetails"]</summary>
+                <pre>@CurrentException.ToString()</pre>
+            </details>
+            <button class="global-error-confirm" autofocus @onclick="ReturnToDiagnostics">
+                @L["Errors.ReturnToDiagnostics"]
+            </button>
+        </section>
+    </div>
+}
+
+@code {
+    private string _errorId = string.Empty;
+
+    protected override void OnInitialized()
+    {
+        Navigation.LocationChanged += OnLocationChanged;
+    }
+
+    protected override Task OnErrorAsync(Exception exception)
+    {
+        _errorId = Guid.NewGuid().ToString("N")[..8].ToUpperInvariant();
+        Logger.LogError(exception, "Unhandled Blazor UI exception. ErrorId={ErrorId}", _errorId);
+        return Task.CompletedTask;
+    }
+
+    private void ReturnToDiagnostics()
+        => Navigation.NavigateTo($"/diagnostics?recovery={Uri.EscapeDataString(_errorId)}");
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs args)
+        => _ = InvokeAsync(Recover);
+
+    public void Dispose()
+    {
+        Navigation.LocationChanged -= OnLocationChanged;
+    }
+}

@@ -3,6 +3,7 @@ using Assets.Lib.Services;
 using DMTQ.Tools.Core.Services;
 using DMTQ.Tools.Core.Services.Pattern;
 using DMTQ_Tools.Components.Localization;
+using DMTQ_Tools.Components.Shared;
 using DMTQ_Tools.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.FluentUI.AspNetCore.Components;
@@ -28,6 +29,7 @@ namespace DMTQ_Tools
 
             builder.Services.AddMauiBlazorWebView();
             builder.Services.AddLocalization();
+            builder.Services.AddSingleton<EditorDraftStore>();
 
             // IMPORTANT: Must use default ServiceLifetime.Scoped for FluentUI in MAUI BlazorWebView.
             // Singleton causes MessageService to resolve before NavigationManager is initialized
