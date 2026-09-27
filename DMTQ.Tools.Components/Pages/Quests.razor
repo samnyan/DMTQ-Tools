@@ -20,10 +20,10 @@
         <FluentGridItem Xs="12" Sm="6" Md="3"><FluentCard><span class="metric-label">@L["Editor.Missions"]</span><strong>@Catalog.Sum(q => q.Missions.Count)</strong></FluentCard></FluentGridItem>
     </FluentGrid></Metrics>
     <Columns>
-        <PropertyColumn TGridItem="Quest" TProp="string" Property="@(q => q.Id)" Title='@L["Fields.QuestId"]' Sortable="true" />
-        <TemplateColumn TGridItem="Quest" Title='@L["Fields.Name"]' Context="q">@CatalogService.GetDisplayName(q, PreviewLanguage)</TemplateColumn>
-        <TemplateColumn TGridItem="Quest" Title='@L["Editor.Missions"]' Context="q">@q.Missions.Count</TemplateColumn>
-        <TemplateColumn TGridItem="Quest" Title='@L["Lists.Actions"]' Context="q">
+        <PropertyColumn TGridItem="Quest" TProp="string" Property="@(q => q.Id)" Title='@L["Fields.QuestId"]' Sortable="true" Width="8rem" MinWidth="8rem" />
+        <TemplateColumn TGridItem="Quest" Title='@L["Fields.Name"]' Width="1fr" MinWidth="20rem" Context="q">@CatalogService.GetDisplayName(q, PreviewLanguage)</TemplateColumn>
+        <TemplateColumn TGridItem="Quest" Title='@L["Editor.Missions"]' Width="10.25rem" MinWidth="10.25rem" Context="q">@q.Missions.Count</TemplateColumn>
+        <TemplateColumn TGridItem="Quest" Title='@L["Lists.Actions"]' Width="9rem" MinWidth="9rem" Context="q">
             <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="4">
                 <FluentButton IconStart="@(new Icons.Regular.Size20.Edit())" Appearance="ButtonAppearance.Default" OnClick="() => Edit(q.Id)" Title='@L["Common.Edit"]' />
                 <FluentButton IconStart="@(new Icons.Regular.Size20.Delete())" Appearance="ButtonAppearance.Default" OnClick="() => DeleteAsync(q)" Title='@L["Common.Delete"]' />

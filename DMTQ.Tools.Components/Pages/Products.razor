@@ -42,15 +42,15 @@
     </Metrics>
 
     <Columns>
-        <PropertyColumn TGridItem="Product" TProp="string" Property="@(product => product.Id)" Title="Product ID" Sortable="true" />
-        <PropertyColumn TGridItem="Product" TProp="string" Property="@(product => product.ItemId)" Title="Item ID" Sortable="true" />
-        <PropertyColumn TGridItem="Product" TProp="string" Property="@(product => product.ProductType)" Title="Type" Sortable="true" />
-        <PropertyColumn TGridItem="Product" TProp="string" Property="@(product => product.PlatformProductId)" Title='@L["Lists.PlatformSku"]' Sortable="true" />
-        <PropertyColumn TGridItem="Product" TProp="string" Property="@(product => product.StoreProductId)" Title='@L["Lists.StoreSku"]' Sortable="true" />
-        <PropertyColumn TGridItem="Product" TProp="string" Property="@(product => product.CostGamePoint)" Title='@L["Lists.GamePoint"]' />
-        <PropertyColumn TGridItem="Product" TProp="string" Property="@(product => product.CostGameCash)" Title='@L["Lists.GameCash"]' />
-        <PropertyColumn TGridItem="Product" TProp="string" Property="@(product => product.Status)" Title="Status" Sortable="true" />
-        <TemplateColumn TGridItem="Product" Title="Actions" Context="product">
+        <PropertyColumn TGridItem="Product" TProp="string" Property="@(product => product.Id)" Title="Product ID" Sortable="true" Width="7rem" MinWidth="7rem" />
+        <PropertyColumn TGridItem="Product" TProp="string" Property="@(product => product.ItemId)" Title="Item ID" Sortable="true" Width="6.5rem" MinWidth="6.5rem" />
+        <PropertyColumn TGridItem="Product" TProp="string" Property="@(product => product.ProductType)" Title="Type" Sortable="true" Width="6.25rem" MinWidth="6.25rem" />
+        <PropertyColumn TGridItem="Product" TProp="string" Property="@(product => product.PlatformProductId)" Title='@L["Lists.PlatformSku"]' Sortable="true" Width="7rem" MinWidth="7rem" />
+        <PropertyColumn TGridItem="Product" TProp="string" Property="@(product => product.StoreProductId)" Title='@L["Lists.StoreSku"]' Sortable="true" Width="1fr" MinWidth="18rem" />
+        <PropertyColumn TGridItem="Product" TProp="string" Property="@(product => product.CostGamePoint)" Title='@L["Lists.GamePoint"]' Width="8rem" MinWidth="8rem" />
+        <PropertyColumn TGridItem="Product" TProp="string" Property="@(product => product.CostGameCash)" Title='@L["Lists.GameCash"]' Width="7rem" MinWidth="7rem" />
+        <PropertyColumn TGridItem="Product" TProp="string" Property="@(product => product.Status)" Title="Status" Sortable="true" Width="6.25rem" MinWidth="6.25rem" />
+        <TemplateColumn TGridItem="Product" Title="Actions" Width="11rem" MinWidth="11rem" Context="product">
             <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="4">
                 <FluentButton IconStart="@(new Icons.Regular.Size20.Edit())"
                               Appearance="ButtonAppearance.Default"

@@ -51,17 +51,17 @@
     </Metrics>
 
     <Columns>
-        <PropertyColumn TGridItem="Item" TProp="string" Property="@(item => item.Id)" Title="Item ID" Sortable="true" />
-        <TemplateColumn TGridItem="Item" Title="Name" Sortable="true" SortBy="@(GridSort<Item>.ByAscending(item => item.ItemName))" Context="item">
+        <PropertyColumn TGridItem="Item" TProp="string" Property="@(item => item.Id)" Title="Item ID" Sortable="true" Width="8.25rem" MinWidth="8.25rem" />
+        <TemplateColumn TGridItem="Item" Title="Name" Sortable="true" SortBy="@(GridSort<Item>.ByAscending(item => item.ItemName))" Width="1fr" MinWidth="14rem" Context="item">
             <strong>@ItemCatalog.GetDisplayName(item, selectedLanguage)</strong>
         </TemplateColumn>
-        <PropertyColumn TGridItem="Item" TProp="string" Property="@(item => item.ItemType)" Title="Type" Sortable="true" />
-        <PropertyColumn TGridItem="Item" TProp="string" Property="@(item => item.Status)" Title="Status" Sortable="true" />
-        <PropertyColumn TGridItem="Item" TProp="string" Property="@(item => item.BuyLevel)" Title="Buy Level" />
-        <TemplateColumn TGridItem="Item" Title="Summary" Context="item">
+        <PropertyColumn TGridItem="Item" TProp="string" Property="@(item => item.ItemType)" Title="Type" Sortable="true" Width="6.25rem" MinWidth="6.25rem" />
+        <PropertyColumn TGridItem="Item" TProp="string" Property="@(item => item.Status)" Title="Status" Sortable="true" Width="6.25rem" MinWidth="6.25rem" />
+        <PropertyColumn TGridItem="Item" TProp="string" Property="@(item => item.BuyLevel)" Title="Buy Level" Width="6.25rem" MinWidth="6.25rem" />
+        <TemplateColumn TGridItem="Item" Title="Summary" Width="2fr" MinWidth="18rem" Context="item">
             @ItemCatalog.GetLocalizedSummary(item, selectedLanguage)
         </TemplateColumn>
-        <TemplateColumn TGridItem="Item" Title="Actions" Context="item">
+        <TemplateColumn TGridItem="Item" Title="Actions" Width="14rem" MinWidth="14rem" Context="item">
             <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="4">
                 <FluentButton IconStart="@(new Icons.Regular.Size20.Edit())"
                               Appearance="ButtonAppearance.Default"

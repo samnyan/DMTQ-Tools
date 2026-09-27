@@ -59,19 +59,19 @@
     </Metrics>
 
     <Columns>
-        <PropertyColumn TGridItem="Song" TProp="int" Property="@(s => s.Id)" Title="Song ID" Sortable="true" />
-        <TemplateColumn TGridItem="Song" Title='@L["Lists.Name"]' Sortable="true" SortBy="@(GridSort<Song>.ByAscending(s => s.Name))" Context="song">
+        <PropertyColumn TGridItem="Song" TProp="int" Property="@(s => s.Id)" Title="Song ID" Sortable="true" Width="6.25rem" MinWidth="6.25rem" />
+        <TemplateColumn TGridItem="Song" Title='@L["Lists.Name"]' Sortable="true" SortBy="@(GridSort<Song>.ByAscending(s => s.Name))" Width="2fr" MinWidth="14rem" Context="song">
             <strong>@DisplayTitle(song)</strong>
         </TemplateColumn>
-        <PropertyColumn TGridItem="Song" TProp="string" Property="@(s => s.Genre)" Title="Genre" Sortable="true" />
-        <PropertyColumn TGridItem="Song" TProp="string" Property="@(s => s.ArtistName)" Title='@L["Lists.Artist"]' Sortable="true" />
-        <TemplateColumn TGridItem="Song" Title='@L["Lists.Patterns"]' Context="song">
+        <PropertyColumn TGridItem="Song" TProp="string" Property="@(s => s.Genre)" Title="Genre" Sortable="true" Width="1fr" MinWidth="10rem" />
+        <PropertyColumn TGridItem="Song" TProp="string" Property="@(s => s.ArtistName)" Title='@L["Lists.Artist"]' Sortable="true" Width="1.75fr" MinWidth="12rem" />
+        <TemplateColumn TGridItem="Song" Title='@L["Lists.Patterns"]' Width="6.25rem" MinWidth="6.25rem" Context="song">
             @song.Patterns.Count
         </TemplateColumn>
-        <TemplateColumn TGridItem="Song" Title='@L["Lists.HasPreview"]' Context="song">
+        <TemplateColumn TGridItem="Song" Title='@L["Lists.HasPreview"]' Width="8rem" MinWidth="8rem" Context="song">
             @(song.HasPreview ? L["Lists.Yes"] : L["Lists.No"])
         </TemplateColumn>
-        <TemplateColumn TGridItem="Song" Title="Actions" Context="song">
+        <TemplateColumn TGridItem="Song" Title="Actions" Width="10rem" MinWidth="10rem" Context="song">
             <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="4">
                 <FluentButton IconStart="@(new Icons.Regular.Size20.Edit())"
                               Appearance="ButtonAppearance.Default"

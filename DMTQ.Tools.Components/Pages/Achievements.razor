@@ -24,12 +24,12 @@
         <FluentGrid Spacing="3"><FluentGridItem Xs="12" Sm="6" Md="3"><FluentCard><span class="metric-label">@L["Nav.Achievements"]</span><strong>@Catalog.Count</strong></FluentCard></FluentGridItem></FluentGrid>
     </Metrics>
     <Columns>
-        <PropertyColumn TGridItem="Achievement" TProp="string" Property="@(item => item.Id)" Title='@L["Fields.AchievementId"]' Sortable="true" />
-        <TemplateColumn TGridItem="Achievement" Title='@L["Fields.Name"]' Context="item">@CatalogService.GetDisplayName(item, PreviewLanguage)</TemplateColumn>
-        <PropertyColumn TGridItem="Achievement" TProp="string" Property="@(item => item.ConditionType)" Title='@L["Fields.ConditionType"]' Sortable="true" />
-        <PropertyColumn TGridItem="Achievement" TProp="string" Property="@(item => item.AchievementTier)" Title='@L["Fields.Tier"]' />
-        <PropertyColumn TGridItem="Achievement" TProp="string" Property="@(item => item.ObtainPoint)" Title='@L["Fields.ObtainPoint"]' />
-        <TemplateColumn TGridItem="Achievement" Title='@L["Lists.Actions"]' Context="item">
+        <PropertyColumn TGridItem="Achievement" TProp="string" Property="@(item => item.Id)" Title='@L["Fields.AchievementId"]' Sortable="true" Width="6rem" MinWidth="6rem" />
+        <TemplateColumn TGridItem="Achievement" Title='@L["Fields.Name"]' Width="2.5fr" MinWidth="20rem" Context="item">@CatalogService.GetDisplayName(item, PreviewLanguage)</TemplateColumn>
+        <PropertyColumn TGridItem="Achievement" TProp="string" Property="@(item => item.ConditionType)" Title='@L["Fields.ConditionType"]' Sortable="true" Width="1fr" MinWidth="14rem" />
+        <PropertyColumn TGridItem="Achievement" TProp="string" Property="@(item => item.AchievementTier)" Title='@L["Fields.Tier"]' Width="7.75rem" MinWidth="7.75rem" />
+        <PropertyColumn TGridItem="Achievement" TProp="string" Property="@(item => item.ObtainPoint)" Title='@L["Fields.ObtainPoint"]' Width="7rem" MinWidth="7rem" />
+        <TemplateColumn TGridItem="Achievement" Title='@L["Lists.Actions"]' Width="16.5rem" MinWidth="16.5rem" Context="item">
             <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="4">
                 <FluentButton IconStart="@(new Icons.Regular.Size20.Edit())" Appearance="ButtonAppearance.Default" OnClick="() => Edit(item.Id)" Title='@L["Common.Edit"]' />
                 <FluentButton IconStart="@(new Icons.Regular.Size20.Delete())" Appearance="ButtonAppearance.Default" OnClick="() => DeleteAsync(item)" Title='@L["Common.Delete"]' />
