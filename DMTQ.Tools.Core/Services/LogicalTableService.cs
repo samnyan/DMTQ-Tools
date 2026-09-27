@@ -61,10 +61,18 @@ public sealed partial class LogicalTableService
             logicalTable.Columns.Add(new LogicalTableColumn(column.Name, column.Name, null, column.Name, Editable: true));
         }
 
+        var keyOccurrences = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         foreach (var row in primary.Rows.OrderBy(row => row.Order))
         {
             var rowKey = GetCellValue(row, keyColumn.Name);
-            var logicalRow = new LogicalTableRow { Key = rowKey };
+            var occurrence = keyOccurrences.GetValueOrDefault(rowKey);
+            keyOccurrences[rowKey] = occurrence + 1;
+            var logicalRow = new LogicalTableRow
+            {
+                Key = occurrence == 0 ? rowKey : $"{rowKey} (duplicate {occurrence + 1})",
+                SourceKeyValue = rowKey,
+                SourceKeyOccurrence = occurrence
+            };
             foreach (var column in primary.Columns.OrderBy(column => column.Order))
             {
                 logicalRow.Cells[column.Name] = GetCellValue(row, column.Name);
@@ -123,7 +131,7 @@ public sealed partial class LogicalTableService
 
         foreach (var rowKey in rowKeys)
         {
-            var logicalRow = new LogicalTableRow { Key = rowKey };
+            var logicalRow = new LogicalTableRow { Key = rowKey, SourceKeyValue = rowKey };
             logicalRow.Cells[keyColumn.Name] = rowKey;
 
             foreach (var table in orderedTables)
@@ -193,6 +201,73 @@ public sealed partial class LogicalTableService
         }
     }
 
+    /// <summary>Saves one row from the generic editor without changing its CSV column order.</summary>
+    public void SaveRow(
+        PatchPackage package,
+        LogicalTable logicalTable,
+        LogicalTableRow? originalRow,
+        IReadOnlyDictionary<string, string> values)
+    {
+        ArgumentNullException.ThrowIfNull(package);
+        ArgumentNullException.ThrowIfNull(logicalTable);
+        ArgumentNullException.ThrowIfNull(values);
+
+        var keyColumn = logicalTable.Columns.FirstOrDefault()
+            ?? throw new InvalidOperationException($"Table '{logicalTable.Key}' has no columns.");
+        if (!values.TryGetValue(keyColumn.Key, out var rowKey) || string.IsNullOrWhiteSpace(rowKey))
+            throw new InvalidDataException($"Column '{keyColumn.DisplayName}' is required.");
+
+        var sourceTables = package.Tables.Tables
+            .Where(table => logicalTable.SourcePackageRelativePaths.Contains(
+                table.PackageRelativePath, StringComparer.OrdinalIgnoreCase))
+            .ToArray();
+        if (sourceTables.Length == 0)
+            throw new InvalidOperationException($"Source tables for '{logicalTable.Key}' no longer exist.");
+
+        var originalRowKey = originalRow?.Key;
+        var keyColumnHasUniqueId = keyColumn.SourceColumnName.Equals("id", StringComparison.OrdinalIgnoreCase)
+                                   || keyColumn.SourceColumnName.EndsWith("_id", StringComparison.OrdinalIgnoreCase);
+        if (keyColumnHasUniqueId && logicalTable.Rows.Any(row =>
+                !row.Key.Equals(originalRowKey, StringComparison.OrdinalIgnoreCase)
+                && row.Cells.GetValueOrDefault(keyColumn.Key, string.Empty).Equals(rowKey, StringComparison.OrdinalIgnoreCase)))
+            throw new InvalidDataException($"Row key '{rowKey}' already exists in '{logicalTable.Key}'.");
+
+        foreach (var table in sourceTables)
+        {
+            var sourceKeyColumn = table.Columns.OrderBy(column => column.Order).FirstOrDefault()
+                ?? throw new InvalidOperationException($"Source table '{table.TableName}' has no columns.");
+            GameTableRow? row = null;
+            if (originalRow is not null)
+            {
+                var matchingRows = table.Rows
+                    .Where(candidate => GetCellValue(candidate, sourceKeyColumn.Name)
+                        .Equals(originalRow.SourceKeyValue, StringComparison.OrdinalIgnoreCase))
+                    .OrderBy(candidate => candidate.Order)
+                    .ToArray();
+                row = matchingRows.ElementAtOrDefault(originalRow.SourceKeyOccurrence);
+            }
+
+            if (row is null)
+            {
+                if (originalRow is not null && logicalTable.Kind == "Shared")
+                    continue;
+
+                row = new GameTableRow { Order = table.Rows.Count };
+                table.Rows.Add(row);
+            }
+
+            foreach (var sourceColumn in table.Columns.OrderBy(column => column.Order))
+            {
+                var logicalColumnKey = logicalTable.Kind == "Localized"
+                    && !sourceColumn.Name.Equals(sourceKeyColumn.Name, StringComparison.OrdinalIgnoreCase)
+                    ? $"{sourceColumn.Name}:{table.LanguageCode}"
+                    : sourceColumn.Name;
+                if (values.TryGetValue(logicalColumnKey, out var value))
+                    SetCellValue(row, sourceColumn.Name, value);
+            }
+        }
+    }
+
     private static void UpdateSourceTableCell(
         GameTable table,
         string rowKey,
@@ -207,6 +282,11 @@ public sealed partial class LogicalTableService
             return;
         }
 
+        SetCellValue(row, columnName, value);
+    }
+
+    private static void SetCellValue(GameTableRow row, string columnName, string value)
+    {
         for (var i = 0; i < row.Cells.Count; i++)
         {
             if (row.Cells[i].ColumnName.Equals(columnName, StringComparison.OrdinalIgnoreCase))

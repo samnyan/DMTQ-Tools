@@ -4,7 +4,10 @@ using DMTQ.Tools.Core.Models.Export;
 using DMTQ.Tools.Core.Models.Project;
 using DMTQ.Tools.Core.Services;
 using System.Reflection;
+using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Rendering;
 using Microsoft.FluentUI.AspNetCore.Components;
+using DMTQ_Tools.Components.Dialogs;
 
 namespace DMTQ.Tools.UITests.Pages;
 
@@ -21,9 +24,9 @@ public sealed class SongEditorPageTests : BlazorUITestBase
 
         var cut = Render<SongEditor>(parameters => parameters.Add(p => p.SongId, "new"));
 
-        cut.Markup.Should().Contain("New Song");
-        cut.Markup.Should().Contain("Song ID");
-        cut.Markup.Should().Contain("Save Song");
+        cut.Markup.Should().Contain("song-editor-form");
+        cut.Markup.Should().Contain("<fluent-text-input");
+        cut.Markup.Should().Contain("fluent-button type=\"submit\"");
     }
 
     [TestMethod]
@@ -36,11 +39,11 @@ public sealed class SongEditorPageTests : BlazorUITestBase
 
         var cut = Render<SongEditor>(parameters => parameters.Add(p => p.SongId, "1001"));
 
-        cut.Markup.Should().Contain("Edit: 1001");
-        cut.Markup.Should().Contain("Name");
-        cut.Markup.Should().Contain("Genre");
-        cut.Markup.Should().Contain("Save Song");
-        cut.Markup.Should().Contain("Patterns");
+        cut.Markup.Should().Contain("1001");
+        cut.Markup.Should().Contain("value=\"T\"");
+        cut.Markup.Should().Contain("value=\"G\"");
+        cut.Markup.Should().Contain("fluent-button type=\"submit\"");
+        cut.Markup.Should().Contain("fluent-data-grid");
     }
 
     [TestMethod]
@@ -52,7 +55,45 @@ public sealed class SongEditorPageTests : BlazorUITestBase
 
         var cut = Render<SongEditor>(parameters => parameters.Add(p => p.SongId, "1001"));
 
-        cut.Markup.Should().Contain("Open or import a project before editing songs");
+        cut.Find("fluent-message-bar").TextContent.Should().NotBeNullOrWhiteSpace();
+    }
+
+    [TestMethod]
+    public void PatternDialog_UsesGamePointTypesAndPreservesUnknownCodes()
+    {
+        var state = CreateStateWithEmptyPackage();
+        RegisterAllServices(state);
+
+        var content = new SongPattern
+        {
+            PatternId = 1,
+            PointType = 7
+        };
+        var root = Render(builder =>
+        {
+            builder.OpenComponent<FluentProviders>(0);
+            builder.CloseComponent();
+            builder.OpenComponent<PatternDialogLauncher>(1);
+            builder.AddAttribute(2, nameof(PatternDialogLauncher.Content), content);
+            builder.CloseComponent();
+        });
+        var launcher = root.FindComponent<PatternDialogLauncher>();
+        Task? openTask = null;
+        root.InvokeAsync(() =>
+        {
+            openTask = launcher.Instance.OpenAsync();
+            return Task.CompletedTask;
+        }).GetAwaiter().GetResult();
+        root.WaitForAssertion(() => root.FindComponents<PatternDialog>().Should().ContainSingle());
+        var cut = root.FindComponent<PatternDialog>();
+
+        cut.Markup.Should().Contain("0 — Q point");
+        cut.Markup.Should().Contain("1 — MAX point");
+        cut.Markup.Should().Contain("7 — Existing value");
+        cut.Markup.Should().NotContain("2 — Q point");
+
+        root.InvokeAsync(() => cut.Instance.DialogInstance.CancelAsync()).GetAwaiter().GetResult();
+        openTask!.GetAwaiter().GetResult();
     }
 
     [TestMethod]
@@ -64,12 +105,13 @@ public sealed class SongEditorPageTests : BlazorUITestBase
         RegisterAllServices(state);
         var cut = Render<SongEditor>(parameters => parameters.Add(p => p.SongId, "1001"));
 
-        var syncSwitch = cut.FindComponents<FluentSwitch>()
-            .Single(component => component.Instance.Label == "Sync original text");
-        syncSwitch.Instance.ValueChanged.InvokeAsync(true).GetAwaiter().GetResult();
-        var originalFields = cut.FindAll("fluent-text-input");
-        originalFields[2].Input("Live full name");
-        originalFields[4].Input("Live artist");
+        var syncSwitch = cut.FindComponents<FluentSwitch>().Last();
+        cut.InvokeAsync(async () =>
+        {
+            await syncSwitch.Instance.ValueChanged.InvokeAsync(true);
+            await cut.FindComponents<FluentTextInput>()[2].Instance.ValueChanged.InvokeAsync("Live full name");
+            await cut.FindComponents<FluentTextInput>()[4].Instance.ValueChanged.InvokeAsync("Live artist");
+        }).GetAwaiter().GetResult();
 
         var draft = GetPrivateField<Song>(cut.Instance, "currentSong");
         draft.Localizations.Should().ContainKeys("CN", "JP", "KR", "TW", "US");
@@ -78,8 +120,11 @@ public sealed class SongEditorPageTests : BlazorUITestBase
             && localization.ArtistName == "Live artist"
             && localization.Genre == "G");
 
-        syncSwitch.Instance.ValueChanged.InvokeAsync(false).GetAwaiter().GetResult();
-        originalFields[2].Input("Original only");
+        cut.InvokeAsync(async () =>
+        {
+            await syncSwitch.Instance.ValueChanged.InvokeAsync(false);
+            await cut.FindComponents<FluentTextInput>()[2].Instance.ValueChanged.InvokeAsync("Original only");
+        }).GetAwaiter().GetResult();
         draft.Localizations.Values.Should().OnlyContain(localization =>
             localization.FullName == "Live full name");
     }
@@ -88,6 +133,25 @@ public sealed class SongEditorPageTests : BlazorUITestBase
         where T : class
         => (T)(instance.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic)
             ?.GetValue(instance) ?? throw new InvalidOperationException($"Field '{fieldName}' was not found."));
+
+    private sealed class PatternDialogLauncher : ComponentBase
+    {
+        [Inject] private IDialogService DialogService { get; set; } = default!;
+        [Parameter] public SongPattern Content { get; set; } = default!;
+
+        public Task OpenAsync()
+            => DialogService.ShowDialogAsync<PatternDialog>(options =>
+            {
+                options.Header.Title = "Pattern";
+                options.Parameters = new Dictionary<string, object?>
+                {
+                    [nameof(PatternDialog.Content)] = Content
+                };
+            });
+
+        protected override void BuildRenderTree(RenderTreeBuilder builder)
+            => builder.AddContent(0, "Pattern dialog test host");
+    }
 
     private static PatchPackage CreateSamplePackage()
     {

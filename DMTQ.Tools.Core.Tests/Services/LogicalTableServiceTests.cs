@@ -93,6 +93,104 @@ public sealed class LogicalTableServiceTests
         us.Rows[0].Cells.Single(cell => cell.ColumnName == "title").Value.Should().Be("Oblivion");
     }
 
+    [TestMethod]
+    public void SaveRow_UpdatesSharedRowsAndAddsNewRowsWithoutChangingColumnOrder()
+    {
+        var package = new PatchPackage
+        {
+            ProjectInfo = new ProjectInfo("project", "source", "1.0", "android")
+        };
+        package.Tables.Tables.Add(CreateTable("table/us/sample.csv", "sample", "us", "id", "name", ("1", "old")));
+        package.Tables.Tables.Add(CreateTable("table/jp/sample.csv", "sample", "jp", "id", "name", ("1", "old")));
+        var service = new LogicalTableService();
+        var logicalTable = service.BuildCatalog(package).Single(table => table.Key == "sample");
+
+        service.SaveRow(package, logicalTable, logicalTable.Rows.Single(row => row.Key == "1"), new Dictionary<string, string>
+        {
+            ["id"] = "1",
+            ["name"] = "updated"
+        });
+        logicalTable = service.BuildCatalog(package).Single(table => table.Key == "sample");
+        service.SaveRow(package, logicalTable, null, new Dictionary<string, string>
+        {
+            ["id"] = "2",
+            ["name"] = "new row"
+        });
+
+        package.Tables.Tables.Should().OnlyContain(table => table.Columns.Select(column => column.Name).SequenceEqual(new[] { "id", "name" }));
+        package.Tables.Tables.SelectMany(table => table.Rows).Should().HaveCount(4);
+        package.Tables.Tables.SelectMany(table => table.Rows)
+            .Where(row => row.Cells.First(cell => cell.ColumnName == "id").Value == "1")
+            .Should().OnlyContain(row => row.Cells.First(cell => cell.ColumnName == "name").Value == "updated");
+    }
+
+    [TestMethod]
+    public void SaveRow_UpdatesLocalizedLanguageAndAddsMissingTranslationRow()
+    {
+        var package = new PatchPackage
+        {
+            ProjectInfo = new ProjectInfo("project", "source", "1.0", "android")
+        };
+        package.Tables.Tables.Add(CreateTable("table/us/song_desc_us.csv", "song_desc_us", "us", "song_id", "title", ("1", "Old")));
+        package.Tables.Tables.Add(CreateTable("table/jp/song_desc_jp.csv", "song_desc_jp", "jp", "song_id", "title"));
+        var service = new LogicalTableService();
+        var logicalTable = service.BuildCatalog(package).Single(table => table.Key == "song_desc");
+
+        service.SaveRow(package, logicalTable, logicalTable.Rows.Single(row => row.Key == "1"), new Dictionary<string, string>
+        {
+            ["song_id"] = "1",
+            ["title:us"] = "Updated",
+            ["title:jp"] = "新しい翻訳"
+        });
+
+        var updated = service.BuildCatalog(package).Single(table => table.Key == "song_desc");
+        updated.Rows.Should().ContainSingle();
+        updated.Rows[0].Cells["title:us"].Should().Be("Updated");
+        updated.Rows[0].Cells["title:jp"].Should().Be("新しい翻訳");
+    }
+
+    [TestMethod]
+    public void SaveRow_UsesOccurrenceToEditRowsWithRepeatedFirstColumnKeys()
+    {
+        var package = new PatchPackage
+        {
+            ProjectInfo = new ProjectInfo("project", "source", "1.0", "android")
+        };
+        var table = new GameTable
+        {
+            PackageRelativePath = "table/us/ingameitem_ingameitem.csv",
+            TableName = "ingameitem_ingameitem",
+            LanguageCode = "us"
+        };
+        table.Columns.Add(new GameTableColumn("item_type", 0));
+        table.Columns.Add(new GameTableColumn("item_level", 1));
+        table.Columns.Add(new GameTableColumn("product_id", 2));
+        table.Rows.Add(CreateRow(0, ("item_type", "AB"), ("item_level", "1"), ("product_id", "10")));
+        table.Rows.Add(CreateRow(1, ("item_type", "AB"), ("item_level", "2"), ("product_id", "20")));
+        package.Tables.Tables.Add(table);
+        var service = new LogicalTableService();
+        var logicalTable = service.BuildCatalog(package).Single(item => item.Key == "ingameitem_ingameitem");
+
+        logicalTable.Rows.Select(row => row.Key).Should().Equal("AB", "AB (duplicate 2)");
+        service.SaveRow(package, logicalTable, logicalTable.Rows[1], new Dictionary<string, string>
+        {
+            ["item_type"] = "AB",
+            ["item_level"] = "2",
+            ["product_id"] = "99"
+        });
+
+        table.Rows[0].Cells.Single(cell => cell.ColumnName == "product_id").Value.Should().Be("10");
+        table.Rows[1].Cells.Single(cell => cell.ColumnName == "product_id").Value.Should().Be("99");
+    }
+
+    private static GameTableRow CreateRow(int order, params (string Name, string Value)[] cells)
+    {
+        var row = new GameTableRow { Order = order };
+        foreach (var (name, value) in cells)
+            row.Cells.Add(new GameTableCell(name, value));
+        return row;
+    }
+
     private static GameTable CreateTable(
         string path,
         string tableName,

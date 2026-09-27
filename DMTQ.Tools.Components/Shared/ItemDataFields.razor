@@ -72,11 +72,14 @@
         {
             var options = new[]
             {
-                "", $"S — {L["Options.ItemTypeMusic"].Value}", $"N — {L["Options.ItemTypeNoteSkin"].Value}",
+                $" — {L["Options.EffectTypeNone"].Value}", $"S — {L["Options.ItemTypeMusic"].Value}", $"N — {L["Options.ItemTypeNoteSkin"].Value}",
             $"K — {L["Options.ItemTypeStatusBarSkin"].Value}", $"C — {L["Options.ItemTypePartner"].Value}",
-            $"F — {L["Options.ItemTypeAddOn"].Value}", $"M — {L["Options.ItemTypeMaxPoint"].Value}",
+                $"F — {L["Options.ItemTypeAddOn"].Value}", $"M — {L["Options.ItemTypeMaxPoint"].Value}",
             $"Q — {L["Options.ItemTypeQPoint"].Value}", $"T — {L["Options.ItemTypeUnlock"].Value}",
-                $"I — {L["Options.ItemTypeIngame"].Value}", $"P — {L["Options.ItemTypeMusicPack"].Value}"
+                $"I — {L["Options.ItemTypeIngame"].Value}", $"P — {L["Options.ItemTypeMusicPack"].Value}",
+                $"itempack — {L["Options.ItemTypeItemPack"].Value}",
+                $"ticket — {L["Options.ItemTypeTicket"].Value}",
+                $"L — {L["Options.ItemTypeRawCode"].Value}"
             };
             return string.IsNullOrWhiteSpace(Content.ItemType)
                    || options.Any(option => option.StartsWith(Content.ItemType + " — ", StringComparison.OrdinalIgnoreCase))
@@ -115,10 +118,16 @@
     private string selectedItemType
     {
         get => string.IsNullOrWhiteSpace(Content.ItemType)
-            ? string.Empty
+            ? ItemTypeOptions[0]
             : ItemTypeOptions.FirstOrDefault(option => option.StartsWith(Content.ItemType + " — ", StringComparison.OrdinalIgnoreCase))
-              ?? Content.ItemType;
-        set => Content.ItemType = value.Split(" — ", 2)[0];
+              ?? $"{Content.ItemType} — {L["Fields.ExistingValue"].Value}";
+        set => Content.ItemType = GetOptionValue(value);
+    }
+
+    private static string GetOptionValue(string option)
+    {
+        var separatorIndex = option.LastIndexOf(" — ", StringComparison.Ordinal);
+        return separatorIndex < 0 ? option : option[..separatorIndex];
     }
 
     private void SetBaseField(Action<Item> update)

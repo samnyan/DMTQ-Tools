@@ -16,13 +16,13 @@
                 <h3 class="lang-heading">@language</h3>
                 <FluentGrid Spacing="2">
                     <FluentGridItem Xs="12" Md="4">
-                        <FluentTextInput style="width: 100%;" @bind-Value="Content.NamesByLanguage[language]" Label='@L["Fields.Name"]' />
+                        <FluentTextInput style="width: 100%;" Value="@Content.NamesByLanguage[language]" ValueChanged="@(value => Content.NamesByLanguage[language] = value)" Label='@L["Fields.Name"]' />
                     </FluentGridItem>
                     <FluentGridItem Xs="12" Md="6">
-                        <FluentTextArea style="width: 100%;" @bind-Value="Content.DescriptionsByLanguage[language]" Label='@L["Fields.Description"]' Height="100px" Resize="TextAreaResize.Vertical" />
+                        <FluentTextArea style="width: 100%;" Value="@Content.DescriptionsByLanguage[language]" ValueChanged="@(value => Content.DescriptionsByLanguage[language] = value)" Label='@L["Fields.Description"]' Height="100px" Resize="TextAreaResize.Vertical" />
                     </FluentGridItem>
                     <FluentGridItem Xs="12" Md="6">
-                        <FluentTextArea style="width: 100%;" @bind-Value="Content.SummariesByLanguage[language]" Label='@L["Fields.Summary"]' Height="100px" Resize="TextAreaResize.Vertical" />
+                        <FluentTextArea style="width: 100%;" Value="@Content.SummariesByLanguage[language]" ValueChanged="@(value => Content.SummariesByLanguage[language] = value)" Label='@L["Fields.Summary"]' Height="100px" Resize="TextAreaResize.Vertical" />
                     </FluentGridItem>
                 </FluentGrid>
             </div>

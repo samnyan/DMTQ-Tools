@@ -50,7 +50,11 @@
                     else
                     {
                         <FluentGrid Spacing="2">
-                            <FluentGridItem Xs="12" Md="4"><FluentTextInput style="width: 100%;" @bind-Value="effectDraft.EffectType" Label='@L["Fields.EffectType"]' /></FluentGridItem>
+                            <FluentGridItem Xs="12" Md="4"><FluentSelect TOption="string" TValue="string"
+                                                                           Items="EffectTypeOptions"
+                                                                           Value="@GetSelectedEffectType()"
+                                                                           ValueChanged="SetEffectType"
+                                                                           Label='@L["Fields.EffectType"]' /></FluentGridItem>
                             <FluentGridItem Xs="12" Md="4"><FluentTextInput style="width: 100%;" @bind-Value="effectDraft.EffectPoint" Label='@L["Fields.EffectPoint"]' /></FluentGridItem>
                             <FluentGridItem Xs="12" Md="4"><FluentTextInput style="width: 100%;" @bind-Value="effectDraft.EffectCount" Label='@L["Fields.EffectCount"]' /></FluentGridItem>
                             <FluentGridItem Xs="12" Md="8"><FluentTextInput style="width: 100%;" @bind-Value="effectDraft.EffectSpecial" Label='@L["Fields.EffectSpecial"]' /></FluentGridItem>
@@ -87,6 +91,52 @@
     private string errorMessage = string.Empty;
     private bool isBusy;
     private IngameItemEffect? effectDraft;
+
+    private string[] EffectTypeOptions
+    {
+        get
+        {
+            var options = new[]
+            {
+                $" — {L["Options.EffectTypeNone"].Value}",
+                $"E — {L["Options.EffectTypeExpPlus"].Value}",
+                $"P — {L["Options.EffectTypeMaxPointPlus"].Value}",
+                $"R — {L["Options.EffectTypeRecover"].Value}",
+                $"H — {L["Options.EffectTypeHpPlus"].Value}",
+                $"O — {L["Options.EffectTypeAntiGameOver"].Value}",
+                $"C — {L["Options.EffectTypeAntiEffector"].Value}",
+                $"A — {L["Options.EffectTypeBreakShield"].Value}",
+                $"F — {L["Options.EffectTypeFeverPlus"].Value}",
+                $"G — {L["Options.EffectTypeGaugeRefill"].Value}",
+                $"lucky — {L["Options.EffectTypeLuckyPlus"].Value}",
+                $"maxpoint — {L["Options.EffectTypeMaxPointPlus"].Value}",
+                $"qpoint — {L["Options.ItemTypeQPoint"].Value}"
+            };
+
+            return string.IsNullOrWhiteSpace(effectDraft?.EffectType)
+                   || options.Any(option => option.StartsWith(effectDraft.EffectType + " — ", StringComparison.OrdinalIgnoreCase))
+                ? options
+                : [.. options, $"{effectDraft.EffectType} — {L["Fields.ExistingValue"].Value}"];
+        }
+    }
+
+    private string GetSelectedEffectType()
+        => string.IsNullOrWhiteSpace(effectDraft?.EffectType)
+            ? EffectTypeOptions[0]
+            : EffectTypeOptions.FirstOrDefault(option => option.StartsWith(effectDraft.EffectType + " — ", StringComparison.OrdinalIgnoreCase))
+              ?? $"{effectDraft.EffectType} — {L["Fields.ExistingValue"].Value}";
+
+    private void SetEffectType(string value)
+    {
+        if (effectDraft is not null)
+            effectDraft.EffectType = GetOptionValue(value);
+    }
+
+    private static string GetOptionValue(string option)
+    {
+        var separatorIndex = option.LastIndexOf(" — ", StringComparison.Ordinal);
+        return separatorIndex < 0 ? option : option[..separatorIndex];
+    }
 
     private IReadOnlyList<Item> Catalog =>
         State.CurrentPackage is null ? [] : ItemCatalog.BuildCatalog(State.CurrentPackage, State.SelectedExportPlatform);

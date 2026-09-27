@@ -403,6 +403,30 @@
   <data name="Options.ItemTypeUnlock" xml:space="preserve"><value>Unlock</value></data>
   <data name="Options.ItemTypeIngame" xml:space="preserve"><value>In-game</value></data>
   <data name="Options.ItemTypeMusicPack" xml:space="preserve"><value>Music pack</value></data>
+  <data name="Options.ItemTypeItemPack" xml:space="preserve"><value>Item pack</value></data>
+  <data name="Options.ItemTypeTicket" xml:space="preserve"><value>Ticket</value></data>
+  <data name="Options.EffectTypeNone" xml:space="preserve"><value>Not set</value></data>
+  <data name="Options.EffectTypeMaxPointPlus" xml:space="preserve"><value>Maximum points</value></data>
+  <data name="Options.EffectTypeRecover" xml:space="preserve"><value>Recovery</value></data>
+  <data name="Options.EffectTypeHpPlus" xml:space="preserve"><value>HP increase</value></data>
+  <data name="Options.EffectTypeLuckyPlus" xml:space="preserve"><value>Luck increase</value></data>
+  <data name="Options.EffectTypeFeverPlus" xml:space="preserve"><value>Fever increase</value></data>
+  <data name="Options.EffectTypeGaugeRefill" xml:space="preserve"><value>Gauge refill</value></data>
+  <data name="Options.EffectTypeBreakShield" xml:space="preserve"><value>Break shield</value></data>
+  <data name="Options.EffectTypeAntiGameOver" xml:space="preserve"><value>Prevent game over</value></data>
+  <data name="Options.EffectTypeAntiEffector" xml:space="preserve"><value>Prevent effectors</value></data>
+  <data name="Options.EffectTypeQPoint" xml:space="preserve"><value>Q points</value></data>
+  <data name="Options.EffectTypeExpPlus" xml:space="preserve"><value>Experience increase</value></data>
+  <data name="Fields.PlatformProductId" xml:space="preserve"><value>Platform product ID</value></data>
+  <data name="Fields.StoreProductId" xml:space="preserve"><value>Store product ID</value></data>
+  <data name="Fields.ProductType" xml:space="preserve"><value>Product type</value></data>
+  <data name="Fields.SaleStartDate" xml:space="preserve"><value>Sale start date</value></data>
+  <data name="Fields.SaleEndDate" xml:space="preserve"><value>Sale end date</value></data>
+  <data name="Options.ProductTypeUnlock" xml:space="preserve"><value>In-game unlock purchase</value></data>
+  <data name="Options.ProductTypeTicket" xml:space="preserve"><value>Ticket purchase</value></data>
+  <data name="Options.ProductStatusNew" xml:space="preserve"><value>New</value></data>
+  <data name="Options.ProductStatusHot" xml:space="preserve"><value>Popular</value></data>
+  <data name="Options.ProductStatusBest" xml:space="preserve"><value>Recommended</value></data>
   <data name="Options.PatternLine2" xml:space="preserve"><value>2 lines</value></data>
   <data name="Options.PatternLine3" xml:space="preserve"><value>3 lines</value></data>
   <data name="Options.PatternLine4" xml:space="preserve"><value>4 lines</value></data>
@@ -413,6 +437,19 @@
   <data name="Options.PointNone" xml:space="preserve"><value>No reward</value></data>
   <data name="Options.PointMax" xml:space="preserve"><value>MAX point</value></data>
   <data name="Options.PointQ" xml:space="preserve"><value>Q point</value></data>
+  <data name="Options.AchievementConditionAllCombo" xml:space="preserve"><value>Full combo</value></data>
+  <data name="Options.AchievementConditionBreak" xml:space="preserve"><value>Break notes</value></data>
+  <data name="Options.AchievementConditionEffector" xml:space="preserve"><value>Effector</value></data>
+  <data name="Options.AchievementConditionItemUse" xml:space="preserve"><value>Item use</value></data>
+  <data name="Options.AchievementConditionLine" xml:space="preserve"><value>Consecutive notes</value></data>
+  <data name="Options.AchievementConditionPerfect" xml:space="preserve"><value>Perfect judgment</value></data>
+  <data name="Options.AchievementConditionQuest" xml:space="preserve"><value>Quest completion</value></data>
+  <data name="Options.AchievementConditionSignature" xml:space="preserve"><value>Signature chart</value></data>
+  <data name="Options.AchievementConditionTotalMPoint" xml:space="preserve"><value>Total MAX points</value></data>
+  <data name="Options.AchievementConditionTotalScore" xml:space="preserve"><value>Total score</value></data>
+  <data name="Options.ProductStatusNone" xml:space="preserve"><value>No badge</value></data>
+  <data name="Options.ProductTypeRawCode" xml:space="preserve"><value>Unmapped type code</value></data>
+  <data name="Options.ItemTypeRawCode" xml:space="preserve"><value>Unmapped item type code</value></data>
   <data name="Lists.Pagination" xml:space="preserve"><value>Table pagination</value></data>
   <data name="Lists.PaginationSummary" xml:space="preserve"><value>{0} items</value></data>
   <data name="Lists.PageOf" xml:space="preserve"><value>Page {0} of {1}</value></data>
@@ -424,4 +461,13 @@
   <data name="Home.OpenRecent" xml:space="preserve"><value>Open</value></data>
   <data name="Home.RemoveRecent" xml:space="preserve"><value>Remove from recent projects</value></data>
   <data name="Home.RecentProjectMissing" xml:space="preserve"><value>Folder not found</value></data>
+  <data name="Nav.Tables" xml:space="preserve"><value>Tables</value></data>
+  <data name="Tables.NoTables" xml:space="preserve"><value>No unmodeled CSV tables are available in this project.</value></data>
+  <data name="Tables.SelectTable" xml:space="preserve"><value>CSV table</value></data>
+  <data name="Tables.SourceFiles" xml:space="preserve"><value>Source files</value></data>
+  <data name="Tables.RowCount" xml:space="preserve"><value>{0} rows · {1}</value></data>
+  <data name="Tables.AddRow" xml:space="preserve"><value>Add row</value></data>
+  <data name="Tables.EditRow" xml:space="preserve"><value>Edit row {0}</value></data>
+  <data name="Tables.SaveRow" xml:space="preserve"><value>Save row</value></data>
+  <data name="Tables.RowSaved" xml:space="preserve"><value>CSV row saved.</value></data>
 </root>

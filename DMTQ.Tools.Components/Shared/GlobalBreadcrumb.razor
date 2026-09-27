@@ -51,6 +51,7 @@
         var route = segments[0].ToLowerInvariant();
         string? listLabel = route switch
         {
+            "tables" => "Nav.Tables",
             "songs" => "Nav.Songs",
             "items" => "Nav.Items",
             "products" => "Nav.Products",

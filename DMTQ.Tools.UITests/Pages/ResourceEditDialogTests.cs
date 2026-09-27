@@ -1,4 +1,7 @@
 using DMTQ.Tools.Components.Models;
+using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Rendering;
+using Microsoft.FluentUI.AspNetCore.Components;
 using FluentAssertions;
 
 namespace DMTQ.Tools.UITests.Pages;
@@ -23,22 +26,60 @@ public sealed class ResourceEditDialogTests : BlazorUITestBase
                 FileName = "song.opus"
             };
 
-            var cut = Render<ResourceEditDialog>(parameters => parameters
-                .Add(component => component.Content, content));
-            cut.Find("code").TextContent.Should().Be("preview/song.opus");
+            var root = Render(builder =>
+            {
+                builder.OpenComponent<FluentProviders>(0);
+                builder.CloseComponent();
+                builder.OpenComponent<ResourceDialogLauncher>(1);
+                builder.AddAttribute(2, nameof(ResourceDialogLauncher.Content), content);
+                builder.CloseComponent();
+            });
 
-            cut.FindAll("fluent-button")
-                .Single(button => button.TextContent.Contains("Select File", StringComparison.Ordinal))
-                .Click();
+            var launch = root.FindComponent<ResourceDialogLauncher>();
+            Task? openTask = null;
+            root.InvokeAsync(() =>
+            {
+                openTask = launch.Instance.OpenAsync();
+                return Task.CompletedTask;
+            }).GetAwaiter().GetResult();
+            root.WaitForAssertion(() => root.FindComponents<ResourceEditDialog>().Should().ContainSingle());
+            var dialog = root.FindComponent<ResourceEditDialog>();
+            dialog.Find("code").TextContent.Should().Be("preview/song.opus");
+
+            root.InvokeAsync(() => dialog.FindComponents<FluentButton>()
+                .Single(button => button.Markup.Contains("Select File", StringComparison.Ordinal))
+                .Instance.OnClick.InvokeAsync(new())).GetAwaiter().GetResult();
 
             content.Platforms.Should().ContainSingle(card =>
                 card.Platform == "share"
                 && card.IsNew
                 && card.PendingFilePath == sourcePath);
+
+            root.InvokeAsync(() => dialog.Instance.DialogInstance.CancelAsync()).GetAwaiter().GetResult();
+            openTask!.GetAwaiter().GetResult();
         }
         finally
         {
             File.Delete(sourcePath);
         }
+    }
+
+    private sealed class ResourceDialogLauncher : ComponentBase
+    {
+        [Inject] private IDialogService DialogService { get; set; } = default!;
+        [Parameter] public ResourceDialogData Content { get; set; } = default!;
+
+        public Task OpenAsync()
+            => DialogService.ShowDialogAsync<ResourceEditDialog>(options =>
+            {
+                options.Header.Title = "Resource";
+                options.Parameters = new Dictionary<string, object?>
+                {
+                    [nameof(ResourceEditDialog.Content)] = Content
+                };
+            });
+
+        protected override void BuildRenderTree(RenderTreeBuilder builder)
+            => builder.AddContent(0, "Resource dialog test host");
     }
 }

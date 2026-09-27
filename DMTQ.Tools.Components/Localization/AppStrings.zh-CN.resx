@@ -182,6 +182,30 @@
   <data name="Options.ItemTypeUnlock" xml:space="preserve"><value>解锁项</value></data>
   <data name="Options.ItemTypeIngame" xml:space="preserve"><value>游戏内道具</value></data>
   <data name="Options.ItemTypeMusicPack" xml:space="preserve"><value>歌曲包</value></data>
+  <data name="Options.ItemTypeItemPack" xml:space="preserve"><value>道具礼包</value></data>
+  <data name="Options.ItemTypeTicket" xml:space="preserve"><value>入场券</value></data>
+  <data name="Options.EffectTypeNone" xml:space="preserve"><value>未设置</value></data>
+  <data name="Options.EffectTypeMaxPointPlus" xml:space="preserve"><value>最大点数增加</value></data>
+  <data name="Options.EffectTypeRecover" xml:space="preserve"><value>恢复</value></data>
+  <data name="Options.EffectTypeHpPlus" xml:space="preserve"><value>生命值增加</value></data>
+  <data name="Options.EffectTypeLuckyPlus" xml:space="preserve"><value>幸运值增加</value></data>
+  <data name="Options.EffectTypeFeverPlus" xml:space="preserve"><value>狂热值增加</value></data>
+  <data name="Options.EffectTypeGaugeRefill" xml:space="preserve"><value>槽量恢复</value></data>
+  <data name="Options.EffectTypeBreakShield" xml:space="preserve"><value>防破盾</value></data>
+  <data name="Options.EffectTypeAntiGameOver" xml:space="preserve"><value>防止游戏结束</value></data>
+  <data name="Options.EffectTypeAntiEffector" xml:space="preserve"><value>屏蔽特效</value></data>
+  <data name="Options.EffectTypeQPoint" xml:space="preserve"><value>Q 点数</value></data>
+  <data name="Options.EffectTypeExpPlus" xml:space="preserve"><value>经验值增加</value></data>
+  <data name="Fields.PlatformProductId" xml:space="preserve"><value>平台商品 ID</value></data>
+  <data name="Fields.StoreProductId" xml:space="preserve"><value>商店商品 ID</value></data>
+  <data name="Fields.ProductType" xml:space="preserve"><value>商品类型</value></data>
+  <data name="Fields.SaleStartDate" xml:space="preserve"><value>开售时间</value></data>
+  <data name="Fields.SaleEndDate" xml:space="preserve"><value>停售时间</value></data>
+  <data name="Options.ProductTypeUnlock" xml:space="preserve"><value>游戏内解锁购买</value></data>
+  <data name="Options.ProductTypeTicket" xml:space="preserve"><value>票券购买</value></data>
+  <data name="Options.ProductStatusNew" xml:space="preserve"><value>新品</value></data>
+  <data name="Options.ProductStatusHot" xml:space="preserve"><value>热门</value></data>
+  <data name="Options.ProductStatusBest" xml:space="preserve"><value>推荐</value></data>
   <data name="Options.PatternLine2" xml:space="preserve"><value>2 轨</value></data>
   <data name="Options.PatternLine3" xml:space="preserve"><value>3 轨</value></data>
   <data name="Options.PatternLine4" xml:space="preserve"><value>4 轨</value></data>
@@ -192,6 +216,19 @@
   <data name="Options.PointNone" xml:space="preserve"><value>无奖励</value></data>
   <data name="Options.PointMax" xml:space="preserve"><value>MAX 点数</value></data>
   <data name="Options.PointQ" xml:space="preserve"><value>Q 点数</value></data>
+  <data name="Options.AchievementConditionAllCombo" xml:space="preserve"><value>全连击</value></data>
+  <data name="Options.AchievementConditionBreak" xml:space="preserve"><value>BREAK 音符</value></data>
+  <data name="Options.AchievementConditionEffector" xml:space="preserve"><value>效果器</value></data>
+  <data name="Options.AchievementConditionItemUse" xml:space="preserve"><value>使用道具</value></data>
+  <data name="Options.AchievementConditionLine" xml:space="preserve"><value>连续音符</value></data>
+  <data name="Options.AchievementConditionPerfect" xml:space="preserve"><value>PERFECT 判定</value></data>
+  <data name="Options.AchievementConditionQuest" xml:space="preserve"><value>完成任务</value></data>
+  <data name="Options.AchievementConditionSignature" xml:space="preserve"><value>SIGNATURE 谱面</value></data>
+  <data name="Options.AchievementConditionTotalMPoint" xml:space="preserve"><value>累计 MAX 点数</value></data>
+  <data name="Options.AchievementConditionTotalScore" xml:space="preserve"><value>累计分数</value></data>
+  <data name="Options.ProductStatusNone" xml:space="preserve"><value>无标记</value></data>
+  <data name="Options.ProductTypeRawCode" xml:space="preserve"><value>未映射产品类型码</value></data>
+  <data name="Options.ItemTypeRawCode" xml:space="preserve"><value>未映射道具类型码</value></data>
   <data name="Lists.Pagination" xml:space="preserve"><value>表格分页</value></data>
   <data name="Lists.PaginationSummary" xml:space="preserve"><value>共 {0} 项</value></data>
   <data name="Lists.PageOf" xml:space="preserve"><value>第 {0} / {1} 页</value></data>
@@ -244,4 +281,13 @@
   <data name="AtlasEditor.Exported" xml:space="preserve"><value>已导出 {0}。</value></data>
   <data name="AtlasEditor.Error" xml:space="preserve"><value>图集操作失败：{0}</value></data>
   <data name="AtlasEditor.NoSprites" xml:space="preserve"><value>导出前请至少添加一个 Sprite。</value></data>
+  <data name="Nav.Tables" xml:space="preserve"><value>表格</value></data>
+  <data name="Tables.NoTables" xml:space="preserve"><value>当前项目没有可直接编辑的未映射 CSV 表。</value></data>
+  <data name="Tables.SelectTable" xml:space="preserve"><value>CSV 表</value></data>
+  <data name="Tables.SourceFiles" xml:space="preserve"><value>来源文件</value></data>
+  <data name="Tables.RowCount" xml:space="preserve"><value>{0} 行 · {1}</value></data>
+  <data name="Tables.AddRow" xml:space="preserve"><value>添加行</value></data>
+  <data name="Tables.EditRow" xml:space="preserve"><value>编辑行 {0}</value></data>
+  <data name="Tables.SaveRow" xml:space="preserve"><value>保存行</value></data>
+  <data name="Tables.RowSaved" xml:space="preserve"><value>CSV 行已保存。</value></data>
 </root>

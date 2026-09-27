@@ -412,9 +412,8 @@
 
     private string FormatPointType(int value) => value switch
     {
-        0 => $"0 — {L["Options.PointNone"].Value}",
+        0 => $"0 — {L["Options.PointQ"].Value}",
         1 => $"1 — {L["Options.PointMax"].Value}",
-        2 => $"2 — {L["Options.PointQ"].Value}",
         _ => $"{value} — {L["Fields.ExistingValue"].Value}"
     };
 

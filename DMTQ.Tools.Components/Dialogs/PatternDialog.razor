@@ -29,7 +29,7 @@
             <FluentNumberInput @bind-Value="Content.PointValue" Label='@L["Fields.PointValue"]' />
         </FluentGridItem>
         <FluentGridItem Xs="12" Sm="6">
-            <FluentTextInput @bind-Value="Content.Name" Label='@L["Fields.PatternName"]' />
+            <FluentTextInput @bind-Value="Content.Update" Label='@L["Fields.Update"]' />
         </FluentGridItem>
         <FluentGridItem Xs="12">
             <FluentSwitch @bind-Value="flgChecked" Label='@L["Fields.PatternEnabled"]' />
@@ -50,7 +50,7 @@
         IncludeExisting([$"0 — {L["Options.PatternEasy"].Value}", $"1 — {L["Options.PatternNormal"].Value}",
             $"2 — {L["Options.PatternHard"].Value}", $"3 — {L["Options.PatternExpert"].Value}"], Content.Signature);
     private string[] PointTypeOptions =>
-        IncludeExisting([$"0 — {L["Options.PointNone"].Value}", $"1 — {L["Options.PointMax"].Value}", $"2 — {L["Options.PointQ"].Value}"], Content.PointType);
+        IncludeExisting([$"0 — {L["Options.PointQ"].Value}", $"1 — {L["Options.PointMax"].Value}"], Content.PointType);
 
     private string selectedLine
     {

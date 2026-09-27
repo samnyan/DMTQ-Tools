@@ -23,8 +23,27 @@ public sealed class RelatedTablesPageTests : BlazorUITestBase
 
         list.Markup.Should().Contain("成就");
         editor.Markup.Should().Contain("Achievement rules");
+        foreach (var conditionType in new[] { "ALL_COMBO", "BREAK", "EFFECTOR", "ITEM_USE", "LINE", "PERFECT", "QUEST", "SIGNATURE", "TOTAL_MPOINT", "TOTAL_SCORE" })
+            editor.Markup.Should().Contain(conditionType);
+        editor.Markup.Should().Contain("QUEST — Quest completion");
         foreach (var language in new[] { "CN", "JP", "KR", "TW", "US" })
             editor.Markup.Should().Contain(language);
+    }
+
+    [TestMethod]
+    public void AchievementEditor_PreservesUnknownConditionTypeAsAnOption()
+    {
+        var state = CreateStateWithEmptyPackage();
+        var package = CreatePackage();
+        package.Achievements.Add(new Achievement { Id = "2", ConditionType = "FUTURE_RULE", Name = "Future" });
+        state.SetPackage(package);
+        state.SetProjectRoot("test-project");
+        RegisterAllServices(state);
+
+        var editor = Render<AchievementEditor>(parameters => parameters.Add(p => p.AchievementId, "2"));
+
+        editor.Markup.Should().Contain("FUTURE_RULE");
+        editor.Markup.Should().Contain("Existing value");
     }
 
     [TestMethod]

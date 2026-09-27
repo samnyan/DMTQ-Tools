@@ -211,6 +211,50 @@ public sealed class EntitySchemaTests
         new ProductCsvSchema().TableName.Should().Be("product_product");
     }
 
+    [TestMethod]
+    public void AchievementCsvSchema_WriteCsv_ThenReadCsv_RoundTripsAllFields()
+    {
+        var schema = new AchievementCsvSchema();
+        var achievements = new List<Achievement>
+        {
+            new()
+            {
+                Id = "ACH_001",
+                ConditionType = "QUEST",
+                ConditionValue = "100",
+                ConditionCount = "3",
+                ConditionSpecial = "clear with no breaks",
+                ImgUrl = "achievement/001.png",
+                AchievementTier = "2",
+                ObtainPoint = "50",
+                Name = "First clear",
+                PreDescription = "Before completion",
+                AfterDescription = "After completion",
+                Update = "1"
+            }
+        };
+
+        using var writeStream = new MemoryStream();
+        schema.WriteCsv(writeStream, achievements);
+        using var readStream = new MemoryStream(writeStream.ToArray());
+
+        var result = schema.ReadCsv(readStream);
+
+        result.Should().ContainSingle();
+        result[0].Id.Should().Be("ACH_001");
+        result[0].ConditionType.Should().Be("QUEST");
+        result[0].ConditionValue.Should().Be("100");
+        result[0].ConditionCount.Should().Be("3");
+        result[0].ConditionSpecial.Should().Be("clear with no breaks");
+        result[0].ImgUrl.Should().Be("achievement/001.png");
+        result[0].AchievementTier.Should().Be("2");
+        result[0].ObtainPoint.Should().Be("50");
+        result[0].Name.Should().Be("First clear");
+        result[0].PreDescription.Should().Be("Before completion");
+        result[0].AfterDescription.Should().Be("After completion");
+        result[0].Update.Should().Be("1");
+    }
+
     // ── PatternCsvSchema ──
 
     [TestMethod]

@@ -22,16 +22,16 @@
                     <h2 class="section-heading">@L["Editor.AchievementRules"]</h2>
                     <FluentGrid Spacing="2">
                         <FluentGridItem Xs="12" Md="4">@if (IsCreate) { <FluentTextInput style="width:100%" @bind-Value="idInput" Label='@L["Fields.AchievementId"]' Required /> } else { <FluentTextInput style="width:100%" Value="@draft!.Id" Label='@L["Fields.AchievementId"]' ReadOnly="true" /> }</FluentGridItem>
-                        <FluentGridItem Xs="12" Md="4"><FluentTextInput style="width:100%" @bind-Value="draft!.ConditionType" Label='@L["Fields.ConditionType"]' /></FluentGridItem>
+                        <FluentGridItem Xs="12" Md="4"><FluentSelect Items="@ConditionTypeOptions" @bind-Value="selectedConditionType" Label='@L["Fields.ConditionType"]' /></FluentGridItem>
                         <FluentGridItem Xs="12" Md="4"><FluentTextInput style="width:100%" @bind-Value="draft!.ConditionValue" Label='@L["Fields.ConditionValue"]' /></FluentGridItem>
                         <FluentGridItem Xs="12" Md="4"><FluentTextInput style="width:100%" @bind-Value="draft!.ConditionCount" Label='@L["Fields.ConditionCount"]' /></FluentGridItem>
-                        <FluentGridItem Xs="12" Md="8"><FluentTextInput style="width:100%" @bind-Value="draft!.ConditionSpecial" Label='@L["Fields.ConditionSpecial"]' /></FluentGridItem>
+                        <FluentGridItem Xs="12" Md="12"><FluentTextArea style="width:100%" @bind-Value="draft!.ConditionSpecial" Label='@L["Fields.ConditionSpecial"]' Height="100px" Resize="TextAreaResize.Vertical" /></FluentGridItem>
                         <FluentGridItem Xs="12" Md="4"><FluentTextInput style="width:100%" @bind-Value="draft!.ImgUrl" Label='@L["Fields.ImageUrl"]' /></FluentGridItem>
                         <FluentGridItem Xs="12" Md="4"><FluentTextInput style="width:100%" @bind-Value="draft!.AchievementTier" Label='@L["Fields.Tier"]' /></FluentGridItem>
                         <FluentGridItem Xs="12" Md="4"><FluentTextInput style="width:100%" @bind-Value="draft!.ObtainPoint" Label='@L["Fields.ObtainPoint"]' /></FluentGridItem>
                         <FluentGridItem Xs="12" Md="4"><FluentTextInput style="width:100%" @bind-Value="draft!.Name" Label='@L["Fields.BaseName"]' /></FluentGridItem>
-                        <FluentGridItem Xs="12" Md="4"><FluentTextInput style="width:100%" @bind-Value="draft!.PreDescription" Label='@L["Fields.PreDescription"]' /></FluentGridItem>
-                        <FluentGridItem Xs="12" Md="4"><FluentTextInput style="width:100%" @bind-Value="draft!.AfterDescription" Label='@L["Fields.AfterDescription"]' /></FluentGridItem>
+                        <FluentGridItem Xs="12" Md="6"><FluentTextArea style="width:100%" @bind-Value="draft!.PreDescription" Label='@L["Fields.PreDescription"]' Height="100px" Resize="TextAreaResize.Vertical" /></FluentGridItem>
+                        <FluentGridItem Xs="12" Md="6"><FluentTextArea style="width:100%" @bind-Value="draft!.AfterDescription" Label='@L["Fields.AfterDescription"]' Height="100px" Resize="TextAreaResize.Vertical" /></FluentGridItem>
                         <FluentGridItem Xs="12" Md="4"><FluentTextInput style="width:100%" @bind-Value="draft!.Update" Label='@L["Fields.Update"]' /></FluentGridItem>
                     </FluentGrid>
                 </section>
@@ -43,9 +43,9 @@
                         <div class="language-panel">
                             <h3 class="lang-heading">@language</h3>
                             <FluentGrid Spacing="2">
-                                <FluentGridItem Xs="12" Md="4"><FluentTextInput style="width:100%" @bind-Value="draft!.NamesByLanguage[language]" Label='@L["Fields.Name"]' /></FluentGridItem>
-                                <FluentGridItem Xs="12" Md="4"><FluentTextInput style="width:100%" @bind-Value="draft!.PreDescriptionsByLanguage[language]" Label='@L["Fields.PreDescription"]' /></FluentGridItem>
-                                <FluentGridItem Xs="12" Md="4"><FluentTextInput style="width:100%" @bind-Value="draft!.AfterDescriptionsByLanguage[language]" Label='@L["Fields.AfterDescription"]' /></FluentGridItem>
+                                <FluentGridItem Xs="12" Md="4"><FluentTextInput style="width:100%" Value="@draft!.NamesByLanguage[language]" ValueChanged="@(value => draft!.NamesByLanguage[language] = value)" Label='@L["Fields.Name"]' /></FluentGridItem>
+                                <FluentGridItem Xs="12" Md="6"><FluentTextArea style="width:100%" Value="@draft!.PreDescriptionsByLanguage[language]" ValueChanged="@(value => draft!.PreDescriptionsByLanguage[language] = value)" Label='@L["Fields.PreDescription"]' Height="100px" Resize="TextAreaResize.Vertical" /></FluentGridItem>
+                                <FluentGridItem Xs="12" Md="6"><FluentTextArea style="width:100%" Value="@draft!.AfterDescriptionsByLanguage[language]" ValueChanged="@(value => draft!.AfterDescriptionsByLanguage[language] = value)" Label='@L["Fields.AfterDescription"]' Height="100px" Resize="TextAreaResize.Vertical" /></FluentGridItem>
                             </FluentGrid>
                         </div>
                     }
@@ -65,12 +65,44 @@
     [Parameter] public string AchievementId { get; set; } = string.Empty;
     [SupplyParameterFromQuery(Name = "returnUrl")] public string? ReturnUrl { get; set; }
     private static readonly string[] Languages = ["CN", "JP", "KR", "TW", "US"];
+    // The game model exposes this CSV field as a string, not a declared enum.
+    // These choices are the exact values present in quest_achievement.csv.
+    private static readonly (string Code, string ResourceKey)[] ConditionTypes =
+    [
+        ("ALL_COMBO", "Options.AchievementConditionAllCombo"),
+        ("BREAK", "Options.AchievementConditionBreak"),
+        ("EFFECTOR", "Options.AchievementConditionEffector"),
+        ("ITEM_USE", "Options.AchievementConditionItemUse"),
+        ("LINE", "Options.AchievementConditionLine"),
+        ("PERFECT", "Options.AchievementConditionPerfect"),
+        ("QUEST", "Options.AchievementConditionQuest"),
+        ("SIGNATURE", "Options.AchievementConditionSignature"),
+        ("TOTAL_MPOINT", "Options.AchievementConditionTotalMPoint"),
+        ("TOTAL_SCORE", "Options.AchievementConditionTotalScore")
+    ];
     private bool IsCreate => AchievementId.Equals("new", StringComparison.OrdinalIgnoreCase);
     private Achievement? draft;
     private string idInput = string.Empty;
     private string? message;
     private string? errorMessage;
     private bool isBusy;
+
+    private string[] ConditionTypeOptions => IncludeExisting(ConditionTypes
+        .Select(option => $"{option.Code} — {L[option.ResourceKey].Value}").ToArray(), draft?.ConditionType);
+
+    private string selectedConditionType
+    {
+        get => ConditionTypeOptions.FirstOrDefault(option => GetCode(option).Equals(draft?.ConditionType, StringComparison.OrdinalIgnoreCase))
+               ?? $"{draft?.ConditionType} — {L["Fields.ExistingValue"].Value}";
+        set { if (draft is not null) draft.ConditionType = GetCode(value); }
+    }
+
+    private static string GetCode(string option) => option.Split(" — ", 2)[0];
+
+    private string[] IncludeExisting(string[] options, string? value)
+        => string.IsNullOrWhiteSpace(value) || options.Any(option => GetCode(option).Equals(value, StringComparison.OrdinalIgnoreCase))
+            ? options
+            : [.. options, $"{value} — {L["Fields.ExistingValue"].Value}"];
 
     protected override void OnParametersSet()
     {

@@ -19,28 +19,28 @@ public sealed class ProductItemPageTests : BlazorUITestBase
 
         var cut = RenderWithProviders<Products>();
 
-        cut.Markup.Should().Contain("Products");
         cut.Markup.Should().Contain("PROD_001");
-        cut.Markup.Should().Contain("Product ID");
-        cut.Markup.Should().Contain("Add Product");
+        cut.Markup.Should().Contain("platform.sku");
     }
 
     [TestMethod]
     public void ProductEditor_RendersExistingProductForm()
     {
         var state = CreateStateWithEmptyPackage();
-        state.SetPackage(CreateSamplePackage());
+        var package = CreateSamplePackage();
+        package.Products[0].Status = "N";
+        state.SetPackage(package);
         state.SetProjectRoot("test-project");
         RegisterAllServices(state);
 
         var cut = Render<ProductEditor>(parameters => parameters.Add(p => p.ProductId, "PROD_001"));
 
-        cut.Markup.Should().Contain("Edit: PROD_001");
-        cut.Markup.Should().Contain("Platform Product ID");
-        cut.Markup.Should().Contain("Product categories");
-        cut.Markup.Should().Contain("In-game configurations");
+        cut.Markup.Should().Contain("PROD_001");
+        cut.Markup.Should().Contain("platform.sku");
         cut.Markup.Should().Contain("CAT_SONG");
-        cut.Markup.Should().Contain("Save Product");
+        cut.Markup.Should().Contain("cash — Unmapped type code");
+        cut.Markup.Should().Contain("N — No badge");
+        cut.Markup.Should().Contain("fluent-button type=\"submit\"");
     }
 
     [TestMethod]
@@ -53,10 +53,8 @@ public sealed class ProductItemPageTests : BlazorUITestBase
 
         var cut = RenderWithProviders<Items>();
 
-        cut.Markup.Should().Contain("Items");
         cut.Markup.Should().Contain("ITEM_001");
         cut.Markup.Should().Contain("中文道具");
-        cut.Markup.Should().Contain("Localized names");
     }
 
     [TestMethod]
@@ -69,17 +67,38 @@ public sealed class ProductItemPageTests : BlazorUITestBase
 
         var cut = Render<ItemEditor>(parameters => parameters.Add(p => p.ItemId, "ITEM_001"));
 
-        cut.Markup.Should().Contain("Edit: ITEM_001");
-        cut.Markup.Should().Contain("Localized Descriptions");
-        cut.Markup.Should().Contain("Item effect");
-        cut.Markup.Should().Contain("Effect point");
+        cut.Markup.Should().Contain("ITEM_001");
         foreach (var language in new[] { "CN", "JP", "KR", "TW", "US" })
             cut.Markup.Should().Contain(language);
-        cut.Markup.Should().Contain("Save Item");
+        cut.Markup.Should().NotContain("礼物");
+        cut.Markup.Should().NotContain("Gift");
+        cut.Markup.Should().Contain("L — Unmapped item type code");
+        cut.Markup.Should().Contain("fluent-button type=\"submit\"");
     }
 
     [TestMethod]
-    public void ItemEditor_SyncOriginalText_CopiesAndLiveUpdatesLocalizedFields()
+    public void ItemEditor_UsesCsvEffectCodesInTheLocalizedSelector()
+    {
+        var state = CreateStateWithEmptyPackage();
+        state.SetPackage(CreateSamplePackage());
+        state.SetProjectRoot("test-project");
+        RegisterAllServices(state);
+
+        var cut = Render<ItemEditor>(parameters => parameters.Add(p => p.ItemId, "ITEM_001"));
+
+        cut.Markup.Should().Contain("E — Experience increase");
+        cut.Markup.Should().Contain("P — Maximum points");
+        cut.Markup.Should().Contain("F — Fever increase");
+        cut.Markup.Should().NotContain("fever —");
+
+        var effectDraft = GetPrivateField<IngameItemEffect>(cut.Instance, "effectDraft");
+        cut.Instance.GetType().GetMethod("SetEffectType", BindingFlags.Instance | BindingFlags.NonPublic)!
+            .Invoke(cut.Instance, ["R — Recovery"]);
+        effectDraft.EffectType.Should().Be("R");
+    }
+
+    [TestMethod]
+    public async Task ItemEditor_SyncOriginalText_CopiesAndLiveUpdatesLocalizedFields()
     {
         var state = CreateStateWithEmptyPackage();
         state.SetPackage(CreateSamplePackage());
@@ -87,13 +106,21 @@ public sealed class ProductItemPageTests : BlazorUITestBase
         RegisterAllServices(state);
         var cut = Render<ItemEditor>(parameters => parameters.Add(p => p.ItemId, "ITEM_001"));
 
-        cut.FindComponents<FluentSwitch>()
-            .Single(component => component.Instance.Label == "Sync original text")
-            .Instance.ValueChanged.InvokeAsync(true).GetAwaiter().GetResult();
-        var originalFields = cut.FindAll("fluent-text-input");
-        originalFields[1].Input("Live item");
-        originalFields[4].Input("Live description");
-        originalFields[5].Input("Live summary");
+        await cut.InvokeAsync(async () =>
+        {
+            await cut.FindComponents<FluentSwitch>()
+                .Single()
+                .Instance.ValueChanged.InvokeAsync(true);
+            await cut.FindComponents<FluentTextInput>()
+                .ElementAt(1)
+                .Instance.ValueChanged.InvokeAsync("Live item");
+            await cut.FindComponents<FluentTextArea>()
+                .ElementAt(0)
+                .Instance.ValueChanged.InvokeAsync("Live description");
+            await cut.FindComponents<FluentTextArea>()
+                .ElementAt(1)
+                .Instance.ValueChanged.InvokeAsync("Live summary");
+        });
 
         var draft = GetPrivateField<Item>(cut.Instance, "currentItem");
         foreach (var language in new[] { "CN", "JP", "KR", "TW", "US" })

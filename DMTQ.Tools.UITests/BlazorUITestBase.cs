@@ -7,6 +7,7 @@ using DMTQ.Tools.Core.Services.Pattern;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Rendering;
 using Microsoft.FluentUI.AspNetCore.Components;
+using Microsoft.Extensions.DependencyInjection;
 using DMTQ_Tools.Components.Localization;
 using Bunit;
 
@@ -49,6 +50,7 @@ public abstract class BlazorUITestBase : Bunit.TestContext
         Services.AddLocalization();
         Services.AddSingleton<ILanguagePreferenceStore, TestLanguagePreferenceStore>();
         Services.AddSingleton<ILanguageService, LanguageService>();
+        Services.GetRequiredService<ILanguageService>().SetLanguage("en-US");
 
         // FluentUI components invoke JS interop in OnAfterRenderAsync (v=... is build-specific).
         // Use Loose mode so unregistered JS calls return empty/default instead of throwing.

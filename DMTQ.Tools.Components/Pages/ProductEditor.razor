@@ -25,30 +25,34 @@
                         <FluentGridItem Xs="12" Md="6">
                             @if (IsCreate)
                             {
-                                <FluentTextInput style="width: 100%;" @bind-Value="productIdInput" Label="Product ID *" Placeholder="e.g. PRODUCT_001" Required />
+                                <FluentTextInput style="width: 100%;" @bind-Value="productIdInput" Label='@L["Fields.ProductId"]' Placeholder="e.g. PRODUCT_001" Required />
                             }
                             else
                             {
-                                <FluentTextInput style="width: 100%;" Value="@(currentProduct?.Id ?? string.Empty)" Label="Product ID" ReadOnly="true" />
+                                <FluentTextInput style="width: 100%;" Value="@(currentProduct?.Id ?? string.Empty)" Label='@L["Fields.ProductId"]' ReadOnly="true" />
                             }
                         </FluentGridItem>
                         <FluentGridItem Xs="12" Md="6">
-                            <FluentTextInput style="width: 100%;" @bind-Value="currentProduct!.ItemId" Label="Item ID" />
+                            <FluentTextInput style="width: 100%;" @bind-Value="currentProduct!.ItemId" Label='@L["Fields.ItemId"]' />
                         </FluentGridItem>
                         <FluentGridItem Xs="12" Md="6">
-                            <FluentTextInput style="width: 100%;" @bind-Value="currentProduct!.PlatformProductId" Label="Platform Product ID" />
+                            <FluentTextInput style="width: 100%;" @bind-Value="currentProduct!.PlatformProductId" Label='@L["Fields.PlatformProductId"]' />
                         </FluentGridItem>
                         <FluentGridItem Xs="12" Md="6">
-                            <FluentTextInput style="width: 100%;" @bind-Value="currentProduct!.StoreProductId" Label="Store Product ID" />
+                            <FluentTextInput style="width: 100%;" @bind-Value="currentProduct!.StoreProductId" Label='@L["Fields.StoreProductId"]' />
                         </FluentGridItem>
                         <FluentGridItem Xs="12" Md="4">
-                            <FluentTextInput style="width: 100%;" @bind-Value="currentProduct!.ProductType" Label="Product Type" />
+                            <FluentSelect Items="@GetProductTypeOptions()"
+                                          @bind-Value="selectedProductType"
+                                          Label='@L["Fields.ProductType"]' />
                         </FluentGridItem>
                         <FluentGridItem Xs="12" Md="4">
-                            <FluentTextInput style="width: 100%;" @bind-Value="currentProduct!.Status" Label="Status" />
+                            <FluentSelect Items="@GetProductStatusOptions()"
+                                          @bind-Value="selectedProductStatus"
+                                          Label='@L["Fields.Status"]' />
                         </FluentGridItem>
                         <FluentGridItem Xs="12" Md="4">
-                            <FluentTextInput style="width: 100%;" @bind-Value="currentProduct!.Update" Label="Update" />
+                            <FluentTextInput style="width: 100%;" @bind-Value="currentProduct!.Update" Label='@L["Fields.Update"]' />
                         </FluentGridItem>
                     </FluentGrid>
                 </section>
@@ -57,16 +61,16 @@
                     <h2 class="section-heading">@L["Editor.PriceSaleWindow"]</h2>
                     <FluentGrid Spacing="2">
                         <FluentGridItem Xs="12" Md="6">
-                            <FluentTextInput style="width: 100%;" @bind-Value="currentProduct!.CostGamePoint" Label="Cost Game Point" />
+                            <FluentTextInput style="width: 100%;" @bind-Value="currentProduct!.CostGamePoint" Label='@L["Fields.CostGamePoint"]' />
                         </FluentGridItem>
                         <FluentGridItem Xs="12" Md="6">
-                            <FluentTextInput style="width: 100%;" @bind-Value="currentProduct!.CostGameCash" Label="Cost Game Cash" />
+                            <FluentTextInput style="width: 100%;" @bind-Value="currentProduct!.CostGameCash" Label='@L["Fields.CostGameCash"]' />
                         </FluentGridItem>
                         <FluentGridItem Xs="12" Md="6">
-                            <FluentTextInput style="width: 100%;" @bind-Value="currentProduct!.SaleStartDate" Label="Sale Start Date" />
+                            <FluentTextInput style="width: 100%;" @bind-Value="currentProduct!.SaleStartDate" Label='@L["Fields.SaleStartDate"]' />
                         </FluentGridItem>
                         <FluentGridItem Xs="12" Md="6">
-                            <FluentTextInput style="width: 100%;" @bind-Value="currentProduct!.SaleEndDate" Label="Sale End Date" />
+                            <FluentTextInput style="width: 100%;" @bind-Value="currentProduct!.SaleEndDate" Label='@L["Fields.SaleEndDate"]' />
                         </FluentGridItem>
                     </FluentGrid>
                 </section>
@@ -107,7 +111,11 @@
                         @foreach (var ingameItem in ingameItemDrafts)
                         {
                             <div class="related-row" @key="ingameItem">
-                                <FluentTextInput @bind-Value="ingameItem.ItemType" Label='@L["Fields.ItemType"]' />
+                                <FluentSelect TOption="string" TValue="string"
+                                              Items="@GetIngameItemTypeOptions(ingameItem)"
+                                              Value="@GetSelectedIngameItemType(ingameItem)"
+                                              ValueChanged="@(value => SetIngameItemType(ingameItem, value))"
+                                              Label='@L["Fields.ItemType"]' />
                                 <FluentTextInput @bind-Value="ingameItem.ItemLevel" Label='@L["Fields.ItemLevel"]' />
                                 <FluentTextInput Value="@(currentProduct?.Id ?? productIdInput)" Label='@L["Fields.ProductId"]' ReadOnly="true" />
                                 <FluentTextInput @bind-Value="ingameItem.Update" Label='@L["Fields.Update"]' />
@@ -147,6 +155,100 @@
     private bool isBusy;
     private int? newCategoryId;
     private List<IngameItem> ingameItemDrafts = [];
+
+    private string[] GetProductTypeOptions()
+    {
+        var knownTypes = Catalog.Select(product => product.ProductType)
+            .Append("ticket")
+            .Where(type => !string.IsNullOrWhiteSpace(type))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(type => type, StringComparer.OrdinalIgnoreCase);
+        var options = new[] { $" — {L["Options.EffectTypeNone"].Value}" }
+            .Concat(knownTypes.Select(type => type.Equals("I", StringComparison.OrdinalIgnoreCase)
+                ? $"{type} — {L["Options.ProductTypeUnlock"].Value}"
+                : type.Equals("ticket", StringComparison.OrdinalIgnoreCase)
+                    ? $"{type} — {L["Options.ProductTypeTicket"].Value}"
+                    : $"{type} — {L["Options.ProductTypeRawCode"].Value}"))
+            .ToArray();
+
+        return currentProduct is null || string.IsNullOrWhiteSpace(currentProduct.ProductType)
+               || options.Any(option => option.StartsWith(currentProduct.ProductType + " — ", StringComparison.OrdinalIgnoreCase))
+            ? options
+            : [.. options, $"{currentProduct.ProductType} — {L["Fields.ExistingValue"].Value}"];
+    }
+
+    private string selectedProductType
+    {
+        get => currentProduct is null || string.IsNullOrWhiteSpace(currentProduct.ProductType)
+            ? GetProductTypeOptions()[0]
+            : GetProductTypeOptions().FirstOrDefault(option => option.StartsWith(currentProduct.ProductType + " — ", StringComparison.OrdinalIgnoreCase))
+              ?? $"{currentProduct.ProductType} — {L["Fields.ExistingValue"].Value}";
+        set
+        {
+            if (currentProduct is not null)
+                currentProduct.ProductType = GetOptionValue(value);
+        }
+    }
+
+    private string[] GetProductStatusOptions()
+    {
+        var options = new[]
+        {
+            $" — {L["Options.EffectTypeNone"].Value}",
+            $"N — {L["Options.ProductStatusNone"].Value}",
+            $"F — {L["Options.ProductStatusNew"].Value}",
+            $"H — {L["Options.ProductStatusHot"].Value}",
+            $"B — {L["Options.ProductStatusBest"].Value}"
+        };
+
+        return currentProduct is null || string.IsNullOrWhiteSpace(currentProduct.Status)
+               || options.Any(option => option.StartsWith(currentProduct.Status + " — ", StringComparison.OrdinalIgnoreCase))
+            ? options
+            : [.. options, $"{currentProduct.Status} — {L["Fields.ExistingValue"].Value}"];
+    }
+
+    private string selectedProductStatus
+    {
+        get => currentProduct is null || string.IsNullOrWhiteSpace(currentProduct.Status)
+            ? GetProductStatusOptions()[0]
+            : GetProductStatusOptions().FirstOrDefault(option => option.StartsWith(currentProduct.Status + " — ", StringComparison.OrdinalIgnoreCase))
+              ?? $"{currentProduct.Status} — {L["Fields.ExistingValue"].Value}";
+        set
+        {
+            if (currentProduct is not null)
+                currentProduct.Status = GetOptionValue(value);
+        }
+    }
+
+    private string[] GetIngameItemTypeOptions(IngameItem item)
+    {
+        var options = new[]
+        {
+            $" — {L["Options.EffectTypeNone"].Value}",
+            $"AB — {L["Options.EffectTypeBreakShield"].Value}",
+            $"FP — {L["Options.EffectTypeFeverPlus"].Value}",
+            $"GR — {L["Options.EffectTypeGaugeRefill"].Value}"
+        };
+
+        return string.IsNullOrWhiteSpace(item.ItemType)
+               || options.Any(option => option.StartsWith(item.ItemType + " — ", StringComparison.OrdinalIgnoreCase))
+            ? options
+            : [.. options, $"{item.ItemType} — {L["Fields.ExistingValue"].Value}"];
+    }
+
+    private string GetSelectedIngameItemType(IngameItem item)
+        => GetIngameItemTypeOptions(item).FirstOrDefault(option =>
+               option.StartsWith(item.ItemType + " — ", StringComparison.OrdinalIgnoreCase))
+           ?? GetIngameItemTypeOptions(item)[0];
+
+    private static void SetIngameItemType(IngameItem item, string value)
+        => item.ItemType = GetOptionValue(value);
+
+    private static string GetOptionValue(string option)
+    {
+        var separatorIndex = option.LastIndexOf(" — ", StringComparison.Ordinal);
+        return separatorIndex < 0 ? option : option[..separatorIndex];
+    }
 
     private IReadOnlyList<Product> Catalog =>
         State.CurrentPackage is null ? [] : ProductCatalog.BuildCatalog(State.CurrentPackage, State.SelectedExportPlatform);

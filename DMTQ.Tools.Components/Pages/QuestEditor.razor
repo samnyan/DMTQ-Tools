@@ -19,8 +19,8 @@
                     @foreach (var language in Languages)
                     {
                         <div class="language-panel"><h3 class="lang-heading">@language</h3><FluentGrid Spacing="2">
-                            <FluentGridItem Xs="12" Md="4"><FluentTextInput style="width:100%" @bind-Value="draft!.NamesByLanguage[language]" Label='@L["Fields.Name"]' /></FluentGridItem>
-                            <FluentGridItem Xs="12" Md="8"><FluentTextInput style="width:100%" @bind-Value="draft!.DescriptionsByLanguage[language]" Label='@L["Fields.Description"]' /></FluentGridItem>
+                            <FluentGridItem Xs="12" Md="4"><FluentTextInput style="width:100%" Value="@draft!.NamesByLanguage[language]" ValueChanged="@(value => draft!.NamesByLanguage[language] = value)" Label='@L["Fields.Name"]' /></FluentGridItem>
+                            <FluentGridItem Xs="12" Md="8"><FluentTextArea style="width:100%" Value="@draft!.DescriptionsByLanguage[language]" ValueChanged="@(value => draft!.DescriptionsByLanguage[language] = value)" Label='@L["Fields.Description"]' Height="100px" Resize="TextAreaResize.Vertical" /></FluentGridItem>
                         </FluentGrid></div>
                     }
                 </section>
@@ -40,7 +40,7 @@
                             <div class="mission-language-grid">
                                 @foreach (var language in Languages)
                                 {
-                                    <FluentTextInput @bind-Value="mission.DescriptionsByLanguage[language]" Label="@language" />
+                                    <FluentTextArea Value="@mission.DescriptionsByLanguage[language]" ValueChanged="@(value => mission.DescriptionsByLanguage[language] = value)" Label="@language" Height="100px" Resize="TextAreaResize.Vertical" />
                                 }
                             </div>
                         </div>

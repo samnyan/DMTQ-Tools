@@ -1,0 +1,276 @@
+@page "/tables"
+@using DMTQ.Tools.Core.Models
+@using DMTQ.Tools.Core.Models.Export
+@inject IProjectState State
+@inject IProjectWorkflow Workflow
+@inject LogicalTableService TableService
+
+<FluentStack Orientation="Orientation.Vertical" VerticalGap="16" HorizontalAlignment="HorizontalAlignment.Stretch" class="logical-tables-page">
+    @if (State.CurrentPackage is null)
+    {
+        <FluentMessageBar Title='@L["Common.NoProject"]' Intent="MessageBarIntent.Warning" />
+    }
+    else if (Catalog.Count == 0)
+    {
+        <FluentCard><p class="status-message">@L["Tables.NoTables"]</p></FluentCard>
+    }
+    else
+    {
+        <section class="toolbar-panel">
+            <FluentGrid Spacing="2" AdaptiveRendering="true">
+                <FluentGridItem Xs="12" Sm="6" Md="4">
+                    <FluentSelect TOption="LogicalTable" TValue="string"
+                                  Items="Catalog"
+                                  OptionText="@(table => table.DisplayName)"
+                                  OptionValue="@(table => table.Key)"
+                                  Value="@selectedTableKey"
+                                  ValueChanged="SelectTable"
+                                  Label='@L["Tables.SelectTable"]' />
+                </FluentGridItem>
+                @if (SelectedTable is not null)
+                {
+                    <FluentGridItem Xs="12" Sm="6" Md="4">
+                        <FluentTextInput Label='@L["Tables.SourceFiles"]' ReadOnly="true"
+                                         Value="@string.Join(", ", SelectedTable.SourcePackageRelativePaths)" />
+                    </FluentGridItem>
+                }
+            </FluentGrid>
+        </section>
+
+        @if (SelectedTable is not null)
+        {
+            <section>
+                <div class="section-title-row">
+                    <div>
+                        <h2 class="section-heading">@SelectedTable.DisplayName</h2>
+                        <p class="section-hint">@L["Tables.RowCount", SelectedTable.Rows.Count, SelectedTable.Kind]</p>
+                    </div>
+                    @if (draftValues is null)
+                    {
+                        <FluentButton Appearance="ButtonAppearance.Primary" IconStart="@(new Icons.Regular.Size20.Add())" OnClick="BeginAddRow">
+                            @L["Tables.AddRow"]
+                        </FluentButton>
+                    }
+                </div>
+
+                <div class="grid-scroll logical-tables-grid">
+                    <FluentDataGrid Items="@SelectedTable.Rows.AsQueryable()" TGridItem="LogicalTableRow">
+                        @foreach (var column in SelectedTable.Columns)
+                        {
+                            <TemplateColumn TGridItem="LogicalTableRow" Title="@column.DisplayName" Context="row">
+                                @row.Cells.GetValueOrDefault(column.Key)
+                            </TemplateColumn>
+                        }
+                        <TemplateColumn TGridItem="LogicalTableRow" Title='@L["Lists.Actions"]' Context="row">
+                            <FluentButton Size="ButtonSize.Small" IconOnly="true" Title='@L["Common.Edit"]'
+                                          OnClick="@(() => BeginEditRow(row))" IconRest="@(new Icons.Regular.Size20.Edit())" />
+                        </TemplateColumn>
+                    </FluentDataGrid>
+                </div>
+            </section>
+
+            @if (draftValues is not null)
+            {
+                <section class="table-row-editor">
+                    <h2 class="section-heading">@(editingRow is null ? L["Tables.AddRow"] : L["Tables.EditRow", editingRow.Key])</h2>
+                    <FluentGrid Spacing="2" AdaptiveRendering="true">
+                        @foreach (var column in SelectedTable.Columns.Where(column => column.Editable || editingRow is null))
+                        {
+                            var currentColumn = column;
+                            <FluentGridItem Xs="12" Sm="6" Md="IsLongText(currentColumn) ? 12 : 6">
+                                @if (IsBooleanColumn(currentColumn))
+                                {
+                                    <FluentSwitch Label="@currentColumn.DisplayName"
+                                                  Value="@GetDraftBoolean(currentColumn)"
+                                                  ValueChanged="@(value => SetDraftBoolean(currentColumn, value))" />
+                                }
+                                else if (IsLongText(currentColumn))
+                                {
+                                    <FluentTextArea style="width: 100%;" Label="@currentColumn.DisplayName"
+                                                    Value="@draftValues.GetValueOrDefault(currentColumn.Key)"
+                                                    ValueChanged="@(value => SetDraftValue(currentColumn.Key, value))"
+                                                    Height="120px" Resize="TextAreaResize.Vertical" />
+                                }
+                                else
+                                {
+                                    <FluentTextInput style="width: 100%;" Label="@currentColumn.DisplayName"
+                                                     Value="@draftValues.GetValueOrDefault(currentColumn.Key)"
+                                                     ValueChanged="@(value => SetDraftValue(currentColumn.Key, value))" />
+                                }
+                            </FluentGridItem>
+                        }
+                    </FluentGrid>
+                    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8" class="table-row-editor-actions">
+                        <FluentButton Appearance="ButtonAppearance.Primary" OnClick="SaveRowAsync" Disabled="@isBusy">@L["Tables.SaveRow"]</FluentButton>
+                        <FluentButton Appearance="ButtonAppearance.Default" OnClick="CancelEdit">@L["Common.Cancel"]</FluentButton>
+                    </FluentStack>
+                </section>
+            }
+        }
+
+        @if (!string.IsNullOrWhiteSpace(message))
+        {
+            <FluentMessageBar Intent="MessageBarIntent.Success">@message</FluentMessageBar>
+        }
+        @if (!string.IsNullOrWhiteSpace(errorMessage))
+        {
+            <FluentMessageBar Intent="MessageBarIntent.Error">@errorMessage</FluentMessageBar>
+        }
+    }
+</FluentStack>
+
+@code {
+    private IReadOnlyList<LogicalTable> Catalog => State.CurrentPackage is null
+        ? []
+        : TableService.BuildCatalog(State.CurrentPackage);
+    private string selectedTableKey = string.Empty;
+    private LogicalTableRow? editingRow;
+    private Dictionary<string, string>? draftValues;
+    private bool isBusy;
+    private string? message;
+    private string? errorMessage;
+
+    private LogicalTable? SelectedTable => Catalog.FirstOrDefault(table =>
+        table.Key.Equals(selectedTableKey, StringComparison.OrdinalIgnoreCase)) ?? Catalog.FirstOrDefault();
+
+    protected override void OnParametersSet()
+    {
+        if (string.IsNullOrEmpty(selectedTableKey))
+            selectedTableKey = Catalog.FirstOrDefault()?.Key ?? string.Empty;
+    }
+
+    private void SelectTable(string key)
+    {
+        selectedTableKey = key;
+        CancelEdit();
+    }
+
+    private void BeginAddRow()
+    {
+        if (SelectedTable is null) return;
+        editingRow = null;
+        draftValues = SelectedTable.Columns.ToDictionary(column => column.Key, _ => string.Empty, StringComparer.OrdinalIgnoreCase);
+        message = errorMessage = null;
+    }
+
+    private void BeginEditRow(LogicalTableRow row)
+    {
+        if (SelectedTable is null) return;
+        editingRow = row;
+        draftValues = SelectedTable.Columns.ToDictionary(
+            column => column.Key,
+            column => row.Cells.GetValueOrDefault(column.Key) ?? string.Empty,
+            StringComparer.OrdinalIgnoreCase);
+        message = errorMessage = null;
+    }
+
+    private void SetDraftValue(string key, string value)
+    {
+        if (draftValues is not null)
+            draftValues[key] = value;
+    }
+
+    private async Task SaveRowAsync()
+    {
+        if (State.CurrentPackage is null || SelectedTable is null || draftValues is null) return;
+        isBusy = true;
+        message = errorMessage = null;
+        try
+        {
+            TableService.SaveRow(State.CurrentPackage, SelectedTable, editingRow, draftValues);
+            await Workflow.SaveProjectAsync();
+            message = L["Tables.RowSaved"].Value;
+            draftValues = null;
+            editingRow = null;
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+            State.Diagnostics.Add("Table row save error: " + ex.Message);
+        }
+        finally
+        {
+            isBusy = false;
+        }
+    }
+
+    private void CancelEdit()
+    {
+        draftValues = null;
+        editingRow = null;
+    }
+
+    private static bool IsLongText(LogicalTableColumn column)
+        => column.SourceColumnName.Contains("desc", StringComparison.OrdinalIgnoreCase)
+           || column.SourceColumnName.Contains("summary", StringComparison.OrdinalIgnoreCase)
+           || column.SourceColumnName.Contains("text", StringComparison.OrdinalIgnoreCase)
+           || column.SourceColumnName.Contains("content", StringComparison.OrdinalIgnoreCase)
+           || column.SourceColumnName.Contains("message", StringComparison.OrdinalIgnoreCase)
+           || column.SourceColumnName.Contains("json", StringComparison.OrdinalIgnoreCase)
+           || column.SourceColumnName.Contains("remark", StringComparison.OrdinalIgnoreCase);
+
+    private bool IsBooleanColumn(LogicalTableColumn column)
+    {
+        var name = column.SourceColumnName;
+        var namedAsBoolean = name.EndsWith("_yn", StringComparison.OrdinalIgnoreCase)
+                             || name.EndsWith("_bool", StringComparison.OrdinalIgnoreCase)
+                             || name.EndsWith("_flg", StringComparison.OrdinalIgnoreCase)
+                             || name.Equals("flg", StringComparison.OrdinalIgnoreCase)
+                             || name.StartsWith("is_", StringComparison.OrdinalIgnoreCase)
+                             || name.StartsWith("has_", StringComparison.OrdinalIgnoreCase)
+                             || name.StartsWith("use_", StringComparison.OrdinalIgnoreCase)
+                             || name.StartsWith("enable_", StringComparison.OrdinalIgnoreCase)
+                             || name.EndsWith("_enabled", StringComparison.OrdinalIgnoreCase);
+        if (!namedAsBoolean || SelectedTable is null) return false;
+
+        return SelectedTable.Rows
+            .Select(row => row.Cells.GetValueOrDefault(column.Key))
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .All(IsBooleanToken);
+    }
+
+    private bool GetDraftBoolean(LogicalTableColumn column)
+        => draftValues is not null && TryParseBoolean(draftValues.GetValueOrDefault(column.Key), out var value) && value;
+
+    private void SetDraftBoolean(LogicalTableColumn column, bool value)
+    {
+        if (draftValues is null) return;
+        var (trueValue, falseValue) = GetBooleanTokens(column);
+        draftValues[column.Key] = value ? trueValue : falseValue;
+    }
+
+    private (string True, string False) GetBooleanTokens(LogicalTableColumn column)
+    {
+        var values = SelectedTable?.Rows
+            .Select(row => row.Cells.GetValueOrDefault(column.Key))
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .ToArray() ?? [];
+        if (values.Any(value => value?.Equals("Y", StringComparison.OrdinalIgnoreCase) == true
+                                || value?.Equals("N", StringComparison.OrdinalIgnoreCase) == true))
+            return ("Y", "N");
+        if (values.Any(value => value?.Equals("1", StringComparison.OrdinalIgnoreCase) == true
+                                || value?.Equals("0", StringComparison.OrdinalIgnoreCase) == true))
+            return ("1", "0");
+        if (column.SourceColumnName.EndsWith("_yn", StringComparison.OrdinalIgnoreCase))
+            return ("Y", "N");
+        return ("true", "false");
+    }
+
+    private static bool IsBooleanToken(string? value)
+        => value is null || value.Length == 0
+           || value.Equals("Y", StringComparison.OrdinalIgnoreCase)
+           || value.Equals("N", StringComparison.OrdinalIgnoreCase)
+           || value.Equals("1", StringComparison.OrdinalIgnoreCase)
+           || value.Equals("0", StringComparison.OrdinalIgnoreCase)
+           || value.Equals("true", StringComparison.OrdinalIgnoreCase)
+           || value.Equals("false", StringComparison.OrdinalIgnoreCase);
+
+    private static bool TryParseBoolean(string? value, out bool result)
+    {
+        result = value is not null
+                && (value.Equals("Y", StringComparison.OrdinalIgnoreCase)
+                    || value.Equals("1", StringComparison.OrdinalIgnoreCase)
+                    || value.Equals("true", StringComparison.OrdinalIgnoreCase));
+        return IsBooleanToken(value);
+    }
+}

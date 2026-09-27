@@ -1,7 +1,9 @@
 using System.Text;
+using System.Reflection;
 using DMTQ.Tools.Core.Models.Pattern;
 using DMTQ.Tools.Core.Services.Pattern;
 using FluentAssertions;
+using Microsoft.FluentUI.AspNetCore.Components;
 
 namespace DMTQ.Tools.UITests.Pages;
 
@@ -22,7 +24,7 @@ public sealed class PatternToolTests : BlazorUITestBase
     }
 
     [TestMethod]
-    public void LoadsPatternAndShowsMetadataAndLists()
+    public async Task LoadsPatternAndShowsMetadataAndLists()
     {
         var source = CreatePattern();
         var path = Path.Combine(Path.GetTempPath(), "pattern-tool-test.bytes");
@@ -35,22 +37,26 @@ public sealed class PatternToolTests : BlazorUITestBase
             FilePicker.PickResult = path;
 
             var cut = RenderWithProviders<PatternTool>();
-            cut.FindAll("fluent-button").First().Click();
+            await cut.InvokeAsync(() => cut.FindComponents<FluentButton>()[0].Instance.OnClick.InvokeAsync(new()));
             cut.WaitForAssertion(() => cut.Markup.Should().Contain("fluent-data-grid"));
 
             cut.Markup.Should().Contain("kick.ogg");
             cut.Markup.Should().Contain("BpmChange");
 
-            cut.Find("fluent-option[value='Pt']").Click();
-            cut.FindAll("fluent-button")[1].Click();
+            cut.Instance.GetType()
+                .GetField("targetFormat", BindingFlags.Instance | BindingFlags.NonPublic)!
+                .SetValue(cut.Instance, PatternFormat.Pt);
+            await cut.InvokeAsync(() => cut.FindComponents<FluentButton>()[1].Instance.OnClick.InvokeAsync(new()));
             cut.WaitForAssertion(() => FileSaver.SavedContent.Should().NotBeNull());
             FileSaver.SuggestedFileName.Should().EndWith(".pt");
             new PatternBinarySerializer()
                 .Deserialize(FileSaver.SavedContent!, PatternFormat.Pt)
                 .CommandCount.Should().Be(2);
 
-            cut.Find("fluent-option[value='Text']").Click();
-            cut.FindAll("fluent-button")[1].Click();
+            cut.Instance.GetType()
+                .GetField("targetFormat", BindingFlags.Instance | BindingFlags.NonPublic)!
+                .SetValue(cut.Instance, PatternFormat.Text);
+            await cut.InvokeAsync(() => cut.FindComponents<FluentButton>()[1].Instance.OnClick.InvokeAsync(new()));
             cut.WaitForAssertion(() => FileSaver.SuggestedFileName.Should().EndWith(".txt"));
             new PatternTextSerializer()
                 .Deserialize(Encoding.UTF8.GetString(FileSaver.SavedContent!))

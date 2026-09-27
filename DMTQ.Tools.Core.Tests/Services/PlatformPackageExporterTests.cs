@@ -100,6 +100,53 @@ public sealed class PlatformPackageExporterTests
     }
 
     [TestMethod]
+    public async Task ExportPlatformAsync_RoundTripsEditedUnmappedCsvTable()
+    {
+        var projectRoot = Path.Combine(Path.GetTempPath(), "dmtq-generic-table-" + Guid.NewGuid().ToString("N"));
+        var exportRoot = Path.Combine(Path.GetTempPath(), "dmtq-generic-table-out-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            Directory.CreateDirectory(projectRoot);
+            var package = CreateEmptyProject(projectRoot);
+            var table = new GameTable
+            {
+                PackageRelativePath = "table/us/custom_settings.csv",
+                TableName = "custom_settings",
+                LanguageCode = "us"
+            };
+            table.Columns.Add(new GameTableColumn("id", 0));
+            table.Columns.Add(new GameTableColumn("description", 1));
+            var row = new GameTableRow { Order = 0 };
+            row.Cells.Add(new GameTableCell("id", "sample"));
+            row.Cells.Add(new GameTableCell("description", "before"));
+            table.Rows.Add(row);
+            package.Tables.Tables.Add(table);
+
+            var tableService = new LogicalTableService();
+            var logicalTable = tableService.BuildCatalog(package).Single(item => item.Key == "custom_settings");
+            tableService.SaveRow(package, logicalTable, logicalTable.Rows.Single(row => row.Key == "sample"), new Dictionary<string, string>
+            {
+                ["id"] = "sample",
+                ["description"] = "edited, with comma"
+            });
+
+            await CreateExporter().ExportPlatformAsync(package, exportRoot,
+                new PlatformExportOptions { Platform = "android", Mode = PlatformExportMode.Full });
+
+            await using var csvStream = File.OpenRead(Path.Combine(exportRoot, "table", "us", "custom_settings.csv"));
+            var roundTrip = await new CsvTableReader().ReadAsync(csvStream, "table/us/custom_settings.csv");
+            roundTrip.Rows.Should().ContainSingle();
+            roundTrip.Rows[0].Cells.Single(cell => cell.ColumnName == "id").Value.Should().Be("sample");
+            roundTrip.Rows[0].Cells.Single(cell => cell.ColumnName == "description").Value.Should().Be("edited, with comma");
+        }
+        finally
+        {
+            DeleteDirectory(projectRoot);
+            DeleteDirectory(exportRoot);
+        }
+    }
+
+    [TestMethod]
     public async Task ExportPlatformAsync_UsesPlatformSpecificDlcAndSharedPreviewInclusion()
     {
         var projectRoot = Path.Combine(Path.GetTempPath(), "dmtq-platform-resource-export-" + Guid.NewGuid().ToString("N"));
