@@ -80,6 +80,7 @@
 
 .atlas-preview-column { position: sticky; top: 1rem; }
 .atlas-section-heading { margin-bottom: .85rem; }
+.atlas-coordinate-origin { color: var(--colorNeutralForeground3); font-size: .8rem; }
 
 .atlas-canvas-scroll {
     overflow: auto;
@@ -141,6 +142,7 @@
 
 @media (max-width: 900px) {
     .atlas-export-grid, .bundle-export-grid { grid-template-columns: minmax(0, 1fr); }
+    .sprite-list-heading { align-items: flex-start; flex-direction: column; gap: .35rem; }
 }
 
 @media (max-width: 640px) {

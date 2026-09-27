@@ -59,7 +59,7 @@ public static class SpriteAtlasPacker
             if (top + image.Height > atlasHeight)
                 throw new InvalidOperationException($"Sprite '{image.Name}' does not fit in the {atlasWidth}x{atlasHeight} atlas.");
 
-            var y = atlasHeight - top - image.Height;
+            var y = top;
             document.Sprites.Add(SpriteAtlasEntry.Create(image.Name, x, y, image.Width, image.Height));
             x += image.Width + spacing;
             rowHeight = Math.Max(rowHeight, image.Height);

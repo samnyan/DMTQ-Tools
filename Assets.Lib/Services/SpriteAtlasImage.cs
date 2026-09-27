@@ -8,7 +8,7 @@ using WriteColorComponents = StbImageWriteSharp.ColorComponents;
 
 namespace Assets.Lib.Services;
 
-/// <summary>Composes and extracts PNG atlas images using the coordinate system stored by Unity.</summary>
+/// <summary>Composes and extracts PNG atlas images using NGUI's top-left-origin pixel coordinates.</summary>
 public static class SpriteAtlasImage
 {
     /// <summary>Composes a transparent PNG atlas by drawing the supplied images into named sprite regions.</summary>
@@ -51,7 +51,7 @@ public static class SpriteAtlasImage
             var width = ToPixel(sprite.Width, sprite.Name, nameof(sprite.Width));
             var height = ToPixel(sprite.Height, sprite.Name, nameof(sprite.Height));
             var x = ToPixel(sprite.X, sprite.Name, nameof(sprite.X));
-            var yFromTop = document.TextureHeight - ToPixel(sprite.Y, sprite.Name, nameof(sprite.Y)) - height;
+            var yFromTop = ToPixel(sprite.Y, sprite.Name, nameof(sprite.Y));
             var image = ImageResult.FromMemory(png, StbImageSharp.ColorComponents.RedGreenBlueAlpha);
             CopyResampled(image.Data, image.Width, image.Height, atlas, document.TextureWidth, x, yFromTop, width, height);
         }
@@ -59,7 +59,7 @@ public static class SpriteAtlasImage
         return EncodePng(atlas, document.TextureWidth, document.TextureHeight);
     }
 
-    /// <summary>Crops a sprite from an atlas PNG using its Unity bottom-left-origin rectangle.</summary>
+    /// <summary>Crops a sprite from an atlas PNG using its NGUI top-left-origin rectangle.</summary>
     /// <param name="atlasPng">PNG bytes for the complete atlas.</param>
     /// <param name="atlasWidth">Expected atlas width in pixels.</param>
     /// <param name="atlasHeight">Expected atlas height in pixels.</param>
@@ -73,7 +73,7 @@ public static class SpriteAtlasImage
             throw new ArgumentOutOfRangeException(nameof(atlasWidth), "Atlas dimensions must be positive.");
 
         var x = ToPixel(sprite.X, sprite.Name, nameof(sprite.X));
-        var y = atlasHeight - ToPixel(sprite.Y, sprite.Name, nameof(sprite.Y)) - ToPixel(sprite.Height, sprite.Name, nameof(sprite.Height));
+        var y = ToPixel(sprite.Y, sprite.Name, nameof(sprite.Y));
         var width = ToPixel(sprite.Width, sprite.Name, nameof(sprite.Width));
         var height = ToPixel(sprite.Height, sprite.Name, nameof(sprite.Height));
         if (x < 0 || y < 0 || width <= 0 || height <= 0 || x + width > atlasWidth || y + height > atlasHeight)

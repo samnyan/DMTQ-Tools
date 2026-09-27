@@ -54,6 +54,7 @@
             <section class="atlas-sprite-column">
                 <div class="atlas-section-heading sprite-list-heading">
                     <div><h2>@L["AtlasEditor.Sprites"]</h2><span>@L["AtlasEditor.SpriteCount", _sprites.Count]</span></div>
+                    <span class="atlas-coordinate-origin">@L["AtlasEditor.CoordinateOrigin"]</span>
                 </div>
                 @for (var index = 0; index < _sprites.Count; index++)
                 {
@@ -150,7 +151,7 @@
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
-            _previewModule = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/DMTQ.Tools.Components/atlasPreview.js?v=3");
+            _previewModule = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/DMTQ.Tools.Components/atlasPreview.js?v=4");
 
         if (!_canvasNeedsRender || _previewModule is null || _document is null || _previewPng.Length == 0)
             return;

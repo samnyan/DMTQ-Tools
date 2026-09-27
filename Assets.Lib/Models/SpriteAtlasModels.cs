@@ -33,10 +33,10 @@ public sealed class SpriteAtlasEntry
     /// <summary>Gets or sets the name looked up by the game, such as <c>e10_oblivion</c>.</summary>
     public string Name { get; set; } = string.Empty;
 
-    /// <summary>Gets or sets the left coordinate in Unity atlas pixels.</summary>
+    /// <summary>Gets or sets the left coordinate in NGUI atlas pixels (origin at top left).</summary>
     public float X { get; set; }
 
-    /// <summary>Gets or sets the bottom coordinate in Unity atlas pixels.</summary>
+    /// <summary>Gets or sets the top coordinate in NGUI atlas pixels (origin at top left).</summary>
     public float Y { get; set; }
 
     /// <summary>Gets or sets the sprite width in pixels.</summary>
@@ -48,7 +48,7 @@ public sealed class SpriteAtlasEntry
     /// <summary>Gets or sets the NGUI2 inner rectangle's left coordinate.</summary>
     public float InnerX { get; set; }
 
-    /// <summary>Gets or sets the NGUI2 inner rectangle's bottom coordinate.</summary>
+    /// <summary>Gets or sets the NGUI2 inner rectangle's top coordinate.</summary>
     public float InnerY { get; set; }
 
     /// <summary>Gets or sets the NGUI2 inner rectangle's width.</summary>

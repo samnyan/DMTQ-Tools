@@ -26,7 +26,7 @@ export async function drawAtlas(canvas, pngBase64, width, height, sprites, selec
         const spriteWidth = sprite.width ?? sprite.Width;
         const spriteHeight = sprite.height ?? sprite.Height;
         const name = sprite.name ?? sprite.Name;
-        const top = height - y - spriteHeight;
+        const top = y;
         const selected = index === selectedIndex;
         context.save();
         context.strokeStyle = selected ? "#ffffff" : "#50c7ff";

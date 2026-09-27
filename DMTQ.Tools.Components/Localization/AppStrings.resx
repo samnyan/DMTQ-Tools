@@ -187,6 +187,7 @@
   <data name="AtlasEditor.SpriteCount" xml:space="preserve"><value>{0} sprites</value></data>
   <data name="AtlasEditor.Name" xml:space="preserve"><value>Sprite name</value></data>
   <data name="AtlasEditor.Region" xml:space="preserve"><value>Region (x, y, width, height)</value></data>
+  <data name="AtlasEditor.CoordinateOrigin" xml:space="preserve"><value>Sprite regions use top-left-origin pixel coordinates.</value></data>
   <data name="AtlasEditor.X" xml:space="preserve"><value>X</value></data>
   <data name="AtlasEditor.Y" xml:space="preserve"><value>Y</value></data>
   <data name="AtlasEditor.Remove" xml:space="preserve"><value>Remove</value></data>

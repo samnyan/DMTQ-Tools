@@ -221,6 +221,7 @@
   <data name="AtlasEditor.SpriteCount" xml:space="preserve"><value>{0} 个 Sprite</value></data>
   <data name="AtlasEditor.Name" xml:space="preserve"><value>Sprite 名称</value></data>
   <data name="AtlasEditor.Region" xml:space="preserve"><value>区域（x、y、宽、高）</value></data>
+  <data name="AtlasEditor.CoordinateOrigin" xml:space="preserve"><value>Sprite 区域坐标以图集左上角为原点，单位为像素。</value></data>
   <data name="AtlasEditor.X" xml:space="preserve"><value>X</value></data>
   <data name="AtlasEditor.Y" xml:space="preserve"><value>Y</value></data>
   <data name="AtlasEditor.Remove" xml:space="preserve"><value>移除</value></data>
