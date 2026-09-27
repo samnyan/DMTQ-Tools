@@ -527,6 +527,12 @@ body {
     flex: 0 0 auto;
 }
 
+.list-toolbar fluent-button {
+    flex: 0 0 auto;
+    min-width: max-content;
+    white-space: nowrap;
+}
+
 .list-grid-scroll {
     flex: 1 1 auto;
     min-width: 0;
