@@ -44,7 +44,6 @@ jobs:
           --self-contained false
           --output ${{ env.BUILD_OUTPUT }}
           -p:WindowsPackageType=None
-          -p:WindowsAppSDKSelfContained=false
 
       - name: Remove release symbols
         shell: pwsh

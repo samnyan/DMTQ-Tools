@@ -1,0 +1,9 @@
+<div class="toolbar-field @(Unlabeled ? "toolbar-field-unlabeled" : null) @(Search ? "toolbar-field-search" : null)">
+    @ChildContent
+</div>
+
+@code {
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public bool Unlabeled { get; set; }
+    [Parameter] public bool Search { get; set; }
+}

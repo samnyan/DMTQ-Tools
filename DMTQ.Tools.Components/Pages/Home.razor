@@ -10,24 +10,28 @@
 <h1>@L["Nav.Project"]</h1>
 
 <FluentStack Orientation="Orientation.Vertical" VerticalGap="16" Style="margin-bottom: 1.25rem;">
-    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8">
-        <FluentTextInput @bind-Value="projectRoot"
-                         Label='@L["Home.ProjectFolder"]'
-                         Placeholder='@L["Home.ProjectFolderPlaceholder"]'
-                         Style="width: 100%;" />
-        <FluentButton Appearance="ButtonAppearance.Default"
-                      IconStart="@(new Icons.Regular.Size20.Folder())"
-                      OnClick="BrowseFolder">@L["Home.Browse"]</FluentButton>
-    </FluentStack>
+    <div class="project-folder-row">
+        <ToolbarField>
+            <FluentTextInput @bind-Value="projectRoot"
+                             Label='@L["Home.ProjectFolder"]'
+                             Placeholder='@L["Home.ProjectFolderPlaceholder"]'
+                             class="project-folder-input" />
+        </ToolbarField>
+        <ToolbarField Unlabeled>
+            <FluentButton Appearance="ButtonAppearance.Default"
+                          IconStart="@(new Icons.Regular.Size20.Folder())"
+                          OnClick="BrowseFolder">@L["Home.Browse"]</FluentButton>
+        </ToolbarField>
+    </div>
 
-    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8">
+    <div class="project-actions">
         <FluentButton Appearance="ButtonAppearance.Primary"
                       OnClick="ConfirmProject"
                       Disabled="@(string.IsNullOrWhiteSpace(projectRoot) || isBusy)">@L["Home.Confirm"]</FluentButton>
         <FluentButton Appearance="ButtonAppearance.Default"
                       OnClick="SaveProject"
                       Disabled="@(!State.HasPackage || isBusy)">@L["Common.Save"]</FluentButton>
-    </FluentStack>
+    </div>
 
     @if (!string.IsNullOrWhiteSpace(message))
     {
@@ -69,58 +73,58 @@
     </section>
 }
 
-<FluentGrid Spacing="3" Justify="JustifyContent.Center" AdaptiveRendering="true">
+<FluentGrid class="metric-grid" Spacing="3" Justify="JustifyContent.Center" AdaptiveRendering="true">
     <FluentGridItem Xs="12" Sm="6" Md="4" Lg="3">
         <FluentCard>
-            <span style="color: #5f6b7a; font-size: 0.8rem;">@L["Nav.Project"]</span>
+            <span class="metric-label">@L["Nav.Project"]</span>
             <p style="font-weight: 600; overflow-wrap: anywhere;">@(State.ProjectRoot ?? L["Home.NotSelected"].Value)</p>
         </FluentCard>
     </FluentGridItem>
     <FluentGridItem Xs="12" Sm="6" Md="4" Lg="3">
         <FluentCard>
-            <span style="color: #5f6b7a; font-size: 0.8rem;">@L["Home.Source"]</span>
+            <span class="metric-label">@L["Home.Source"]</span>
             <p style="font-weight: 600; overflow-wrap: anywhere;">@(State.CurrentPackage?.ProjectInfo.SourcePackageRoot ?? L["Home.NotImported"].Value)</p>
         </FluentCard>
     </FluentGridItem>
     <FluentGridItem Xs="12" Sm="6" Md="4" Lg="3">
         <FluentCard>
-            <span style="color: #5f6b7a; font-size: 0.8rem;">@L["Home.Version"]</span>
+            <span class="metric-label">@L["Home.Version"]</span>
             <p style="font-weight: 600;">@(State.CurrentPackage?.ProjectInfo.Version ?? "-")</p>
         </FluentCard>
     </FluentGridItem>
     <FluentGridItem Xs="12" Sm="6" Md="4" Lg="3">
         <FluentCard>
-            <span style="color: #5f6b7a; font-size: 0.8rem;">@L["Home.PrimaryPlatform"]</span>
+            <span class="metric-label">@L["Home.PrimaryPlatform"]</span>
             <p style="font-weight: 600;">@(State.CurrentPackage?.ProjectInfo.Platform ?? "-")</p>
         </FluentCard>
     </FluentGridItem>
     <FluentGridItem Xs="12" Sm="6" Md="4" Lg="3">
         <FluentCard>
-            <span style="color: #5f6b7a; font-size: 0.8rem;">@L["Home.ImportedPlatforms"]</span>
+            <span class="metric-label">@L["Home.ImportedPlatforms"]</span>
             <p style="font-weight: 600;">@PlatformSummary</p>
         </FluentCard>
     </FluentGridItem>
     <FluentGridItem Xs="12" Sm="6" Md="4" Lg="3">
         <FluentCard>
-            <span style="color: #5f6b7a; font-size: 0.8rem;">@L["Nav.Songs"]</span>
+            <span class="metric-label">@L["Nav.Songs"]</span>
             <p style="font-weight: 600;">@(State.CurrentPackage?.Songs.Count ?? 0)</p>
         </FluentCard>
     </FluentGridItem>
     <FluentGridItem Xs="12" Sm="6" Md="4" Lg="3">
         <FluentCard>
-            <span style="color: #5f6b7a; font-size: 0.8rem;">@L["Home.Tables"]</span>
+            <span class="metric-label">@L["Home.Tables"]</span>
             <p style="font-weight: 600;">@(State.CurrentPackage?.Tables.Tables.Count ?? 0)</p>
         </FluentCard>
     </FluentGridItem>
     <FluentGridItem Xs="12" Sm="6" Md="4" Lg="3">
         <FluentCard>
-            <span style="color: #5f6b7a; font-size: 0.8rem;">@L["Nav.Resources"]</span>
+            <span class="metric-label">@L["Nav.Resources"]</span>
             <p style="font-weight: 600;">@(State.CurrentPackage?.Resources.Count ?? 0)</p>
         </FluentCard>
     </FluentGridItem>
     <FluentGridItem Xs="12" Sm="6" Md="4" Lg="3">
         <FluentCard>
-            <span style="color: #5f6b7a; font-size: 0.8rem;">@L["Home.LastValidation"]</span>
+            <span class="metric-label">@L["Home.LastValidation"]</span>
             <p style="font-weight: 600;">@ValidationText</p>
         </FluentCard>
     </FluentGridItem>

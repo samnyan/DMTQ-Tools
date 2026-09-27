@@ -12,33 +12,37 @@
 
 <FluentStack Orientation="Orientation.Vertical" VerticalGap="16">
     <section class="toolbar-panel pattern-toolbar">
-        <FluentStack Orientation="Orientation.Horizontal"
-                     HorizontalGap="8"
-                     VerticalAlignment="VerticalAlignment.Center"
-                     Wrap="true">
-            <FluentButton Appearance="ButtonAppearance.Primary"
-                          OnClick="LoadPatternAsync"
-                          Disabled="@isBusy">
-                @L["Pattern.Open"]
-            </FluentButton>
-            <FluentSelect TOption="PatternFormat"
-                          TValue="PatternFormat"
-                          Items="TargetFormats"
-                          OptionText="@(format => FormatName(format))"
-                          OptionValue="@(format => format)"
-                          @bind-Value="targetFormat"
-                          Label='@L["Pattern.ExportFormat"]'
-                          Disabled="@(pattern is null || isBusy)" />
-            <FluentButton Appearance="ButtonAppearance.Default"
-                          OnClick="SavePatternAsync"
-                          Disabled="@(pattern is null || isBusy)">
-                @L["Pattern.SaveAs"]
-            </FluentButton>
+        <div class="pattern-toolbar-layout">
+            <ToolbarField Unlabeled>
+                <FluentButton Appearance="ButtonAppearance.Primary"
+                              OnClick="LoadPatternAsync"
+                              Disabled="@isBusy">
+                    @L["Pattern.Open"]
+                </FluentButton>
+            </ToolbarField>
+            <ToolbarField>
+                <FluentSelect TOption="PatternFormat"
+                              TValue="PatternFormat"
+                              Items="TargetFormats"
+                              OptionText="@(format => FormatName(format))"
+                              OptionValue="@(format => format)"
+                              @bind-Value="targetFormat"
+                              Label='@L["Pattern.ExportFormat"]'
+                              Disabled="@(pattern is null || isBusy)"
+                              class="pattern-format-select" />
+            </ToolbarField>
+            <ToolbarField Unlabeled>
+                <FluentButton Appearance="ButtonAppearance.Default"
+                              OnClick="SavePatternAsync"
+                              Disabled="@(pattern is null || isBusy)">
+                    @L["Pattern.SaveAs"]
+                </FluentButton>
+            </ToolbarField>
             @if (isBusy)
             {
                 <FluentSpinner />
             }
-        </FluentStack>
+        </div>
         <p class="section-hint">@L["Pattern.OpenHintWithText"]</p>
         @if (!string.IsNullOrWhiteSpace(statusMessage))
         {
@@ -56,7 +60,7 @@
     {
         <section>
             <h2 class="section-heading">@L["Pattern.BasicInfo"]</h2>
-            <FluentGrid Spacing="3" AdaptiveRendering="true">
+            <FluentGrid class="metric-grid" Spacing="3" AdaptiveRendering="true">
                 <FluentGridItem Xs="12" Sm="6" Md="3">
                     <FluentCard><span class="metric-label">@L["Pattern.File"]</span><strong class="pattern-value">@fileName</strong></FluentCard>
                 </FluentGridItem>

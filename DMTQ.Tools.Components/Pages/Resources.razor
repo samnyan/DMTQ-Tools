@@ -16,26 +16,35 @@
                   Message="@message"
                   ErrorMessage="@errorMessage">
     <Toolbar>
-        <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center">
-            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" VerticalAlignment="VerticalAlignment.Center">
-                <FluentSelect Items="@(new[] { "All", "dlc", "preview", "slang" })"
-                              OptionText="@(i => i == "All" ? L["Lists.AllCategories"].Value : i)"
-                              OptionValue="@(i => i)"
-                              @bind-Value="categoryFilter"
-                              @bind-Value:after="UpdateCategoryQueryAsync"
-                              Label='@L["Lists.Category"]'
-                              Style="min-width: 140px;" />
-                <FluentTextInput Value="@filter" ValueChanged="SetFilterAsync" Immediate="true" Placeholder='@L["Lists.FilterResources"]'
-                                 Style="min-width: 280px;" />
-            </FluentStack>
-            <FluentButton Appearance="ButtonAppearance.Primary"
-                          IconStart="@(new Icons.Regular.Size20.Add())"
-                          OnClick="AddNewResource">@L["Lists.AddResource"]</FluentButton>
-        </FluentStack>
+        <div class="list-toolbar-layout">
+            <div class="list-toolbar-filters">
+                <ToolbarField>
+                    <FluentSelect Items="@(new[] { "All", "dlc", "preview", "slang" })"
+                                  OptionText="@(i => i == "All" ? L["Lists.AllCategories"].Value : i)"
+                                  OptionValue="@(i => i)"
+                                  @bind-Value="categoryFilter"
+                                  @bind-Value:after="UpdateCategoryQueryAsync"
+                                  Label='@L["Lists.Category"]'
+                                  class="list-select" />
+                </ToolbarField>
+                <ToolbarField Unlabeled Search>
+                    <FluentTextInput Value="@filter" ValueChanged="SetFilterAsync" Immediate="true" Placeholder='@L["Lists.FilterResources"]'
+                                     class="list-filter" />
+                </ToolbarField>
+            </div>
+            <div class="list-toolbar-actions">
+                <ToolbarField Unlabeled>
+                    <FluentButton Appearance="ButtonAppearance.Primary"
+                                  class="list-toolbar-action-button"
+                                  IconStart="@(new Icons.Regular.Size20.Add())"
+                                  OnClick="AddNewResource"><span class="button-label-nowrap">@L["Lists.AddResource"]</span></FluentButton>
+                </ToolbarField>
+            </div>
+        </div>
     </Toolbar>
 
     <Metrics>
-        <FluentGrid Spacing="3" AdaptiveRendering="true">
+        <FluentGrid class="metric-grid" Spacing="3" AdaptiveRendering="true">
             <FluentGridItem Xs="12" Sm="6" Md="3">
                 <FluentCard>
                     <span class="metric-label">@L["Lists.TotalResources"]</span><strong>@Catalog.Count</strong>

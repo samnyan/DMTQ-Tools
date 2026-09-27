@@ -8,11 +8,19 @@
 <ProjectListShell TItem="SlangEntry" Title='@L["Nav.Slang"]' ProjectMissingMessage='@L["Common.NoProject"]'
                   EmptyMessage='@L["Lists.NoSlang"]' FilteredItems="@FilteredItems" Pagination="@pagination"
                   Message="@message" ErrorMessage="@errorMessage">
-    <Toolbar><FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween">
-        <FluentTextInput Value="@filter" ValueChanged="SetFilterAsync" Immediate="true" Placeholder='@L["Lists.FilterSlang"]' Style="min-width:320px" />
-        <FluentButton Appearance="ButtonAppearance.Primary" IconStart="@(new Icons.Regular.Size20.Add())" OnClick="CreateNew">@L["Lists.AddSlang"]</FluentButton>
-    </FluentStack></Toolbar>
-    <Metrics><FluentGrid Spacing="3"><FluentGridItem Xs="12" Sm="6" Md="3"><FluentCard><span class="metric-label">@L["Lists.SlangEntries"]</span><strong>@Catalog.Count</strong></FluentCard></FluentGridItem></FluentGrid></Metrics>
+    <Toolbar><div class="list-toolbar-layout">
+        <div class="list-toolbar-filters">
+            <ToolbarField Unlabeled Search>
+                <FluentTextInput Value="@filter" ValueChanged="SetFilterAsync" Immediate="true" Placeholder='@L["Lists.FilterSlang"]' class="list-filter" />
+            </ToolbarField>
+        </div>
+        <div class="list-toolbar-actions">
+            <ToolbarField Unlabeled>
+                <FluentButton Appearance="ButtonAppearance.Primary" IconStart="@(new Icons.Regular.Size20.Add())" OnClick="CreateNew">@L["Lists.AddSlang"]</FluentButton>
+            </ToolbarField>
+        </div>
+    </div></Toolbar>
+    <Metrics><FluentGrid class="metric-grid" Spacing="3"><FluentGridItem Xs="12" Sm="6" Md="3"><FluentCard><span class="metric-label">@L["Lists.SlangEntries"]</span><strong>@Catalog.Count</strong></FluentCard></FluentGridItem></FluentGrid></Metrics>
     <Columns>
         <PropertyColumn TGridItem="SlangEntry" TProp="string" Property="@(entry => entry.Value)" Title='@L["Fields.SlangValue"]' Sortable="true" />
         <TemplateColumn TGridItem="SlangEntry" Title='@L["Lists.Actions"]' Context="entry"><FluentStack Orientation="Orientation.Horizontal" HorizontalGap="4">

@@ -37,6 +37,16 @@ fluent-data-grid {
     overflow: hidden;
 }
 
+h1 {
+    margin: 0 0 1rem;
+    font-size: 1.5rem;
+    line-height: 1.35;
+}
+
+h2 {
+    line-height: 1.35;
+}
+
 .app-header {
     box-sizing: border-box;
     display: flex;
@@ -533,6 +543,109 @@ body {
     white-space: nowrap;
 }
 
+.list-toolbar-action-button {
+    min-width: 9rem;
+    white-space: nowrap;
+}
+
+.button-label-nowrap {
+    white-space: nowrap;
+}
+
+/* Keep control surfaces aligned when only some controls have labels. */
+.list-toolbar-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    gap: 0.75rem;
+    width: 100%;
+    min-width: 0;
+}
+
+.toolbar-field {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+}
+
+.toolbar-field fluent-field {
+    margin-block: 0 !important;
+}
+
+.toolbar-field-unlabeled {
+    padding-top: 1.375rem;
+    padding-bottom: 0.125rem;
+}
+
+.toolbar-field-search {
+    flex: 1 1 20rem;
+    max-width: 28rem;
+}
+
+.list-toolbar-filters,
+.list-toolbar-actions {
+    display: flex;
+    min-width: 0;
+    align-items: end;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.list-toolbar-actions {
+    justify-content: end;
+}
+
+.list-toolbar-actions .toolbar-field-unlabeled fluent-button,
+.pattern-toolbar-layout .toolbar-field-unlabeled fluent-button {
+    transform: translateY(-0.125rem);
+}
+
+.list-filter {
+    box-sizing: border-box;
+    width: min(28rem, 100%);
+    min-width: min(16rem, 100%);
+}
+
+.list-select {
+    box-sizing: border-box;
+    width: 10rem;
+    min-width: 8rem;
+}
+
+.metric-grid fluent-grid-item {
+    box-sizing: border-box;
+    min-width: 0;
+}
+
+.metric-grid fluent-card {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    height: 100%;
+}
+
+.project-folder-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    gap: 0.5rem;
+    width: 100%;
+    min-width: 0;
+}
+
+.project-folder-input {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+}
+
+.project-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
 .list-grid-scroll {
     flex: 1 1 auto;
     min-width: 0;
@@ -641,16 +754,6 @@ body {
     white-space: nowrap;
 }
 
-/* Keep metric cards wide enough for labels such as "Localized names". */
-fluent-grid-item:has(.metric-label) {
-    min-width: 12rem;
-}
-
-fluent-card:has(.metric-label) {
-    width: 100%;
-    min-width: 12rem;
-}
-
 /* ── Table counts ── */
 .table-counts {
     color: #5f6b7a;
@@ -662,6 +765,29 @@ fluent-card:has(.metric-label) {
     padding: 0.75rem;
     border: 1px solid var(--colorNeutralStroke1, #d8dee6);
     border-radius: 6px;
+}
+
+.pattern-toolbar-layout {
+    display: flex;
+    align-items: end;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.pattern-format-select {
+    box-sizing: border-box;
+    width: 10rem;
+    min-width: 9rem;
+}
+
+@media (max-width: 720px) {
+    .list-toolbar-layout {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .list-toolbar-actions {
+        justify-content: start;
+    }
 }
 
 .pattern-grid {

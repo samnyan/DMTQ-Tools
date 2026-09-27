@@ -15,26 +15,34 @@
                   Message="@message"
                   ErrorMessage="@errorMessage">
     <Toolbar>
-        <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center">
-            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" VerticalAlignment="VerticalAlignment.Center">
-                <FluentTextInput Value="@filter" ValueChanged="SetFilterAsync" Immediate="true" Placeholder='@L["Lists.FilterItems"]'
-                                 Style="min-width: 320px;" />
-                <FluentSelect Items="Languages"
-                              OptionText="@(language => language)"
-                              OptionValue="@(language => language)"
-                              @bind-Value="selectedLanguage"
-                              @bind-Value:after="UpdateLanguageQueryAsync"
-                              Label='@L["Lists.Language"]'
-                              Style="min-width: 100px;" />
-            </FluentStack>
-            <FluentButton Appearance="ButtonAppearance.Primary"
-                          IconStart="@(new Icons.Regular.Size20.Add())"
-                          OnClick="CreateNewItem">@L["Lists.AddItem"]</FluentButton>
-        </FluentStack>
+        <div class="list-toolbar-layout">
+            <div class="list-toolbar-filters">
+                <ToolbarField Unlabeled Search>
+                    <FluentTextInput Value="@filter" ValueChanged="SetFilterAsync" Immediate="true" Placeholder='@L["Lists.FilterItems"]'
+                                     class="list-filter" />
+                </ToolbarField>
+                <ToolbarField>
+                    <FluentSelect Items="Languages"
+                                  OptionText="@(language => language)"
+                                  OptionValue="@(language => language)"
+                                  @bind-Value="selectedLanguage"
+                                  @bind-Value:after="UpdateLanguageQueryAsync"
+                                  Label='@L["Lists.Language"]'
+                                  class="list-select" />
+                </ToolbarField>
+            </div>
+            <div class="list-toolbar-actions">
+                <ToolbarField Unlabeled>
+                    <FluentButton Appearance="ButtonAppearance.Primary"
+                                  IconStart="@(new Icons.Regular.Size20.Add())"
+                                  OnClick="CreateNewItem">@L["Lists.AddItem"]</FluentButton>
+                </ToolbarField>
+            </div>
+        </div>
     </Toolbar>
 
     <Metrics>
-        <FluentGrid Spacing="3" AdaptiveRendering="true">
+        <FluentGrid class="metric-grid" Spacing="3" AdaptiveRendering="true">
             <FluentGridItem Xs="12" Sm="6" Md="3">
                 <FluentCard><span class="metric-label">@L["Nav.Items"]</span><strong>@Catalog.Count</strong></FluentCard>
             </FluentGridItem>

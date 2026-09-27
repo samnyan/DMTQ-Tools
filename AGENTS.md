@@ -93,6 +93,13 @@ CSV Models (GameTable, GameTableRow, GameTableCell) ← import/export boundary
 - **Commits**: small, single-purpose, descriptive.
 - **No new MAUI workload** requirements for running tests (RCL isolates UI from MAUI SDK).
 
+### UI layout conventions
+
+- Follow [UI_LAYOUT_GUIDELINES.md](UI_LAYOUT_GUIDELINES.md) for page structure, forms, toolbars, and responsive layouts.
+- Use Fluent UI for controls and simple stacks; use the shared CSS layout classes for page-level alignment instead of one-off inline widths or per-page spacing guesses.
+- Wrap toolbar controls with the shared `<ToolbarField>` component. Use `Unlabeled` for controls with no visible label and `Search` for list search fields; do not recreate its wrapper CSS by hand.
+- Keep labels above controls and align mixed labeled/unlabeled fields by the control bottom edge. Keep responsive behavior explicit and verify at narrow and wide window sizes.
+
 ## Notes
 
 - `IProjectFilePicker` and `IFolderPicker` are Core interfaces for file/folder selection — MAUI implementations in `DMTQ-Tools/Services/`, faked in bUnit tests.
