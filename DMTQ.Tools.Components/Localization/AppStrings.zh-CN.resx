@@ -316,4 +316,17 @@
   <data name="AtlasEditor.ProjectPlatform" xml:space="preserve"><value>平台</value></data>
   <data name="AtlasEditor.SaveToProject" xml:space="preserve"><value>保存到工程</value></data>
   <data name="AtlasEditor.SavedToProject" xml:space="preserve"><value>已保存到工程：{0}</value></data>
+  <data name="Lists.ItemCover" xml:space="preserve"><value>物品封面</value></data>
+  <data name="Lists.None" xml:space="preserve"><value>无</value></data>
+  <data name="Common.Close" xml:space="preserve"><value>关闭</value></data>
+  <data name="SongCoverPreview.Title" xml:space="preserve"><value>封面图预览：{0}</value></data>
+  <data name="SongCoverPreview.Sprite" xml:space="preserve"><value>Sprite</value></data>
+  <data name="SongCoverPreview.Loading" xml:space="preserve"><value>正在扫描图集…</value></data>
+  <data name="SongCoverPreview.Found" xml:space="preserve"><value>存在</value></data>
+  <data name="SongCoverPreview.Missing" xml:space="preserve"><value>缺失</value></data>
+  <data name="SongCoverPreview.ReadError" xml:space="preserve"><value>读取失败</value></data>
+  <data name="SongCoverPreview.NoProject" xml:space="preserve"><value>当前没有打开工程。</value></data>
+  <data name="SongCoverPreview.InvalidSprite" xml:space="preserve"><value>Sprite 名称应符合 e编号_名称 的格式。</value></data>
+  <data name="SongCoverPreview.SpriteMissing" xml:space="preserve"><value>该图集不包含此 Sprite。</value></data>
+  <data name="SongCoverPreview.Path" xml:space="preserve"><value>路径</value></data>
 </root>

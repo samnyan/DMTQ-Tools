@@ -1,0 +1,214 @@
+@using Assets.Lib.Models
+@using Assets.Lib.Services
+@using DMTQ.Tools.Core.Models.Project
+@using DMTQ.Tools.Core.Services
+@inherits FluentDialogInstance
+@inject IProjectState ProjectState
+@inject SpriteAtlasBundleService BundleService
+
+<FluentDialogBody>
+    <div class="song-cover-preview-dialog">
+        <p class="song-cover-sprite-name"><span>@L["SongCoverPreview.Sprite"]</span> <code>@SpriteName</code></p>
+        <div class="song-cover-preview-grid">
+            @foreach (var preview in _previews)
+            {
+                <article class="song-cover-preview-card">
+                    <header>
+                        <h3>@preview.Label</h3>
+                        <span class="song-cover-preview-status @preview.Status.ToString().ToLowerInvariant()">@StatusLabel(preview.Status)</span>
+                    </header>
+                    @if (!string.IsNullOrWhiteSpace(preview.BundleRelativePath))
+                    {
+                        <p class="song-cover-preview-path"><span>@L["SongCoverPreview.Path"]</span> <code>@preview.BundleRelativePath</code></p>
+                    }
+                    @if (preview.Status == PreviewStatus.Found && preview.ImageDataUrl is not null)
+                    {
+                        <div class="song-cover-preview-image"><img src="@preview.ImageDataUrl" alt="@SpriteName (@preview.Label)" /></div>
+                    }
+                    else
+                    {
+                        <div class="song-cover-preview-placeholder">
+                            @(preview.Message ?? StatusLabel(preview.Status))
+                        </div>
+                    }
+                </article>
+            }
+        </div>
+    </div>
+</FluentDialogBody>
+
+@code {
+    [Parameter, EditorRequired] public string SpriteName { get; set; } = string.Empty;
+
+    private readonly List<CoverPreview> _previews =
+    [
+        new("NGUI2 Android", "d_", "android", SpriteAtlasKind.NGUI2),
+        new("NGUI3 Android", "d3_", "android", SpriteAtlasKind.NGUI3),
+        new("NGUI2 iOS", "d_", "ios", SpriteAtlasKind.NGUI2),
+        new("NGUI3 iOS", "d3_", "ios", SpriteAtlasKind.NGUI3)
+    ];
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        foreach (var preview in _previews)
+        {
+            await LoadPreviewAsync(preview);
+        }
+    }
+
+    protected override Task OnActionClickedAsync(bool primary) => DialogInstance.CancelAsync();
+
+    private string StatusLabel(PreviewStatus status) => status switch
+    {
+        PreviewStatus.Loading => L["SongCoverPreview.Loading"].Value,
+        PreviewStatus.Found => L["SongCoverPreview.Found"].Value,
+        PreviewStatus.Missing => L["SongCoverPreview.Missing"].Value,
+        _ => L["SongCoverPreview.ReadError"].Value
+    };
+
+    private async Task LoadPreviewAsync(CoverPreview preview)
+    {
+        preview.Status = PreviewStatus.Loading;
+        await Task.Yield();
+
+        try
+        {
+            var package = ProjectState.CurrentPackage;
+            var projectRoot = ProjectState.ProjectRoot;
+            if (package is null || string.IsNullOrWhiteSpace(projectRoot))
+            {
+                preview.Status = PreviewStatus.Missing;
+                preview.Message = L["SongCoverPreview.NoProject"].Value;
+                return;
+            }
+
+            var atlasKey = GetAtlasKey(SpriteName);
+            if (atlasKey is null)
+            {
+                preview.Status = PreviewStatus.Missing;
+                preview.Message = L["SongCoverPreview.InvalidSprite"].Value;
+                return;
+            }
+
+            var atlasName = preview.AtlasPrefix + atlasKey;
+            var platformRoot = Path.GetFullPath(Path.Combine(projectRoot, "resources", preview.Platform));
+            var rootPrefix = platformRoot.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
+            string? bundlePath = null;
+            string? compressedPath = null;
+            foreach (var packageRelativePath in FindAtlasResourcePaths(package, atlasName, preview.Platform))
+            {
+                var relativePath = FileUtility.NormalizePackageRelativePath(packageRelativePath);
+                var candidatePath = Path.GetFullPath(Path.Combine(platformRoot, relativePath.Replace('/', Path.DirectorySeparatorChar)));
+                if (!candidatePath.StartsWith(rootPrefix, StringComparison.OrdinalIgnoreCase))
+                    throw new InvalidDataException("The atlas resource path is outside its platform directory.");
+
+                if (File.Exists(candidatePath))
+                {
+                    bundlePath = candidatePath;
+                    preview.BundleRelativePath = relativePath;
+                    break;
+                }
+
+                if (File.Exists(candidatePath + ".lz4"))
+                {
+                    bundlePath = candidatePath;
+                    compressedPath = candidatePath + ".lz4";
+                    preview.BundleRelativePath = relativePath;
+                    break;
+                }
+            }
+
+            if (bundlePath is null)
+            {
+                preview.Status = PreviewStatus.Missing;
+                return;
+            }
+
+            string? temporaryPath = null;
+            try
+            {
+                if (compressedPath is not null)
+                {
+                    temporaryPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N") + Path.GetExtension(bundlePath));
+                    await FileUtility.DecompressFileAsync(compressedPath, temporaryPath);
+                    bundlePath = temporaryPath;
+                }
+
+                var content = await Task.Run(() => BundleService.Read(bundlePath, preview.Kind));
+                var sprite = content.Document.Sprites.FirstOrDefault(entry =>
+                    entry.Name.Equals(SpriteName, StringComparison.OrdinalIgnoreCase));
+                if (sprite is null)
+                {
+                    preview.Status = PreviewStatus.Missing;
+                    preview.Message = L["SongCoverPreview.SpriteMissing"].Value;
+                    return;
+                }
+
+                var png = SpriteAtlasImage.Crop(content.AtlasPng, content.Document.TextureWidth, content.Document.TextureHeight, sprite);
+                preview.ImageDataUrl = $"data:image/png;base64,{Convert.ToBase64String(png)}";
+                preview.Status = PreviewStatus.Found;
+            }
+            finally
+            {
+                if (temporaryPath is not null && File.Exists(temporaryPath))
+                    File.Delete(temporaryPath);
+            }
+        }
+        catch (Exception exception)
+        {
+            preview.Status = PreviewStatus.Error;
+            preview.Message = exception.Message;
+        }
+    }
+
+    private static IEnumerable<string> FindAtlasResourcePaths(PatchPackage package, string atlasName, string platform)
+    {
+        var packagePaths = package.Resources
+            .Where(resource => resource.Category.Equals("dlc", StringComparison.OrdinalIgnoreCase)
+                && Path.GetFileNameWithoutExtension(resource.FileName).Equals(atlasName, StringComparison.OrdinalIgnoreCase)
+                && (Path.GetExtension(resource.FileName).Equals(".unity", StringComparison.OrdinalIgnoreCase)
+                    || Path.GetExtension(resource.FileName).Equals(".unity3d", StringComparison.OrdinalIgnoreCase)))
+            .OrderByDescending(resource => resource.PlatformManifest.Any(entry =>
+                entry.Platform.Equals(platform, StringComparison.OrdinalIgnoreCase) && entry.Exist))
+            .ThenBy(resource => Path.GetExtension(resource.FileName).Equals(".unity3d", StringComparison.OrdinalIgnoreCase) ? 0 : 1)
+            .Select(resource => resource.FileName);
+
+        return packagePaths
+            .Prepend($"dlc/{atlasName}.unity3d")
+            .Prepend($"dlc/{atlasName}.unity")
+            .Distinct(StringComparer.OrdinalIgnoreCase);
+    }
+
+    private static string? GetAtlasKey(string spriteName)
+    {
+        var separator = spriteName.IndexOf('_');
+        if (separator <= 1 || separator == spriteName.Length - 1)
+            return null;
+
+        var key = spriteName[..separator];
+        return key.StartsWith("e", StringComparison.OrdinalIgnoreCase) && key.Length > 1
+            ? key
+            : null;
+    }
+
+    private enum PreviewStatus
+    {
+        Loading,
+        Found,
+        Missing,
+        Error
+    }
+
+    private sealed class CoverPreview(string label, string atlasPrefix, string platform, SpriteAtlasKind kind)
+    {
+        public string Label { get; } = label;
+        public string AtlasPrefix { get; } = atlasPrefix;
+        public string Platform { get; } = platform;
+        public SpriteAtlasKind Kind { get; } = kind;
+        public PreviewStatus Status { get; set; } = PreviewStatus.Loading;
+        public string? ImageDataUrl { get; set; }
+        public string? BundleRelativePath { get; set; }
+        public string? Message { get; set; }
+    }
+}

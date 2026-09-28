@@ -1,0 +1,14 @@
+.song-cover-preview-link {
+    color: var(--colorBrandForeground1);
+    max-width: 100%;
+    text-decoration: underline;
+    text-underline-offset: .15em;
+}
+
+.song-cover-preview-link:hover { color: var(--colorBrandForeground2); }
+
+.song-cover-preview-link:focus-visible {
+    border-radius: var(--borderRadiusSmall);
+    outline: 2px solid var(--colorStrokeFocus2);
+    outline-offset: 2px;
+}

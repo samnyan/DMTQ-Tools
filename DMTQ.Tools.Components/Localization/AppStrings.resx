@@ -508,4 +508,17 @@
   <data name="AtlasEditor.ProjectPlatform" xml:space="preserve"><value>Platform</value></data>
   <data name="AtlasEditor.SaveToProject" xml:space="preserve"><value>Save to project</value></data>
   <data name="AtlasEditor.SavedToProject" xml:space="preserve"><value>Saved to project: {0}</value></data>
+  <data name="Lists.ItemCover" xml:space="preserve"><value>Item Cover</value></data>
+  <data name="Lists.None" xml:space="preserve"><value>None</value></data>
+  <data name="Common.Close" xml:space="preserve"><value>Close</value></data>
+  <data name="SongCoverPreview.Title" xml:space="preserve"><value>Cover preview: {0}</value></data>
+  <data name="SongCoverPreview.Sprite" xml:space="preserve"><value>Sprite</value></data>
+  <data name="SongCoverPreview.Loading" xml:space="preserve"><value>Scanning atlases…</value></data>
+  <data name="SongCoverPreview.Found" xml:space="preserve"><value>Found</value></data>
+  <data name="SongCoverPreview.Missing" xml:space="preserve"><value>Missing</value></data>
+  <data name="SongCoverPreview.ReadError" xml:space="preserve"><value>Read error</value></data>
+  <data name="SongCoverPreview.NoProject" xml:space="preserve"><value>No project is open.</value></data>
+  <data name="SongCoverPreview.InvalidSprite" xml:space="preserve"><value>Sprite name should use the e-number_name format.</value></data>
+  <data name="SongCoverPreview.SpriteMissing" xml:space="preserve"><value>This atlas does not contain the Sprite.</value></data>
+  <data name="SongCoverPreview.Path" xml:space="preserve"><value>Path</value></data>
 </root>

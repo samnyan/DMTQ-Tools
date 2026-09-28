@@ -76,6 +76,20 @@
         <TemplateColumn TGridItem="Song" Title='@L["Lists.Patterns"]' Width="6.25rem" MinWidth="6.25rem" Context="song">
             @song.Patterns.Count
         </TemplateColumn>
+        <TemplateColumn TGridItem="Song" Title='@L["Lists.ItemCover"]' Width="0.9fr" MinWidth="7rem" Context="song">
+            @{
+                var spriteName = ItemCover(song);
+            }
+            @if (string.IsNullOrWhiteSpace(spriteName))
+            {
+                @L["Lists.None"]
+            }
+            else
+            {
+                <a href="#" class="song-cover-preview-link" @onclick="@(() => ShowCoverPreviewAsync(spriteName))"
+                   @onclick:preventDefault="true">@spriteName</a>
+            }
+        </TemplateColumn>
         <TemplateColumn TGridItem="Song" Title='@L["Lists.HasPreview"]' Width="8rem" MinWidth="8rem" Context="song">
             @(song.HasPreview ? L["Lists.Yes"] : L["Lists.No"])
         </TemplateColumn>
@@ -110,6 +124,7 @@
     private PatchPackage? _lastPackage;
     private string? _lastPlatform;
     private IReadOnlyList<Song> _catalog = [];
+    private IReadOnlyDictionary<string, Item> _songItems = new Dictionary<string, Item>(StringComparer.OrdinalIgnoreCase);
     private static readonly IReadOnlyList<string> _languages = ["CN", "JP", "KR", "TW", "US"];
 
     private IReadOnlyList<Song> Catalog
@@ -121,6 +136,12 @@
             _lastPackage = State.CurrentPackage;
             _lastPlatform = State.SelectedExportPlatform;
             _catalog = State.CurrentPackage is null ? [] : SongCatalog.BuildCatalog(State.CurrentPackage, State.SelectedExportPlatform);
+            _songItems = State.CurrentPackage is null
+                ? new Dictionary<string, Item>(StringComparer.OrdinalIgnoreCase)
+                : State.CurrentPackage.GetPlatformTables(State.SelectedExportPlatform).Items
+                    .Where(item => item.ItemType.Equals("S", StringComparison.OrdinalIgnoreCase))
+                    .GroupBy(item => item.Id, StringComparer.OrdinalIgnoreCase)
+                    .ToDictionary(group => group.Key, group => group.First(), StringComparer.OrdinalIgnoreCase);
             return _catalog;
         }
     }
@@ -146,6 +167,26 @@
         if (song.Localizations.TryGetValue(lang, out var loc) && !string.IsNullOrWhiteSpace(loc.FullName))
             return loc.FullName;
         return string.IsNullOrWhiteSpace(song.Name) ? song.Id.ToString() : song.Name;
+    }
+
+    private string? ItemCover(Song song)
+    {
+        var itemId = song.ItemId.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        return _songItems.TryGetValue(itemId, out var item) ? item.ImgUrl1 : null;
+    }
+
+    private async Task ShowCoverPreviewAsync(string spriteName)
+    {
+        await DialogService.ShowDialogAsync<SongCoverPreviewDialog>(options =>
+        {
+            options.Header.Title = L["SongCoverPreview.Title", spriteName].Value;
+            options.Width = "min(1000px, 95vw)";
+            options.Footer.PrimaryAction.Label = L["Common.Close"].Value;
+            options.Parameters = new Dictionary<string, object?>
+            {
+                [nameof(SongCoverPreviewDialog.SpriteName)] = spriteName
+            };
+        });
     }
 
     private Task SetFilterAsync(string? value)
