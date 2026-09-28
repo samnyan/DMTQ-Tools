@@ -102,3 +102,5 @@
     .song-cover-preview-dialog { min-width: 0; }
     .song-cover-preview-grid { grid-template-columns: minmax(0, 1fr); }
 }
+.song-cover-legacy-previews { margin-top: 1rem; }
+.song-cover-legacy-previews > summary { cursor: pointer; color: var(--colorNeutralForeground3); }

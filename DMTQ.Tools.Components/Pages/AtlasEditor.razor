@@ -66,7 +66,7 @@
             <section class="atlas-variant-switch panel-surface">
                 <strong>@L["AtlasEditor.Variant"]</strong>
                 <div class="atlas-variant-buttons">
-                    @foreach (var variant in _projectVariantChoices)
+                    @foreach (var variant in _projectVariantChoices.Where(choice => choice.Kind == SpriteAtlasKind.NGUI3))
                     {
                         var selected = variant.Kind == _document.Kind
                             && variant.Platform.Equals(_projectContext.Platform, StringComparison.OrdinalIgnoreCase);
@@ -78,6 +78,25 @@
                         </FluentButton>
                     }
                 </div>
+                @if (_projectVariantChoices.Any(choice => choice.Kind == SpriteAtlasKind.NGUI2))
+                {
+                    <details class="atlas-legacy-variants">
+                        <summary>@L["AtlasEditor.NGUI2Compatibility"]</summary>
+                        <div class="atlas-variant-buttons">
+                            @foreach (var variant in _projectVariantChoices.Where(choice => choice.Kind == SpriteAtlasKind.NGUI2))
+                            {
+                                var selected = variant.Kind == _document.Kind
+                                    && variant.Platform.Equals(_projectContext.Platform, StringComparison.OrdinalIgnoreCase);
+                                <FluentButton Size="ButtonSize.Small"
+                                              Appearance="@(selected ? ButtonAppearance.Primary : ButtonAppearance.Default)"
+                                              OnClick="@(() => SwitchProjectVariantAsync(variant))"
+                                              Disabled="@(_isBusy || !variant.Exists || selected)">
+                                    @KindShortLabel(variant.Kind) · @PlatformLabel(variant.Platform)
+                                </FluentButton>
+                            }
+                        </div>
+                    </details>
+                }
                 <div class="atlas-family-check">
                     <div>
                         <span>@L["AtlasEditor.ContentConsistency"]</span>
@@ -88,7 +107,7 @@
                         <strong class="@(_familyLayoutMismatch ? "is-warning" : null)">@FamilyLayoutStatus</strong>
                     </div>
                     <FluentButton Size="ButtonSize.Small" Appearance="ButtonAppearance.Default"
-                                  OnClick="CheckFourAtlasesAsync" Disabled="@(_isBusy || State.CurrentPackage is null)">
+                                  OnClick="CheckAtlasesAsync" Disabled="@(_isBusy || State.CurrentPackage is null)">
                         @if (_checkingFamily) { <FluentSpinner /> }
                         @L["AtlasEditor.CheckFourAtlases"]
                     </FluentButton>
@@ -234,8 +253,8 @@
     private IJSObjectReference? _previewModule;
     private SpriteAtlasDocument? _document;
     private byte[] _previewPng = [];
-    private string _atlasName = "d_e10";
-    private string _kindValue = "NGUI2";
+    private string _atlasName = "d3_e10";
+    private string _kindValue = "NGUI3";
     private int _atlasWidth = 512;
     private int _atlasHeight = 512;
     private int _selectedSpriteIndex;
@@ -256,12 +275,12 @@
         && State.CurrentPackage is not null && !string.IsNullOrWhiteSpace(AtlasKeyFromName(_document.AtlasName));
     private string FamilyContentStatus => !_familyCheckPerformed
         ? L["AtlasEditor.CheckNotRun"].Value
-        : _familyReadyCount < 4
+        : _familyReadyCount < 2
             ? L["AtlasEditor.CheckIncomplete", _familyReadyCount].Value
             : _familyContentMismatch ? L["AtlasEditor.ContentMismatch"].Value : L["AtlasEditor.ContentMatch"].Value;
     private string FamilyLayoutStatus => !_familyCheckPerformed
         ? L["AtlasEditor.CheckNotRun"].Value
-        : _familyReadyCount < 4
+        : _familyReadyCount < 2
             ? L["AtlasEditor.CheckIncomplete", _familyReadyCount].Value
             : _familyContentMismatch ? L["AtlasEditor.LayoutNotCompared"].Value
             : _familyLayoutMismatch ? L["AtlasEditor.LayoutMismatch"].Value
@@ -609,7 +628,7 @@
         }
     }
 
-    private async Task CheckFourAtlasesAsync()
+    private async Task CheckAtlasesAsync()
     {
         if (_isBusy || State.CurrentPackage is null || _projectContext is null || _document is null
             || string.IsNullOrWhiteSpace(State.ProjectRoot)) return;
@@ -621,7 +640,7 @@
         {
             var projectRoot = Path.GetFullPath(State.ProjectRoot);
             var atlasKey = AtlasKeyFromName(_document.AtlasName);
-            var index = await EyecatchIndexService.BuildAsync(State.CurrentPackage, projectRoot);
+            var index = await EyecatchIndexService.CheckNGUI3FamilyAsync(State.CurrentPackage, projectRoot, atlasKey);
             var family = index.Atlases.FirstOrDefault(atlas => atlas.AtlasKey.Equals(atlasKey, StringComparison.OrdinalIgnoreCase));
             if (family is null)
                 ClearFamilyCheck(checkedCompleted: true);
@@ -645,7 +664,8 @@
     private void UpdateFamilyCheck(EyecatchAtlasFamily family)
     {
         var ready = family.Variants
-            .Where(variant => variant.Status == EyecatchVariantStatus.Ready && variant.Document is not null)
+            .Where(variant => variant.Kind == SpriteAtlasKind.NGUI3
+                && variant.Status == EyecatchVariantStatus.Ready && variant.Document is not null)
             .GroupBy(variant => $"{variant.Kind}/{variant.Platform}", StringComparer.OrdinalIgnoreCase)
             .Select(group => group.First())
             .ToArray();
@@ -654,7 +674,7 @@
         _familyContentMismatch = false;
         _familyLayoutMismatch = false;
         _familyOrderMismatch = false;
-        if (ready.Length < 4) return;
+        if (ready.Length < 2) return;
 
         var reference = ready[0].Document;
         var referenceNames = reference.Sprites.Select(sprite => sprite.Name).ToHashSet(StringComparer.Ordinal);
@@ -941,8 +961,8 @@
         await BeginSaveOperationAsync(AtlasBusyOperation.SaveAllVariants, L["AtlasEditor.SaveAllVariants"].Value);
         try
         {
-            var index = await EyecatchIndexService.BuildAsync(State.CurrentPackage!, projectRoot);
             var atlasKey = AtlasKeyFromName(document.AtlasName);
+            var index = await EyecatchIndexService.CheckNGUI3FamilyAsync(State.CurrentPackage!, projectRoot, atlasKey);
             var family = index.Atlases.FirstOrDefault(atlas => atlas.AtlasKey.Equals(atlasKey, StringComparison.OrdinalIgnoreCase));
             if (family is null)
                 throw new FileNotFoundException(L["AtlasEditor.CheckFamilyMissing"].Value);
@@ -955,23 +975,19 @@
                 await ShowFamilySaveWarningAsync(L["AtlasEditor.ContentMismatchSaveBlocked"].Value);
                 return;
             }
-            if (family.Variants.Any(variant => variant.Status == EyecatchVariantStatus.SourceChanged))
+            if (HasContentMismatch(document, family))
+            {
+                await ShowFamilySaveWarningAsync(L["AtlasEditor.ContentMismatchSaveBlocked"].Value);
+                return;
+            }
+            if (family.Variants.Any(variant => variant.Kind == SpriteAtlasKind.NGUI3
+                && variant.Status == EyecatchVariantStatus.SourceChanged))
             {
                 await ShowFamilySaveWarningAsync(L["AtlasEditor.SourceChangedSaveBlocked"].Value);
                 return;
             }
 
-            if (_familyReadyCount < 4)
-            {
-                var incompleteConfirmation = await DialogService.ShowConfirmationAsync(
-                    message: L["AtlasEditor.ConfirmIncompleteVariants", _familyReadyCount].Value,
-                    title: L["AtlasEditor.CheckFourAtlases"].Value,
-                    primaryButton: L["AtlasEditor.SaveAllVariants"].Value,
-                    secondaryButton: L["Common.Cancel"].Value);
-                if (incompleteConfirmation.Cancelled) return;
-            }
-
-            if (family is not null && HasLayoutMismatch(document, family))
+            if (HasLayoutMismatch(document, family))
             {
                 var confirmation = await DialogService.ShowConfirmationAsync(
                     message: L["AtlasEditor.ConfirmSaveAllVariants"].Value,
@@ -1015,7 +1031,8 @@
 
     private static bool HasLayoutMismatch(SpriteAtlasDocument source, EyecatchAtlasFamily family)
     {
-        foreach (var variant in family.Variants.Where(item => item.Status == EyecatchVariantStatus.Ready))
+        foreach (var variant in family.Variants.Where(item => item.Kind == SpriteAtlasKind.NGUI3
+            && item.Status == EyecatchVariantStatus.Ready))
         {
             var target = variant.Document;
             if (source.TextureWidth != target.TextureWidth || source.TextureHeight != target.TextureHeight
@@ -1033,6 +1050,18 @@
             }
         }
         return false;
+    }
+
+    private static bool HasContentMismatch(SpriteAtlasDocument source, EyecatchAtlasFamily family)
+    {
+        var sourceNames = source.Sprites.Select(sprite => sprite.Name).ToHashSet(StringComparer.Ordinal);
+        return family.Variants
+            .Where(item => item.Kind == SpriteAtlasKind.NGUI3 && item.Status == EyecatchVariantStatus.Ready)
+            .Any(variant =>
+            {
+                var names = variant.Document.Sprites.Select(sprite => sprite.Name).ToHashSet(StringComparer.Ordinal);
+                return names.Count != source.Sprites.Count || !names.SetEquals(sourceNames);
+            });
     }
 
     private async Task SaveNewFamilyAsync()
@@ -1253,8 +1282,8 @@
         _projectVariantChoices.Clear();
         _hasUnsavedEdits = false;
         _isNewAtlas = false;
-        _atlasName = "d_e10";
-        _kindValue = "NGUI2";
+        _atlasName = "d3_e10";
+        _kindValue = "NGUI3";
         _atlasWidth = 512;
         _atlasHeight = 512;
         _selectedSpriteIndex = 0;

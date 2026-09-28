@@ -31,14 +31,14 @@
             <FluentMessageBar Intent="MessageBarIntent.Warning" Title='@L["Eyecatch.PlatformLayoutMismatch"]' />
         }
         <div class="eyecatch-preview-actions">
-            <span>@L["Eyecatch.SpriteCount"] @(_family.Variants.Where(variant => variant.Status == EyecatchVariantStatus.Ready).Select(variant => variant.Document.Sprites.Count).DefaultIfEmpty(0).Max())</span>
+            <span>@L["Eyecatch.SpriteCount"] @SpriteCount(_family, SpriteAtlasKind.NGUI3)</span>
             <FluentButton Appearance="ButtonAppearance.Primary" OnClick="BuildAllVariantsAsync"
                           Disabled="@(_busy || !CanBuild(_family))">
                 @L["Eyecatch.BuildAllVariants"]
             </FluentButton>
         </div>
         <div class="eyecatch-preview-grid">
-            @foreach (var variant in OrderedVariants(_family))
+            @foreach (var variant in OrderedVariants(_family).Where(item => item.Kind == SpriteAtlasKind.NGUI3))
             {
                 <article class="eyecatch-preview-card">
                     <header>
@@ -87,6 +87,62 @@
                 </article>
             }
         </div>
+        @if (_family.Variants.Any(variant => variant.Kind == SpriteAtlasKind.NGUI2))
+        {
+            <details class="eyecatch-legacy-preview">
+                <summary>@L["AtlasEditor.NGUI2Compatibility"]</summary>
+                <div class="eyecatch-preview-grid">
+                    @foreach (var variant in OrderedVariants(_family).Where(item => item.Kind == SpriteAtlasKind.NGUI2))
+                    {
+                        <article class="eyecatch-preview-card">
+                            <header>
+                                <h3>@KindLabel(variant.Kind) · @PlatformLabel(variant.Platform)</h3>
+                                <span class="eyecatch-preview-status @variant.Status.ToString().ToLowerInvariant()">@VariantStatus(variant)</span>
+                            </header>
+                            @if (!string.IsNullOrWhiteSpace(variant.ResourcePath))
+                            {
+                                <p class="eyecatch-preview-path"><code>@variant.ResourcePath</code></p>
+                            }
+                            @if (_previewImages.TryGetValue(VariantKey(variant), out var imageUrl) && imageUrl is not null)
+                            {
+                                <img class="eyecatch-preview-image" src="@imageUrl" alt="@variant.AtlasName" />
+                            }
+                            else
+                            {
+                                <div class="eyecatch-preview-empty">@VariantErrorOrStatus(variant)</div>
+                            }
+                            <div class="eyecatch-preview-meta">
+                                <span>@L["Eyecatch.SpriteCount"]: @(variant.Document?.Sprites.Count ?? 0)</span>
+                                @if (variant.Document is not null && variant.Document.TextureWidth > 0)
+                                {
+                                    <span>@variant.Document.TextureWidth × @variant.Document.TextureHeight</span>
+                                }
+                                @if (variant.IsDirty)
+                                {
+                                    <span class="eyecatch-preview-dirty">@L["Eyecatch.Dirty"]</span>
+                                }
+                            </div>
+                            @if (variant.Document is not null && variant.Document.Sprites.Count > 0)
+                            {
+                                <details class="eyecatch-preview-sprites">
+                                    <summary>@L["Eyecatch.Sprites"] (@variant.Document.Sprites.Count)</summary>
+                                    <ul>
+                                        @foreach (var sprite in variant.Document.Sprites)
+                                        {
+                                            <li><code>@sprite.Name</code> <span>@((int)sprite.Width) × @((int)sprite.Height)</span></li>
+                                        }
+                                    </ul>
+                                </details>
+                            }
+                            <FluentButton Appearance="ButtonAppearance.Default" OnClick="@(() => OpenEditorAsync(variant))"
+                                          Disabled="@(_busy || !CanEdit(variant))">
+                                @L["Eyecatch.EditThis"]
+                            </FluentButton>
+                        </article>
+                    }
+                </div>
+            </details>
+        }
     }
 </FluentDialogBody>
 
@@ -170,6 +226,9 @@
     }
 
     private string KindLabel(SpriteAtlasKind kind) => kind == SpriteAtlasKind.NGUI3 ? L["AtlasEditor.NGUI3"].Value : L["AtlasEditor.NGUI2"].Value;
+    private static int SpriteCount(EyecatchAtlasFamily family, SpriteAtlasKind kind)
+        => family.Variants.Where(variant => variant.Kind == kind && variant.Status == EyecatchVariantStatus.Ready)
+            .Select(variant => variant.Document?.Sprites.Count ?? 0).DefaultIfEmpty(0).Max();
     private string VariantStatus(EyecatchAtlasVariant variant) => variant.Status switch
     {
         EyecatchVariantStatus.Ready => L["Eyecatch.Ready"].Value,
@@ -183,15 +242,17 @@
     private static string VariantKey(EyecatchAtlasVariant variant) => $"{variant.Kind}/{variant.Platform}";
     private static string PlatformLabel(string platform) => platform.Equals("ios", StringComparison.OrdinalIgnoreCase) ? "iOS" : "Android";
     private static IEnumerable<EyecatchAtlasVariant> OrderedVariants(EyecatchAtlasFamily family)
-        => family.Variants.OrderBy(variant => variant.Kind).ThenBy(variant => variant.Platform == "android" ? 0 : 1);
+        => family.Variants.OrderBy(variant => variant.Kind == SpriteAtlasKind.NGUI3 ? 0 : 1)
+            .ThenBy(variant => variant.Platform == "android" ? 0 : 1);
     private static bool CanEdit(EyecatchAtlasVariant variant)
         => variant.Exists && variant.ResourceRegistered && !string.IsNullOrWhiteSpace(variant.ResourcePath)
             && variant.Status == EyecatchVariantStatus.Ready;
     private static bool CanBuild(EyecatchAtlasFamily family)
         => !HasSpriteNameMismatch(family)
-            && !family.Variants.Any(variant => variant.Status == EyecatchVariantStatus.SourceChanged)
-            && Enum.GetValues<SpriteAtlasKind>().All(kind => family.Variants.Any(variant =>
-                variant.Kind == kind && variant.Status == EyecatchVariantStatus.Ready));
+            && !family.Variants.Any(variant => variant.Kind == SpriteAtlasKind.NGUI3
+                && variant.Status == EyecatchVariantStatus.SourceChanged)
+            && family.Variants.Any(variant => variant.Kind == SpriteAtlasKind.NGUI3
+                && variant.Status == EyecatchVariantStatus.Ready);
     private static bool HasSpriteNameMismatch(EyecatchAtlasFamily family)
         => family.HasSpriteNameMismatch;
     private static bool HasPlatformLayoutMismatch(EyecatchAtlasFamily family)

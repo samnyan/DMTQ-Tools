@@ -64,6 +64,8 @@
 .eyecatch-preview-sprites li { display: flex; justify-content: space-between; gap: .5rem; min-width: 0; font-size: .8rem; }
 .eyecatch-preview-sprites li code { overflow-wrap: anywhere; }
 .eyecatch-preview-sprites li span { flex: 0 0 auto; color: var(--colorNeutralForeground3); }
+.eyecatch-legacy-preview { margin-top: 1rem; }
+.eyecatch-legacy-preview > summary { cursor: pointer; color: var(--colorNeutralForeground3); }
 
 @media (max-width: 760px) {
     .eyecatch-preview-grid { grid-template-columns: minmax(0, 1fr); }

@@ -10,7 +10,7 @@
     <div class="song-cover-preview-dialog">
         <p class="song-cover-sprite-name"><span>@L["SongCoverPreview.Sprite"]</span> <code>@SpriteName</code></p>
         <div class="song-cover-preview-grid">
-            @foreach (var preview in _previews)
+            @foreach (var preview in _previews.Where(item => item.Kind == SpriteAtlasKind.NGUI3))
             {
                 <article class="song-cover-preview-card">
                     <header>
@@ -34,6 +34,37 @@
                 </article>
             }
         </div>
+        @if (_previews.Any(item => item.Kind == SpriteAtlasKind.NGUI2))
+        {
+            <details class="song-cover-legacy-previews">
+                <summary>@L["SongCoverPreview.NGUI2Compatibility"]</summary>
+                <div class="song-cover-preview-grid">
+                    @foreach (var preview in _previews.Where(item => item.Kind == SpriteAtlasKind.NGUI2))
+                    {
+                        <article class="song-cover-preview-card">
+                            <header>
+                                <h3>@preview.Label</h3>
+                                <span class="song-cover-preview-status @preview.Status.ToString().ToLowerInvariant()">@StatusLabel(preview.Status)</span>
+                            </header>
+                            @if (!string.IsNullOrWhiteSpace(preview.BundleRelativePath))
+                            {
+                                <p class="song-cover-preview-path"><span>@L["SongCoverPreview.Path"]</span> <code>@preview.BundleRelativePath</code></p>
+                            }
+                            @if (preview.Status == PreviewStatus.Found && preview.ImageDataUrl is not null)
+                            {
+                                <div class="song-cover-preview-image"><img src="@preview.ImageDataUrl" alt="@SpriteName (@preview.Label)" /></div>
+                            }
+                            else
+                            {
+                                <div class="song-cover-preview-placeholder">
+                                    @(preview.Message ?? StatusLabel(preview.Status))
+                                </div>
+                            }
+                        </article>
+                    }
+                </div>
+            </details>
+        }
     </div>
 </FluentDialogBody>
 
@@ -42,10 +73,10 @@
 
     private readonly List<CoverPreview> _previews =
     [
-        new("NGUI2 Android", "d_", "android", SpriteAtlasKind.NGUI2),
         new("NGUI3 Android", "d3_", "android", SpriteAtlasKind.NGUI3),
-        new("NGUI2 iOS", "d_", "ios", SpriteAtlasKind.NGUI2),
-        new("NGUI3 iOS", "d3_", "ios", SpriteAtlasKind.NGUI3)
+        new("NGUI3 iOS", "d3_", "ios", SpriteAtlasKind.NGUI3),
+        new("NGUI2 Android", "d_", "android", SpriteAtlasKind.NGUI2),
+        new("NGUI2 iOS", "d_", "ios", SpriteAtlasKind.NGUI2)
     ];
 
     protected override async Task OnInitializedAsync()

@@ -94,6 +94,55 @@ public sealed class EyecatchIndexService(SpriteAtlasBundleService bundleService)
         return index;
     }
 
+    /// <summary>Checks and indexes only the NGUI3 Android/iOS pair for one atlas, leaving legacy NGUI2 data untouched.</summary>
+    public async Task<EyecatchProjectIndex> CheckNGUI3FamilyAsync(
+        PatchPackage package,
+        string projectRoot,
+        string atlasKey,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(package);
+        ArgumentException.ThrowIfNullOrWhiteSpace(projectRoot);
+        ArgumentException.ThrowIfNullOrWhiteSpace(atlasKey);
+
+        var root = Path.GetFullPath(projectRoot);
+        var index = await LoadAsync(root, cancellationToken).ConfigureAwait(false);
+        var candidates = DiscoverCandidates(package, root);
+        var family = index.Atlases.FirstOrDefault(atlas => atlas.AtlasKey.Equals(atlasKey, StringComparison.OrdinalIgnoreCase));
+        if (family is null)
+        {
+            family = new EyecatchAtlasFamily { AtlasKey = atlasKey };
+            index.Atlases.Add(family);
+        }
+
+        foreach (var platform in Platforms)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var variant = family.Variants.FirstOrDefault(item => item.Kind == SpriteAtlasKind.NGUI3
+                && item.Platform.Equals(platform, StringComparison.OrdinalIgnoreCase));
+            if (variant is null)
+            {
+                variant = new EyecatchAtlasVariant
+                {
+                    AtlasKey = atlasKey,
+                    Kind = SpriteAtlasKind.NGUI3,
+                    Platform = platform,
+                    AtlasName = $"d3_{atlasKey}"
+                };
+                family.Variants.Add(variant);
+            }
+
+            var candidate = SelectCandidate(candidates, atlasKey, SpriteAtlasKind.NGUI3, platform, root);
+            await IndexVariantAsync(package, root, variant, candidate, cancellationToken).ConfigureAwait(false);
+        }
+
+        family.HasPlatformLayoutMismatch = HasPlatformLayoutMismatch(family);
+        family.HasSpriteNameMismatch = HasSpriteNameMismatch(family);
+        index.Atlases = index.Atlases.OrderBy(atlas => atlas.AtlasKey, StringComparer.OrdinalIgnoreCase).ToList();
+        await SaveAsync(root, index, cancellationToken).ConfigureAwait(false);
+        return index;
+    }
+
     /// <summary>Loads an indexed PNG as a data URL for the list preview.</summary>
     public async Task<string?> ReadImageDataUrlAsync(string projectRoot, string? relativePath, CancellationToken cancellationToken = default)
     {
@@ -120,7 +169,7 @@ public sealed class EyecatchIndexService(SpriteAtlasBundleService bundleService)
         var family = index.Atlases.FirstOrDefault(atlas => atlas.AtlasKey.Equals(atlasKey, StringComparison.OrdinalIgnoreCase));
         var imagePath = family?.Variants
             .Where(variant => variant.Status == EyecatchVariantStatus.Ready)
-            .OrderBy(variant => variant.Kind == SpriteAtlasKind.NGUI2 ? 0 : 1)
+            .OrderBy(variant => variant.Kind == SpriteAtlasKind.NGUI3 ? 0 : 1)
             .ThenBy(variant => variant.Platform.Equals("android", StringComparison.OrdinalIgnoreCase) ? 0 : 1)
             .SelectMany(variant => variant.SpriteAssets)
             .FirstOrDefault(asset => asset.Name.Equals(spriteName, StringComparison.OrdinalIgnoreCase))?.ImagePath;
@@ -466,21 +515,17 @@ public sealed class EyecatchIndexService(SpriteAtlasBundleService bundleService)
 
     private static bool HasPlatformLayoutMismatch(EyecatchAtlasFamily family)
     {
-        foreach (var kind in new[] { SpriteAtlasKind.NGUI2, SpriteAtlasKind.NGUI3 })
-        {
-            var android = family.Variants.FirstOrDefault(variant => variant.Kind == kind && variant.Platform == "android");
-            var ios = family.Variants.FirstOrDefault(variant => variant.Kind == kind && variant.Platform == "ios");
-            if (android?.Status != EyecatchVariantStatus.Ready || ios?.Status != EyecatchVariantStatus.Ready)
-                continue;
-            if (!DocumentsHaveSameLayout(android.Document, ios.Document)) return true;
-        }
-        return false;
+        var android = family.Variants.FirstOrDefault(variant => variant.Kind == SpriteAtlasKind.NGUI3 && variant.Platform == "android");
+        var ios = family.Variants.FirstOrDefault(variant => variant.Kind == SpriteAtlasKind.NGUI3 && variant.Platform == "ios");
+        return android?.Status == EyecatchVariantStatus.Ready && ios?.Status == EyecatchVariantStatus.Ready
+            && !DocumentsHaveSameLayout(android.Document, ios.Document);
     }
 
     private static bool HasSpriteNameMismatch(EyecatchAtlasFamily family)
     {
         HashSet<string>? referenceNames = null;
-        foreach (var variant in family.Variants.Where(item => item.Status == EyecatchVariantStatus.Ready))
+        foreach (var variant in family.Variants.Where(item => item.Kind == SpriteAtlasKind.NGUI3
+            && item.Status == EyecatchVariantStatus.Ready))
         {
             var names = variant.Document.Sprites.Select(sprite => sprite.Name).ToHashSet(StringComparer.Ordinal);
             if (referenceNames is not null && !referenceNames.SetEquals(names)) return true;

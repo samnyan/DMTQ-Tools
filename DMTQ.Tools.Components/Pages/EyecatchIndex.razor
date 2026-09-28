@@ -62,7 +62,7 @@
                         Title='@L["Eyecatch.AtlasKey"]' Sortable="true" Width="1fr" MinWidth="10rem" />
         <TemplateColumn TGridItem="EyecatchAtlasFamily" Title='@L["Eyecatch.SpriteCount"]' Context="family"
                         Width="8rem" MinWidth="8rem">
-            <span class="eyecatch-nowrap">2: @SpriteCount(family, SpriteAtlasKind.NGUI2) · 3: @SpriteCount(family, SpriteAtlasKind.NGUI3)</span>
+            <span class="eyecatch-nowrap">@SpriteCount(family, SpriteAtlasKind.NGUI3)</span>
         </TemplateColumn>
         <TemplateColumn TGridItem="EyecatchAtlasFamily" Title="Android" Context="family" Width="9rem" MinWidth="9rem">
             @PlatformStatus(family, "android")
@@ -180,11 +180,12 @@
 
     private RenderFragment PlatformStatus(EyecatchAtlasFamily family, string platform) => builder =>
     {
-        var variants = OrderedVariants(family).Where(variant => variant.Platform.Equals(platform, StringComparison.OrdinalIgnoreCase));
-        var text = string.Join(" · ", variants.Select(variant => $"{(variant.Kind == SpriteAtlasKind.NGUI2 ? "2" : "3")} {VariantStatus(variant)}"));
+        var variant = family.Variants.FirstOrDefault(item => item.Kind == SpriteAtlasKind.NGUI3
+            && item.Platform.Equals(platform, StringComparison.OrdinalIgnoreCase));
+        var text = variant is null ? L["Eyecatch.Missing"].Value : VariantStatus(variant);
         builder.OpenElement(0, "span");
         builder.AddAttribute(1, "class", "eyecatch-nowrap");
-        builder.AddAttribute(2, "title", text);
+        builder.AddAttribute(2, "title", $"{L["AtlasEditor.NGUI3"].Value}: {text}");
         builder.AddContent(3, text);
         builder.CloseElement();
     };
@@ -193,12 +194,13 @@
     {
         if (family.HasSpriteNameMismatch) return L["Eyecatch.PlatformSpriteNameMismatchShort"].Value;
         if (family.HasPlatformLayoutMismatch) return L["Eyecatch.LayoutMismatch"].Value;
-        if (family.Variants.Any(variant => variant.Status == EyecatchVariantStatus.SourceChanged)) return L["Eyecatch.SourceChanged"].Value;
-        if (family.Variants.Any(variant => variant.IsDirty)) return L["Eyecatch.Dirty"].Value;
-        if (family.Variants.Any(variant => variant.Status == EyecatchVariantStatus.Error)) return L["Eyecatch.HasErrors"].Value;
-        return family.Variants.Count(variant => variant.Status == EyecatchVariantStatus.Ready) switch
+        if (family.Variants.Any(variant => variant.Kind == SpriteAtlasKind.NGUI3 && variant.Status == EyecatchVariantStatus.SourceChanged)) return L["Eyecatch.SourceChanged"].Value;
+        if (family.Variants.Any(variant => variant.Kind == SpriteAtlasKind.NGUI3 && variant.IsDirty)) return L["Eyecatch.Dirty"].Value;
+        if (family.Variants.Any(variant => variant.Kind == SpriteAtlasKind.NGUI3 && variant.Status == EyecatchVariantStatus.Error)) return L["Eyecatch.HasErrors"].Value;
+        return family.Variants.Count(variant => variant.Kind == SpriteAtlasKind.NGUI3
+            && variant.Status == EyecatchVariantStatus.Ready) switch
         {
-            4 => L["Eyecatch.AllPlatforms"].Value,
+            2 => L["Eyecatch.AllPlatforms"].Value,
             > 0 => L["Eyecatch.PartialPlatforms"].Value,
             _ => L["Eyecatch.Missing"].Value
         };
@@ -214,7 +216,8 @@
     };
 
     private static IEnumerable<EyecatchAtlasVariant> OrderedVariants(EyecatchAtlasFamily family)
-        => family.Variants.OrderBy(variant => variant.Kind).ThenBy(variant => variant.Platform == "android" ? 0 : 1);
+        => family.Variants.OrderBy(variant => variant.Kind == SpriteAtlasKind.NGUI3 ? 0 : 1)
+            .ThenBy(variant => variant.Platform == "android" ? 0 : 1);
 
     private static bool CanEdit(EyecatchAtlasVariant variant)
         => variant.Exists && variant.ResourceRegistered && !string.IsNullOrWhiteSpace(variant.ResourcePath)
