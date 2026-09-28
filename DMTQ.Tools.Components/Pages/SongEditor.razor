@@ -636,7 +636,7 @@
             })
             .Where(candidate => File.Exists(candidate.PlatformPath) || File.Exists(candidate.PlatformPath + ".lz4"))
             .OrderBy(candidate => candidate.Platform.Equals(State.SelectedExportPlatform, StringComparison.OrdinalIgnoreCase) ? 0 : 1)
-            .ThenBy(candidate => candidate.IsNgui2 ? 0 : 1)
+            .ThenBy(candidate => candidate.IsNgui2 ? 1 : 0)
             .ToArray();
 
         var selected = candidates.FirstOrDefault();
@@ -654,7 +654,7 @@
                 [nameof(SongItemAtlasEditorDialog.ProjectFile)] = projectFile,
                 [nameof(SongItemAtlasEditorDialog.Platform)] = platform,
                 [nameof(SongItemAtlasEditorDialog.IsNewAtlas)] = isNew,
-                [nameof(SongItemAtlasEditorDialog.InitialAtlasName)] = $"d_{atlasKey}",
+                [nameof(SongItemAtlasEditorDialog.InitialAtlasName)] = $"d3_{atlasKey}",
                 [nameof(SongItemAtlasEditorDialog.InitialSpriteName)] = spriteName
             };
         });

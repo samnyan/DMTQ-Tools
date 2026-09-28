@@ -11,6 +11,72 @@ namespace DMTQ.Tools.Core.Tests.Services;
 public sealed class PlatformPackageImporterTests
 {
     [TestMethod]
+    public async Task ImportPlatformAsync_RefreshesInstallPackMetadataFromManifestWithoutPayload()
+    {
+        var projectRoot = Path.Combine(Path.GetTempPath(), "dmtq-installpack-metadata-" + Guid.NewGuid().ToString("N"));
+        var packageRoot = Path.Combine(Path.GetTempPath(), "dmtq-installpack-manifest-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            Directory.CreateDirectory(projectRoot);
+            Directory.CreateDirectory(packageRoot);
+            var archivedPath = Path.Combine(projectRoot, "resources", "android", "dlc", "installed.bin");
+            Directory.CreateDirectory(Path.GetDirectoryName(archivedPath)!);
+            await File.WriteAllTextAsync(archivedPath, "install-pack-content");
+
+            const string manifestChecksum = "11111111111111111111111111111111";
+            const string compressedChecksum = "22222222222222222222222222222222";
+            await WriteManifestCsvAsync(packageRoot,
+                "file_name,file_size,checksum,compressed_file_size,compressed_checksum,acquire_on_demand,compressed,platform,tag\n" +
+                $"dlc/installed.bin,123,{manifestChecksum},45,{compressedChecksum},1,1,,\n");
+
+            var resource = new ResourceFile
+            {
+                FileName = "dlc/installed.bin",
+                Category = "dlc",
+                Compressed = false,
+                AcquireOnDemand = 0,
+                PlatformManifest =
+                {
+                    new PlatformManifestEntry
+                    {
+                        Platform = "android",
+                        Exist = true,
+                        IsInstallPack = true,
+                        SourceFileSize = 10,
+                        SourceChecksum = "old-checksum",
+                        SourceCompressedFileSize = 0,
+                        SourceCompressedChecksum = "old-compressed-checksum",
+                        InstallPackBaselineChecksum = "install-pack-checksum"
+                    }
+                }
+            };
+            var package = CreateEmptyProject(projectRoot);
+            package.Resources.Add(resource);
+
+            await CreateImporter().ImportPlatformAsync(package, packageRoot, "android");
+
+            package.Resources.Should().ContainSingle();
+            resource.Compressed.Should().BeTrue();
+            resource.AcquireOnDemand.Should().Be(1);
+            var platformEntry = resource.PlatformManifest.Should().ContainSingle().Which;
+            platformEntry.Exist.Should().BeTrue();
+            platformEntry.IsInstallPack.Should().BeTrue();
+            platformEntry.SourceFileSize.Should().Be(123);
+            platformEntry.SourceChecksum.Should().Be(manifestChecksum);
+            platformEntry.SourceCompressedFileSize.Should().Be(45);
+            platformEntry.SourceCompressedChecksum.Should().Be(compressedChecksum);
+            platformEntry.InstallPackBaselineChecksum.Should().Be("install-pack-checksum");
+            (await File.ReadAllTextAsync(archivedPath)).Should().Be("install-pack-content");
+            package.IntegrityErrors.Should().BeEmpty("the patch contains only manifest metadata for this InstallPack file");
+        }
+        finally
+        {
+            DeleteDirectory(projectRoot);
+            DeleteDirectory(packageRoot);
+        }
+    }
+
+    [TestMethod]
     public async Task ImportPlatformAsync_PreservesBaselineWhenManifestFileIsMissing()
     {
         var projectRoot = Path.Combine(Path.GetTempPath(), "dmtq-platform-import-" + Guid.NewGuid().ToString("N"));
@@ -228,17 +294,19 @@ public sealed class PlatformPackageImporterTests
         string packageRoot,
         List<(string FileName, string Checksum, bool Compressed)> entries)
     {
-        var manifestPath = Path.Combine(packageRoot, "patch_new.csv");
-        await using var writer = new StreamWriter(manifestPath);
-        await writer.WriteLineAsync("file_name,file_size,checksum,compressed_file_size,compressed_checksum,acquire_on_demand,compressed,platform,tag");
+        var csv = new System.Text.StringBuilder("file_name,file_size,checksum,compressed_file_size,compressed_checksum,acquire_on_demand,compressed,platform,tag\n");
         foreach (var entry in entries)
         {
-            await writer.WriteLineAsync($"{entry.FileName},0,{entry.Checksum},0,,0,{(entry.Compressed ? 1 : 0)},,");
+            csv.AppendLine($"{entry.FileName},0,{entry.Checksum},0,,0,{(entry.Compressed ? 1 : 0)},,");
         }
 
-        await writer.FlushAsync();
-        writer.Close();
+        await WriteManifestCsvAsync(packageRoot, csv.ToString());
+    }
 
+    private static async Task WriteManifestCsvAsync(string packageRoot, string csv)
+    {
+        var manifestPath = Path.Combine(packageRoot, "patch_new.csv");
+        await File.WriteAllTextAsync(manifestPath, csv);
         var csvBytes = await File.ReadAllBytesAsync(manifestPath);
         using var ms = new MemoryStream();
         using (var lz4 = K4os.Compression.LZ4.Legacy.LZ4Legacy.Encode(ms, leaveOpen: true))

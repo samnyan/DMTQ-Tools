@@ -201,24 +201,20 @@ public sealed class PlatformPackageExporter
         var platformEntry = resource.PlatformManifest.FirstOrDefault(m =>
             m.Platform.Equals(options.Platform, StringComparison.OrdinalIgnoreCase)
             || m.Platform.Equals("share", StringComparison.OrdinalIgnoreCase));
-        if (platformEntry?.IsInstallPack == true)
+        if (platformEntry?.IsInstallPack == true
+            && !string.IsNullOrWhiteSpace(platformEntry.InstallPackBaselineChecksum)
+            && File.Exists(sourcePath))
         {
-            if (!string.IsNullOrWhiteSpace(platformEntry.InstallPackBaselineChecksum))
+            var currentChecksum = await FileUtility.ComputeMd5Async(sourcePath, cancellationToken).ConfigureAwait(false);
+            if (currentChecksum.Equals(platformEntry.InstallPackBaselineChecksum, StringComparison.OrdinalIgnoreCase))
             {
-                if (!File.Exists(sourcePath))
-                {
-                    result.FilesSkippedAsBaseline++;
-                    result.Messages.Add($"InstallPack baseline resource omitted: {relativePath}");
-                    return;
-                }
-
-                var currentChecksum = await FileUtility.ComputeMd5Async(sourcePath, cancellationToken).ConfigureAwait(false);
-                if (currentChecksum.Equals(platformEntry.InstallPackBaselineChecksum, StringComparison.OrdinalIgnoreCase))
-                {
-                    result.FilesSkippedAsBaseline++;
-                    result.Messages.Add($"Unchanged InstallPack resource omitted: {relativePath}");
-                    return;
-                }
+                AddBaselineManifestEntry(
+                    resource,
+                    platformEntry,
+                    relativePath,
+                    result,
+                    $"Unchanged InstallPack resource retained in manifest: {relativePath}");
+                return;
             }
         }
 
@@ -228,18 +224,12 @@ public sealed class PlatformPackageExporter
             // (file may be built into IPA/APK — client needs manifest entry for checksum)
             if (platformEntry is not null)
             {
-                result.Manifest.Entries.Add(new PatchFileEntry(
+                AddBaselineManifestEntry(
+                    resource,
+                    platformEntry,
                     relativePath,
-                    platformEntry.SourceFileSize,
-                    platformEntry.SourceChecksum,
-                    platformEntry.SourceCompressedFileSize,
-                    platformEntry.SourceCompressedChecksum,
-                    resource.AcquireOnDemand,
-                    resource.Compressed,
-                    string.Empty,
-                    string.Empty));
-                result.FilesSkippedAsBaseline++;
-                result.Messages.Add($"Missing-on-disk file (manifest baseline): {relativePath}");
+                    result,
+                    $"Missing-on-disk file (manifest baseline): {relativePath}");
             }
             else
             {
@@ -283,6 +273,27 @@ public sealed class PlatformPackageExporter
         }
 
         result.Manifest.Entries.Add(manifestEntry);
+    }
+
+    private static void AddBaselineManifestEntry(
+        ResourceFile resource,
+        PlatformManifestEntry platformEntry,
+        string relativePath,
+        PlatformExportResult result,
+        string message)
+    {
+        result.Manifest.Entries.Add(new PatchFileEntry(
+            relativePath,
+            platformEntry.SourceFileSize,
+            platformEntry.SourceChecksum,
+            platformEntry.SourceCompressedFileSize,
+            platformEntry.SourceCompressedChecksum,
+            resource.AcquireOnDemand,
+            resource.Compressed,
+            string.Empty,
+            string.Empty));
+        result.FilesSkippedAsBaseline++;
+        result.Messages.Add(message);
     }
 
     private static string ResolveResourceSourcePath(string projectRoot, string fileName, string category, string targetPlatform)

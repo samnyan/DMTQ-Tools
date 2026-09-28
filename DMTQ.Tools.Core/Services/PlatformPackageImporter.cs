@@ -94,32 +94,39 @@ public sealed class PlatformPackageImporter
                     var archivedPath = Path.Combine(projectRoot, projectRelativePath.Replace('/', Path.DirectorySeparatorChar));
                     var existingResource = package.Resources.FirstOrDefault(resource =>
                         resource.FileName.Equals(relativePath, StringComparison.OrdinalIgnoreCase));
-                    var existingPlatformEntry = existingResource?.PlatformManifest.FirstOrDefault(manifestEntry =>
-                        manifestEntry.Platform.Equals(platform, StringComparison.OrdinalIgnoreCase));
-                    bool fileExists = sourcePath is not null
-                        || (existingPlatformEntry?.IsInstallPack == true && File.Exists(archivedPath));
+                    bool fileExists = File.Exists(archivedPath);
+                    bool importedPayload = false;
 
                     if (sourcePath is not null)
                     {
-                        Directory.CreateDirectory(Path.GetDirectoryName(archivedPath) ?? projectRoot);
+                        var stagedPath = Path.Combine(tempRoot,
+                            projectRelativePath.Replace('/', Path.DirectorySeparatorChar));
+                        Directory.CreateDirectory(Path.GetDirectoryName(stagedPath) ?? tempRoot);
 
                         if (entry.Compressed)
                         {
-                            await FileUtility.DecompressFileAsync(sourcePath!, archivedPath, cancellationToken)
+                            await FileUtility.DecompressFileAsync(sourcePath, stagedPath, cancellationToken)
                                 .ConfigureAwait(false);
                         }
                         else
                         {
-                            await using var source = File.OpenRead(sourcePath!);
-                            await using var destination = File.Create(archivedPath);
+                            await using var source = File.OpenRead(sourcePath);
+                            await using var destination = File.Create(stagedPath);
                             await source.CopyToAsync(destination, cancellationToken).ConfigureAwait(false);
                         }
 
                         // Validate decompressed checksum against manifest
-                        if (!await ValidateDecompressedChecksumAsync(archivedPath, entry, package.IntegrityErrors, relativePath, cancellationToken)
+                        if (await ValidateDecompressedChecksumAsync(stagedPath, entry, package.IntegrityErrors, relativePath, cancellationToken)
                                 .ConfigureAwait(false))
                         {
-                            fileExists = false;
+                            Directory.CreateDirectory(Path.GetDirectoryName(archivedPath) ?? projectRoot);
+                            File.Move(stagedPath, archivedPath, overwrite: true);
+                            fileExists = true;
+                            importedPayload = true;
+                        }
+                        else
+                        {
+                            fileExists = File.Exists(archivedPath);
                         }
                     }
 
@@ -137,6 +144,11 @@ public sealed class PlatformPackageImporter
                         };
                         package.Resources.Add(resourceFile);
                     }
+
+                    // The manifest describes the current package format even when this import
+                    // only updates metadata for a file that is not present in the patch payload.
+                    resourceFile.Compressed = entry.Compressed;
+                    resourceFile.AcquireOnDemand = entry.AcquireOnDemand;
 
                     // For preview resources, use "share" as platform
                     var entryPlatform = category == "preview" ? "share" : platform;
@@ -162,6 +174,16 @@ public sealed class PlatformPackageImporter
                     {
                         // Update existing entry
                         existingEntry.Exist = fileExists;
+                        existingEntry.SourceFileSize = entry.FileSize;
+                        existingEntry.SourceChecksum = entry.Checksum;
+                        existingEntry.SourceCompressedFileSize = entry.CompressedFileSize;
+                        existingEntry.SourceCompressedChecksum = entry.CompressedChecksum;
+                    }
+
+                    if (importedPayload && existingEntry is not null)
+                    {
+                        existingEntry.IsInstallPack = false;
+                        existingEntry.InstallPackBaselineChecksum = string.Empty;
                     }
                 }
             }
@@ -632,8 +654,6 @@ public sealed class PlatformPackageImporter
             return true;
 
         errors.Add($"[INTEGRITY] {relativePath}: decompressed checksum mismatch (expected {entry.Checksum}, got {actual})");
-        // Delete the invalid file so it doesn't pollute the project
-        try { File.Delete(decompressedPath); } catch { /* best effort */ }
         return false;
     }
 }

@@ -51,21 +51,14 @@ public sealed class CategoryProductCsvSchema : CsvLookupSchema<Product>
         // Header
         csv.WriteField("category_id");
         csv.WriteField("product_id");
-        csv.WriteField("display_order");
-        csv.WriteField("update");
         csv.NextRecord();
 
         foreach (var product in products)
         {
-            for (var index = 0; index < product.CategoryIds.Count; index++)
+            foreach (var categoryId in product.CategoryIds)
             {
-                var metadata = index < product.CategoryLinkMetadata.Count
-                    ? product.CategoryLinkMetadata[index]
-                    : new CategoryProductLinkMetadata("0", "0");
-                csv.WriteField(product.CategoryIds[index]);
+                csv.WriteField(categoryId);
                 csv.WriteField(product.Id);
-                csv.WriteField(metadata.DisplayOrder);
-                csv.WriteField(metadata.Update);
                 csv.NextRecord();
             }
         }

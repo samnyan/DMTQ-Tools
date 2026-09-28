@@ -73,9 +73,15 @@ public static class PatchManifestIO
         csv.WriteField(""); // trailing empty column (game client expects exact column count)
         await csv.NextRecordAsync().ConfigureAwait(false);
 
-        foreach (var entry in manifest.Entries)
+        var orderedEntries = manifest.Entries
+            .Select((entry, index) => (Entry: entry, OriginalIndex: index))
+            .OrderBy(item => GetExportGroupOrder(item.Entry.FileName))
+            .ThenBy(item => item.OriginalIndex);
+
+        foreach (var item in orderedEntries)
         {
             cancellationToken.ThrowIfCancellationRequested();
+            var entry = item.Entry;
             csv.WriteField(entry.FileName);
             csv.WriteField(entry.FileSize);
             csv.WriteField(entry.Checksum);
@@ -90,6 +96,21 @@ public static class PatchManifestIO
         }
 
         await textWriter.FlushAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    private static int GetExportGroupOrder(string fileName)
+    {
+        var normalizedPath = fileName.Replace('\\', '/');
+        var separatorIndex = normalizedPath.IndexOf('/');
+        var topLevelDirectory = separatorIndex < 0
+            ? normalizedPath
+            : normalizedPath[..separatorIndex];
+
+        if (topLevelDirectory.Equals("table", StringComparison.OrdinalIgnoreCase)) return 0;
+        if (topLevelDirectory.Equals("dlc", StringComparison.OrdinalIgnoreCase)) return 1;
+        if (topLevelDirectory.Equals("Fonts", StringComparison.OrdinalIgnoreCase)) return 2;
+        if (topLevelDirectory.Equals("preview", StringComparison.OrdinalIgnoreCase)) return 3;
+        return 4;
     }
 
     private static string NormalizePath(string path)

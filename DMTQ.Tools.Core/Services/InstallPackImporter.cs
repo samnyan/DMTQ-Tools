@@ -73,8 +73,12 @@ public sealed class InstallPackImporter
                 }
 
                 var category = FileUtility.ResourceCategory(packagePath);
-                var archivePath = Path.Combine(package.ProjectInfo.ProjectRoot, "resources", platformName,
-                    packagePath.Replace('/', Path.DirectorySeparatorChar));
+                var isSharedResource = category.Equals("preview", StringComparison.OrdinalIgnoreCase);
+                var archivePath = isSharedResource
+                    ? Path.Combine(package.ProjectInfo.ProjectRoot, "resources",
+                        packagePath.Replace('/', Path.DirectorySeparatorChar))
+                    : Path.Combine(package.ProjectInfo.ProjectRoot, "resources", platformName,
+                        packagePath.Replace('/', Path.DirectorySeparatorChar));
                 Directory.CreateDirectory(Path.GetDirectoryName(archivePath) ?? package.ProjectInfo.ProjectRoot);
                 if (sourceIsCompressed)
                     await FileUtility.DecompressFileAsync(sourcePath, archivePath, cancellationToken).ConfigureAwait(false);
@@ -99,11 +103,12 @@ public sealed class InstallPackImporter
                 }
 
                 resource.Compressed = sourceIsCompressed;
+                var entryPlatform = isSharedResource ? "share" : platformName;
                 var platformEntry = resource.PlatformManifest.FirstOrDefault(item =>
-                    item.Platform.Equals(platformName, StringComparison.OrdinalIgnoreCase));
+                    item.Platform.Equals(entryPlatform, StringComparison.OrdinalIgnoreCase));
                 if (platformEntry is null)
                 {
-                    platformEntry = new PlatformManifestEntry { Platform = platformName };
+                    platformEntry = new PlatformManifestEntry { Platform = entryPlatform };
                     resource.PlatformManifest.Add(platformEntry);
                 }
 
