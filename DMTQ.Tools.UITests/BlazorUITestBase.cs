@@ -10,6 +10,8 @@ using Microsoft.FluentUI.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 using DMTQ_Tools.Components.Localization;
 using DMTQ_Tools.Components.Shared;
+using DMTQ_Tools.Components.Services;
+using Assets.Lib.Services;
 using Bunit;
 
 namespace DMTQ.Tools.UITests;
@@ -49,6 +51,8 @@ public abstract class BlazorUITestBase : Bunit.TestContext
         Services.AddSingleton<QuestCatalogService>();
         Services.AddSingleton<QuestEditService>();
         Services.AddSingleton<SlangEditService>();
+        Services.AddSingleton<SpriteAtlasBundleService>();
+        Services.AddSingleton<EyecatchIndexService>();
         Services.AddFluentUIComponents();
         Services.AddLocalization();
         Services.AddSingleton<ILanguagePreferenceStore, TestLanguagePreferenceStore>();

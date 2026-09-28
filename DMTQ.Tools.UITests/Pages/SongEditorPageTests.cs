@@ -30,6 +30,91 @@ public sealed class SongEditorPageTests : BlazorUITestBase
     }
 
     [TestMethod]
+    public void CreateStandardSongProducts_UsesItemIdAndAssignsStoreCategories()
+    {
+        var state = CreateStateWithEmptyPackage();
+        var package = CreateSamplePackage();
+        var tables = package.GetPlatformTables(state.SelectedExportPlatform);
+        tables.Items.Add(new Item { Id = "2000" });
+        tables.Products.Add(new Product { Id = "9000000", PlatformProductId = "40" });
+        state.SetPackage(package);
+        state.SetProjectRoot("test-project");
+        RegisterAllServices(state);
+
+        var cut = Render<SongEditor>(parameters => parameters.Add(p => p.SongId, "new"));
+        GetPrivateField<Song>(cut.Instance, "currentSong").Name = "New Song";
+        cut.InvokeAsync(() =>
+        {
+            InvokePrivateMethod(cut.Instance, "SetSongIdInput", "2000");
+            InvokePrivateMethod(cut.Instance, "CreateSongItem");
+            InvokePrivateMethod(cut.Instance, "CreateStandardSongProducts");
+        }).GetAwaiter().GetResult();
+
+        var item = GetPrivateField<Item>(cut.Instance, "songItemDraft");
+        item.Id.Should().Be("2001", "the song ID already belongs to another item");
+        var products = GetPrivateField<List<Product>>(cut.Instance, "songProductDrafts");
+        products.Select(product => product.Id).Should().Equal("2001", "1002001");
+        products.Select(product => product.StoreProductId).Should().Equal(
+            "com.neowizInternet.game.dmtq.newsong",
+            "com.neowizInternet.game.dmtq_a.newsong");
+        products.Select(product => product.PlatformProductId).Should().Equal("41", "42");
+        products[0].CategoryIds.Should().Equal("3");
+        products[1].CategoryIds.Should().Equal("103");
+    }
+
+    [TestMethod]
+    public void ReopeningSongAfterProductListDeletion_DropsOnlyDeletedProductDraft()
+    {
+        var state = CreateStateWithEmptyPackage();
+        var package = CreateSamplePackage();
+        package.Songs[0].ItemId = 2000;
+        var tables = package.GetPlatformTables(state.SelectedExportPlatform);
+        tables.Items.Add(new Item { Id = "2000", ItemType = "S" });
+        tables.Products.Add(new Product { Id = "2000", ItemId = "2000" });
+        state.SetPackage(package);
+        state.SetProjectRoot("test-project");
+        RegisterAllServices(state);
+
+        var firstVisit = Render<SongEditor>(parameters => parameters.Add(p => p.SongId, "1001"));
+        GetPrivateField<List<Product>>(firstVisit.Instance, "songProductDrafts")
+            .Select(product => product.Id).Should().Equal("2000");
+        firstVisit.InvokeAsync(() => InvokePrivateMethod(firstVisit.Instance, "AddSongProduct"))
+            .GetAwaiter().GetResult();
+        new ProductEditService().RemoveProduct(package, "2000", state.SelectedExportPlatform);
+
+        var reopened = Render<SongEditor>(parameters => parameters.Add(p => p.SongId, "1001"));
+
+        GetPrivateField<List<Product>>(reopened.Instance, "songProductDrafts")
+            .Select(product => product.Id).Should().ContainSingle()
+            .Which.Should().Be("2001", "a newly added unsaved product draft is retained");
+        package.GetPlatformTables(state.SelectedExportPlatform).Products.Should().BeEmpty();
+    }
+
+    [TestMethod]
+    public void ReopeningSongAfterItemListDeletion_DoesNotRestoreItemOrItsProductCards()
+    {
+        var state = CreateStateWithEmptyPackage();
+        var package = CreateSamplePackage();
+        package.Songs[0].ItemId = 2000;
+        var tables = package.GetPlatformTables(state.SelectedExportPlatform);
+        tables.Items.Add(new Item { Id = "2000", ItemType = "S" });
+        tables.Products.Add(new Product { Id = "2000", ItemId = "2000" });
+        state.SetPackage(package);
+        state.SetProjectRoot("test-project");
+        RegisterAllServices(state);
+
+        var firstVisit = Render<SongEditor>(parameters => parameters.Add(p => p.SongId, "1001"));
+        GetPrivateField<Item>(firstVisit.Instance, "songItemDraft").Id.Should().Be("2000");
+        new ItemEditService().RemoveItem(package, "2000", state.SelectedExportPlatform);
+
+        var reopened = Render<SongEditor>(parameters => parameters.Add(p => p.SongId, "1001"));
+
+        GetPrivateFieldValue(reopened.Instance, "songItemDraft").Should().BeNull();
+        GetPrivateField<List<Product>>(reopened.Instance, "songProductDrafts").Should().BeEmpty();
+        tables.Products.Should().ContainSingle("deleting an item does not delete its product table row");
+    }
+
+    [TestMethod]
     public void RendersEditFormForExistingSong()
     {
         var state = CreateStateWithEmptyPackage();
@@ -131,8 +216,16 @@ public sealed class SongEditorPageTests : BlazorUITestBase
 
     private static T GetPrivateField<T>(object instance, string fieldName)
         where T : class
-        => (T)(instance.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic)
-            ?.GetValue(instance) ?? throw new InvalidOperationException($"Field '{fieldName}' was not found."));
+        => (T)(GetPrivateFieldValue(instance, fieldName)
+            ?? throw new InvalidOperationException($"Field '{fieldName}' was null."));
+
+    private static object? GetPrivateFieldValue(object instance, string fieldName)
+        => instance.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic)
+            ?.GetValue(instance);
+
+    private static void InvokePrivateMethod(object instance, string methodName, params object?[] arguments)
+        => instance.GetType().GetMethod(methodName, BindingFlags.Instance | BindingFlags.NonPublic)
+            ?.Invoke(instance, arguments);
 
     private sealed class PatternDialogLauncher : ComponentBase
     {

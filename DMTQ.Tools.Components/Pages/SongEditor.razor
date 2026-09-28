@@ -435,6 +435,7 @@
     private string? originalSongItemId;
     private bool itemIdWasConflictSuggested;
     private List<Product> songProductDrafts = [];
+    private HashSet<string> originalSongProductIds = new(StringComparer.OrdinalIgnoreCase);
     private Dictionary<string, string> songProductIdDrafts = new(StringComparer.OrdinalIgnoreCase);
     private HashSet<string> pendingSongProductDeletionIds = new(StringComparer.OrdinalIgnoreCase);
 
@@ -509,6 +510,7 @@
             songItemIdInput = null;
             originalSongItemId = null;
             songProductDrafts = [];
+            originalSongProductIds.Clear();
             songProductIdDrafts.Clear();
             pendingSongProductDeletionIds.Clear();
             itemIdWasConflictSuggested = false;
@@ -522,10 +524,13 @@
             songItemIdInput = recovered.SongItemIdInput;
             originalSongItemId = recovered.OriginalSongItemId;
             songProductDrafts = recovered.SongProductDrafts;
+            originalSongProductIds = recovered.OriginalSongProductIds;
             songProductIdDrafts = recovered.SongProductIdDrafts;
             pendingSongProductDeletionIds = recovered.PendingSongProductDeletionIds;
             itemIdWasConflictSuggested = recovered.ItemIdWasConflictSuggested;
             _syncOriginalText = recovered.SyncOriginalText;
+            RemoveExternallyDeletedSongItem();
+            RemoveExternallyDeletedSongProducts();
             return;
         }
 
@@ -554,6 +559,7 @@
                 songItemIdInput,
                 originalSongItemId,
                 songProductDrafts,
+                originalSongProductIds,
                 songProductIdDrafts,
                 pendingSongProductDeletionIds,
                 itemIdWasConflictSuggested,
@@ -667,6 +673,7 @@
         songItemIdInput = null;
         originalSongItemId = null;
         songProductDrafts = [];
+        originalSongProductIds.Clear();
         songProductIdDrafts.Clear();
         if (currentSong is null || State.CurrentPackage is null || currentSong.ItemId <= 0) return;
 
@@ -683,7 +690,46 @@
             .Where(product => product.ItemId == item.Id)
             .Select(product => ProductEditSvc.CreateDraft(product))
             .ToList();
+        originalSongProductIds = songProductDrafts.Select(product => product.Id)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
         ResetSongProductIds();
+    }
+
+    private void RemoveExternallyDeletedSongProducts()
+    {
+        if (State.CurrentPackage is null) return;
+        var existingIds = State.CurrentPackage.GetPlatformTables(State.SelectedExportPlatform).Products
+            .Select(product => product.Id)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var removedIds = songProductDrafts
+            .Where(product => originalSongProductIds.Contains(product.Id) && !existingIds.Contains(product.Id))
+            .Select(product => product.Id)
+            .ToArray();
+        if (removedIds.Length == 0) return;
+
+        songProductDrafts.RemoveAll(product => removedIds.Contains(product.Id, StringComparer.OrdinalIgnoreCase));
+        foreach (var id in removedIds)
+        {
+            songProductIdDrafts.Remove(id);
+            pendingSongProductDeletionIds.Remove(id);
+        }
+    }
+
+    private void RemoveExternallyDeletedSongItem()
+    {
+        if (State.CurrentPackage is null || originalSongItemId is null) return;
+        var itemExists = State.CurrentPackage.GetPlatformTables(State.SelectedExportPlatform).Items
+            .Any(item => item.Id.Equals(originalSongItemId, StringComparison.OrdinalIgnoreCase));
+        if (itemExists) return;
+
+        songItemDraft = null;
+        songItemIdInput = null;
+        originalSongItemId = null;
+        songProductDrafts.Clear();
+        originalSongProductIds.Clear();
+        songProductIdDrafts.Clear();
+        pendingSongProductDeletionIds.Clear();
+        itemIdWasConflictSuggested = false;
     }
 
     private SongLocalization GetOrCreateLocalization(string lang)
@@ -761,14 +807,21 @@
         if (State.CurrentPackage is null || songItemDraft is null || songItemIdInput is not > 0
             || songProductDrafts.Any(product => !IsSongProductMarkedForDeletion(product))) return;
         var tables = State.CurrentPackage.GetPlatformTables(State.SelectedExportPlatform);
-        var nextProductId = NextNumericId(tables.Products.Select(product => product.Id));
         var nextPlatformProductId = NextNumericId(tables.Products.Select(product => product.PlatformProductId));
+        var itemId = songItemIdInput.Value;
         songProductDrafts =
         [
-            CreateSongProduct(nextProductId, nextPlatformProductId, "com.neowizInternet.game.dmtq.", songItemDraft.ItemName),
-            CreateSongProduct(nextProductId + 1, nextPlatformProductId + 1, "com.neowizInternet.game.dmtq_a.", songItemDraft.ItemName)
+            CreateStandardSongProduct(itemId, nextPlatformProductId, "com.neowizInternet.game.dmtq.", "3", songItemDraft.ItemName),
+            CreateStandardSongProduct((long)itemId + 1_000_000, nextPlatformProductId + 1, "com.neowizInternet.game.dmtq_a.", "103", songItemDraft.ItemName)
         ];
         ResetSongProductIds();
+    }
+
+    private static Product CreateStandardSongProduct(long productId, int platformProductId, string skuPrefix, string categoryId, string itemName)
+    {
+        var product = CreateSongProduct(productId, platformProductId, skuPrefix, itemName);
+        product.AddCategoryId(categoryId);
+        return product;
     }
 
     private void ResetSongProductIds()
@@ -803,7 +856,7 @@
     private void RestoreSongProduct(Product product)
         => pendingSongProductDeletionIds.Remove(product.Id);
 
-    private static Product CreateSongProduct(int productId, int platformProductId, string skuPrefix, string itemName)
+    private static Product CreateSongProduct(long productId, int platformProductId, string skuPrefix, string itemName)
     {
         var skuName = string.Concat(itemName.Trim().ToLowerInvariant().Where(char.IsLetterOrDigit));
         return new Product
@@ -1221,6 +1274,7 @@
         int? SongItemIdInput,
         string? OriginalSongItemId,
         List<Product> SongProductDrafts,
+        HashSet<string> OriginalSongProductIds,
         Dictionary<string, string> SongProductIdDrafts,
         HashSet<string> PendingSongProductDeletionIds,
         bool ItemIdWasConflictSuggested,
