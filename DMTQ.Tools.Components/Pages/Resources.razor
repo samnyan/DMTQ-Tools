@@ -80,14 +80,16 @@
         <TemplateColumn TGridItem="ResourceCatalogEntry" Title='@L["Lists.Compressed"]' Context="resource">
             @(resource.Compressed ? L["Lists.Yes"] : L["Lists.No"])
         </TemplateColumn>
-        <TemplateColumn TGridItem="ResourceCatalogEntry" Title="Actions" Context="resource">
+        <TemplateColumn TGridItem="ResourceCatalogEntry" Title='@L["Lists.Actions"]' Context="resource">
             <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="4">
                 <FluentButton IconStart="@(new Icons.Regular.Size20.Edit())"
-                              Appearance="ButtonAppearance.Default"
+                              Size="ButtonSize.Small"
                               OnClick="() => OpenEditDialog(resource)"
-                              Title='@L["Common.Edit"]' />
+                              Title='@L["Common.Edit"]'>
+                    @L["Common.Edit"]
+                </FluentButton>
                 <FluentButton IconStart="@(new Icons.Regular.Size20.Delete())"
-                              Appearance="ButtonAppearance.Default"
+                              Size="ButtonSize.Small"
                               OnClick="() => DeleteResourceAsync(resource)"
                               Title='@L["Common.Delete"]' />
             </FluentStack>

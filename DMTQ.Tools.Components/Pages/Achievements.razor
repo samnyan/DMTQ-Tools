@@ -39,8 +39,10 @@
         <PropertyColumn TGridItem="Achievement" TProp="string" Property="@(item => item.ObtainPoint)" Title='@L["Fields.ObtainPoint"]' Width="7rem" MinWidth="7rem" />
         <TemplateColumn TGridItem="Achievement" Title='@L["Lists.Actions"]' Width="16.5rem" MinWidth="16.5rem" Context="item">
             <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="4">
-                <FluentButton IconStart="@(new Icons.Regular.Size20.Edit())" Appearance="ButtonAppearance.Default" OnClick="() => Edit(item.Id)" Title='@L["Common.Edit"]' />
-                <FluentButton IconStart="@(new Icons.Regular.Size20.Delete())" Appearance="ButtonAppearance.Default" OnClick="() => DeleteAsync(item)" Title='@L["Common.Delete"]' />
+                <FluentButton IconStart="@(new Icons.Regular.Size20.Edit())" Size="ButtonSize.Small" OnClick="() => Edit(item.Id)" Title='@L["Common.Edit"]'>
+                    @L["Common.Edit"]
+                </FluentButton>
+                <FluentButton IconStart="@(new Icons.Regular.Size20.Delete())" Size="ButtonSize.Small" OnClick="() => DeleteAsync(item)" Title='@L["Common.Delete"]' Color="var(--presence-busy)" />
             </FluentStack>
         </TemplateColumn>
     </Columns>

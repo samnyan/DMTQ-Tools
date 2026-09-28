@@ -24,8 +24,10 @@
     <Columns>
         <PropertyColumn TGridItem="SlangEntry" TProp="string" Property="@(entry => entry.Value)" Title='@L["Fields.SlangValue"]' Sortable="true" />
         <TemplateColumn TGridItem="SlangEntry" Title='@L["Lists.Actions"]' Context="entry"><FluentStack Orientation="Orientation.Horizontal" HorizontalGap="4">
-            <FluentButton IconStart="@(new Icons.Regular.Size20.Edit())" Appearance="ButtonAppearance.Default" OnClick="() => Edit(entry.Id)" Title='@L["Common.Edit"]' />
-            <FluentButton IconStart="@(new Icons.Regular.Size20.Delete())" Appearance="ButtonAppearance.Default" OnClick="() => DeleteAsync(entry)" Title='@L["Common.Delete"]' />
+                <FluentButton IconStart="@(new Icons.Regular.Size20.Edit())" Size="ButtonSize.Small" OnClick="() => Edit(entry.Id)" Title='@L["Common.Edit"]'>
+                    @L["Common.Edit"]
+                </FluentButton>
+            <FluentButton IconStart="@(new Icons.Regular.Size20.Delete())" Size="ButtonSize.Small" OnClick="() => DeleteAsync(entry)" Title='@L["Common.Delete"]' />
         </FluentStack></TemplateColumn>
     </Columns>
 </ProjectListShell>

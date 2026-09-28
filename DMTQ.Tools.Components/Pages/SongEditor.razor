@@ -7,8 +7,8 @@
 @inject SongEditService SongEditSvc
 @inject EditorDraftStore DraftStore
 @inject SongCatalogService SongCatalog
-@inject ItemCatalogService ItemCatalog
 @inject ItemEditService ItemEditSvc
+@inject ProductEditService ProductEditSvc
 @inject IDialogService DialogService
 
 <div class="song-editor-page">
@@ -28,209 +28,339 @@
             <div class="song-editor-scroll">
                 <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Stretch" class="editor-form-sections">
 
-                <section>
-                    <h2 class="section-heading">@L["Editor.BasicInfo"]</h2>
-                    <FluentGrid Spacing="1">
-                        <FluentGridItem Xs="12" Sm="6" Md="3">
-                            @if (IsCreate)
+                    <section>
+                        <h4 class="mb-1">@L["Editor.BasicInfo"]</h4>
+                        <FluentGrid Spacing="1">
+                            <FluentGridItem Xs="12" Sm="6" Md="3">
+                                @if (IsCreate)
+                                {
+                                    <FluentTextInput style="width: 100%;" Value="@songIdInput" ValueChanged="SetSongIdInput" Label='@(L["Fields.SongId"].Value + " *")' Placeholder="1" Required />
+                                }
+                                else
+                                {
+                                    <FluentTextInput style="width: 100%;" Value="@(currentSong?.Id.ToString() ?? "")" Label='@L["Fields.SongId"]' ReadOnly="true" />
+                                }
+                            </FluentGridItem>
+                            
+                            <FluentGridItem Xs="12" Sm="6" Md="3"><FluentTextInput style="width: 100%;" @bind-Value="currentSong!.Name" Label='@L["Fields.SongName"]' /></FluentGridItem>
+
+                            <FluentGridItem HiddenWhen="GridItemHidden.Xs" Md="6">
+                            </FluentGridItem>
+
+                            <FluentGridItem Xs="12" Sm="6" Md="3"><FluentTextInput style="width: 100%;" @bind-Value="songFullName" Label='@L["Fields.FullName"]' Immediate="true" /></FluentGridItem>
+                            <FluentGridItem Xs="12" Sm="6" Md="3"><FluentTextInput style="width: 100%;" @bind-Value="songGenre" Label='@L["Fields.Genre"]' Immediate="true" /></FluentGridItem>
+                        </FluentGrid>
+                    </section>
+
+                    <section>
+                        <h4 class="mb-1">@L["Editor.Credits"]</h4>
+                        <FluentGrid Spacing="1">
+                            <FluentGridItem Xs="12" Sm="6" Md="4"><FluentTextInput style="width: 100%;" @bind-Value="songArtistName" Label='@L["Fields.Artist"]' Immediate="true" /></FluentGridItem>
+                            <FluentGridItem Xs="12" Sm="6" Md="4"><FluentTextInput style="width: 100%;" @bind-Value="songComposedBy" Label='@L["Fields.Composer"]' Immediate="true" /></FluentGridItem>
+                            <FluentGridItem Xs="12" Sm="6" Md="4"><FluentTextInput style="width: 100%;" @bind-Value="songSinger" Label='@L["Fields.Singer"]' Immediate="true" /></FluentGridItem>
+                            <FluentGridItem Xs="12" Sm="6" Md="4"><FluentTextInput style="width: 100%;" @bind-Value="songFeatBy" Label='@L["Fields.FeaturedArtist"]' Immediate="true" /></FluentGridItem>
+                            <FluentGridItem Xs="12" Sm="6" Md="4"><FluentTextInput style="width: 100%;" @bind-Value="songArrangedBy" Label='@L["Fields.Arranger"]' Immediate="true" /></FluentGridItem>
+                            <FluentGridItem Xs="12" Sm="6" Md="4"><FluentTextInput style="width: 100%;" @bind-Value="songVisualizedBy" Label='@L["Fields.Visualizer"]' Immediate="true" /></FluentGridItem>
+                        </FluentGrid>
+                    </section>
+
+                    <section>
+                        <h4 class="mb-1">@L["Editor.GameplaySettings"]</h4>
+                        <p class="section-hint">@L["Editor.SongCodesHint"]</p>
+                        <FluentGrid Spacing="1">
+                            <FluentGridItem Xs="12" Md="3" style="display: flex; flex-direction: column;">
+                                <FluentSwitch @bind-Value="openYn" Label='@L["Fields.OpenSong"]' />
+                                <FluentSwitch @bind-Value="freeYn" Label='@L["Fields.FreeSong"]' />
+                                <FluentSwitch @bind-Value="hiddenYn" Label='@L["Fields.HiddenSong"]' />
+                            </FluentGridItem>
+                            <FluentGridItem Xs="12" Md="3"><FluentNumberInput @bind-Value="costPoint" Label='@L["Fields.CostGamePoint"]' /></FluentGridItem>
+                            <FluentGridItem Xs="12" Md="3"><FluentNumberInput @bind-Value="costCash" Label='@L["Fields.CostGameCash"]' /></FluentGridItem>
+                            <FluentGridItem Xs="12" Md="3">
+                                <p class="section-hint">
+                                @L["Editor.SongPriceNotice"]
+                                </p>
+                            </FluentGridItem>
+
+                            <FluentGridItem Xs="12" Md="3" style="display: flex; flex-direction: column;">
+                                <FluentSwitch @bind-Value="bgaOriginal" Label='@L["Fields.OriginalBga"]' />
+                                <FluentSwitch @bind-Value="bgaLoop" Label='@L["Fields.LoopBga"]' />
+                            </FluentGridItem>
+                            <FluentGridItem Xs="12" Md="3"><FluentNumberInput @bind-Value="currentSong!.Flag" Label='@L["Fields.SongFlag"]' /></FluentGridItem>
+                            <FluentGridItem Xs="12" Md="3"><FluentTextInput style="width: 100%;" @bind-Value="currentSong!.Status" Label='@L["Fields.SongStatus"]' /></FluentGridItem>
+                            <FluentGridItem HiddenWhen="GridItemHidden.Xs" Md="3">
+                            </FluentGridItem>
+
+                            <FluentGridItem Xs="12" Md="3"><FluentNumberInput @bind-Value="currentSong!.TrackId" Label='@L["Fields.TrackId"]' /></FluentGridItem>
+                            <FluentGridItem Xs="12" Md="3"><FluentTextInput @bind-Value="currentSong!.ModDate" Label='@L["Fields.ModDate"]' /></FluentGridItem>
+                            <FluentGridItem Xs="12" Md="3"><FluentTextInput @bind-Value="currentSong!.Update" Label='@L["Fields.UpdateValue"]' /></FluentGridItem>
+                        </FluentGrid>
+                    </section>
+
+                    <FluentDivider class="song-section-divider" />
+
+                    @* 道具 *@
+                    <section>
+                        <div class="section-title-row">
+                            <div>
+                                <h4 class="mb-1">@L["Editor.SongCommerce"]</h4>
+                                <p class="section-hint">@L["Editor.SongCommerceHint"]</p>
+                            </div>
+                            @if (songItemDraft is null)
                             {
-                                <FluentTextInput style="width: 100%;" Value="@songIdInput" ValueChanged="SetSongIdInput" Label='@(L["Fields.SongId"].Value + " *")' Placeholder="1" Required />
+                                <FluentButton Appearance="ButtonAppearance.Default" OnClick="CreateSongItem"
+                                              Disabled="@(!CanCreateSongItem)"
+                                              IconStart="@(new Icons.Regular.Size20.Add())">@L["Editor.CreateSongItem"]</FluentButton>
                             }
-                            else
-                            {
-                                <FluentTextInput style="width: 100%;" Value="@(currentSong?.Id.ToString() ?? "")" Label='@L["Fields.SongId"]' ReadOnly="true" />
-                            }
-                        </FluentGridItem>
-                        <FluentGridItem Xs="12" Sm="6" Md="3"><FluentTextInput style="width: 100%;" @bind-Value="currentSong!.Name" Label='@L["Fields.SongName"]' /></FluentGridItem>
-                        <FluentGridItem Xs="12" Sm="6" Md="3"><FluentTextInput style="width: 100%;" @bind-Value="songFullName" Label='@L["Fields.FullName"]' Immediate="true" /></FluentGridItem>
-                        <FluentGridItem Xs="12" Sm="6" Md="3"><FluentTextInput style="width: 100%;" @bind-Value="songGenre" Label='@L["Fields.Genre"]' Immediate="true" /></FluentGridItem>
-                    </FluentGrid>
-                </section>
-
-                <section>
-                    <h2 class="section-heading">@L["Editor.Credits"]</h2>
-                    <FluentGrid Spacing="1">
-                        <FluentGridItem Xs="12" Sm="6" Md="4"><FluentTextInput style="width: 100%;" @bind-Value="songArtistName" Label='@L["Fields.Artist"]' Immediate="true" /></FluentGridItem>
-                        <FluentGridItem Xs="12" Sm="6" Md="4"><FluentTextInput style="width: 100%;" @bind-Value="songComposedBy" Label='@L["Fields.Composer"]' Immediate="true" /></FluentGridItem>
-                        <FluentGridItem Xs="12" Sm="6" Md="4"><FluentTextInput style="width: 100%;" @bind-Value="songSinger" Label='@L["Fields.Singer"]' Immediate="true" /></FluentGridItem>
-                        <FluentGridItem Xs="12" Sm="6" Md="4"><FluentTextInput style="width: 100%;" @bind-Value="songFeatBy" Label='@L["Fields.FeaturedArtist"]' Immediate="true" /></FluentGridItem>
-                        <FluentGridItem Xs="12" Sm="6" Md="4"><FluentTextInput style="width: 100%;" @bind-Value="songArrangedBy" Label='@L["Fields.Arranger"]' Immediate="true" /></FluentGridItem>
-                        <FluentGridItem Xs="12" Sm="6" Md="4"><FluentTextInput style="width: 100%;" @bind-Value="songVisualizedBy" Label='@L["Fields.Visualizer"]' Immediate="true" /></FluentGridItem>
-                    </FluentGrid>
-                </section>
-
-                <section>
-                    <h2 class="section-heading">@L["Editor.GameplaySettings"]</h2>
-                    <p class="section-hint">@L["Editor.SongCodesHint"]</p>
-                    <FluentGrid Spacing="1">
-                        <FluentGridItem Xs="12" Sm="6" Md="4"><FluentSwitch @bind-Value="bgaOriginal" Label='@L["Fields.OriginalBga"]' /></FluentGridItem>
-                        <FluentGridItem Xs="12" Sm="6" Md="4"><FluentSwitch @bind-Value="bgaLoop" Label='@L["Fields.LoopBga"]' /></FluentGridItem>
-                        <FluentGridItem Xs="12" Sm="6" Md="4"><FluentNumberInput @bind-Value="costPoint" Label='@L["Fields.CostGamePoint"]' /></FluentGridItem>
-                        <FluentGridItem Xs="12" Sm="6" Md="4"><FluentNumberInput @bind-Value="costCash" Label='@L["Fields.CostGameCash"]' /></FluentGridItem>
-                        <FluentGridItem Xs="12" Sm="6" Md="4"><FluentNumberInput @bind-Value="currentSong!.Flag" Label='@L["Fields.SongFlag"]' /></FluentGridItem>
-                        <FluentGridItem Xs="12" Sm="6" Md="4"><FluentTextInput style="width: 100%;" @bind-Value="currentSong!.Status" Label='@L["Fields.SongStatus"]' /></FluentGridItem>
-                        <FluentGridItem Xs="12" Sm="6" Md="4"><FluentSwitch @bind-Value="freeYn" Label='@L["Fields.FreeSong"]' /></FluentGridItem>
-                        <FluentGridItem Xs="12" Sm="6" Md="4"><FluentSwitch @bind-Value="hiddenYn" Label='@L["Fields.HiddenSong"]' /></FluentGridItem>
-                        <FluentGridItem Xs="12" Sm="6" Md="4"><FluentSwitch @bind-Value="openYn" Label='@L["Fields.OpenSong"]' /></FluentGridItem>
-                        <FluentGridItem Xs="12" Sm="6" Md="4"><FluentNumberInput @bind-Value="currentSong!.TrackId" Label='@L["Fields.TrackId"]' /></FluentGridItem>
-                        <FluentGridItem Xs="12" Sm="6" Md="4"><FluentTextInput style="width: 100%;" @bind-Value="currentSong!.ModDate" Label='@L["Fields.ModDate"]' /></FluentGridItem>
-                        <FluentGridItem Xs="12" Sm="6" Md="4"><FluentTextInput style="width: 100%;" @bind-Value="currentSong!.Update" Label='@L["Fields.UpdateValue"]' /></FluentGridItem>
-                    </FluentGrid>
-                </section>
-
-                @* ════════════════════════════════════════════
-                   Row 2: Link ID (full width)
-                   ════════════════════════════════════════════ *@
-                <section>
-                    <h2 class="section-heading">@L["Editor.GameItemLink"]</h2>
-                    <p class="section-hint">@L["Editor.SongItemHint"]</p>
-                    <div class="linked-item-card">
-                        <div class="linked-item-card-header">
-                            <span class="linked-item-state">@(linkedItemDraft is not null ? L["Editor.LinkedItemWillBeCreated"] : selectedLinkedItem is not null ? L["Editor.ExistingLinkedItem"] : !IsCreate && currentSong!.ItemId > 0 ? L["Editor.MissingLinkedItem"] : L["Editor.NoGameItemSelected"])</span>
-                            <FluentButton Appearance="ButtonAppearance.Default" OnClick="OpenLinkedItemPickerAsync">@L["Editor.ChangeOrCreateLinkedItem"]</FluentButton>
                         </div>
-                        @if (linkedItemDraft is { } linkedDraft)
+                        @if (songItemDraft is null)
                         {
-                            <dl class="linked-item-details">
-                                <dt>@L["Fields.ItemId"]</dt><dd>@linkedDraft.Id</dd>
-                                <dt>@L["Fields.Name"]</dt><dd>@ItemDisplayName(linkedDraft)</dd>
-                                <dt>@L["Fields.Summary"]</dt><dd>@ItemCatalog.GetLocalizedSummary(linkedDraft, CurrentItemLanguage)</dd>
-                            </dl>
-                        }
-                        else if (selectedLinkedItem is { } existingItem)
-                        {
-                            <dl class="linked-item-details">
-                                <dt>@L["Fields.ItemId"]</dt><dd>@existingItem.Id</dd>
-                                <dt>@L["Fields.Name"]</dt><dd>@ItemDisplayName(existingItem)</dd>
-                                <dt>@L["Fields.Summary"]</dt><dd>@ItemCatalog.GetLocalizedSummary(existingItem, CurrentItemLanguage)</dd>
-                            </dl>
+                            <FluentMessageBar Title='@L["Editor.NoSongItem"]' Intent="MessageBarIntent.Info" />
                         }
                         else
                         {
-                            @if (!IsCreate && currentSong!.ItemId > 0)
+                            <FluentCard class="song-item-card" Padding="Padding.All4">
+                                <div class="song-related-card-heading">
+                                    <h3>@L["Editor.SongItemCardTitle"]</h3>
+                                    <span>@L["Editor.SongItemCardLink", currentSong!.Id]</span>
+                                </div>
+                                <FluentGrid Spacing="1">
+                                    <FluentGridItem Xs="12" Md="3" Sm="3">
+                                        <FluentNumberInput @bind-Value="songItemIdInput" Label='@L["Fields.ItemId"]' Min="1" />
+                                    </FluentGridItem>
+                                    <FluentGridItem Xs="12" Md="3" Sm="3">
+                                        <FluentTextInput @bind-Value="songItemDraft.ItemName" Label='@L["Fields.ItemName"]' Width="100%" />
+                                    </FluentGridItem>
+                                    <FluentGridItem Xs="12" Md="3" Sm="3">
+                                        <FluentTextInput Value="S" Label='@L["Fields.ItemType"]' ReadOnly="true" />
+                                    </FluentGridItem>
+                                    <FluentGridItem Xs="12" Md="3" Sm="3">
+                                        <FluentTextInput @bind-Value="songItemDraft.RepeatCount" Label='@L["Fields.RepeatCount"]' Width="100%" />
+                                    </FluentGridItem>
+
+                                    <FluentGridItem Xs="12" Sm="6" Md="6">
+                                        <FluentTextInput @bind-Value="songItemDraft.ImgUrl1" Label='@L["Fields.ImageUrl1"]' Width="100%" />
+                                    </FluentGridItem>
+                                    <FluentGridItem Xs="12" Sm="6" Md="6">
+                                        <FluentTextInput @bind-Value="songItemDraft.ImgUrl2" Label='@L["Fields.ImageUrl2"]' Width="100%" />
+                                    </FluentGridItem>
+                                    <FluentGridItem Sm="6">
+                                    </FluentGridItem>
+                                    <FluentGridItem Sm="6">
+                                    </FluentGridItem>
+                                    <FluentGridItem Xs="12">
+                                        <FluentTextArea @bind-Value="songItemDraft.Description" Label='@L["Fields.Description"]' Height="80px" Width="100%" Resize="TextAreaResize.Vertical" />
+                                    </FluentGridItem>
+                                </FluentGrid>
+                            </FluentCard>
+                            @if (IsSuggestedItemIdConflict)
                             {
-                                <dl class="linked-item-details">
-                                    <dt>@L["Fields.ItemId"]</dt><dd>@currentSong.ItemId</dd>
-                                </dl>
-                                <p class="section-hint">@L["Editor.LinkedItemMissingHint"]</p>
+                                <FluentMessageBar Title='@L["Editor.SongItemIdConflict", SongIdForItem, songItemIdInput ?? 0]' Intent="MessageBarIntent.Warning" />
+                            }
+
+                        
+                            @* 商品 *@
+                            <FluentDivider class="song-section-divider" />
+                            <div class="section-title-row">
+                                <h4 class="mb-1">@L["Editor.SongProducts"]</h4>
+                                <FluentButton Appearance="ButtonAppearance.Primary" OnClick="AddSongProduct"
+                                              IconStart="@(new Icons.Regular.Size20.Add())">@L["Editor.AddSongProduct"]</FluentButton>
+                                @if (!songProductDrafts.Any(product => !IsSongProductMarkedForDeletion(product)))
+                                {
+                                    <FluentButton Appearance="ButtonAppearance.Primary" OnClick="CreateStandardSongProducts"
+                                                  IconStart="@(new Icons.Regular.Size20.Add())">@L["Editor.CreateStandardSongProducts"]</FluentButton>
+                                }
+                            </div>
+                            @if (songProductDrafts.Count == 0)
+                            {
+                                <FluentMessageBar Title='@L["Editor.NoSongProducts"]' Intent="MessageBarIntent.Info" />
                             }
                             else
                             {
-                                <p class="section-hint">@L["Editor.NoGameItemSelected"]</p>
+                                <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Stretch" VerticalGap="12" class="song-product-cards">
+                                    @foreach (var product in songProductDrafts)
+                                    {
+                                        <FluentCard class="@SongProductCardClass(product)" Padding="Padding.All4">
+                                            <div class="song-related-card-heading">
+                                                <h4>@L["Editor.SongProductCardTitle", GetSongProductId(product), songItemIdInput ?? 0]</h4>
+                                                @if (IsSongProductMarkedForDeletion(product))
+                                                {
+                                                    <FluentButton Appearance="ButtonAppearance.Default" Size="ButtonSize.Small"
+                                                                  OnClick="() => RestoreSongProduct(product)">@L["Editor.RestoreSongProduct"]</FluentButton>
+                                                }
+                                                else
+                                                {
+                                                    <FluentButton Appearance="ButtonAppearance.Default" Size="ButtonSize.Small"
+                                                                  IconStart="@(new Icons.Regular.Size20.Delete())"
+                                                                  Color="var(--error)"
+                                                                  OnClick="() => RequestDeleteSongProductAsync(product)">@L["Common.Delete"]</FluentButton>
+                                                }
+                                            </div>
+                                            @if (IsSongProductMarkedForDeletion(product))
+                                            {
+                                                <FluentMessageBar Title='@L["Editor.SongProductPendingDelete"]' Intent="MessageBarIntent.Warning" />
+                                            }
+                                            <FluentGrid Spacing="1">
+                                                <FluentGridItem Xs="12" Sm="6" Md="3">
+                                                    <FluentTextInput Value="@GetSongProductId(product)"
+                                                                     ValueChanged="@(value => SetSongProductId(product, value))"
+                                                                     Label='@L["Fields.ProductId"]'
+                                                                     Disabled="@IsSongProductMarkedForDeletion(product)" Width="100%" />
+                                                </FluentGridItem>
+                                                <FluentGridItem Xs="12" Sm="6" Md="3">
+                                                    <FluentTextInput Value="@(songItemIdInput?.ToString() ?? string.Empty)" Label='@L["Fields.ItemId"]' ReadOnly="true" Width="100%" />
+                                                </FluentGridItem>
+                                                <FluentGridItem Xs="12" Sm="6" Md="3">
+                                                    <FluentSelect TOption="string" TValue="string" Items="@ProductTypeOptions"
+                                                                  Value="@GetProductTypeOption(product)"
+                                                                  ValueChanged="@(value => SetProductTypeOption(product, value))"
+                                                                  Disabled="@IsSongProductMarkedForDeletion(product)"
+                                                                  Label='@L["Fields.ProductType"]' Width="100%" />
+                                                </FluentGridItem>
+                                                <FluentGridItem HiddenWhen="GridItemHidden.Xs" Sm="6" Md="3">
+                                                </FluentGridItem>
+                                                <FluentGridItem Xs="12" Sm="3">
+                                                    <FluentTextInput @bind-Value="product.PlatformProductId" Label='@L["Fields.PlatformProductId"]'
+                                                                     Disabled="@IsSongProductMarkedForDeletion(product)" Width="100%" />
+                                                </FluentGridItem>
+                                                <FluentGridItem Xs="12" Sm="9">
+                                                    <FluentTextInput @bind-Value="product.StoreProductId" Label='@L["Fields.StoreProductId"]' Width="100%"
+                                                                     Disabled="@IsSongProductMarkedForDeletion(product)" />
+                                                </FluentGridItem>
+                                                <FluentGridItem Xs="12" Sm="6" Md="3">
+                                                    <FluentTextInput @bind-Value="product.CostGamePoint" Label='@L["Fields.CostGamePoint"]' Disabled="@IsSongProductMarkedForDeletion(product)" Width="100%" />
+                                                </FluentGridItem>
+                                                <FluentGridItem Xs="12" Sm="6" Md="3">
+                                                    <FluentTextInput @bind-Value="product.CostGameCash" Label='@L["Fields.CostGameCash"]' Disabled="@IsSongProductMarkedForDeletion(product)" Width="100%" />
+                                                </FluentGridItem>
+                                                <FluentGridItem Xs="12" Sm="6" Md="3">
+                                                    <FluentSelect TOption="string" TValue="string" Items="@ProductStatusOptions"
+                                                                  Value="@GetProductStatusOption(product)"
+                                                                  ValueChanged="@(value => SetProductStatusOption(product, value))"
+                                                                  Disabled="@IsSongProductMarkedForDeletion(product)"
+                                                                  Label='@L["Fields.Status"]' Width="100%" />
+                                                </FluentGridItem>
+
+                                                <FluentGridItem HiddenWhen="GridItemHidden.Sm" Md="3">
+                                                </FluentGridItem>
+                                            </FluentGrid>
+                                            <FluentGrid Spacing="1" class="song-product-date-row">
+                                                <FluentGridItem Xs="12" Sm="6">
+                                                    <FluentTextInput @bind-Value="product.SaleStartDate" Label='@L["Fields.SaleStartDate"]' Disabled="@IsSongProductMarkedForDeletion(product)" Width="100%" />
+                                                </FluentGridItem>
+                                                <FluentGridItem Xs="12" Sm="6">
+                                                    <FluentTextInput @bind-Value="product.SaleEndDate" Label='@L["Fields.SaleEndDate"]' Disabled="@IsSongProductMarkedForDeletion(product)" Width="100%" />
+                                                </FluentGridItem>
+                                            </FluentGrid>
+                                        </FluentCard>
+                                    }
+                                </FluentStack>
                             }
                         }
-                    </div>
-                </section>
+                    </section>
 
-                @if (linkedItemDraft is not null)
-                {
-                    <ItemDataFields Content="@linkedItemDraft"
-                                    ShowItemId="true"
-                                    ItemId="@linkedItemDraft.Id"
-                                    IsItemIdReadOnly="true"
-                                    IsItemIdRequired="true" />
-                }
-
-                @* ════════════════════════════════════════════
+                    @* ════════════════════════════════════════════
                    Row 3: Descriptions (multi-language, full width)
                    ════════════════════════════════════════════ *@
-                <section>
-                    <h2 class="section-heading">@L["Editor.LocalizedDescriptions"]</h2>
-                    <div class="section-inline-control">
-                        <FluentSwitch @bind-Value="syncOriginalText" Label='@L["Editor.SyncAllLanguages"]' />
-                    </div>
-                    <p class="section-hint">@(syncOriginalText ? L["Editor.SyncAllLanguagesHint"] : L["Editor.DescriptionsHint"])</p>
-                    @if (!syncOriginalText)
-                    {
-                        <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Stretch">
-                            @foreach (var lang in DefaultLanguages)
-                            {
-                                var loc = GetOrCreateLocalization(lang);
-                                <div>
-                                    <h3 class="lang-heading">@LanguageLabel(lang)</h3>
-                                    <FluentGrid Spacing="1">
-                                        <FluentGridItem Xs="12" Sm="6" Md="4" Lg="2">
-                                            <FluentTextInput style="width: 100%;" @bind-Value="loc.FullName" Label='@L["Fields.FullName"]' />
-                                        </FluentGridItem>
-                                        <FluentGridItem Xs="12" Sm="6" Md="4" Lg="2">
-                                            <FluentTextInput style="width: 100%;" @bind-Value="loc.Genre" Label='@L["Fields.Genre"]' />
-                                        </FluentGridItem>
-                                        <FluentGridItem Xs="12" Sm="6" Md="4" Lg="2">
-                                            <FluentTextInput style="width: 100%;" @bind-Value="loc.ArtistName" Label='@L["Fields.Artist"]' />
-                                        </FluentGridItem>
-                                        <FluentGridItem Xs="12" Sm="6" Md="4" Lg="2">
-                                            <FluentTextInput style="width: 100%;" @bind-Value="loc.ComposedBy" Label='@L["Fields.Composer"]' />
-                                        </FluentGridItem>
-                                        <FluentGridItem Xs="12" Sm="6" Md="4" Lg="2">
-                                            <FluentTextInput style="width: 100%;" @bind-Value="loc.Singer" Label='@L["Fields.Singer"]' />
-                                        </FluentGridItem>
-                                        <FluentGridItem Xs="12" Sm="6" Md="4" Lg="2">
-                                            <FluentTextInput style="width: 100%;" @bind-Value="loc.FeatBy" Label='@L["Fields.FeaturedArtist"]' />
-                                        </FluentGridItem>
-                                        <FluentGridItem Xs="12" Sm="6" Md="4" Lg="2">
-                                            <FluentTextInput style="width: 100%;" @bind-Value="loc.ArrangedBy" Label='@L["Fields.Arranger"]' />
-                                        </FluentGridItem>
-                                        <FluentGridItem Xs="12" Sm="6" Md="4" Lg="2">
-                                            <FluentTextInput style="width: 100%;" @bind-Value="loc.VisualizedBy" Label='@L["Fields.Visualizer"]' />
-                                        </FluentGridItem>
-                                    </FluentGrid>
-                                </div>
-                            }
-                        </FluentStack>
-                    }
-                </section>
+                    <FluentDivider class="song-section-divider" />
+                    <section class="song-localized-section">
+                        <h4 class="mb-1">@L["Editor.LocalizedDescriptions"]</h4>
+                        <div class="section-inline-control">
+                            <FluentSwitch @bind-Value="syncOriginalText" Label='@L["Editor.SyncAllLanguages"]' />
+                        </div>
+                        <p class="section-hint">@(syncOriginalText ? L["Editor.SyncAllLanguagesHint"] : L["Editor.DescriptionsHint"])</p>
+                        @if (!syncOriginalText)
+                        {
+                            <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Stretch">
+                                @foreach (var lang in DefaultLanguages)
+                                {
+                                    var loc = GetOrCreateLocalization(lang);
+                                    <div>
+                                        <h3 class="lang-heading">@LanguageLabel(lang)</h3>
+                                        <FluentGrid Spacing="1">
+                                            <FluentGridItem Xs="12" Sm="6" Md="4" Lg="2">
+                                                <FluentTextInput style="width: 100%;" @bind-Value="loc.FullName" Label='@L["Fields.FullName"]' />
+                                            </FluentGridItem>
+                                            <FluentGridItem Xs="12" Sm="6" Md="4" Lg="2">
+                                                <FluentTextInput style="width: 100%;" @bind-Value="loc.Genre" Label='@L["Fields.Genre"]' />
+                                            </FluentGridItem>
+                                            <FluentGridItem Xs="12" Sm="6" Md="4" Lg="2">
+                                                <FluentTextInput style="width: 100%;" @bind-Value="loc.ArtistName" Label='@L["Fields.Artist"]' />
+                                            </FluentGridItem>
+                                            <FluentGridItem Xs="12" Sm="6" Md="4" Lg="2">
+                                                <FluentTextInput style="width: 100%;" @bind-Value="loc.ComposedBy" Label='@L["Fields.Composer"]' />
+                                            </FluentGridItem>
+                                            <FluentGridItem Xs="12" Sm="6" Md="4" Lg="2">
+                                                <FluentTextInput style="width: 100%;" @bind-Value="loc.Singer" Label='@L["Fields.Singer"]' />
+                                            </FluentGridItem>
+                                            <FluentGridItem Xs="12" Sm="6" Md="4" Lg="2">
+                                                <FluentTextInput style="width: 100%;" @bind-Value="loc.FeatBy" Label='@L["Fields.FeaturedArtist"]' />
+                                            </FluentGridItem>
+                                            <FluentGridItem Xs="12" Sm="6" Md="4" Lg="2">
+                                                <FluentTextInput style="width: 100%;" @bind-Value="loc.ArrangedBy" Label='@L["Fields.Arranger"]' />
+                                            </FluentGridItem>
+                                            <FluentGridItem Xs="12" Sm="6" Md="4" Lg="2">
+                                                <FluentTextInput style="width: 100%;" @bind-Value="loc.VisualizedBy" Label='@L["Fields.Visualizer"]' />
+                                            </FluentGridItem>
+                                        </FluentGrid>
+                                    </div>
+                                }
+                            </FluentStack>
+                        }
+                    </section>
 
-                @* ════════════════════════════════════════════
+                    @* ════════════════════════════════════════════
                    Row 4: Patterns (full width, DataGrid + Dialog)
                    ════════════════════════════════════════════ *@
-                <section>
-                    <div class="table-header">
-                        <h2 class="section-heading">@L["Editor.Patterns"]</h2>
-                        <FluentButton Appearance="ButtonAppearance.Primary"
-                                      IconStart="@(new Icons.Regular.Size20.Add())"
-                                      OnClick="OpenAddPatternDialog">@L["Editor.AddPattern"]</FluentButton>
-                    </div>
-
-                    @if (currentSong?.Patterns.Count > 0)
-                    {
-                        <div class="grid-scroll">
-                            <FluentDataGrid Items="@SortedPatterns.AsQueryable()" TGridItem="SongPattern"
-                                            ShowHover="true" ResizableColumns="true">
-                                <PropertyColumn Property="@(p => p.PatternId)" Title='@L["Fields.PatternId"]' Sortable="true" />
-                                <TemplateColumn Title='@L["Fields.ChartLine"]' Context="p">
-                                    @FormatChartLine(p.Line)
-                                </TemplateColumn>
-                                <TemplateColumn Title='@L["Fields.ChartDifficulty"]' Context="p">
-                                    @FormatChartDifficulty(p.Signature)
-                                </TemplateColumn>
-                                <PropertyColumn Property="@(p => p.Difficulty)" Title='@L["Fields.StarRating"]' />
-                                <TemplateColumn Title='@L["Fields.PointType"]' Context="p">
-                                    @FormatPointType(p.PointType)
-                                </TemplateColumn>
-                                <PropertyColumn Property="@(p => p.PointValue)" Title='@L["Fields.PointValue"]' />
-                                <TemplateColumn Title='@L["Fields.PatternEnabled"]' Context="p">
-                                    @(p.Flg == "Y" ? "✓" : "")
-                                </TemplateColumn>
-                                <TemplateColumn Title='@L["Common.Actions"]' Context="p">
-                                    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="4">
-                                        <FluentButton IconStart="@(new Icons.Regular.Size20.Edit())"
-                                                      Appearance="ButtonAppearance.Default" Size="ButtonSize.Small"
-                                                      Title='@L["Common.Edit"]'
-                                                      OnClick="() => OpenEditPatternDialog(p)" />
-                                        <FluentButton IconStart="@(new Icons.Regular.Size20.Delete())"
-                                                      Appearance="ButtonAppearance.Default" Size="ButtonSize.Small"
-                                                      Title='@L["Common.Delete"]'
-                                                      OnClick="() => RemovePatternAsync(p)" />
-                                    </FluentStack>
-                                </TemplateColumn>
-                            </FluentDataGrid>
+                    <section>
+                        <div class="table-header">
+                            <h4 class="mb-1">@L["Editor.Patterns"]</h4>
+                            <FluentButton Appearance="ButtonAppearance.Primary"
+                                          IconStart="@(new Icons.Regular.Size20.Add())"
+                                          OnClick="OpenAddPatternDialog">@L["Editor.AddPattern"]</FluentButton>
                         </div>
-                    }
-                    else
-                    {
-                        <FluentMessageBar Title='@L["Editor.NoPatterns"]' Intent="MessageBarIntent.Info" />
-                    }
-                </section>
+
+                        @if (currentSong?.Patterns.Count > 0)
+                        {
+                            <div class="grid-scroll">
+                                <FluentDataGrid Items="@SortedPatterns.AsQueryable()" TGridItem="SongPattern"
+                                                ShowHover="true" ResizableColumns="true">
+                                    <PropertyColumn Property="@(p => p.PatternId)" Title='@L["Fields.PatternId"]' Sortable="true" />
+                                    <TemplateColumn Title='@L["Fields.ChartLine"]' Context="p">
+                                        @FormatChartLine(p.Line)
+                                    </TemplateColumn>
+                                    <TemplateColumn Title='@L["Fields.ChartDifficulty"]' Context="p">
+                                        @FormatChartDifficulty(p.Signature)
+                                    </TemplateColumn>
+                                    <PropertyColumn Property="@(p => p.Difficulty)" Title='@L["Fields.StarRating"]' />
+                                    <TemplateColumn Title='@L["Fields.PointType"]' Context="p">
+                                        @FormatPointType(p.PointType)
+                                    </TemplateColumn>
+                                    <PropertyColumn Property="@(p => p.PointValue)" Title='@L["Fields.PointValue"]' />
+                                    <TemplateColumn Title='@L["Fields.PatternEnabled"]' Context="p">
+                                        @(p.Flg == "Y" ? "✓" : "")
+                                    </TemplateColumn>
+                                    <TemplateColumn Title='@L["Common.Actions"]' Context="p">
+                                        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="4">
+                                            <FluentButton IconStart="@(new Icons.Regular.Size20.Edit())"
+                                                          Size="ButtonSize.Small"
+                                                          Title='@L["Common.Edit"]'
+                                                          OnClick="() => OpenEditPatternDialog(p)">
+                                                @L["Common.Edit"]
+                                            </FluentButton>
+                                            <FluentButton IconStart="@(new Icons.Regular.Size20.Delete())"
+                                                          Size="ButtonSize.Small"
+                                                          Title='@L["Common.Delete"]'
+                                                          OnClick="() => RemovePatternAsync(p)" />
+                                        </FluentStack>
+                                    </TemplateColumn>
+                                </FluentDataGrid>
+                            </div>
+                        }
+                        else
+                        {
+                            <FluentMessageBar Title='@L["Editor.NoPatterns"]' Intent="MessageBarIntent.Info" />
+                        }
+                    </section>
 
                 </FluentStack>
             </div>
@@ -262,14 +392,18 @@
     private string? loadedSongId;
     private Song? currentSong;
     private string songIdInput = string.Empty;
-    private bool hasExplicitLinkedItemChoice;
     private string message = string.Empty;
     private string errorMessage = string.Empty;
     private Exception? saveException;
     private bool isBusy;
     private bool _syncOriginalText = true;
-    private Item? linkedItemDraft;
-    private Item? selectedLinkedItem;
+    private Item? songItemDraft;
+    private int? songItemIdInput;
+    private string? originalSongItemId;
+    private bool itemIdWasConflictSuggested;
+    private List<Product> songProductDrafts = [];
+    private Dictionary<string, string> songProductIdDrafts = new(StringComparer.OrdinalIgnoreCase);
+    private HashSet<string> pendingSongProductDeletionIds = new(StringComparer.OrdinalIgnoreCase);
 
     private bool syncOriginalText
     {
@@ -304,9 +438,8 @@
     private PatchPackage? _lastPackage;
     private string? _lastPlatform;
     private IReadOnlyList<Song> _catalog = [];
-    private PatchPackage? _lastItemPackage;
-    private string? _lastItemPlatform;
-    private IReadOnlyList<Item> _itemOptions = [];
+    private string[] ProductTypeOptions => BuildProductTypeOptions();
+    private string[] ProductStatusOptions => BuildProductStatusOptions();
 
     private IReadOnlyList<Song> Catalog
     {
@@ -339,18 +472,26 @@
             loadedSongId = SongId;
             currentSong = null;
             songIdInput = string.Empty;
-            hasExplicitLinkedItemChoice = false;
-            linkedItemDraft = null;
-            selectedLinkedItem = null;
+            songItemDraft = null;
+            songItemIdInput = null;
+            originalSongItemId = null;
+            songProductDrafts = [];
+            songProductIdDrafts.Clear();
+            pendingSongProductDeletionIds.Clear();
+            itemIdWasConflictSuggested = false;
         }
 
         if (DraftStore.TryGet<SongDraft>(RecoveryKey, out var recovered) && recovered is not null)
         {
             currentSong = recovered.Song;
             songIdInput = recovered.SongIdInput;
-            hasExplicitLinkedItemChoice = recovered.HasExplicitLinkedItemChoice;
-            linkedItemDraft = recovered.LinkedItemDraft;
-            selectedLinkedItem = recovered.SelectedLinkedItem;
+            songItemDraft = recovered.SongItemDraft;
+            songItemIdInput = recovered.SongItemIdInput;
+            originalSongItemId = recovered.OriginalSongItemId;
+            songProductDrafts = recovered.SongProductDrafts;
+            songProductIdDrafts = recovered.SongProductIdDrafts;
+            pendingSongProductDeletionIds = recovered.PendingSongProductDeletionIds;
+            itemIdWasConflictSuggested = recovered.ItemIdWasConflictSuggested;
             _syncOriginalText = recovered.SyncOriginalText;
             return;
         }
@@ -363,10 +504,10 @@
         {
             var source = Catalog.FirstOrDefault(s => s.Id == id);
             currentSong = source is null ? null : SongEditSvc.CreateDraft(source);
-            selectedLinkedItem = currentSong is null
-                ? null
-                : AvailableGameItems.FirstOrDefault(item => item.Id.Equals(currentSong.ItemId.ToString(System.Globalization.CultureInfo.InvariantCulture), StringComparison.OrdinalIgnoreCase));
+            LoadSongCommerceDrafts();
         }
+        else if (IsCreate && songItemDraft is null)
+            songProductDrafts = [];
     }
 
     protected override void OnAfterRender(bool firstRender)
@@ -376,11 +517,40 @@
             DraftStore.Set(RecoveryKey, new SongDraft(
                 currentSong,
                 songIdInput,
-                hasExplicitLinkedItemChoice,
-                linkedItemDraft,
-                selectedLinkedItem,
+                songItemDraft,
+                songItemIdInput,
+                originalSongItemId,
+                songProductDrafts,
+                songProductIdDrafts,
+                pendingSongProductDeletionIds,
+                itemIdWasConflictSuggested,
                 _syncOriginalText));
         }
+    }
+
+    private void LoadSongCommerceDrafts()
+    {
+        songItemDraft = null;
+        songItemIdInput = null;
+        originalSongItemId = null;
+        songProductDrafts = [];
+        songProductIdDrafts.Clear();
+        if (currentSong is null || State.CurrentPackage is null || currentSong.ItemId <= 0) return;
+
+        var itemId = currentSong.ItemId.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        var tables = State.CurrentPackage.GetPlatformTables(State.SelectedExportPlatform);
+        var item = tables.Items.FirstOrDefault(candidate => candidate.Id == itemId
+            && candidate.ItemType.Equals("S", StringComparison.OrdinalIgnoreCase));
+        if (item is null) return;
+
+        songItemDraft = ItemEditSvc.CreateDraft(item);
+        songItemIdInput = currentSong.ItemId;
+        originalSongItemId = item.Id;
+        songProductDrafts = tables.Products
+            .Where(product => product.ItemId == item.Id)
+            .Select(product => ProductEditSvc.CreateDraft(product))
+            .ToList();
+        ResetSongProductIds();
     }
 
     private SongLocalization GetOrCreateLocalization(string lang)
@@ -393,43 +563,168 @@
         return loc;
     }
 
-    private IReadOnlyList<Item> AvailableGameItems
-    {
-        get
-        {
-            if (ReferenceEquals(State.CurrentPackage, _lastItemPackage)
-                && string.Equals(State.SelectedExportPlatform, _lastItemPlatform, StringComparison.OrdinalIgnoreCase))
-            {
-                return _itemOptions;
-            }
-
-            _lastItemPackage = State.CurrentPackage;
-            _lastItemPlatform = State.SelectedExportPlatform;
-            _itemOptions = State.CurrentPackage is null
-                ? []
-                : ItemCatalog.BuildCatalog(State.CurrentPackage, State.SelectedExportPlatform);
-            return _itemOptions;
-        }
-    }
-
-    private Item? SelectedLinkedItem => linkedItemDraft is null ? selectedLinkedItem : null;
-
-    private string CurrentItemLanguage => Language.CurrentCulture.Name == "zh-CN" ? "CN" : "US";
-    private string ItemDisplayName(Item item)
-        => ItemCatalog.GetDisplayName(item, CurrentItemLanguage);
-
-    private Task SetSongIdInput(string? value)
+    private void SetSongIdInput(string? value)
     {
         songIdInput = value ?? string.Empty;
-        if (!hasExplicitLinkedItemChoice && linkedItemDraft is null
-            && int.TryParse(songIdInput, out var songId))
-        {
-            currentSong!.ItemId = songId;
-            selectedLinkedItem = AvailableGameItems.FirstOrDefault(item => item.Id.Equals(songIdInput, StringComparison.OrdinalIgnoreCase));
-        }
-
-        return Task.CompletedTask;
     }
+
+    private bool CanCreateSongItem => songItemDraft is null
+        && (IsCreate ? int.TryParse(songIdInput, out var createId) && createId > 0 : currentSong is not null);
+
+    private string SongIdForItem => IsCreate ? songIdInput : currentSong?.Id.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty;
+
+    private bool IsSuggestedItemIdConflict => itemIdWasConflictSuggested
+        && int.TryParse(SongIdForItem, out var sourceId)
+        && songItemIdInput != sourceId;
+
+    private void CreateSongItem()
+    {
+        if (State.CurrentPackage is null || currentSong is null) return;
+        var tables = State.CurrentPackage.GetPlatformTables(State.SelectedExportPlatform);
+        var desiredId = currentSong.ItemId > 0 ? currentSong.ItemId : (IsCreate && int.TryParse(songIdInput, out var createId) ? createId : currentSong.Id);
+        var conflict = tables.Items.Any(item => item.Id == desiredId.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        var id = conflict
+            ? NextNumericId(tables.Items.Select(item => item.Id))
+            : desiredId;
+        if (id <= 0) id = NextNumericId(tables.Items.Select(item => item.Id));
+
+        songItemIdInput = id;
+        itemIdWasConflictSuggested = conflict;
+        songItemDraft = new Item
+        {
+            Id = id.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            ItemName = currentSong.Name,
+            ImgUrl1 = string.Empty,
+            ImgUrl2 = string.Empty,
+            Description = string.Empty,
+            RepeatCount = "0",
+            ItemType = "S",
+            LimitMinute = "0",
+            Status = "N",
+            BuyLevel = "0",
+            BuyLimitCount = "1",
+            BuyLimitType = "F",
+            Summary = string.IsNullOrWhiteSpace(currentSong.FullName) ? currentSong.Name : currentSong.FullName,
+            Update = "0"
+        };
+        originalSongItemId = null;
+        songProductDrafts = [];
+        songProductIdDrafts.Clear();
+    }
+
+    private void AddSongProduct()
+    {
+        if (State.CurrentPackage is null || songItemDraft is null || songItemIdInput is not > 0) return;
+        var tables = State.CurrentPackage.GetPlatformTables(State.SelectedExportPlatform);
+        var productId = NextNumericId(tables.Products.Select(product => product.Id).Concat(songProductDrafts.Select(product => product.Id)));
+        var platformProductId = NextNumericId(tables.Products.Select(product => product.PlatformProductId).Concat(songProductDrafts.Select(product => product.PlatformProductId)));
+        var product = CreateSongProduct(productId, platformProductId, "com.neowizInternet.game.dmtq.", songItemDraft.ItemName);
+        songProductDrafts.Add(product);
+        songProductIdDrafts[product.Id] = product.Id;
+    }
+
+    private void CreateStandardSongProducts()
+    {
+        if (State.CurrentPackage is null || songItemDraft is null || songItemIdInput is not > 0
+            || songProductDrafts.Any(product => !IsSongProductMarkedForDeletion(product))) return;
+        var tables = State.CurrentPackage.GetPlatformTables(State.SelectedExportPlatform);
+        var nextProductId = NextNumericId(tables.Products.Select(product => product.Id));
+        var nextPlatformProductId = NextNumericId(tables.Products.Select(product => product.PlatformProductId));
+        songProductDrafts =
+        [
+            CreateSongProduct(nextProductId, nextPlatformProductId, "com.neowizInternet.game.dmtq.", songItemDraft.ItemName),
+            CreateSongProduct(nextProductId + 1, nextPlatformProductId + 1, "com.neowizInternet.game.dmtq_a.", songItemDraft.ItemName)
+        ];
+        ResetSongProductIds();
+    }
+
+    private void ResetSongProductIds()
+        => songProductIdDrafts = songProductDrafts.ToDictionary(product => product.Id, product => product.Id, StringComparer.OrdinalIgnoreCase);
+
+    private string GetSongProductId(Product product)
+        => songProductIdDrafts.TryGetValue(product.Id, out var value) ? value : product.Id;
+
+    private void SetSongProductId(Product product, string? value)
+        => songProductIdDrafts[product.Id] = value ?? string.Empty;
+
+    private bool IsSongProductMarkedForDeletion(Product product)
+        => pendingSongProductDeletionIds.Contains(product.Id);
+
+    private string SongProductCardClass(Product product)
+        => IsSongProductMarkedForDeletion(product)
+            ? "song-product-card song-product-card-pending"
+            : "song-product-card";
+
+    private async Task RequestDeleteSongProductAsync(Product product)
+    {
+        var result = await DialogService.ShowConfirmationAsync(
+            message: L["Editor.DeleteSongProductConfirm", GetSongProductId(product)].Value,
+            title: L["Editor.SongProducts"].Value,
+            primaryButton: L["Common.Delete"].Value,
+            secondaryButton: L["Common.Cancel"].Value);
+        if (result.Cancelled) return;
+
+        pendingSongProductDeletionIds.Add(product.Id);
+    }
+
+    private void RestoreSongProduct(Product product)
+        => pendingSongProductDeletionIds.Remove(product.Id);
+
+    private static Product CreateSongProduct(int productId, int platformProductId, string skuPrefix, string itemName)
+    {
+        var skuName = string.Concat(itemName.Trim().ToLowerInvariant().Where(char.IsLetterOrDigit));
+        return new Product
+        {
+            Id = productId.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            ItemId = string.Empty,
+            PlatformProductId = platformProductId.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            StoreProductId = skuPrefix + skuName,
+            ProductType = "I",
+            CostGamePoint = "0",
+            CostGameCash = "20",
+            Status = "N",
+            SaleStartDate = string.Empty,
+            SaleEndDate = string.Empty,
+            Update = "0"
+        };
+    }
+
+    private static int NextNumericId(IEnumerable<string> ids)
+        => ids.Select(id => int.TryParse(id, out var value) ? value : 0).DefaultIfEmpty(0).Max() + 1;
+
+    private string[] BuildProductTypeOptions()
+    {
+        var observed = State.CurrentPackage?.GetPlatformTables(State.SelectedExportPlatform).Products
+            .Select(product => product.ProductType) ?? [];
+        var types = observed.Append("I").Append("ticket")
+            .Where(type => !string.IsNullOrWhiteSpace(type))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(type => type, StringComparer.OrdinalIgnoreCase);
+        return [.. new[] { $" — {L["Options.EffectTypeNone"].Value}" }, .. types.Select(type => $"{type} — {ProductTypeDisplay.GetName(type, L)}")];
+    }
+
+    private string GetProductTypeOption(Product product)
+        => ProductTypeOptions.FirstOrDefault(option => option.StartsWith(product.ProductType + " — ", StringComparison.OrdinalIgnoreCase))
+           ?? $"{product.ProductType} — {L["Fields.ExistingValue"].Value}";
+
+    private void SetProductTypeOption(Product product, string? option)
+        => product.ProductType = string.IsNullOrWhiteSpace(option) ? string.Empty : option.Split(" — ", 2, StringSplitOptions.None)[0];
+
+    private string[] BuildProductStatusOptions() =>
+    [
+        $" — {L["Options.EffectTypeNone"].Value}",
+        $"N — {L["Options.ProductStatusNone"].Value}",
+        $"F — {L["Options.ProductStatusNew"].Value}",
+        $"H — {L["Options.ProductStatusHot"].Value}",
+        $"B — {L["Options.ProductStatusBest"].Value}"
+    ];
+
+    private string GetProductStatusOption(Product product)
+        => ProductStatusOptions.FirstOrDefault(option => option.StartsWith(product.Status + " — ", StringComparison.OrdinalIgnoreCase))
+           ?? $"{product.Status} — {L["Fields.ExistingValue"].Value}";
+
+    private void SetProductStatusOption(Product product, string? option)
+        => product.Status = string.IsNullOrWhiteSpace(option) ? string.Empty : option.Split(" — ", 2, StringSplitOptions.None)[0];
 
     private string LanguageLabel(string language) => L[$"Editor.Language.{language}"].Value;
 
@@ -456,64 +751,6 @@
         1 => $"1 — {L["Options.PointMax"].Value}",
         _ => $"{value} — {L["Fields.ExistingValue"].Value}"
     };
-
-    private bool TryGetSuggestedItemId(out string itemId)
-    {
-        var existingSongItemId = currentSong is null
-            ? string.Empty
-            : currentSong.ItemId > 0
-                ? currentSong.ItemId.ToString(System.Globalization.CultureInfo.InvariantCulture)
-                : currentSong.Id.ToString(System.Globalization.CultureInfo.InvariantCulture);
-        itemId = linkedItemDraft?.Id ?? SelectedLinkedItem?.Id ?? (IsCreate ? songIdInput : existingSongItemId);
-        return int.TryParse(itemId, out var parsedId) && parsedId > 0;
-    }
-
-    private string SuggestedLinkedItemName
-        => !string.IsNullOrWhiteSpace(currentSong?.FullName) ? currentSong.FullName : currentSong?.Name ?? string.Empty;
-
-    private async Task OpenLinkedItemPickerAsync()
-    {
-        if (currentSong is null)
-            return;
-
-        TryGetSuggestedItemId(out var suggestedId);
-        var pickerState = new LinkedItemPickerState
-        {
-            Items = AvailableGameItems,
-            ItemId = suggestedId,
-            ItemName = linkedItemDraft?.ItemName ?? SuggestedLinkedItemName,
-            Summary = linkedItemDraft?.Summary ?? string.Empty,
-            IsCreateMode = selectedLinkedItem is null && linkedItemDraft is not null
-        };
-
-        await DialogService.ShowDialogAsync<LinkedItemPickerDialog>(options =>
-        {
-            options.Header.Title = L["Editor.ChangeOrCreateLinkedItem"].Value;
-            options.Footer.PrimaryAction.Visible = false;
-            options.Footer.SecondaryAction.Label = L["Common.Cancel"].Value;
-            options.Width = "800px";
-            options.Parameters = new Dictionary<string, object?>
-            {
-                [nameof(LinkedItemPickerDialog.State)] = pickerState
-            };
-        });
-
-        if (!pickerState.Accepted || pickerState.ResultItem is null)
-            return;
-
-        hasExplicitLinkedItemChoice = true;
-        if (pickerState.ResultIsNew)
-        {
-            linkedItemDraft = pickerState.ResultItem;
-            selectedLinkedItem = null;
-        }
-        else
-        {
-            linkedItemDraft = null;
-            selectedLinkedItem = pickerState.ResultItem;
-        }
-        currentSong.ItemId = int.Parse(pickerState.ResultItem.Id, System.Globalization.CultureInfo.InvariantCulture);
-    }
 
     private void SetOriginalField(Action<Song> update)
     {
@@ -557,7 +794,6 @@
         errorMessage = string.Empty;
         saveException = null;
 
-        var linkedItemAdded = false;
         try
         {
             if (IsCreate)
@@ -567,61 +803,15 @@
                     errorMessage = L["Editor.SongIdRequired"].Value;
                     return;
                 }
-                var linkedItem = SelectedLinkedItem;
-                var linkedItemId = linkedItemDraft?.Id ?? linkedItem?.Id;
-                if (int.TryParse(linkedItemId, out var parsedLinkedItemId) && parsedLinkedItemId > 0)
-                {
-                    currentSong!.ItemId = parsedLinkedItemId;
-                }
-                else
-                {
-                    currentSong!.ItemId = 0;
-                }
-                if (_syncOriginalText) SyncOriginalToAllLanguages();
-                var song = SongEditSvc.CreateDraft(currentSong, newId);
-                if (linkedItemDraft is not null)
-                    SongEditSvc.AddSongWithItem(State.CurrentPackage, song, linkedItemDraft, State.SelectedExportPlatform);
-                else
-                    SongEditSvc.AddSong(State.CurrentPackage, song, State.SelectedExportPlatform);
-                var wasDirty = State.IsDirty;
-                State.IsDirty = true;
-                try { await Workflow.SaveProjectAsync(); }
-                catch
-                {
-                    SongEditSvc.RemoveSong(State.CurrentPackage, song.Id, State.SelectedExportPlatform);
-                    if (linkedItemDraft is not null)
-                        ItemEditSvc.RemoveItem(State.CurrentPackage, song.ItemId.ToString(System.Globalization.CultureInfo.InvariantCulture), State.SelectedExportPlatform);
-                    State.IsDirty = wasDirty;
-                    throw;
-                }
+                var song = SongEditSvc.CreateDraft(currentSong!, newId);
+                await SaveSongAndCommerceAsync(song);
                 State.Diagnostics.Add($"Song added: {song.Id}");
                 _lastPackage = null;
                 NavigateBack();
             }
             else if (currentSong is not null)
             {
-                var linkedItem = SelectedLinkedItem;
-                var linkedItemId = linkedItemDraft?.Id ?? linkedItem?.Id;
-                if (int.TryParse(linkedItemId, out var parsedLinkedItemId) && parsedLinkedItemId > 0)
-                    currentSong.ItemId = parsedLinkedItemId;
-                if (_syncOriginalText) SyncOriginalToAllLanguages();
-                try
-                {
-                    if (linkedItemDraft is not null)
-                    {
-                        ItemEditSvc.AddItem(State.CurrentPackage, linkedItemDraft, State.SelectedExportPlatform);
-                        linkedItemAdded = true;
-                    }
-                    SongEditSvc.UpdateSong(State.CurrentPackage, currentSong, State.SelectedExportPlatform);
-                    State.IsDirty = true;
-                    await Workflow.SaveProjectAsync();
-                }
-                catch
-                {
-                    if (linkedItemAdded)
-                        ItemEditSvc.RemoveItem(State.CurrentPackage, linkedItemDraft!.Id, State.SelectedExportPlatform);
-                    throw;
-                }
+                await SaveSongAndCommerceAsync(currentSong);
                 _lastPackage = null;
                 State.Diagnostics.Add($"Song edited: {currentSong.Id}");
                 NavigateBack();
@@ -776,11 +966,130 @@
         finally { isBusy = false; }
     }
 
+    private async Task SaveSongAndCommerceAsync(Song song)
+    {
+        var package = State.CurrentPackage!;
+        var tables = package.GetPlatformTables(State.SelectedExportPlatform);
+        var wasDirty = State.IsDirty;
+        var oldSongs = tables.Songs.Select(existing => SongEditSvc.CreateDraft(existing)).ToList();
+        var oldItems = tables.Items.Select(existing => ItemEditSvc.CreateDraft(existing)).ToList();
+        var oldProducts = tables.Products.Select(existing => ProductEditSvc.CreateDraft(existing)).ToList();
+        var oldIngameItems = tables.IngameItems.Select(existing => new IngameItem
+        {
+            Id = existing.Id,
+            ItemType = existing.ItemType,
+            ItemLevel = existing.ItemLevel,
+            ProductId = existing.ProductId,
+            Update = existing.Update
+        }).ToList();
+
+        try
+        {
+            if (songItemDraft is not null)
+            {
+                if (songItemIdInput is not > 0)
+                    throw new InvalidOperationException(L["Editor.SongItemIdRequired"].Value);
+                var newItemId = songItemIdInput.Value.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                var conflictingItem = tables.Items.FirstOrDefault(item => item.Id == newItemId && item.Id != originalSongItemId);
+                if (conflictingItem is not null)
+                    throw new InvalidOperationException(L["Editor.SongItemIdTaken", newItemId].Value);
+                songItemDraft = ItemEditSvc.CreateDraft(songItemDraft, newItemId);
+                songItemDraft.ItemType = "S";
+                song.ItemId = songItemIdInput.Value;
+
+                if (originalSongItemId is not null && originalSongItemId != newItemId)
+                    tables.Items.RemoveAll(item => item.Id == originalSongItemId);
+                if (tables.Items.Any(item => item.Id == newItemId))
+                    ItemEditSvc.UpdateItem(package, songItemDraft, State.SelectedExportPlatform);
+                else
+                    ItemEditSvc.AddItem(package, songItemDraft, State.SelectedExportPlatform);
+
+                foreach (var productId in pendingSongProductDeletionIds)
+                {
+                    if (tables.Products.Any(existing => existing.Id.Equals(productId, StringComparison.OrdinalIgnoreCase)))
+                        ProductEditSvc.RemoveProduct(package, productId, State.SelectedExportPlatform);
+                }
+
+                var activeSongProducts = songProductDrafts
+                    .Where(productDraft => !IsSongProductMarkedForDeletion(productDraft))
+                    .ToList();
+                var requestedProductIds = activeSongProducts
+                    .Select(GetSongProductId)
+                    .Select(id => id.Trim())
+                    .ToArray();
+                if (requestedProductIds.Any(string.IsNullOrWhiteSpace))
+                    throw new InvalidOperationException(L["Editor.ProductIdRequired"].Value);
+                if (requestedProductIds.Distinct(StringComparer.OrdinalIgnoreCase).Count() != requestedProductIds.Length)
+                    throw new InvalidOperationException(L["Editor.SongProductIdDuplicate"].Value);
+
+                for (var index = 0; index < activeSongProducts.Count; index++)
+                {
+                    var productDraft = activeSongProducts[index];
+                    var oldProductId = productDraft.Id;
+                    var newProductId = requestedProductIds[index];
+                    var product = ProductEditSvc.CreateDraft(productDraft, newProductId);
+                    product.ItemId = newItemId;
+
+                    var existingProduct = tables.Products.FirstOrDefault(existing => existing.Id == oldProductId);
+                    if (existingProduct is not null && !oldProductId.Equals(newProductId, StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (tables.Products.Any(existing => existing.Id.Equals(newProductId, StringComparison.OrdinalIgnoreCase)))
+                            throw new InvalidOperationException(L["Editor.SongProductIdTaken", newProductId].Value);
+
+                        var movedIngameItems = tables.IngameItems
+                            .Where(item => item.ProductId.Equals(oldProductId, StringComparison.OrdinalIgnoreCase))
+                            .Select(item => new IngameItem
+                            {
+                                Id = item.Id,
+                                ItemType = item.ItemType,
+                                ItemLevel = item.ItemLevel,
+                                ProductId = newProductId,
+                                Update = item.Update
+                            })
+                            .ToList();
+                        tables.Products.Remove(existingProduct);
+                        tables.IngameItems.RemoveAll(item => item.ProductId.Equals(oldProductId, StringComparison.OrdinalIgnoreCase));
+                        ProductEditSvc.AddProduct(package, product, movedIngameItems, State.SelectedExportPlatform);
+                    }
+                    else if (existingProduct is not null)
+                        ProductEditSvc.UpdateProduct(package, product, State.SelectedExportPlatform);
+                    else
+                    {
+                        if (tables.Products.Any(existing => existing.Id.Equals(newProductId, StringComparison.OrdinalIgnoreCase)))
+                            throw new InvalidOperationException(L["Editor.SongProductIdTaken", newProductId].Value);
+                        ProductEditSvc.AddProduct(package, product, [], State.SelectedExportPlatform);
+                    }
+                }
+            }
+
+            if (IsCreate)
+                SongEditSvc.AddSong(package, SongEditSvc.CreateDraft(song), State.SelectedExportPlatform);
+            else
+                SongEditSvc.UpdateSong(package, song, State.SelectedExportPlatform);
+
+            State.IsDirty = true;
+            await Workflow.SaveProjectAsync();
+        }
+        catch
+        {
+            tables.Songs.Clear(); tables.Songs.AddRange(oldSongs);
+            tables.Items.Clear(); tables.Items.AddRange(oldItems);
+            tables.Products.Clear(); tables.Products.AddRange(oldProducts);
+            tables.IngameItems.Clear(); tables.IngameItems.AddRange(oldIngameItems);
+            State.IsDirty = wasDirty;
+            throw;
+        }
+    }
+
     private sealed record SongDraft(
         Song Song,
         string SongIdInput,
-        bool HasExplicitLinkedItemChoice,
-        Item? LinkedItemDraft,
-        Item? SelectedLinkedItem,
+        Item? SongItemDraft,
+        int? SongItemIdInput,
+        string? OriginalSongItemId,
+        List<Product> SongProductDrafts,
+        Dictionary<string, string> SongProductIdDrafts,
+        HashSet<string> PendingSongProductDeletionIds,
+        bool ItemIdWasConflictSuggested,
         bool SyncOriginalText);
 }

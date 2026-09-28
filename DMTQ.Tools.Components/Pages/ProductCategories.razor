@@ -68,8 +68,10 @@
                     @ProductPreview(category)
                 </TemplateColumn>
                 <TemplateColumn TGridItem="ProductCategorySummary" Title='@L["Lists.Actions"]' Width="9rem" MinWidth="9rem" Context="category">
-                    <FluentButton IconStart="@(new Icons.Regular.Size20.Edit())" Appearance="ButtonAppearance.Default"
-                                  OnClick="() => EditCategory(category.Id)" Title='@L["Common.Edit"]' />
+                    <FluentButton IconStart="@(new Icons.Regular.Size20.Edit())" Size="ButtonSize.Small"
+                                  OnClick="() => EditCategory(category.Id)" Title='@L["Common.Edit"]'>
+                        @L["Common.Edit"]
+                    </FluentButton>
                 </TemplateColumn>
             </Columns>
         </ProjectListShell>

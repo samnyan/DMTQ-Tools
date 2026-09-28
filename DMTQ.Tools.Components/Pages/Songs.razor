@@ -76,6 +76,9 @@
         <TemplateColumn TGridItem="Song" Title='@L["Lists.Patterns"]' Width="6.25rem" MinWidth="6.25rem" Context="song">
             @song.Patterns.Count
         </TemplateColumn>
+        <TemplateColumn TGridItem="Song" Title='@L["Lists.LinkedItem"]' Width="1.1fr" MinWidth="8.5rem" Context="song">
+            @LinkedItemLabel(song)
+        </TemplateColumn>
         <TemplateColumn TGridItem="Song" Title='@L["Lists.ItemCover"]' Width="0.9fr" MinWidth="7rem" Context="song">
             @{
                 var spriteName = ItemCover(song);
@@ -90,18 +93,27 @@
                    @onclick:preventDefault="true">@spriteName</a>
             }
         </TemplateColumn>
-        <TemplateColumn TGridItem="Song" Title='@L["Lists.HasPreview"]' Width="8rem" MinWidth="8rem" Context="song">
+        <TemplateColumn TGridItem="Song" Title='@L["Lists.LinkedProducts"]' Width="0.8fr" MinWidth="8rem" Context="song">
+            @ProductIds(song)
+        </TemplateColumn>
+        <TemplateColumn TGridItem="Song" Title='@L["Lists.Price"]' Width="5rem" MinWidth="5rem" Context="song">
+            @ProductPrices(song)
+        </TemplateColumn>
+        <TemplateColumn TGridItem="Song" Title='@L["Lists.HasPreview"]' Width="8rem" MinWidth="5rem" Context="song">
             @(song.HasPreview ? L["Lists.Yes"] : L["Lists.No"])
         </TemplateColumn>
-        <TemplateColumn TGridItem="Song" Title="Actions" Width="10rem" MinWidth="10rem" Context="song">
+        <TemplateColumn TGridItem="Song" Title='@L["Lists.Actions"]' Width="8rem" MinWidth="8rem" Pin="DataGridColumnPin.End" Context="song">
             <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="4">
                 <FluentButton IconStart="@(new Icons.Regular.Size20.Edit())"
-                              Appearance="ButtonAppearance.Default"
+                              Size="ButtonSize.Small"
                               OnClick="() => EditSong(song.Id.ToString())"
-                              Title='@L["Common.Edit"]' />
+                              Title='@L["Common.Edit"]' >
+                    @L["Common.Edit"]
+                </FluentButton>
                 <FluentButton IconStart="@(new Icons.Regular.Size20.Delete())"
-                              Appearance="ButtonAppearance.Default"
+                              Size="ButtonSize.Small"
                               OnClick="() => DeleteSongAsync(song)"
+                              Color="var(--presence-busy)"
                               Title='@L["Common.Delete"]' />
             </FluentStack>
         </TemplateColumn>
@@ -125,6 +137,7 @@
     private string? _lastPlatform;
     private IReadOnlyList<Song> _catalog = [];
     private IReadOnlyDictionary<string, Item> _songItems = new Dictionary<string, Item>(StringComparer.OrdinalIgnoreCase);
+    private IReadOnlyDictionary<string, IReadOnlyList<Product>> _songProducts = new Dictionary<string, IReadOnlyList<Product>>(StringComparer.OrdinalIgnoreCase);
     private static readonly IReadOnlyList<string> _languages = ["CN", "JP", "KR", "TW", "US"];
 
     private IReadOnlyList<Song> Catalog
@@ -136,12 +149,27 @@
             _lastPackage = State.CurrentPackage;
             _lastPlatform = State.SelectedExportPlatform;
             _catalog = State.CurrentPackage is null ? [] : SongCatalog.BuildCatalog(State.CurrentPackage, State.SelectedExportPlatform);
-            _songItems = State.CurrentPackage is null
-                ? new Dictionary<string, Item>(StringComparer.OrdinalIgnoreCase)
-                : State.CurrentPackage.GetPlatformTables(State.SelectedExportPlatform).Items
+            if (State.CurrentPackage is null)
+            {
+                _songItems = new Dictionary<string, Item>(StringComparer.OrdinalIgnoreCase);
+                _songProducts = new Dictionary<string, IReadOnlyList<Product>>(StringComparer.OrdinalIgnoreCase);
+            }
+            else
+            {
+                var tables = State.CurrentPackage.GetPlatformTables(State.SelectedExportPlatform);
+                _songItems = tables.Items
                     .Where(item => item.ItemType.Equals("S", StringComparison.OrdinalIgnoreCase))
                     .GroupBy(item => item.Id, StringComparer.OrdinalIgnoreCase)
                     .ToDictionary(group => group.Key, group => group.First(), StringComparer.OrdinalIgnoreCase);
+                _songProducts = tables.Products
+                    .Where(product => !string.IsNullOrWhiteSpace(product.ItemId))
+                    .GroupBy(product => product.ItemId, StringComparer.OrdinalIgnoreCase)
+                    .ToDictionary(
+                        group => group.Key,
+                        group => (IReadOnlyList<Product>)group.OrderBy(product => int.TryParse(product.Id, out var id) ? id : int.MaxValue)
+                            .ThenBy(product => product.Id, StringComparer.OrdinalIgnoreCase).ToArray(),
+                        StringComparer.OrdinalIgnoreCase);
+            }
             return _catalog;
         }
     }
@@ -169,11 +197,25 @@
         return string.IsNullOrWhiteSpace(song.Name) ? song.Id.ToString() : song.Name;
     }
 
-    private string? ItemCover(Song song)
+    private Item? FindSongItem(Song song)
+        => song.ItemId > 0
+           && _songItems.TryGetValue(song.ItemId.ToString(System.Globalization.CultureInfo.InvariantCulture), out var item)
+            ? item
+            : null;
+
+    private IReadOnlyList<Product> FindSongProducts(Song song)
     {
-        var itemId = song.ItemId.ToString(System.Globalization.CultureInfo.InvariantCulture);
-        return _songItems.TryGetValue(itemId, out var item) ? item.ImgUrl1 : null;
+        var item = FindSongItem(song);
+        return item is not null && _songProducts.TryGetValue(item.Id, out var products) ? products : [];
     }
+
+    private string LinkedItemLabel(Song song)
+    {
+        var item = FindSongItem(song);
+        return item is null ? L["Lists.None"].Value : $"{item.Id}. {item.ItemName}";
+    }
+
+    private string? ItemCover(Song song) => FindSongItem(song)?.ImgUrl1;
 
     private async Task ShowCoverPreviewAsync(string spriteName)
     {
@@ -187,6 +229,27 @@
                 [nameof(SongCoverPreviewDialog.SpriteName)] = spriteName
             };
         });
+    }
+
+    private string ProductIds(Song song)
+    {
+        var products = FindSongProducts(song);
+        return products.Count == 0 ? L["Lists.None"].Value : string.Join(", ", products.Select(product => product.Id));
+    }
+
+    private string ProductPrices(Song song)
+    {
+        var products = FindSongProducts(song);
+        if (products.Count == 0) return L["Lists.None"].Value;
+
+        var prices = products.Select(product =>
+        {
+            if (decimal.TryParse(product.CostGamePoint, System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.InvariantCulture, out var pointCost)
+                && pointCost >= 1)
+                return $"MAX: {product.CostGamePoint}";
+            return $"Q: {product.CostGameCash}";
+        }).Distinct(StringComparer.OrdinalIgnoreCase);
+        return string.Join(", ", prices);
     }
 
     private Task SetFilterAsync(string? value)

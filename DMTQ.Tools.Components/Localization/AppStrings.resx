@@ -1,524 +1,1758 @@
 <?xml version="1.0" encoding="utf-8"?>
 <root>
-  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
-  <resheader name="version"><value>2.0</value></resheader>
-  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
-  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
-  <data name="App.Title" xml:space="preserve"><value>DMTQ-Tools</value></data>
-  <data name="Language.Title" xml:space="preserve"><value>Language</value></data>
-  <data name="Language.English" xml:space="preserve"><value>English</value></data>
-  <data name="Language.Chinese" xml:space="preserve"><value>中文</value></data>
-  <data name="Nav.Project" xml:space="preserve"><value>Project</value></data>
-  <data name="Nav.Import" xml:space="preserve"><value>Import</value></data>
-  <data name="Nav.Songs" xml:space="preserve"><value>Songs</value></data>
-  <data name="Nav.Products" xml:space="preserve"><value>Products</value></data>
-  <data name="Nav.ProductCategories" xml:space="preserve"><value>Product categories</value></data>
-  <data name="Nav.Items" xml:space="preserve"><value>Items</value></data>
-  <data name="Nav.Resources" xml:space="preserve"><value>Resources</value></data>
-  <data name="Nav.Export" xml:space="preserve"><value>Export</value></data>
-  <data name="Nav.Diagnostics" xml:space="preserve"><value>Diagnostics</value></data>
-  <data name="Header.UnsavedChanges" xml:space="preserve"><value>Unsaved changes</value></data>
-  <data name="Header.Saving" xml:space="preserve"><value>Saving...</value></data>
-  <data name="Header.SaveProject" xml:space="preserve"><value>Save Project</value></data>
-  <data name="Header.AutoSave" xml:space="preserve"><value>Auto-save</value></data>
-  <data name="Header.AutoSaveFailed" xml:space="preserve"><value>Auto-save failed</value></data>
-  <data name="Header.AutoSaveHint" xml:space="preserve"><value>Automatically saves dirty project data after a short pause.</value></data>
-  <data name="Header.SaveFailed" xml:space="preserve"><value>Save failed</value></data>
-  <data name="Errors.SaveFailed" xml:space="preserve"><value>Could not save your changes.</value></data>
-  <data name="Errors.ShowDetails" xml:space="preserve"><value>Show technical details</value></data>
-  <data name="Errors.UnexpectedTitle" xml:space="preserve"><value>Something went wrong</value></data>
-  <data name="Errors.UnexpectedMessage" xml:space="preserve"><value>The current page could not continue. Your project and active editor drafts remain available in this app session. Return to Diagnostics to continue without reloading the app.</value></data>
-  <data name="Errors.ErrorId" xml:space="preserve"><value>Error ID: {0}</value></data>
-  <data name="Errors.ReturnToDiagnostics" xml:space="preserve"><value>Continue to Diagnostics</value></data>
-  <data name="Header.ToggleNavigation" xml:space="preserve"><value>Toggle navigation</value></data>
-  <data name="Common.Save" xml:space="preserve"><value>Save</value></data>
-  <data name="Common.Cancel" xml:space="preserve"><value>Cancel</value></data>
-  <data name="Common.Delete" xml:space="preserve"><value>Delete</value></data>
-  <data name="Common.Edit" xml:space="preserve"><value>Edit</value></data>
-  <data name="Common.NotRun" xml:space="preserve"><value>Not run</value></data>
-  <data name="Common.Passed" xml:space="preserve"><value>Passed</value></data>
-  <data name="Common.Errors" xml:space="preserve"><value>{0} errors</value></data>
-  <data name="Common.NoProject" xml:space="preserve"><value>Import or open a project first.</value></data>
-  <data name="Common.NoItems" xml:space="preserve"><value>No items found.</value></data>
-  <data name="Home.ProjectFolder" xml:space="preserve"><value>Project folder</value></data>
-  <data name="Home.ProjectFolderPlaceholder" xml:space="preserve"><value>Select or enter a project folder path...</value></data>
-  <data name="Home.Browse" xml:space="preserve"><value>Browse</value></data>
-  <data name="Home.Confirm" xml:space="preserve"><value>Confirm</value></data>
-  <data name="Home.Source" xml:space="preserve"><value>Source</value></data>
-  <data name="Home.Version" xml:space="preserve"><value>Version</value></data>
-  <data name="Home.PrimaryPlatform" xml:space="preserve"><value>Primary platform</value></data>
-  <data name="Home.ImportedPlatforms" xml:space="preserve"><value>Imported platforms</value></data>
-  <data name="Home.Tables" xml:space="preserve"><value>Tables</value></data>
-  <data name="Home.LastValidation" xml:space="preserve"><value>Last validation</value></data>
-  <data name="Home.NotSelected" xml:space="preserve"><value>Not selected</value></data>
-  <data name="Home.NotImported" xml:space="preserve"><value>Not imported</value></data>
-  <data name="Home.ProjectLoaded" xml:space="preserve"><value>Project loaded.</value></data>
-  <data name="Home.ProjectSaved" xml:space="preserve"><value>Project saved.</value></data>
-  <data name="Home.ProjectCreated" xml:space="preserve"><value>Project created. Go to the Import page to import a patch package.</value></data>
-  <data name="Home.EnterProjectPath" xml:space="preserve"><value>Please enter a project folder path.</value></data>
-  <data name="Home.FolderNotFound" xml:space="preserve"><value>Folder '{0}' does not exist.</value></data>
-  <data name="Home.EmptyFolderConfirm" xml:space="preserve"><value>This folder is empty. Create a new project here?</value></data>
-  <data name="Home.NewProject" xml:space="preserve"><value>New project</value></data>
-  <data name="Home.InvalidFolder" xml:space="preserve"><value>This folder contains files but is not a DMTQ project. Please choose an empty folder, then go to the Import page to import an existing patch package.</value></data>
-  <data name="Import.SourceDirectory" xml:space="preserve"><value>Source package directory</value></data>
-  <data name="Import.Platform" xml:space="preserve"><value>Platform</value></data>
-  <data name="Import.ImportPlatform" xml:space="preserve"><value>Import Platform</value></data>
-  <data name="Import.Precondition" xml:space="preserve"><value>Create or open a project on the Project page before importing.</value></data>
-  <data name="Import.Importing" xml:space="preserve"><value>Importing platform package...</value></data>
-  <data name="Import.Completed" xml:space="preserve"><value>Import completed.</value></data>
-  <data name="Common.Languages" xml:space="preserve"><value>Languages</value></data>
-  <data name="Export.CompressionPolicy" xml:space="preserve"><value>Compression policy</value></data>
-  <data name="Export.OutputDirectory" xml:space="preserve"><value>Output directory</value></data>
-  <data name="Export.Export" xml:space="preserve"><value>Export</value></data>
-  <data name="Export.Precondition" xml:space="preserve"><value>Import a package before exporting.</value></data>
-  <data name="Export.PreExportQa" xml:space="preserve"><value>Pre-export QA:</value></data>
-  <data name="Export.FixErrors" xml:space="preserve"><value> — Fix errors before exporting.</value></data>
-  <data name="Export.ManifestEntries" xml:space="preserve"><value>Manifest entries</value></data>
-  <data name="Export.FilesWritten" xml:space="preserve"><value>Files written</value></data>
-  <data name="Export.SkippedBaseline" xml:space="preserve"><value>Skipped baseline</value></data>
-  <data name="Export.MissingCurrentFiles" xml:space="preserve"><value>Missing current files</value></data>
-  <data name="Export.ValidationErrors" xml:space="preserve"><value>Validation errors</value></data>
-  <data name="Export.RunningQa" xml:space="preserve"><value>Running QA...</value></data>
-  <data name="Export.Exporting" xml:space="preserve"><value>Exporting platform package...</value></data>
-  <data name="Export.QaFoundErrors" xml:space="preserve"><value>QA found {0} error(s). Fix them before exporting.</value></data>
-  <data name="Export.CompletedValid" xml:space="preserve"><value>Platform export completed and validation passed.</value></data>
-  <data name="Export.CompletedInvalid" xml:space="preserve"><value>Platform export completed with validation errors.</value></data>
-  <data name="Diagnostics.ProjectFile" xml:space="preserve"><value>Project file</value></data>
-  <data name="Diagnostics.NoProject" xml:space="preserve"><value>No project selected.</value></data>
-  <data name="Diagnostics.ProjectExists" xml:space="preserve"><value>Project file exists.</value></data>
-  <data name="Diagnostics.NotSaved" xml:space="preserve"><value>Project has not been saved yet.</value></data>
-  <data name="Diagnostics.QaCheck" xml:space="preserve"><value>QA Check</value></data>
-  <data name="Diagnostics.RunQa" xml:space="preserve"><value>Run QA</value></data>
-  <data name="Diagnostics.WorkflowLog" xml:space="preserve"><value>Workflow log</value></data>
-  <data name="Diagnostics.NoneYet" xml:space="preserve"><value>No diagnostics yet.</value></data>
-  <data name="Diagnostics.LastValidation" xml:space="preserve"><value>Last validation</value></data>
-  <data name="Diagnostics.NotRun" xml:space="preserve"><value>Validation has not run.</value></data>
-  <data name="Diagnostics.Passed" xml:space="preserve"><value>Validation passed.</value></data>
-  <data name="Lists.FilterItems" xml:space="preserve"><value>Filter by item ID, name, type...</value></data>
-  <data name="Lists.FilterProducts" xml:space="preserve"><value>Filter by product ID, item ID, type...</value></data>
-  <data name="Lists.FilterResources" xml:space="preserve"><value>Filter by file name</value></data>
-  <data name="Lists.Language" xml:space="preserve"><value>Language</value></data>
-  <data name="Lists.Category" xml:space="preserve"><value>Category</value></data>
-  <data name="Lists.AllCategories" xml:space="preserve"><value>All Categories</value></data>
-  <data name="Lists.AddItem" xml:space="preserve"><value>Add Item</value></data>
-  <data name="Lists.AddProduct" xml:space="preserve"><value>Add Product</value></data>
-  <data name="Lists.AddResource" xml:space="preserve"><value>Add Resource</value></data>
-  <data name="Lists.Active" xml:space="preserve"><value>Active</value></data>
-  <data name="Lists.LocalizedNames" xml:space="preserve"><value>Localized names</value></data>
-  <data name="Lists.ItemTypes" xml:space="preserve"><value>Item types</value></data>
-  <data name="Lists.TotalResources" xml:space="preserve"><value>Total resources</value></data>
-  <data name="Lists.Others" xml:space="preserve"><value>Others</value></data>
-  <data name="Lists.Actions" xml:space="preserve"><value>Actions</value></data>
-  <data name="Lists.Type" xml:space="preserve"><value>Type</value></data>
-  <data name="Lists.Name" xml:space="preserve"><value>Name</value></data>
-  <data name="Lists.Summary" xml:space="preserve"><value>Summary</value></data>
-  <data name="Lists.ItemId" xml:space="preserve"><value>Item ID</value></data>
-  <data name="Lists.ProductId" xml:space="preserve"><value>Product ID</value></data>
-  <data name="Lists.FileName" xml:space="preserve"><value>File Name</value></data>
-  <data name="Lists.Platforms" xml:space="preserve"><value>Platforms</value></data>
-  <data name="Lists.Size" xml:space="preserve"><value>Size</value></data>
-  <data name="Lists.Compressed" xml:space="preserve"><value>Compressed</value></data>
-  <data name="Lists.Yes" xml:space="preserve"><value>Yes</value></data>
-  <data name="Lists.No" xml:space="preserve"><value>No</value></data>
-  <data name="Lists.DeleteConfirm" xml:space="preserve"><value>Delete {0} '{1}'?</value></data>
-  <data name="Lists.Deleted" xml:space="preserve"><value>{0} {1} deleted.</value></data>
-  <data name="Lists.NoSongs" xml:space="preserve"><value>No songs found. Import CSV data or add a song.</value></data>
-  <data name="Lists.NoProducts" xml:space="preserve"><value>No products found. Import CSV data or add a product.</value></data>
-  <data name="Lists.NoResources" xml:space="preserve"><value>No resources found.</value></data>
-  <data name="Lists.NoItemsDetailed" xml:space="preserve"><value>No items found. Import CSV data or add an item.</value></data>
-  <data name="Lists.FilterSongs" xml:space="preserve"><value>Filter by song ID, title, item...</value></data>
-  <data name="Lists.PreviewLanguage" xml:space="preserve"><value>Preview Language</value></data>
-  <data name="Lists.AddSong" xml:space="preserve"><value>Add Song</value></data>
-  <data name="Lists.Patterns" xml:space="preserve"><value>Patterns</value></data>
-  <data name="Lists.WithPreview" xml:space="preserve"><value>With preview</value></data>
-  <data name="Lists.HasPreview" xml:space="preserve"><value>Has Preview .opus</value></data>
-  <data name="Lists.Artist" xml:space="preserve"><value>Artist</value></data>
-  <data name="Lists.Products" xml:space="preserve"><value>Products</value></data>
-  <data name="Lists.WithStoreSku" xml:space="preserve"><value>With store SKU</value></data>
-  <data name="Lists.Categories" xml:space="preserve"><value>Categories</value></data>
-  <data name="Lists.PlatformSku" xml:space="preserve"><value>Platform SKU</value></data>
-  <data name="Lists.StoreSku" xml:space="preserve"><value>Store SKU</value></data>
-  <data name="Lists.GamePoint" xml:space="preserve"><value>Game Point</value></data>
-  <data name="Lists.GameCash" xml:space="preserve"><value>Game Cash</value></data>
-  <data name="Editor.OpenProjectFirst" xml:space="preserve"><value>Open or import a project before editing.</value></data>
-  <data name="Editor.NotFound" xml:space="preserve"><value>{0} '{1}' not found.</value></data>
-  <data name="Editor.BackTo" xml:space="preserve"><value>Back to {0}</value></data>
-  <data name="Editor.BasicInfo" xml:space="preserve"><value>Basic Info</value></data>
-  <data name="Editor.Credits" xml:space="preserve"><value>Credits</value></data>
-  <data name="Editor.GameplaySettings" xml:space="preserve"><value>Gameplay Settings</value></data>
-  <data name="Editor.ItemText" xml:space="preserve"><value>Descriptions and summary</value></data>
-  <data name="Editor.ItemRules" xml:space="preserve"><value>Item settings</value></data>
-  <data name="Editor.LocalizedDescriptions" xml:space="preserve"><value>Localized Descriptions</value></data>
-  <data name="Editor.SyncOriginalText" xml:space="preserve"><value>Sync original text</value></data>
-  <data name="Editor.SaveItem" xml:space="preserve"><value>Save Item</value></data>
-  <data name="Editor.SaveProduct" xml:space="preserve"><value>Save Product</value></data>
-  <data name="Editor.SaveSong" xml:space="preserve"><value>Save Song</value></data>
-  <data name="Editor.ItemIdRequired" xml:space="preserve"><value>Item ID is required.</value></data>
-  <data name="Editor.ProductIdRequired" xml:space="preserve"><value>Product ID is required.</value></data>
-  <data name="Editor.SongIdRequired" xml:space="preserve"><value>Song ID is required and must be a number.</value></data>
-  <data name="Editor.Saved" xml:space="preserve"><value>{0} saved.</value></data>
-  <data name="Editor.Patterns" xml:space="preserve"><value>Patterns</value></data>
-  <data name="Editor.AddPattern" xml:space="preserve"><value>Add Pattern</value></data>
-  <data name="Editor.NoPatterns" xml:space="preserve"><value>No patterns yet. Click Add Pattern to add one.</value></data>
-  <data name="Editor.DescriptionsHint" xml:space="preserve"><value>Overrides per language. Leave blank to use Basic Info values on export.</value></data>
-  <data name="Dialog.AddResource" xml:space="preserve"><value>Add Resource</value></data>
-  <data name="Dialog.EditResource" xml:space="preserve"><value>Edit Resource</value></data>
-  <data name="Dialog.BasicInfo" xml:space="preserve"><value>Basic Info</value></data>
-  <data name="Dialog.PlatformFiles" xml:space="preserve"><value>Platform Files</value></data>
-  <data name="Dialog.ReplaceFile" xml:space="preserve"><value>Replace File</value></data>
-  <data name="Dialog.SelectPlatform" xml:space="preserve"><value>Select platform:</value></data>
-  <data name="Dialog.AddPlatform" xml:space="preserve"><value>+ Add Platform</value></data>
-  <data name="Dialog.AllPlatformsAdded" xml:space="preserve"><value>All platforms already added.</value></data>
-  <data name="Dialog.WillReplace" xml:space="preserve"><value>Will replace: {0}</value></data>
-  <data name="Dialog.Source" xml:space="preserve"><value>Source: {0}</value></data>
-  <data name="Dialog.ExistSizeChecksum" xml:space="preserve"><value>Exist: {0}, Size: {1}, Checksum: {2}</value></data>
-  <data name="Editor.NewSong" xml:space="preserve"><value>New Song</value></data><data name="Editor.NewProduct" xml:space="preserve"><value>New Product</value></data><data name="Editor.NewItem" xml:space="preserve"><value>New Item</value></data><data name="Editor.Edit" xml:space="preserve"><value>Edit: {0}</value></data><data name="Editor.ProductInformation" xml:space="preserve"><value>Product Information</value></data><data name="Editor.ItemInformation" xml:space="preserve"><value>Item Information</value></data><data name="Editor.PriceSaleWindow" xml:space="preserve"><value>Price and Sale Window</value></data><data name="Editor.ItemDescriptionsHint" xml:space="preserve"><value>These values are exported to item_desc_&lt;lang&gt;.csv during package export.</value></data>
-  <data name="Editor.OpenSongsProject" xml:space="preserve"><value>Open or import a project before editing songs.</value></data>
-  <data name="Nav.PatternTool" xml:space="preserve"><value>Pattern Tool</value></data>
-  <data name="Nav.AtlasEditor" xml:space="preserve"><value>Song Jackets</value></data>
-  <data name="AtlasEditor.Title" xml:space="preserve"><value>Song Jacket Atlas</value></data>
-  <data name="AtlasEditor.New" xml:space="preserve"><value>New atlas</value></data>
-  <data name="AtlasEditor.Create" xml:space="preserve"><value>Create atlas</value></data>
-  <data name="AtlasEditor.CloseAtlas" xml:space="preserve"><value>Close atlas</value></data>
-  <data name="AtlasEditor.Size" xml:space="preserve"><value>Size</value></data>
-  <data name="AtlasEditor.AddSprite" xml:space="preserve"><value>Add Sprite</value></data>
-  <data name="AtlasEditor.EmptySprite" xml:space="preserve"><value>Empty slot</value></data>
-  <data name="AtlasEditor.ReplaceImage" xml:space="preserve"><value>Replace image</value></data>
-  <data name="AtlasEditor.ExportImage" xml:space="preserve"><value>Export image</value></data>
-  <data name="AtlasEditor.ExportTexture" xml:space="preserve"><value>Export texture</value></data>
-  <data name="AtlasEditor.DeleteTitle" xml:space="preserve"><value>Delete Sprite</value></data>
-  <data name="AtlasEditor.DeleteConfirm" xml:space="preserve"><value>Delete Sprite '{0}'?</value></data>
-  <data name="AtlasEditor.Stretch" xml:space="preserve"><value>Stretch to fit</value></data>
-  <data name="AtlasEditor.StretchConfirm" xml:space="preserve"><value>The image is {0}×{1}; the target region is {2}×{3}. Stretch it to fit?</value></data>
-  <data name="AtlasEditor.NoSpriteSlot" xml:space="preserve"><value>No free slot can fit a 256×149 cover.</value></data>
-  <data name="AtlasEditor.TemplateForPlatform" xml:space="preserve"><value>Platform template: {0}</value></data>
-  <data name="AtlasEditor.Subtitle" xml:space="preserve"><value>Arrange song covers into an NGUI atlas and export replacement assets or a platform bundle.</value></data>
-  <data name="AtlasEditor.AtlasName" xml:space="preserve"><value>Bundle / prefab name</value></data>
-  <data name="AtlasEditor.Kind" xml:space="preserve"><value>Atlas type</value></data>
-  <data name="AtlasEditor.NGUI2" xml:space="preserve"><value>NGUI2 (d_)</value></data>
-  <data name="AtlasEditor.NGUI3" xml:space="preserve"><value>NGUI3 (d3_)</value></data>
-  <data name="AtlasEditor.Width" xml:space="preserve"><value>Width</value></data>
-  <data name="AtlasEditor.Height" xml:space="preserve"><value>Height</value></data>
-  <data name="AtlasEditor.OpenBundle" xml:space="preserve"><value>Open existing bundle</value></data>
-  <data name="AtlasEditor.Preview" xml:space="preserve"><value>Atlas preview</value></data>
-  <data name="AtlasEditor.Sprites" xml:space="preserve"><value>Sprites</value></data>
-  <data name="AtlasEditor.SpriteCount" xml:space="preserve"><value>{0} sprites</value></data>
-  <data name="AtlasEditor.Name" xml:space="preserve"><value>Sprite name</value></data>
-  <data name="AtlasEditor.Region" xml:space="preserve"><value>Region (x, y, width, height)</value></data>
-  <data name="AtlasEditor.CoordinateOrigin" xml:space="preserve"><value>Sprite regions use top-left-origin pixel coordinates.</value></data>
-  <data name="AtlasEditor.X" xml:space="preserve"><value>X</value></data>
-  <data name="AtlasEditor.Y" xml:space="preserve"><value>Y</value></data>
-  <data name="AtlasEditor.Remove" xml:space="preserve"><value>Remove</value></data>
-  <data name="AtlasEditor.ExportBundle" xml:space="preserve"><value>Export complete bundle</value></data>
-  <data name="AtlasEditor.Platform" xml:space="preserve"><value>Target platform</value></data>
-  <data name="AtlasEditor.Template" xml:space="preserve"><value>Template</value></data>
-  <data name="AtlasEditor.Loaded" xml:space="preserve"><value>Loaded {0} ({1}, {2} sprites).</value></data>
-  <data name="AtlasEditor.Exported" xml:space="preserve"><value>Exported {0}.</value></data>
-  <data name="AtlasEditor.Error" xml:space="preserve"><value>Atlas operation failed: {0}</value></data>
-  <data name="AtlasEditor.NoSprites" xml:space="preserve"><value>Add at least one sprite before exporting.</value></data>
-  <data name="Pattern.Title" xml:space="preserve"><value>Pattern Tool</value></data>
-  <data name="Pattern.Open" xml:space="preserve"><value>Open Pattern</value></data>
-  <data name="Pattern.SaveAs" xml:space="preserve"><value>Save As</value></data>
-  <data name="Pattern.ExportFormat" xml:space="preserve"><value>Export format</value></data>
-  <data name="Pattern.OpenHint" xml:space="preserve"><value>Open a .pt, .bytes, or .txt file. The file is parsed into the common pattern model.</value></data>
-  <data name="Pattern.NoPattern" xml:space="preserve"><value>Open a pattern to inspect its metadata, events, and sound table.</value></data>
-  <data name="Pattern.BasicInfo" xml:space="preserve"><value>Pattern information</value></data>
-  <data name="Pattern.File" xml:space="preserve"><value>File</value></data>
-  <data name="Pattern.SourceFormat" xml:space="preserve"><value>Source format</value></data>
-  <data name="Pattern.Encrypted" xml:space="preserve"><value>Source PT is encrypted</value></data>
-  <data name="Pattern.Version" xml:space="preserve"><value>PT version</value></data>
-  <data name="Pattern.PtRawHeaderFieldB" xml:space="preserve"><value>PT raw header field B</value></data>
-  <data name="Pattern.BytesTick" xml:space="preserve"><value>Bytes tick</value></data>
-  <data name="Pattern.BytesPlayTime" xml:space="preserve"><value>Bytes play time (seconds)</value></data>
-  <data name="Pattern.PositionsPerMeasure" xml:space="preserve"><value>Positions per measure</value></data>
-  <data name="Pattern.InitialBpm" xml:space="preserve"><value>Initial BPM</value></data>
-  <data name="Pattern.EndPosition" xml:space="preserve"><value>End position</value></data>
-  <data name="Pattern.Events" xml:space="preserve"><value>Events</value></data>
-  <data name="Pattern.Tracks" xml:space="preserve"><value>Tracks</value></data>
-  <data name="Pattern.Sounds" xml:space="preserve"><value>Sounds</value></data>
-  <data name="Pattern.TagB" xml:space="preserve"><value>Tag B</value></data>
-  <data name="Pattern.TagC" xml:space="preserve"><value>Tag C</value></data>
-  <data name="Pattern.SoundList" xml:space="preserve"><value>Sound list</value></data>
-  <data name="Pattern.EventList" xml:space="preserve"><value>Event list</value></data>
-  <data name="Pattern.SoundId" xml:space="preserve"><value>Sound ID</value></data>
-  <data name="Pattern.Flags" xml:space="preserve"><value>Flags</value></data>
-  <data name="Pattern.FileName" xml:space="preserve"><value>File name</value></data>
-  <data name="Pattern.Track" xml:space="preserve"><value>Track</value></data>
-  <data name="Pattern.Position" xml:space="preserve"><value>Position</value></data>
-  <data name="Pattern.Type" xml:space="preserve"><value>Type</value></data>
-  <data name="Pattern.Details" xml:space="preserve"><value>Details</value></data>
-  <data name="Pattern.Yes" xml:space="preserve"><value>Yes</value></data>
-  <data name="Pattern.No" xml:space="preserve"><value>No</value></data>
-  <data name="Pattern.UnsupportedExtension" xml:space="preserve"><value>Only .pt, .bytes, and .txt files are supported.</value></data>
-  <data name="Pattern.Loaded" xml:space="preserve"><value>Loaded {0}.</value></data>
-  <data name="Pattern.Saved" xml:space="preserve"><value>Saved {0}.</value></data>
-  <data name="Pattern.LoadFailed" xml:space="preserve"><value>Could not load pattern: {0}</value></data>
-  <data name="Pattern.SaveFailed" xml:space="preserve"><value>Could not save pattern: {0}</value></data>
-  <data name="Pattern.OpenHintWithText" xml:space="preserve"><value>Open a .pt, .bytes, or .txt file. The file is parsed into the common pattern model.</value></data>
-  <data name="Pattern.UnsupportedExtensionWithText" xml:space="preserve"><value>Only .pt, .bytes, and .txt files are supported.</value></data>
-  <data name="Header.DataPlatform" xml:space="preserve"><value>Data platform</value></data>
-  <data name="Common.Add" xml:space="preserve"><value>Add</value></data>
-  <data name="Common.MoveUp" xml:space="preserve"><value>Move up</value></data>
-  <data name="Common.MoveDown" xml:space="preserve"><value>Move down</value></data>
-  <data name="Nav.Achievements" xml:space="preserve"><value>Achievements</value></data>
-  <data name="Nav.Quests" xml:space="preserve"><value>Quests</value></data>
-  <data name="Nav.Slang" xml:space="preserve"><value>Slang filter</value></data>
-  <data name="Lists.NoAchievements" xml:space="preserve"><value>No achievements found. Import CSV data or add an achievement.</value></data>
-  <data name="Lists.FilterAchievements" xml:space="preserve"><value>Filter by achievement ID, name, or condition...</value></data>
-  <data name="Lists.AddAchievement" xml:space="preserve"><value>Add achievement</value></data>
-  <data name="Lists.NoQuests" xml:space="preserve"><value>No quests found. Import CSV data or add a quest.</value></data>
-  <data name="Lists.FilterQuests" xml:space="preserve"><value>Filter by quest ID or localized name...</value></data>
-  <data name="Lists.AddQuest" xml:space="preserve"><value>Add quest</value></data>
-  <data name="Lists.NoSlang" xml:space="preserve"><value>No slang entries found.</value></data>
-  <data name="Lists.FilterSlang" xml:space="preserve"><value>Filter slang entries...</value></data>
-  <data name="Lists.AddSlang" xml:space="preserve"><value>Add entry</value></data>
-  <data name="Lists.SlangEntries" xml:space="preserve"><value>Entries</value></data>
-  <data name="Fields.AchievementId" xml:space="preserve"><value>Achievement ID</value></data>
-  <data name="Fields.QuestId" xml:space="preserve"><value>Quest ID</value></data>
-  <data name="Fields.ProductId" xml:space="preserve"><value>Product ID</value></data>
-  <data name="Fields.CategoryId" xml:space="preserve"><value>Category ID</value></data>
-  <data name="Fields.CategoryName" xml:space="preserve"><value>Category usage</value></data>
-  <data name="Fields.Notes" xml:space="preserve"><value>Notes</value></data>
-  <data name="Fields.ItemType" xml:space="preserve"><value>Item type</value></data>
-  <data name="Fields.ItemLevel" xml:space="preserve"><value>Item level</value></data>
-  <data name="Fields.Update" xml:space="preserve"><value>Update</value></data>
-  <data name="Fields.Name" xml:space="preserve"><value>Name</value></data>
-  <data name="Fields.BaseName" xml:space="preserve"><value>Base name</value></data>
-  <data name="Fields.Description" xml:space="preserve"><value>Description</value></data>
-  <data name="Fields.ConditionType" xml:space="preserve"><value>Condition type</value></data>
-  <data name="Fields.ConditionValue" xml:space="preserve"><value>Condition value</value></data>
-  <data name="Fields.ConditionCount" xml:space="preserve"><value>Condition count</value></data>
-  <data name="Fields.ConditionSpecial" xml:space="preserve"><value>Condition special</value></data>
-  <data name="Fields.ImageUrl" xml:space="preserve"><value>Image URL</value></data>
-  <data name="Fields.Tier" xml:space="preserve"><value>Tier</value></data>
-  <data name="Fields.ObtainPoint" xml:space="preserve"><value>Obtain point</value></data>
-  <data name="Fields.PreDescription" xml:space="preserve"><value>Pre-description</value></data>
-  <data name="Fields.AfterDescription" xml:space="preserve"><value>After-description</value></data>
-  <data name="Fields.EffectType" xml:space="preserve"><value>Effect type</value></data>
-  <data name="Fields.EffectPoint" xml:space="preserve"><value>Effect point</value></data>
-  <data name="Fields.EffectCount" xml:space="preserve"><value>Effect count</value></data>
-  <data name="Fields.EffectSpecial" xml:space="preserve"><value>Effect special</value></data>
-  <data name="Fields.SlangValue" xml:space="preserve"><value>Blocked word or phrase</value></data>
-  <data name="Editor.ProductCategories" xml:space="preserve"><value>Product categories</value></data>
-  <data name="Editor.ProductCategoriesHint" xml:space="preserve"><value>Links this product to category IDs in category_categoryproduct.csv. A product can belong to more than one category.</value></data>
-  <data name="Editor.IngameConfigurations" xml:space="preserve"><value>In-game configurations</value></data>
-  <data name="Editor.IngameConfigurationsHint" xml:space="preserve"><value>Rows linked by product_id in ingameitem_ingameitem.csv.</value></data>
-  <data name="Editor.AddConfiguration" xml:space="preserve"><value>Add configuration</value></data>
-  <data name="Editor.NoIngameConfigurations" xml:space="preserve"><value>This product has no in-game configuration.</value></data>
-  <data name="Editor.ItemEffect" xml:space="preserve"><value>Item effect</value></data>
-  <data name="Editor.ItemEffectHint" xml:space="preserve"><value>The optional ingameitem_itemeffect.csv row linked by item_id.</value></data>
-  <data name="Editor.AddEffect" xml:space="preserve"><value>Add effect</value></data>
-  <data name="Editor.RemoveEffect" xml:space="preserve"><value>Remove effect</value></data>
-  <data name="Editor.NoItemEffect" xml:space="preserve"><value>This item has no effect row.</value></data>
-  <data name="Editor.NewAchievement" xml:space="preserve"><value>New achievement</value></data>
-  <data name="Editor.SaveAchievement" xml:space="preserve"><value>Save achievement</value></data>
-  <data name="Editor.AchievementRules" xml:space="preserve"><value>Achievement rules</value></data>
-  <data name="Editor.AchievementDescriptionsHint" xml:space="preserve"><value>These values are written to acievement_desc_&lt;lang&gt;.csv.</value></data>
-  <data name="Editor.AchievementIdRequired" xml:space="preserve"><value>Achievement ID is required.</value></data>
-  <data name="Editor.NewQuest" xml:space="preserve"><value>New quest</value></data>
-  <data name="Editor.SaveQuest" xml:space="preserve"><value>Save quest</value></data>
-  <data name="Editor.QuestDescriptions" xml:space="preserve"><value>Localized quest descriptions</value></data>
-  <data name="Editor.QuestIdRequired" xml:space="preserve"><value>Quest ID is required.</value></data>
-  <data name="Editor.Missions" xml:space="preserve"><value>Missions</value></data>
-  <data name="Editor.MissionsHint" xml:space="preserve"><value>Mission order is preserved across all five localized CSV files.</value></data>
-  <data name="Editor.AddMission" xml:space="preserve"><value>Add mission</value></data>
-  <data name="Editor.NoMissions" xml:space="preserve"><value>This quest has no missions.</value></data>
-  <data name="Editor.MissionNumber" xml:space="preserve"><value>Mission {0}</value></data>
-  <data name="Editor.NewSlang" xml:space="preserve"><value>New slang entry</value></data>
-  <data name="Editor.SlangEntry" xml:space="preserve"><value>Slang entry</value></data>
-  <data name="Editor.SlangHint" xml:space="preserve"><value>The exporter preserves the trailing empty column required by current patches.</value></data>
-  <data name="Fields.ItemName" xml:space="preserve"><value>Item name</value></data>
-  <data name="Fields.ItemId" xml:space="preserve"><value>Item ID</value></data>
-  <data name="Fields.ImageUrl1" xml:space="preserve"><value>Image URL 1</value></data>
-  <data name="Fields.ImageUrl2" xml:space="preserve"><value>Image URL 2</value></data>
-  <data name="Fields.Summary" xml:space="preserve"><value>Summary</value></data>
-  <data name="Fields.RepeatCount" xml:space="preserve"><value>Repeat count</value></data>
-  <data name="Fields.LimitMinute" xml:space="preserve"><value>Limit duration (minutes)</value></data>
-  <data name="Fields.Status" xml:space="preserve"><value>Status code</value></data>
-  <data name="Fields.BuyLevel" xml:space="preserve"><value>Required level</value></data>
-  <data name="Fields.BuyLimitCount" xml:space="preserve"><value>Purchase limit count</value></data>
-  <data name="Fields.BuyLimitType" xml:space="preserve"><value>Purchase limit type code</value></data>
-  <data name="Fields.GameItemId" xml:space="preserve"><value>Linked game item ID</value></data>
-  <data name="Fields.ChartLine" xml:space="preserve"><value>Chart line count</value></data>
-  <data name="Fields.ChartDifficulty" xml:space="preserve"><value>Chart difficulty</value></data>
-  <data name="Fields.StarRating" xml:space="preserve"><value>Star rating</value></data>
-  <data name="Fields.PointType" xml:space="preserve"><value>Play reward type</value></data>
-  <data name="Fields.ExistingValue" xml:space="preserve"><value>Existing value</value></data>
-  <data name="Editor.CopyBaseToLanguages" xml:space="preserve"><value>Copy base values to all languages</value></data>
-  <data name="Editor.GameItemLink" xml:space="preserve"><value>Linked game item</value></data>
-  <data name="Editor.ExistingLinkedItem" xml:space="preserve"><value>Existing item</value></data>
-  <data name="Editor.NewLinkedItem" xml:space="preserve"><value>New item</value></data>
-  <data name="Editor.LinkedItemWillBeCreated" xml:space="preserve"><value>Will be created with this song</value></data>
-  <data name="Editor.ChangeOrCreateLinkedItem" xml:space="preserve"><value>Change or create linked item</value></data>
-  <data name="Editor.SelectLinkedItem" xml:space="preserve"><value>Select item</value></data>
-  <data name="Editor.CreateLinkedItem" xml:space="preserve"><value>Create item</value></data>
-  <data name="Editor.NewLinkedItemHint" xml:space="preserve"><value>Create a new item draft. It will be saved together with the song.</value></data>
-  <data name="Editor.NoGameItemSelected" xml:space="preserve"><value>No game item is linked.</value></data>
-  <data name="Editor.MissingLinkedItem" xml:space="preserve"><value>Linked item is missing</value></data>
-  <data name="Editor.LinkedItemMissingHint" xml:space="preserve"><value>The song refers to this item ID, but it is not in the item catalog. Create it or choose another item.</value></data>
-  <data name="Editor.LinkedItemIdExists" xml:space="preserve"><value>An item with this ID already exists. Select it from the existing items list.</value></data>
-  <data name="Editor.LinkedItemNameRequired" xml:space="preserve"><value>Enter a name for the linked item.</value></data>
-  <data name="Editor.SyncAllLanguages" xml:space="preserve"><value>Sync all language information</value></data>
-  <data name="Editor.SyncAllLanguagesHint" xml:space="preserve"><value>Song metadata will be copied to all five language tables when you save.</value></data>
-  <data name="Editor.LanguageOverrides" xml:space="preserve"><value>Language-specific values</value></data>
-  <data name="Editor.Language.CN" xml:space="preserve"><value>Simplified Chinese (CN)</value></data>
-  <data name="Editor.Language.JP" xml:space="preserve"><value>Japanese (JP)</value></data>
-  <data name="Editor.Language.KR" xml:space="preserve"><value>Korean (KR)</value></data>
-  <data name="Editor.Language.TW" xml:space="preserve"><value>Traditional Chinese (TW)</value></data>
-  <data name="Editor.Language.US" xml:space="preserve"><value>English (US)</value></data>
-  <data name="Editor.NoGameItemMatches" xml:space="preserve"><value>No matching game items.</value></data>
-  <data name="Editor.CancelLinkedGameItem" xml:space="preserve"><value>Cancel new item</value></data>
-  <data name="Editor.SongCodesHint" xml:space="preserve"><value>Status and flag are game table codes; “disabled” is recognized as an unavailable song. Track ID selects the game's audio asset.</value></data>
-  <data name="Fields.SongId" xml:space="preserve"><value>Song ID</value></data>
-  <data name="Fields.SongName" xml:space="preserve"><value>Internal song key</value></data>
-  <data name="Fields.FullName" xml:space="preserve"><value>Song title</value></data>
-  <data name="Fields.Genre" xml:space="preserve"><value>Genre</value></data>
-  <data name="Fields.Artist" xml:space="preserve"><value>Artist</value></data>
-  <data name="Fields.OriginalBga" xml:space="preserve"><value>Original background video</value></data>
-  <data name="Fields.LoopBga" xml:space="preserve"><value>Loop background video</value></data>
-  <data name="Fields.Composer" xml:space="preserve"><value>Composer</value></data>
-  <data name="Fields.Singer" xml:space="preserve"><value>Vocalist</value></data>
-  <data name="Fields.FeaturedArtist" xml:space="preserve"><value>Featured artist</value></data>
-  <data name="Fields.Arranger" xml:space="preserve"><value>Arranger</value></data>
-  <data name="Fields.Visualizer" xml:space="preserve"><value>Video artist</value></data>
-  <data name="Fields.CostGamePoint" xml:space="preserve"><value>Unlock cost (game points)</value></data>
-  <data name="Fields.CostGameCash" xml:space="preserve"><value>Unlock cost (game cash)</value></data>
-  <data name="Fields.SongFlag" xml:space="preserve"><value>Song flag code</value></data>
-  <data name="Fields.SongStatus" xml:space="preserve"><value>Song status code</value></data>
-  <data name="Fields.FreeSong" xml:space="preserve"><value>Free to play</value></data>
-  <data name="Fields.HiddenSong" xml:space="preserve"><value>Hidden from song list</value></data>
-  <data name="Fields.OpenSong" xml:space="preserve"><value>Available to play</value></data>
-  <data name="Fields.TrackId" xml:space="preserve"><value>Music track ID</value></data>
-  <data name="Fields.ModDate" xml:space="preserve"><value>Modification timestamp</value></data>
-  <data name="Fields.UpdateValue" xml:space="preserve"><value>Update version</value></data>
-  <data name="Fields.PatternId" xml:space="preserve"><value>Pattern ID</value></data>
-  <data name="Fields.PointValue" xml:space="preserve"><value>Play reward amount</value></data>
-  <data name="Fields.PatternName" xml:space="preserve"><value>Pattern name</value></data>
-  <data name="Fields.PatternEnabled" xml:space="preserve"><value>Enabled</value></data>
-  <data name="Common.Actions" xml:space="preserve"><value>Actions</value></data>
-  <data name="Editor.SongItemHint" xml:space="preserve"><value>Choose an existing game item by ID or name. If it is missing, add it here and it will be saved with the song.</value></data>
-  <data name="Editor.SongItemIdRequired" xml:space="preserve"><value>Select an existing game item or add a new one before saving the song.</value></data>
-  <data name="Editor.SelectGameItem" xml:space="preserve"><value>Linked game item</value></data>
-  <data name="Editor.SearchGameItem" xml:space="preserve"><value>Search by item ID or name</value></data>
-  <data name="Editor.AddLinkedGameItem" xml:space="preserve"><value>Add new game item</value></data>
-  <data name="Editor.PatternDraftSavedWithSong" xml:space="preserve"><value>Pattern changes are part of this unsaved song and will be saved with it.</value></data>
-  <data name="Editor.CategoryIdExplanation" xml:space="preserve"><value>Category IDs are supplied by the game server. This CSV stores only the ID and product link, not category names. Existing IDs come from imported rows; add a custom ID only when you know the server value.</value></data>
-  <data name="Editor.CategoryNameUnavailable" xml:space="preserve"><value>The offline tables contain category IDs and product links only. The game client defines a server category name field, but this export has no category-name data.</value></data>
-  <data name="Editor.ProductCategoryMappingsAreInferred" xml:space="preserve"><value>Category descriptions are inferred from associated products and items. They are local reference labels, not official game names.</value></data>
-  <data name="Editor.CategoryNameOrProductRequired" xml:space="preserve"><value>Enter a category description or select at least one product.</value></data>
-  <data name="Editor.ProductCategoryMembershipHint" xml:space="preserve"><value>Select the products that belong to this category. Existing repeated CSV links are preserved until you change a product's membership.</value></data>
-  <data name="Editor.CategoryIdMustBeNumeric" xml:space="preserve"><value>Enter a numeric category ID supplied by the game server.</value></data>
-  <data name="Editor.CategoryNeedsProduct" xml:space="preserve"><value>Select at least one product before saving a category; the game table stores category-product links only.</value></data>
-  <data name="Lists.ManageProductCategories" xml:space="preserve"><value>Manage categories</value></data>
-  <data name="Lists.NoProductCategories" xml:space="preserve"><value>No product category IDs are present in this platform's imported product links.</value></data>
-  <data name="Lists.FilterProductCategories" xml:space="preserve"><value>Filter by category ID...</value></data>
-  <data name="Lists.AddProductCategory" xml:space="preserve"><value>Add category</value></data>
-  <data name="Lists.UniqueProductCategoryLinks" xml:space="preserve"><value>Unique category-product pairs</value></data>
-  <data name="Lists.ProductCount" xml:space="preserve"><value>Products</value></data>
-  <data name="Lists.UnknownProductCategory" xml:space="preserve"><value>Unmapped category</value></data>
-  <data name="Lists.NoProductCategoriesForProduct" xml:space="preserve"><value>None</value></data>
-  <data name="Lists.RemoveAllCategoryLinks" xml:space="preserve"><value>Remove all product links</value></data>
-  <data name="Lists.RemoveCategoryLinksConfirm" xml:space="preserve"><value>Remove all product links from category {0}? Its reference description will remain.</value></data>
-  <data name="Options.ItemTypeMusic" xml:space="preserve"><value>Music</value></data>
-  <data name="Options.ItemTypeNoteSkin" xml:space="preserve"><value>Note skin</value></data>
-  <data name="Options.ItemTypeStatusBarSkin" xml:space="preserve"><value>Status bar skin</value></data>
-  <data name="Options.ItemTypePartner" xml:space="preserve"><value>Partner</value></data>
-  <data name="Options.ItemTypeAddOn" xml:space="preserve"><value>Add-on</value></data>
-  <data name="Options.ItemTypeMaxPoint" xml:space="preserve"><value>MAX point</value></data>
-  <data name="Options.ItemTypeQPoint" xml:space="preserve"><value>Q point</value></data>
-  <data name="Options.ItemTypeUnlock" xml:space="preserve"><value>Unlock</value></data>
-  <data name="Options.ItemTypeIngame" xml:space="preserve"><value>In-game</value></data>
-  <data name="Options.ItemTypeMusicPack" xml:space="preserve"><value>Music pack</value></data>
-  <data name="Options.ItemTypeItemPack" xml:space="preserve"><value>Item pack</value></data>
-  <data name="Options.ItemTypeTicket" xml:space="preserve"><value>Ticket</value></data>
-  <data name="Options.EffectTypeNone" xml:space="preserve"><value>Not set</value></data>
-  <data name="Options.EffectTypeMaxPointPlus" xml:space="preserve"><value>Maximum points</value></data>
-  <data name="Options.EffectTypeRecover" xml:space="preserve"><value>Recovery</value></data>
-  <data name="Options.EffectTypeHpPlus" xml:space="preserve"><value>HP increase</value></data>
-  <data name="Options.EffectTypeLuckyPlus" xml:space="preserve"><value>Luck increase</value></data>
-  <data name="Options.EffectTypeFeverPlus" xml:space="preserve"><value>Fever increase</value></data>
-  <data name="Options.EffectTypeGaugeRefill" xml:space="preserve"><value>Gauge refill</value></data>
-  <data name="Options.EffectTypeBreakShield" xml:space="preserve"><value>Break shield</value></data>
-  <data name="Options.EffectTypeAntiGameOver" xml:space="preserve"><value>Prevent game over</value></data>
-  <data name="Options.EffectTypeAntiEffector" xml:space="preserve"><value>Prevent effectors</value></data>
-  <data name="Options.EffectTypeQPoint" xml:space="preserve"><value>Q points</value></data>
-  <data name="Options.EffectTypeExpPlus" xml:space="preserve"><value>Experience increase</value></data>
-  <data name="Fields.PlatformProductId" xml:space="preserve"><value>Platform product ID</value></data>
-  <data name="Fields.StoreProductId" xml:space="preserve"><value>Store product ID</value></data>
-  <data name="Fields.ProductType" xml:space="preserve"><value>Product type</value></data>
-  <data name="Fields.SaleStartDate" xml:space="preserve"><value>Sale start date</value></data>
-  <data name="Fields.SaleEndDate" xml:space="preserve"><value>Sale end date</value></data>
-  <data name="Options.ProductTypeUnlock" xml:space="preserve"><value>In-game unlock purchase</value></data>
-  <data name="Options.ProductTypePack" xml:space="preserve"><value>Product pack</value></data>
-  <data name="Options.ProductTypeTicket" xml:space="preserve"><value>Ticket purchase</value></data>
-  <data name="Options.ProductStatusNew" xml:space="preserve"><value>New</value></data>
-  <data name="Options.ProductStatusHot" xml:space="preserve"><value>Popular</value></data>
-  <data name="Options.ProductStatusBest" xml:space="preserve"><value>Recommended</value></data>
-  <data name="Options.PatternLine2" xml:space="preserve"><value>2 lines</value></data>
-  <data name="Options.PatternLine3" xml:space="preserve"><value>3 lines</value></data>
-  <data name="Options.PatternLine4" xml:space="preserve"><value>4 lines</value></data>
-  <data name="Options.PatternEasy" xml:space="preserve"><value>Easy</value></data>
-  <data name="Options.PatternNormal" xml:space="preserve"><value>Normal</value></data>
-  <data name="Options.PatternHard" xml:space="preserve"><value>Hard</value></data>
-  <data name="Options.PatternExpert" xml:space="preserve"><value>Expert</value></data>
-  <data name="Options.PointNone" xml:space="preserve"><value>No reward</value></data>
-  <data name="Options.PointMax" xml:space="preserve"><value>MAX point</value></data>
-  <data name="Options.PointQ" xml:space="preserve"><value>Q point</value></data>
-  <data name="Options.AchievementConditionAllCombo" xml:space="preserve"><value>Full combo</value></data>
-  <data name="Options.AchievementConditionBreak" xml:space="preserve"><value>Break notes</value></data>
-  <data name="Options.AchievementConditionEffector" xml:space="preserve"><value>Effector</value></data>
-  <data name="Options.AchievementConditionItemUse" xml:space="preserve"><value>Item use</value></data>
-  <data name="Options.AchievementConditionLine" xml:space="preserve"><value>Consecutive notes</value></data>
-  <data name="Options.AchievementConditionPerfect" xml:space="preserve"><value>Perfect judgment</value></data>
-  <data name="Options.AchievementConditionQuest" xml:space="preserve"><value>Quest completion</value></data>
-  <data name="Options.AchievementConditionSignature" xml:space="preserve"><value>Signature chart</value></data>
-  <data name="Options.AchievementConditionTotalMPoint" xml:space="preserve"><value>Total MAX points</value></data>
-  <data name="Options.AchievementConditionTotalScore" xml:space="preserve"><value>Total score</value></data>
-  <data name="Options.ProductStatusNone" xml:space="preserve"><value>No badge</value></data>
-  <data name="Options.ProductTypeRawCode" xml:space="preserve"><value>Unmapped type code</value></data>
-  <data name="Options.ItemTypeRawCode" xml:space="preserve"><value>Unmapped item type code</value></data>
-  <data name="Lists.Pagination" xml:space="preserve"><value>Table pagination</value></data>
-  <data name="Lists.PaginationSummary" xml:space="preserve"><value>{0} items</value></data>
-  <data name="Lists.PageOf" xml:space="preserve"><value>Page {0} of {1}</value></data>
-  <data name="Lists.FirstPage" xml:space="preserve"><value>First page</value></data>
-  <data name="Lists.PreviousPage" xml:space="preserve"><value>Previous page</value></data>
-  <data name="Lists.NextPage" xml:space="preserve"><value>Next page</value></data>
-  <data name="Lists.LastPage" xml:space="preserve"><value>Last page</value></data>
-  <data name="Home.RecentProjects" xml:space="preserve"><value>Recent Projects</value></data>
-  <data name="Home.OpenRecent" xml:space="preserve"><value>Open</value></data>
-  <data name="Home.RemoveRecent" xml:space="preserve"><value>Remove from recent projects</value></data>
-  <data name="Home.RecentProjectMissing" xml:space="preserve"><value>Folder not found</value></data>
-  <data name="Nav.Tables" xml:space="preserve"><value>Tables</value></data>
-  <data name="Tables.NoTables" xml:space="preserve"><value>No unmodeled CSV tables are available in this project.</value></data>
-  <data name="Tables.SelectTable" xml:space="preserve"><value>CSV table</value></data>
-  <data name="Tables.SourceFiles" xml:space="preserve"><value>Source files</value></data>
-  <data name="Tables.RowCount" xml:space="preserve"><value>{0} rows · {1}</value></data>
-  <data name="Tables.AddRow" xml:space="preserve"><value>Add row</value></data>
-  <data name="Tables.EditRow" xml:space="preserve"><value>Edit row {0}</value></data>
-  <data name="Tables.SaveRow" xml:space="preserve"><value>Save row</value></data>
-  <data name="Tables.RowSaved" xml:space="preserve"><value>CSV row saved.</value></data>
-  <data name="Editor.ItemSyncAllLanguagesHint" xml:space="preserve"><value>Item name, description, and summary will be copied to all five language tables when you save.</value></data>
-  <data name="Lists.SelectItemTypes" xml:space="preserve"><value>Select item types</value></data>
-  <data name="Lists.SelectedItemTypes" xml:space="preserve"><value>{0} selected</value></data>
-  <data name="Lists.ClearItemTypeFilters" xml:space="preserve"><value>Clear type filters</value></data>
-  <data name="Dialog.EditCover" xml:space="preserve"><value>Edit cover art</value></data>
-  <data name="AtlasEditor.ProjectSave" xml:space="preserve"><value>Save to project</value></data>
-  <data name="AtlasEditor.ProjectExport" xml:space="preserve"><value>Export bundle</value></data>
-  <data name="AtlasEditor.ProjectPath" xml:space="preserve"><value>Project path</value></data>
-  <data name="AtlasEditor.ProjectPlatform" xml:space="preserve"><value>Platform</value></data>
-  <data name="AtlasEditor.SaveToProject" xml:space="preserve"><value>Save to project</value></data>
-  <data name="AtlasEditor.SavedToProject" xml:space="preserve"><value>Saved to project: {0}</value></data>
-  <data name="Lists.ItemCover" xml:space="preserve"><value>Item Cover</value></data>
-  <data name="Lists.None" xml:space="preserve"><value>None</value></data>
-  <data name="Common.Close" xml:space="preserve"><value>Close</value></data>
-  <data name="SongCoverPreview.Title" xml:space="preserve"><value>Cover preview: {0}</value></data>
-  <data name="SongCoverPreview.Sprite" xml:space="preserve"><value>Sprite</value></data>
-  <data name="SongCoverPreview.Loading" xml:space="preserve"><value>Scanning atlases…</value></data>
-  <data name="SongCoverPreview.Found" xml:space="preserve"><value>Found</value></data>
-  <data name="SongCoverPreview.Missing" xml:space="preserve"><value>Missing</value></data>
-  <data name="SongCoverPreview.ReadError" xml:space="preserve"><value>Read error</value></data>
-  <data name="SongCoverPreview.NoProject" xml:space="preserve"><value>No project is open.</value></data>
-  <data name="SongCoverPreview.InvalidSprite" xml:space="preserve"><value>Sprite name should use the e-number_name format.</value></data>
-  <data name="SongCoverPreview.SpriteMissing" xml:space="preserve"><value>This atlas does not contain the Sprite.</value></data>
-  <data name="SongCoverPreview.Path" xml:space="preserve"><value>Path</value></data>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="App.Title" xml:space="preserve">
+    <value>DMTQ-Tools</value>
+  </data>
+  <data name="Language.Title" xml:space="preserve">
+    <value>Language</value>
+  </data>
+  <data name="Language.English" xml:space="preserve">
+    <value>English</value>
+  </data>
+  <data name="Language.Chinese" xml:space="preserve">
+    <value>中文</value>
+  </data>
+  <data name="Nav.Project" xml:space="preserve">
+    <value>Project</value>
+  </data>
+  <data name="Nav.Import" xml:space="preserve">
+    <value>Import</value>
+  </data>
+  <data name="Nav.Songs" xml:space="preserve">
+    <value>Songs</value>
+  </data>
+  <data name="Nav.Products" xml:space="preserve">
+    <value>Products</value>
+  </data>
+  <data name="Nav.ProductCategories" xml:space="preserve">
+    <value>Product categories</value>
+  </data>
+  <data name="Nav.Items" xml:space="preserve">
+    <value>Items</value>
+  </data>
+  <data name="Nav.Resources" xml:space="preserve">
+    <value>Resources</value>
+  </data>
+  <data name="Nav.Export" xml:space="preserve">
+    <value>Export</value>
+  </data>
+  <data name="Nav.Diagnostics" xml:space="preserve">
+    <value>Diagnostics</value>
+  </data>
+  <data name="Header.UnsavedChanges" xml:space="preserve">
+    <value>Unsaved changes</value>
+  </data>
+  <data name="Header.Saving" xml:space="preserve">
+    <value>Saving...</value>
+  </data>
+  <data name="Header.SaveProject" xml:space="preserve">
+    <value>Save Project</value>
+  </data>
+  <data name="Header.AutoSave" xml:space="preserve">
+    <value>Auto-save</value>
+  </data>
+  <data name="Header.AutoSaveFailed" xml:space="preserve">
+    <value>Auto-save failed</value>
+  </data>
+  <data name="Header.AutoSaveHint" xml:space="preserve">
+    <value>Automatically saves dirty project data after a short pause.</value>
+  </data>
+  <data name="Header.SaveFailed" xml:space="preserve">
+    <value>Save failed</value>
+  </data>
+  <data name="Errors.SaveFailed" xml:space="preserve">
+    <value>Could not save your changes.</value>
+  </data>
+  <data name="Errors.ShowDetails" xml:space="preserve">
+    <value>Show technical details</value>
+  </data>
+  <data name="Errors.UnexpectedTitle" xml:space="preserve">
+    <value>Something went wrong</value>
+  </data>
+  <data name="Errors.UnexpectedMessage" xml:space="preserve">
+    <value>The current page could not continue. Your project and active editor drafts remain available in this app session. Return to Diagnostics to continue without reloading the app.</value>
+  </data>
+  <data name="Errors.ErrorId" xml:space="preserve">
+    <value>Error ID: {0}</value>
+  </data>
+  <data name="Errors.ReturnToDiagnostics" xml:space="preserve">
+    <value>Continue to Diagnostics</value>
+  </data>
+  <data name="Header.ToggleNavigation" xml:space="preserve">
+    <value>Toggle navigation</value>
+  </data>
+  <data name="Common.Save" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="Common.Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="Common.Delete" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="Common.Edit" xml:space="preserve">
+    <value>Edit</value>
+  </data>
+  <data name="Common.NotRun" xml:space="preserve">
+    <value>Not run</value>
+  </data>
+  <data name="Common.Passed" xml:space="preserve">
+    <value>Passed</value>
+  </data>
+  <data name="Common.Errors" xml:space="preserve">
+    <value>{0} errors</value>
+  </data>
+  <data name="Common.NoProject" xml:space="preserve">
+    <value>Import or open a project first.</value>
+  </data>
+  <data name="Common.NoItems" xml:space="preserve">
+    <value>No items found.</value>
+  </data>
+  <data name="Home.ProjectFolder" xml:space="preserve">
+    <value>Project folder</value>
+  </data>
+  <data name="Home.ProjectFolderPlaceholder" xml:space="preserve">
+    <value>Select or enter a project folder path...</value>
+  </data>
+  <data name="Home.Browse" xml:space="preserve">
+    <value>Browse</value>
+  </data>
+  <data name="Home.Confirm" xml:space="preserve">
+    <value>Confirm</value>
+  </data>
+  <data name="Home.Source" xml:space="preserve">
+    <value>Source</value>
+  </data>
+  <data name="Home.Version" xml:space="preserve">
+    <value>Version</value>
+  </data>
+  <data name="Home.PrimaryPlatform" xml:space="preserve">
+    <value>Primary platform</value>
+  </data>
+  <data name="Home.ImportedPlatforms" xml:space="preserve">
+    <value>Imported platforms</value>
+  </data>
+  <data name="Home.Tables" xml:space="preserve">
+    <value>Tables</value>
+  </data>
+  <data name="Home.LastValidation" xml:space="preserve">
+    <value>Last validation</value>
+  </data>
+  <data name="Home.NotSelected" xml:space="preserve">
+    <value>Not selected</value>
+  </data>
+  <data name="Home.NotImported" xml:space="preserve">
+    <value>Not imported</value>
+  </data>
+  <data name="Home.ProjectLoaded" xml:space="preserve">
+    <value>Project loaded.</value>
+  </data>
+  <data name="Home.ProjectSaved" xml:space="preserve">
+    <value>Project saved.</value>
+  </data>
+  <data name="Home.ProjectCreated" xml:space="preserve">
+    <value>Project created. Go to the Import page to import a patch package.</value>
+  </data>
+  <data name="Home.EnterProjectPath" xml:space="preserve">
+    <value>Please enter a project folder path.</value>
+  </data>
+  <data name="Home.FolderNotFound" xml:space="preserve">
+    <value>Folder '{0}' does not exist.</value>
+  </data>
+  <data name="Home.EmptyFolderConfirm" xml:space="preserve">
+    <value>This folder is empty. Create a new project here?</value>
+  </data>
+  <data name="Home.NewProject" xml:space="preserve">
+    <value>New project</value>
+  </data>
+  <data name="Home.InvalidFolder" xml:space="preserve">
+    <value>This folder contains files but is not a DMTQ project. Please choose an empty folder, then go to the Import page to import an existing patch package.</value>
+  </data>
+  <data name="Import.SourceDirectory" xml:space="preserve">
+    <value>Source package directory</value>
+  </data>
+  <data name="Import.Platform" xml:space="preserve">
+    <value>Platform</value>
+  </data>
+  <data name="Import.ImportPlatform" xml:space="preserve">
+    <value>Import Platform</value>
+  </data>
+  <data name="Import.Precondition" xml:space="preserve">
+    <value>Create or open a project on the Project page before importing.</value>
+  </data>
+  <data name="Import.Importing" xml:space="preserve">
+    <value>Importing platform package...</value>
+  </data>
+  <data name="Import.Completed" xml:space="preserve">
+    <value>Import completed.</value>
+  </data>
+  <data name="Common.Languages" xml:space="preserve">
+    <value>Languages</value>
+  </data>
+  <data name="Export.CompressionPolicy" xml:space="preserve">
+    <value>Compression policy</value>
+  </data>
+  <data name="Export.OutputDirectory" xml:space="preserve">
+    <value>Output directory</value>
+  </data>
+  <data name="Export.Export" xml:space="preserve">
+    <value>Export</value>
+  </data>
+  <data name="Export.Precondition" xml:space="preserve">
+    <value>Import a package before exporting.</value>
+  </data>
+  <data name="Export.PreExportQa" xml:space="preserve">
+    <value>Pre-export QA:</value>
+  </data>
+  <data name="Export.FixErrors" xml:space="preserve">
+    <value> — Fix errors before exporting.</value>
+  </data>
+  <data name="Export.ManifestEntries" xml:space="preserve">
+    <value>Manifest entries</value>
+  </data>
+  <data name="Export.FilesWritten" xml:space="preserve">
+    <value>Files written</value>
+  </data>
+  <data name="Export.SkippedBaseline" xml:space="preserve">
+    <value>Skipped baseline</value>
+  </data>
+  <data name="Export.MissingCurrentFiles" xml:space="preserve">
+    <value>Missing current files</value>
+  </data>
+  <data name="Export.ValidationErrors" xml:space="preserve">
+    <value>Validation errors</value>
+  </data>
+  <data name="Export.RunningQa" xml:space="preserve">
+    <value>Running QA...</value>
+  </data>
+  <data name="Export.Exporting" xml:space="preserve">
+    <value>Exporting platform package...</value>
+  </data>
+  <data name="Export.QaFoundErrors" xml:space="preserve">
+    <value>QA found {0} error(s). Fix them before exporting.</value>
+  </data>
+  <data name="Export.CompletedValid" xml:space="preserve">
+    <value>Platform export completed and validation passed.</value>
+  </data>
+  <data name="Export.CompletedInvalid" xml:space="preserve">
+    <value>Platform export completed with validation errors.</value>
+  </data>
+  <data name="Diagnostics.ProjectFile" xml:space="preserve">
+    <value>Project file</value>
+  </data>
+  <data name="Diagnostics.NoProject" xml:space="preserve">
+    <value>No project selected.</value>
+  </data>
+  <data name="Diagnostics.ProjectExists" xml:space="preserve">
+    <value>Project file exists.</value>
+  </data>
+  <data name="Diagnostics.NotSaved" xml:space="preserve">
+    <value>Project has not been saved yet.</value>
+  </data>
+  <data name="Diagnostics.QaCheck" xml:space="preserve">
+    <value>QA Check</value>
+  </data>
+  <data name="Diagnostics.RunQa" xml:space="preserve">
+    <value>Run QA</value>
+  </data>
+  <data name="Diagnostics.WorkflowLog" xml:space="preserve">
+    <value>Workflow log</value>
+  </data>
+  <data name="Diagnostics.NoneYet" xml:space="preserve">
+    <value>No diagnostics yet.</value>
+  </data>
+  <data name="Diagnostics.LastValidation" xml:space="preserve">
+    <value>Last validation</value>
+  </data>
+  <data name="Diagnostics.NotRun" xml:space="preserve">
+    <value>Validation has not run.</value>
+  </data>
+  <data name="Diagnostics.Passed" xml:space="preserve">
+    <value>Validation passed.</value>
+  </data>
+  <data name="Lists.FilterItems" xml:space="preserve">
+    <value>Filter by item ID, name, type...</value>
+  </data>
+  <data name="Lists.FilterProducts" xml:space="preserve">
+    <value>Filter by product ID, item ID, type...</value>
+  </data>
+  <data name="Lists.FilterResources" xml:space="preserve">
+    <value>Filter by file name</value>
+  </data>
+  <data name="Lists.Language" xml:space="preserve">
+    <value>Language</value>
+  </data>
+  <data name="Lists.Category" xml:space="preserve">
+    <value>Category</value>
+  </data>
+  <data name="Lists.AllCategories" xml:space="preserve">
+    <value>All Categories</value>
+  </data>
+  <data name="Lists.AddItem" xml:space="preserve">
+    <value>Add Item</value>
+  </data>
+  <data name="Lists.AddProduct" xml:space="preserve">
+    <value>Add Product</value>
+  </data>
+  <data name="Lists.AddResource" xml:space="preserve">
+    <value>Add Resource</value>
+  </data>
+  <data name="Lists.Active" xml:space="preserve">
+    <value>Active</value>
+  </data>
+  <data name="Lists.LocalizedNames" xml:space="preserve">
+    <value>Localized names</value>
+  </data>
+  <data name="Lists.ItemTypes" xml:space="preserve">
+    <value>Item types</value>
+  </data>
+  <data name="Lists.TotalResources" xml:space="preserve">
+    <value>Total resources</value>
+  </data>
+  <data name="Lists.Others" xml:space="preserve">
+    <value>Others</value>
+  </data>
+  <data name="Lists.Actions" xml:space="preserve">
+    <value>Actions</value>
+  </data>
+  <data name="Lists.Type" xml:space="preserve">
+    <value>Type</value>
+  </data>
+  <data name="Lists.Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="Lists.Summary" xml:space="preserve">
+    <value>Summary</value>
+  </data>
+  <data name="Lists.ItemId" xml:space="preserve">
+    <value>Item ID</value>
+  </data>
+  <data name="Lists.ProductId" xml:space="preserve">
+    <value>Product ID</value>
+  </data>
+  <data name="Lists.FileName" xml:space="preserve">
+    <value>File Name</value>
+  </data>
+  <data name="Lists.Platforms" xml:space="preserve">
+    <value>Platforms</value>
+  </data>
+  <data name="Lists.Size" xml:space="preserve">
+    <value>Size</value>
+  </data>
+  <data name="Lists.Compressed" xml:space="preserve">
+    <value>Compressed</value>
+  </data>
+  <data name="Lists.Yes" xml:space="preserve">
+    <value>Yes</value>
+  </data>
+  <data name="Lists.No" xml:space="preserve">
+    <value>No</value>
+  </data>
+  <data name="Lists.DeleteConfirm" xml:space="preserve">
+    <value>Delete {0} '{1}'?</value>
+  </data>
+  <data name="Lists.Deleted" xml:space="preserve">
+    <value>{0} {1} deleted.</value>
+  </data>
+  <data name="Lists.NoSongs" xml:space="preserve">
+    <value>No songs found. Import CSV data or add a song.</value>
+  </data>
+  <data name="Lists.NoProducts" xml:space="preserve">
+    <value>No products found. Import CSV data or add a product.</value>
+  </data>
+  <data name="Lists.NoResources" xml:space="preserve">
+    <value>No resources found.</value>
+  </data>
+  <data name="Lists.NoItemsDetailed" xml:space="preserve">
+    <value>No items found. Import CSV data or add an item.</value>
+  </data>
+  <data name="Lists.FilterSongs" xml:space="preserve">
+    <value>Filter by song ID, title, item...</value>
+  </data>
+  <data name="Lists.PreviewLanguage" xml:space="preserve">
+    <value>Preview Language</value>
+  </data>
+  <data name="Lists.AddSong" xml:space="preserve">
+    <value>Add Song</value>
+  </data>
+  <data name="Lists.Patterns" xml:space="preserve">
+    <value>Patterns</value>
+  </data>
+  <data name="Lists.WithPreview" xml:space="preserve">
+    <value>With preview</value>
+  </data>
+  <data name="Lists.HasPreview" xml:space="preserve">
+    <value>Has Preview .opus</value>
+  </data>
+  <data name="Lists.Artist" xml:space="preserve">
+    <value>Artist</value>
+  </data>
+  <data name="Lists.Products" xml:space="preserve">
+    <value>Products</value>
+  </data>
+  <data name="Lists.WithStoreSku" xml:space="preserve">
+    <value>With store SKU</value>
+  </data>
+  <data name="Lists.Categories" xml:space="preserve">
+    <value>Categories</value>
+  </data>
+  <data name="Lists.PlatformSku" xml:space="preserve">
+    <value>Platform SKU</value>
+  </data>
+  <data name="Lists.StoreSku" xml:space="preserve">
+    <value>Store SKU</value>
+  </data>
+  <data name="Lists.GamePoint" xml:space="preserve">
+    <value>MAX Point</value>
+  </data>
+  <data name="Lists.GameCash" xml:space="preserve">
+    <value>Q Point</value>
+  </data>
+  <data name="Editor.OpenProjectFirst" xml:space="preserve">
+    <value>Open or import a project before editing.</value>
+  </data>
+  <data name="Editor.NotFound" xml:space="preserve">
+    <value>{0} '{1}' not found.</value>
+  </data>
+  <data name="Editor.BackTo" xml:space="preserve">
+    <value>Back to {0}</value>
+  </data>
+  <data name="Editor.BasicInfo" xml:space="preserve">
+    <value>Basic Info</value>
+  </data>
+  <data name="Editor.Credits" xml:space="preserve">
+    <value>Credits</value>
+  </data>
+  <data name="Editor.GameplaySettings" xml:space="preserve">
+    <value>Gameplay Settings</value>
+  </data>
+  <data name="Editor.ItemText" xml:space="preserve">
+    <value>Descriptions and summary</value>
+  </data>
+  <data name="Editor.ItemRules" xml:space="preserve">
+    <value>Item settings</value>
+  </data>
+  <data name="Editor.LocalizedDescriptions" xml:space="preserve">
+    <value>Localized Descriptions</value>
+  </data>
+  <data name="Editor.SyncOriginalText" xml:space="preserve">
+    <value>Sync original text</value>
+  </data>
+  <data name="Editor.SaveItem" xml:space="preserve">
+    <value>Save Item</value>
+  </data>
+  <data name="Editor.SaveProduct" xml:space="preserve">
+    <value>Save Product</value>
+  </data>
+  <data name="Editor.SaveSong" xml:space="preserve">
+    <value>Save Song</value>
+  </data>
+  <data name="Editor.ItemIdRequired" xml:space="preserve">
+    <value>Item ID is required.</value>
+  </data>
+  <data name="Editor.ProductIdRequired" xml:space="preserve">
+    <value>Product ID is required.</value>
+  </data>
+  <data name="Editor.SongIdRequired" xml:space="preserve">
+    <value>Song ID is required and must be a number.</value>
+  </data>
+  <data name="Editor.Saved" xml:space="preserve">
+    <value>{0} saved.</value>
+  </data>
+  <data name="Editor.Patterns" xml:space="preserve">
+    <value>Patterns</value>
+  </data>
+  <data name="Editor.AddPattern" xml:space="preserve">
+    <value>Add Pattern</value>
+  </data>
+  <data name="Editor.NoPatterns" xml:space="preserve">
+    <value>No patterns yet. Click Add Pattern to add one.</value>
+  </data>
+  <data name="Editor.DescriptionsHint" xml:space="preserve">
+    <value>Overrides per language. Leave blank to use Basic Info values on export.</value>
+  </data>
+  <data name="Dialog.AddResource" xml:space="preserve">
+    <value>Add Resource</value>
+  </data>
+  <data name="Dialog.EditResource" xml:space="preserve">
+    <value>Edit Resource</value>
+  </data>
+  <data name="Dialog.BasicInfo" xml:space="preserve">
+    <value>Basic Info</value>
+  </data>
+  <data name="Dialog.PlatformFiles" xml:space="preserve">
+    <value>Platform Files</value>
+  </data>
+  <data name="Dialog.ReplaceFile" xml:space="preserve">
+    <value>Replace File</value>
+  </data>
+  <data name="Dialog.EditCover" xml:space="preserve">
+    <value>Edit cover art</value>
+  </data>
+  <data name="Dialog.SelectPlatform" xml:space="preserve">
+    <value>Select platform:</value>
+  </data>
+  <data name="Dialog.AddPlatform" xml:space="preserve">
+    <value>+ Add Platform</value>
+  </data>
+  <data name="Dialog.AllPlatformsAdded" xml:space="preserve">
+    <value>All platforms already added.</value>
+  </data>
+  <data name="Dialog.WillReplace" xml:space="preserve">
+    <value>Will replace: {0}</value>
+  </data>
+  <data name="Dialog.Source" xml:space="preserve">
+    <value>Source: {0}</value>
+  </data>
+  <data name="Dialog.ExistSizeChecksum" xml:space="preserve">
+    <value>Exist: {0}, Size: {1}, Checksum: {2}</value>
+  </data>
+  <data name="Editor.NewSong" xml:space="preserve">
+    <value>New Song</value>
+  </data>
+  <data name="Editor.NewProduct" xml:space="preserve">
+    <value>New Product</value>
+  </data>
+  <data name="Editor.NewItem" xml:space="preserve">
+    <value>New Item</value>
+  </data>
+  <data name="Editor.Edit" xml:space="preserve">
+    <value>Edit: {0}</value>
+  </data>
+  <data name="Editor.ProductInformation" xml:space="preserve">
+    <value>Product Information</value>
+  </data>
+  <data name="Editor.ItemInformation" xml:space="preserve">
+    <value>Item Information</value>
+  </data>
+  <data name="Editor.PriceSaleWindow" xml:space="preserve">
+    <value>Price and Sale Window</value>
+  </data>
+  <data name="Editor.ItemDescriptionsHint" xml:space="preserve">
+    <value>These values are exported to item_desc_&lt;lang&gt;.csv during package export.</value>
+  </data>
+  <data name="Editor.OpenSongsProject" xml:space="preserve">
+    <value>Open or import a project before editing songs.</value>
+  </data>
+  <data name="Nav.PatternTool" xml:space="preserve">
+    <value>Pattern Tool</value>
+  </data>
+  <data name="Nav.AtlasEditor" xml:space="preserve">
+    <value>Song Jackets</value>
+  </data>
+  <data name="AtlasEditor.Title" xml:space="preserve">
+    <value>Song Jacket Atlas</value>
+  </data>
+  <data name="AtlasEditor.New" xml:space="preserve">
+    <value>New atlas</value>
+  </data>
+  <data name="AtlasEditor.Create" xml:space="preserve">
+    <value>Create atlas</value>
+  </data>
+  <data name="AtlasEditor.CloseAtlas" xml:space="preserve">
+    <value>Close atlas</value>
+  </data>
+  <data name="AtlasEditor.Size" xml:space="preserve">
+    <value>Size</value>
+  </data>
+  <data name="AtlasEditor.AddSprite" xml:space="preserve">
+    <value>Add Sprite</value>
+  </data>
+  <data name="AtlasEditor.EmptySprite" xml:space="preserve">
+    <value>Empty slot</value>
+  </data>
+  <data name="AtlasEditor.ReplaceImage" xml:space="preserve">
+    <value>Replace image</value>
+  </data>
+  <data name="AtlasEditor.ExportImage" xml:space="preserve">
+    <value>Export image</value>
+  </data>
+  <data name="AtlasEditor.ExportTexture" xml:space="preserve">
+    <value>Export texture</value>
+  </data>
+  <data name="AtlasEditor.DeleteTitle" xml:space="preserve">
+    <value>Delete Sprite</value>
+  </data>
+  <data name="AtlasEditor.DeleteConfirm" xml:space="preserve">
+    <value>Delete Sprite '{0}'?</value>
+  </data>
+  <data name="AtlasEditor.Stretch" xml:space="preserve">
+    <value>Stretch to fit</value>
+  </data>
+  <data name="AtlasEditor.StretchConfirm" xml:space="preserve">
+    <value>The image is {0}×{1}; the target region is {2}×{3}. Stretch it to fit?</value>
+  </data>
+  <data name="AtlasEditor.NoSpriteSlot" xml:space="preserve">
+    <value>No free slot can fit a 256×149 cover.</value>
+  </data>
+  <data name="AtlasEditor.TemplateForPlatform" xml:space="preserve">
+    <value>Platform template: {0}</value>
+  </data>
+  <data name="AtlasEditor.Subtitle" xml:space="preserve">
+    <value>Arrange song covers into an NGUI atlas and export replacement assets or a platform bundle.</value>
+  </data>
+  <data name="AtlasEditor.AtlasName" xml:space="preserve">
+    <value>Bundle / prefab name</value>
+  </data>
+  <data name="AtlasEditor.Kind" xml:space="preserve">
+    <value>Atlas type</value>
+  </data>
+  <data name="AtlasEditor.NGUI2" xml:space="preserve">
+    <value>NGUI2 (d_)</value>
+  </data>
+  <data name="AtlasEditor.NGUI3" xml:space="preserve">
+    <value>NGUI3 (d3_)</value>
+  </data>
+  <data name="AtlasEditor.Width" xml:space="preserve">
+    <value>Width</value>
+  </data>
+  <data name="AtlasEditor.Height" xml:space="preserve">
+    <value>Height</value>
+  </data>
+  <data name="AtlasEditor.OpenBundle" xml:space="preserve">
+    <value>Open existing bundle</value>
+  </data>
+  <data name="AtlasEditor.Preview" xml:space="preserve">
+    <value>Atlas preview</value>
+  </data>
+  <data name="AtlasEditor.Sprites" xml:space="preserve">
+    <value>Sprites</value>
+  </data>
+  <data name="AtlasEditor.SpriteCount" xml:space="preserve">
+    <value>{0} sprites</value>
+  </data>
+  <data name="AtlasEditor.Name" xml:space="preserve">
+    <value>Sprite name</value>
+  </data>
+  <data name="AtlasEditor.Region" xml:space="preserve">
+    <value>Region (x, y, width, height)</value>
+  </data>
+  <data name="AtlasEditor.CoordinateOrigin" xml:space="preserve">
+    <value>Sprite regions use top-left-origin pixel coordinates.</value>
+  </data>
+  <data name="AtlasEditor.X" xml:space="preserve">
+    <value>X</value>
+  </data>
+  <data name="AtlasEditor.Y" xml:space="preserve">
+    <value>Y</value>
+  </data>
+  <data name="AtlasEditor.Remove" xml:space="preserve">
+    <value>Remove</value>
+  </data>
+  <data name="AtlasEditor.ExportBundle" xml:space="preserve">
+    <value>Export complete bundle</value>
+  </data>
+  <data name="AtlasEditor.ProjectSave" xml:space="preserve">
+    <value>Save to project</value>
+  </data>
+  <data name="AtlasEditor.ProjectExport" xml:space="preserve">
+    <value>Export bundle</value>
+  </data>
+  <data name="AtlasEditor.ProjectPath" xml:space="preserve">
+    <value>Project path</value>
+  </data>
+  <data name="AtlasEditor.ProjectPlatform" xml:space="preserve">
+    <value>Platform</value>
+  </data>
+  <data name="AtlasEditor.SaveToProject" xml:space="preserve">
+    <value>Save to project</value>
+  </data>
+  <data name="AtlasEditor.SavedToProject" xml:space="preserve">
+    <value>Saved to project: {0}</value>
+  </data>
+  <data name="AtlasEditor.Platform" xml:space="preserve">
+    <value>Target platform</value>
+  </data>
+  <data name="AtlasEditor.Template" xml:space="preserve">
+    <value>Template</value>
+  </data>
+  <data name="AtlasEditor.Loaded" xml:space="preserve">
+    <value>Loaded {0} ({1}, {2} sprites).</value>
+  </data>
+  <data name="AtlasEditor.Exported" xml:space="preserve">
+    <value>Exported {0}.</value>
+  </data>
+  <data name="AtlasEditor.Error" xml:space="preserve">
+    <value>Atlas operation failed: {0}</value>
+  </data>
+  <data name="AtlasEditor.NoSprites" xml:space="preserve">
+    <value>Add at least one sprite before exporting.</value>
+  </data>
+  <data name="Pattern.Title" xml:space="preserve">
+    <value>Pattern Tool</value>
+  </data>
+  <data name="Pattern.Open" xml:space="preserve">
+    <value>Open Pattern</value>
+  </data>
+  <data name="Pattern.SaveAs" xml:space="preserve">
+    <value>Save As</value>
+  </data>
+  <data name="Pattern.ExportFormat" xml:space="preserve">
+    <value>Export format</value>
+  </data>
+  <data name="Pattern.OpenHint" xml:space="preserve">
+    <value>Open a .pt, .bytes, or .txt file. The file is parsed into the common pattern model.</value>
+  </data>
+  <data name="Pattern.NoPattern" xml:space="preserve">
+    <value>Open a pattern to inspect its metadata, events, and sound table.</value>
+  </data>
+  <data name="Pattern.BasicInfo" xml:space="preserve">
+    <value>Pattern information</value>
+  </data>
+  <data name="Pattern.File" xml:space="preserve">
+    <value>File</value>
+  </data>
+  <data name="Pattern.SourceFormat" xml:space="preserve">
+    <value>Source format</value>
+  </data>
+  <data name="Pattern.Encrypted" xml:space="preserve">
+    <value>Source PT is encrypted</value>
+  </data>
+  <data name="Pattern.Version" xml:space="preserve">
+    <value>PT version</value>
+  </data>
+  <data name="Pattern.PtRawHeaderFieldB" xml:space="preserve">
+    <value>PT raw header field B</value>
+  </data>
+  <data name="Pattern.BytesTick" xml:space="preserve">
+    <value>Bytes tick</value>
+  </data>
+  <data name="Pattern.BytesPlayTime" xml:space="preserve">
+    <value>Bytes play time (seconds)</value>
+  </data>
+  <data name="Pattern.PositionsPerMeasure" xml:space="preserve">
+    <value>Positions per measure</value>
+  </data>
+  <data name="Pattern.InitialBpm" xml:space="preserve">
+    <value>Initial BPM</value>
+  </data>
+  <data name="Pattern.EndPosition" xml:space="preserve">
+    <value>End position</value>
+  </data>
+  <data name="Pattern.Events" xml:space="preserve">
+    <value>Events</value>
+  </data>
+  <data name="Pattern.Tracks" xml:space="preserve">
+    <value>Tracks</value>
+  </data>
+  <data name="Pattern.Sounds" xml:space="preserve">
+    <value>Sounds</value>
+  </data>
+  <data name="Pattern.TagB" xml:space="preserve">
+    <value>Tag B</value>
+  </data>
+  <data name="Pattern.TagC" xml:space="preserve">
+    <value>Tag C</value>
+  </data>
+  <data name="Pattern.SoundList" xml:space="preserve">
+    <value>Sound list</value>
+  </data>
+  <data name="Pattern.EventList" xml:space="preserve">
+    <value>Event list</value>
+  </data>
+  <data name="Pattern.SoundId" xml:space="preserve">
+    <value>Sound ID</value>
+  </data>
+  <data name="Pattern.Flags" xml:space="preserve">
+    <value>Flags</value>
+  </data>
+  <data name="Pattern.FileName" xml:space="preserve">
+    <value>File name</value>
+  </data>
+  <data name="Pattern.Track" xml:space="preserve">
+    <value>Track</value>
+  </data>
+  <data name="Pattern.Position" xml:space="preserve">
+    <value>Position</value>
+  </data>
+  <data name="Pattern.Type" xml:space="preserve">
+    <value>Type</value>
+  </data>
+  <data name="Pattern.Details" xml:space="preserve">
+    <value>Details</value>
+  </data>
+  <data name="Pattern.Yes" xml:space="preserve">
+    <value>Yes</value>
+  </data>
+  <data name="Pattern.No" xml:space="preserve">
+    <value>No</value>
+  </data>
+  <data name="Pattern.UnsupportedExtension" xml:space="preserve">
+    <value>Only .pt, .bytes, and .txt files are supported.</value>
+  </data>
+  <data name="Pattern.Loaded" xml:space="preserve">
+    <value>Loaded {0}.</value>
+  </data>
+  <data name="Pattern.Saved" xml:space="preserve">
+    <value>Saved {0}.</value>
+  </data>
+  <data name="Pattern.LoadFailed" xml:space="preserve">
+    <value>Could not load pattern: {0}</value>
+  </data>
+  <data name="Pattern.SaveFailed" xml:space="preserve">
+    <value>Could not save pattern: {0}</value>
+  </data>
+  <data name="Pattern.OpenHintWithText" xml:space="preserve">
+    <value>Open a .pt, .bytes, or .txt file. The file is parsed into the common pattern model.</value>
+  </data>
+  <data name="Pattern.UnsupportedExtensionWithText" xml:space="preserve">
+    <value>Only .pt, .bytes, and .txt files are supported.</value>
+  </data>
+  <data name="Header.DataPlatform" xml:space="preserve">
+    <value>Data platform</value>
+  </data>
+  <data name="Common.Add" xml:space="preserve">
+    <value>Add</value>
+  </data>
+  <data name="Common.MoveUp" xml:space="preserve">
+    <value>Move up</value>
+  </data>
+  <data name="Common.MoveDown" xml:space="preserve">
+    <value>Move down</value>
+  </data>
+  <data name="Nav.Achievements" xml:space="preserve">
+    <value>Achievements</value>
+  </data>
+  <data name="Nav.Quests" xml:space="preserve">
+    <value>Quests</value>
+  </data>
+  <data name="Nav.Slang" xml:space="preserve">
+    <value>Slang filter</value>
+  </data>
+  <data name="Lists.NoAchievements" xml:space="preserve">
+    <value>No achievements found. Import CSV data or add an achievement.</value>
+  </data>
+  <data name="Lists.FilterAchievements" xml:space="preserve">
+    <value>Filter by achievement ID, name, or condition...</value>
+  </data>
+  <data name="Lists.AddAchievement" xml:space="preserve">
+    <value>Add achievement</value>
+  </data>
+  <data name="Lists.NoQuests" xml:space="preserve">
+    <value>No quests found. Import CSV data or add a quest.</value>
+  </data>
+  <data name="Lists.FilterQuests" xml:space="preserve">
+    <value>Filter by quest ID or localized name...</value>
+  </data>
+  <data name="Lists.AddQuest" xml:space="preserve">
+    <value>Add quest</value>
+  </data>
+  <data name="Lists.NoSlang" xml:space="preserve">
+    <value>No slang entries found.</value>
+  </data>
+  <data name="Lists.FilterSlang" xml:space="preserve">
+    <value>Filter slang entries...</value>
+  </data>
+  <data name="Lists.AddSlang" xml:space="preserve">
+    <value>Add entry</value>
+  </data>
+  <data name="Lists.SlangEntries" xml:space="preserve">
+    <value>Entries</value>
+  </data>
+  <data name="Fields.AchievementId" xml:space="preserve">
+    <value>Achievement ID</value>
+  </data>
+  <data name="Fields.QuestId" xml:space="preserve">
+    <value>Quest ID</value>
+  </data>
+  <data name="Fields.ProductId" xml:space="preserve">
+    <value>Product ID</value>
+  </data>
+  <data name="Fields.CategoryId" xml:space="preserve">
+    <value>Category ID</value>
+  </data>
+  <data name="Fields.CategoryName" xml:space="preserve">
+    <value>Category usage</value>
+  </data>
+  <data name="Fields.Notes" xml:space="preserve">
+    <value>Notes</value>
+  </data>
+  <data name="Fields.ItemType" xml:space="preserve">
+    <value>Item type</value>
+  </data>
+  <data name="Fields.ItemLevel" xml:space="preserve">
+    <value>Item level</value>
+  </data>
+  <data name="Fields.Update" xml:space="preserve">
+    <value>Update</value>
+  </data>
+  <data name="Fields.Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="Fields.BaseName" xml:space="preserve">
+    <value>Base name</value>
+  </data>
+  <data name="Fields.Description" xml:space="preserve">
+    <value>Description</value>
+  </data>
+  <data name="Fields.ConditionType" xml:space="preserve">
+    <value>Condition type</value>
+  </data>
+  <data name="Fields.ConditionValue" xml:space="preserve">
+    <value>Condition value</value>
+  </data>
+  <data name="Fields.ConditionCount" xml:space="preserve">
+    <value>Condition count</value>
+  </data>
+  <data name="Fields.ConditionSpecial" xml:space="preserve">
+    <value>Condition special</value>
+  </data>
+  <data name="Fields.ImageUrl" xml:space="preserve">
+    <value>Image URL</value>
+  </data>
+  <data name="Fields.Tier" xml:space="preserve">
+    <value>Tier</value>
+  </data>
+  <data name="Fields.ObtainPoint" xml:space="preserve">
+    <value>Obtain point</value>
+  </data>
+  <data name="Fields.PreDescription" xml:space="preserve">
+    <value>Pre-description</value>
+  </data>
+  <data name="Fields.AfterDescription" xml:space="preserve">
+    <value>After-description</value>
+  </data>
+  <data name="Fields.EffectType" xml:space="preserve">
+    <value>Effect type</value>
+  </data>
+  <data name="Fields.EffectPoint" xml:space="preserve">
+    <value>Effect point</value>
+  </data>
+  <data name="Fields.EffectCount" xml:space="preserve">
+    <value>Effect count</value>
+  </data>
+  <data name="Fields.EffectSpecial" xml:space="preserve">
+    <value>Effect special</value>
+  </data>
+  <data name="Fields.SlangValue" xml:space="preserve">
+    <value>Blocked word or phrase</value>
+  </data>
+  <data name="Editor.ProductCategories" xml:space="preserve">
+    <value>Product categories</value>
+  </data>
+  <data name="Editor.ProductCategoriesHint" xml:space="preserve">
+    <value>Links this product to category IDs in category_categoryproduct.csv. A product can belong to more than one category.</value>
+  </data>
+  <data name="Editor.IngameConfigurations" xml:space="preserve">
+    <value>In-game configurations</value>
+  </data>
+  <data name="Editor.IngameConfigurationsHint" xml:space="preserve">
+    <value>Rows linked by product_id in ingameitem_ingameitem.csv.</value>
+  </data>
+  <data name="Editor.AddConfiguration" xml:space="preserve">
+    <value>Add configuration</value>
+  </data>
+  <data name="Editor.NoIngameConfigurations" xml:space="preserve">
+    <value>This product has no in-game configuration.</value>
+  </data>
+  <data name="Editor.ItemEffect" xml:space="preserve">
+    <value>Item effect</value>
+  </data>
+  <data name="Editor.ItemEffectHint" xml:space="preserve">
+    <value>The optional ingameitem_itemeffect.csv row linked by item_id.</value>
+  </data>
+  <data name="Editor.AddEffect" xml:space="preserve">
+    <value>Add effect</value>
+  </data>
+  <data name="Editor.RemoveEffect" xml:space="preserve">
+    <value>Remove effect</value>
+  </data>
+  <data name="Editor.NoItemEffect" xml:space="preserve">
+    <value>This item has no effect row.</value>
+  </data>
+  <data name="Editor.NewAchievement" xml:space="preserve">
+    <value>New achievement</value>
+  </data>
+  <data name="Editor.SaveAchievement" xml:space="preserve">
+    <value>Save achievement</value>
+  </data>
+  <data name="Editor.AchievementRules" xml:space="preserve">
+    <value>Achievement rules</value>
+  </data>
+  <data name="Editor.AchievementDescriptionsHint" xml:space="preserve">
+    <value>These values are written to acievement_desc_&lt;lang&gt;.csv.</value>
+  </data>
+  <data name="Editor.AchievementIdRequired" xml:space="preserve">
+    <value>Achievement ID is required.</value>
+  </data>
+  <data name="Editor.NewQuest" xml:space="preserve">
+    <value>New quest</value>
+  </data>
+  <data name="Editor.SaveQuest" xml:space="preserve">
+    <value>Save quest</value>
+  </data>
+  <data name="Editor.QuestDescriptions" xml:space="preserve">
+    <value>Localized quest descriptions</value>
+  </data>
+  <data name="Editor.QuestIdRequired" xml:space="preserve">
+    <value>Quest ID is required.</value>
+  </data>
+  <data name="Editor.Missions" xml:space="preserve">
+    <value>Missions</value>
+  </data>
+  <data name="Editor.MissionsHint" xml:space="preserve">
+    <value>Mission order is preserved across all five localized CSV files.</value>
+  </data>
+  <data name="Editor.AddMission" xml:space="preserve">
+    <value>Add mission</value>
+  </data>
+  <data name="Editor.NoMissions" xml:space="preserve">
+    <value>This quest has no missions.</value>
+  </data>
+  <data name="Editor.MissionNumber" xml:space="preserve">
+    <value>Mission {0}</value>
+  </data>
+  <data name="Editor.NewSlang" xml:space="preserve">
+    <value>New slang entry</value>
+  </data>
+  <data name="Editor.SlangEntry" xml:space="preserve">
+    <value>Slang entry</value>
+  </data>
+  <data name="Editor.SlangHint" xml:space="preserve">
+    <value>The exporter preserves the trailing empty column required by current patches.</value>
+  </data>
+  <data name="Fields.ItemName" xml:space="preserve">
+    <value>Item name</value>
+  </data>
+  <data name="Fields.ItemId" xml:space="preserve">
+    <value>Item ID</value>
+  </data>
+  <data name="Fields.ImageUrl1" xml:space="preserve">
+    <value>Image URL 1</value>
+  </data>
+  <data name="Fields.ImageUrl2" xml:space="preserve">
+    <value>Image URL 2</value>
+  </data>
+  <data name="Fields.Summary" xml:space="preserve">
+    <value>Summary</value>
+  </data>
+  <data name="Fields.RepeatCount" xml:space="preserve">
+    <value>Repeat count</value>
+  </data>
+  <data name="Fields.LimitMinute" xml:space="preserve">
+    <value>Limit duration (minutes)</value>
+  </data>
+  <data name="Fields.Status" xml:space="preserve">
+    <value>Status code</value>
+  </data>
+  <data name="Fields.BuyLevel" xml:space="preserve">
+    <value>Required level</value>
+  </data>
+  <data name="Fields.BuyLimitCount" xml:space="preserve">
+    <value>Purchase limit count</value>
+  </data>
+  <data name="Fields.BuyLimitType" xml:space="preserve">
+    <value>Purchase limit type code</value>
+  </data>
+  <data name="Fields.GameItemId" xml:space="preserve">
+    <value>Linked game item ID</value>
+  </data>
+  <data name="Fields.ChartLine" xml:space="preserve">
+    <value>Chart line count</value>
+  </data>
+  <data name="Fields.ChartDifficulty" xml:space="preserve">
+    <value>Chart difficulty</value>
+  </data>
+  <data name="Fields.StarRating" xml:space="preserve">
+    <value>Star rating</value>
+  </data>
+  <data name="Fields.PointType" xml:space="preserve">
+    <value>Play reward type</value>
+  </data>
+  <data name="Fields.ExistingValue" xml:space="preserve">
+    <value>Existing value</value>
+  </data>
+  <data name="Editor.CopyBaseToLanguages" xml:space="preserve">
+    <value>Copy base values to all languages</value>
+  </data>
+  <data name="Editor.GameItemLink" xml:space="preserve">
+    <value>Linked game item</value>
+  </data>
+  <data name="Editor.ExistingLinkedItem" xml:space="preserve">
+    <value>Existing item</value>
+  </data>
+  <data name="Editor.NewLinkedItem" xml:space="preserve">
+    <value>New item</value>
+  </data>
+  <data name="Editor.LinkedItemWillBeCreated" xml:space="preserve">
+    <value>Will be created with this song</value>
+  </data>
+  <data name="Editor.ChangeOrCreateLinkedItem" xml:space="preserve">
+    <value>Change or create linked item</value>
+  </data>
+  <data name="Editor.SelectLinkedItem" xml:space="preserve">
+    <value>Select item</value>
+  </data>
+  <data name="Editor.CreateLinkedItem" xml:space="preserve">
+    <value>Create item</value>
+  </data>
+  <data name="Editor.NewLinkedItemHint" xml:space="preserve">
+    <value>Create a new item draft. It will be saved together with the song.</value>
+  </data>
+  <data name="Editor.NoGameItemSelected" xml:space="preserve">
+    <value>No game item is linked.</value>
+  </data>
+  <data name="Editor.MissingLinkedItem" xml:space="preserve">
+    <value>Linked item is missing</value>
+  </data>
+  <data name="Editor.LinkedItemMissingHint" xml:space="preserve">
+    <value>The song refers to this item ID, but it is not in the item catalog. Create it or choose another item.</value>
+  </data>
+  <data name="Editor.LinkedItemIdExists" xml:space="preserve">
+    <value>An item with this ID already exists. Select it from the existing items list.</value>
+  </data>
+  <data name="Editor.LinkedItemNameRequired" xml:space="preserve">
+    <value>Enter a name for the linked item.</value>
+  </data>
+  <data name="Editor.SyncAllLanguages" xml:space="preserve">
+    <value>Sync all language information</value>
+  </data>
+  <data name="Editor.SyncAllLanguagesHint" xml:space="preserve">
+    <value>Song metadata will be copied to all five language tables when you save.</value>
+  </data>
+  <data name="Editor.LanguageOverrides" xml:space="preserve">
+    <value>Language-specific values</value>
+  </data>
+  <data name="Editor.Language.CN" xml:space="preserve">
+    <value>Simplified Chinese (CN)</value>
+  </data>
+  <data name="Editor.Language.JP" xml:space="preserve">
+    <value>Japanese (JP)</value>
+  </data>
+  <data name="Editor.Language.KR" xml:space="preserve">
+    <value>Korean (KR)</value>
+  </data>
+  <data name="Editor.Language.TW" xml:space="preserve">
+    <value>Traditional Chinese (TW)</value>
+  </data>
+  <data name="Editor.Language.US" xml:space="preserve">
+    <value>English (US)</value>
+  </data>
+  <data name="Editor.NoGameItemMatches" xml:space="preserve">
+    <value>No matching game items.</value>
+  </data>
+  <data name="Editor.CancelLinkedGameItem" xml:space="preserve">
+    <value>Cancel new item</value>
+  </data>
+  <data name="Editor.SongCodesHint" xml:space="preserve">
+    <value>Status and flag are game table codes; “disabled” is recognized as an unavailable song. Track ID selects the game's audio asset.</value>
+  </data>
+  <data name="Fields.SongId" xml:space="preserve">
+    <value>Song ID</value>
+  </data>
+  <data name="Fields.SongName" xml:space="preserve">
+    <value>Internal song key</value>
+  </data>
+  <data name="Fields.FullName" xml:space="preserve">
+    <value>Song title</value>
+  </data>
+  <data name="Fields.Genre" xml:space="preserve">
+    <value>Genre</value>
+  </data>
+  <data name="Fields.Artist" xml:space="preserve">
+    <value>Artist</value>
+  </data>
+  <data name="Fields.OriginalBga" xml:space="preserve">
+    <value>Original background video</value>
+  </data>
+  <data name="Fields.LoopBga" xml:space="preserve">
+    <value>Loop background video</value>
+  </data>
+  <data name="Fields.Composer" xml:space="preserve">
+    <value>Composer</value>
+  </data>
+  <data name="Fields.Singer" xml:space="preserve">
+    <value>Vocalist</value>
+  </data>
+  <data name="Fields.FeaturedArtist" xml:space="preserve">
+    <value>Featured artist</value>
+  </data>
+  <data name="Fields.Arranger" xml:space="preserve">
+    <value>Arranger</value>
+  </data>
+  <data name="Fields.Visualizer" xml:space="preserve">
+    <value>Video artist</value>
+  </data>
+  <data name="Fields.CostGamePoint" xml:space="preserve">
+    <value>MAX Point</value>
+  </data>
+  <data name="Fields.CostGameCash" xml:space="preserve">
+    <value>Q Point</value>
+  </data>
+  <data name="Fields.SongFlag" xml:space="preserve">
+    <value>Song flag code</value>
+  </data>
+  <data name="Fields.SongStatus" xml:space="preserve">
+    <value>Song status code</value>
+  </data>
+  <data name="Fields.FreeSong" xml:space="preserve">
+    <value>Free to play</value>
+  </data>
+  <data name="Fields.HiddenSong" xml:space="preserve">
+    <value>Hidden from song list</value>
+  </data>
+  <data name="Fields.OpenSong" xml:space="preserve">
+    <value>Available to play</value>
+  </data>
+  <data name="Fields.TrackId" xml:space="preserve">
+    <value>Music track ID</value>
+  </data>
+  <data name="Fields.ModDate" xml:space="preserve">
+    <value>Modification timestamp</value>
+  </data>
+  <data name="Fields.UpdateValue" xml:space="preserve">
+    <value>Update version</value>
+  </data>
+  <data name="Fields.PatternId" xml:space="preserve">
+    <value>Pattern ID</value>
+  </data>
+  <data name="Fields.PointValue" xml:space="preserve">
+    <value>Play reward amount</value>
+  </data>
+  <data name="Fields.PatternName" xml:space="preserve">
+    <value>Pattern name</value>
+  </data>
+  <data name="Fields.PatternEnabled" xml:space="preserve">
+    <value>Enabled</value>
+  </data>
+  <data name="Common.Actions" xml:space="preserve">
+    <value>Actions</value>
+  </data>
+  <data name="Editor.SongItemHint" xml:space="preserve">
+    <value>Choose an existing game item by ID or name. If it is missing, add it here and it will be saved with the song.</value>
+  </data>
+  <data name="Editor.SongItemIdRequired" xml:space="preserve">
+    <value>Enter a positive item ID before saving.</value>
+  </data>
+  <data name="Editor.SelectGameItem" xml:space="preserve">
+    <value>Linked game item</value>
+  </data>
+  <data name="Editor.SearchGameItem" xml:space="preserve">
+    <value>Search by item ID or name</value>
+  </data>
+  <data name="Editor.AddLinkedGameItem" xml:space="preserve">
+    <value>Add new game item</value>
+  </data>
+  <data name="Editor.PatternDraftSavedWithSong" xml:space="preserve">
+    <value>Pattern changes are part of this unsaved song and will be saved with it.</value>
+  </data>
+  <data name="Editor.CategoryIdExplanation" xml:space="preserve">
+    <value>Category IDs are supplied by the game server. This CSV stores only the ID and product link, not category names. Existing IDs come from imported rows; add a custom ID only when you know the server value.</value>
+  </data>
+  <data name="Editor.CategoryNameUnavailable" xml:space="preserve">
+    <value>The offline tables contain category IDs and product links only. The game client defines a server category name field, but this export has no category-name data.</value>
+  </data>
+  <data name="Editor.ProductCategoryMappingsAreInferred" xml:space="preserve">
+    <value>Category descriptions are inferred from associated products and items. They are local reference labels, not official game names.</value>
+  </data>
+  <data name="Editor.CategoryNameOrProductRequired" xml:space="preserve">
+    <value>Enter a category description or select at least one product.</value>
+  </data>
+  <data name="Editor.ProductCategoryMembershipHint" xml:space="preserve">
+    <value>Select the products that belong to this category. Existing repeated CSV links are preserved until you change a product's membership.</value>
+  </data>
+  <data name="Editor.CategoryIdMustBeNumeric" xml:space="preserve">
+    <value>Enter a numeric category ID supplied by the game server.</value>
+  </data>
+  <data name="Editor.CategoryNeedsProduct" xml:space="preserve">
+    <value>Select at least one product before saving a category; the game table stores category-product links only.</value>
+  </data>
+  <data name="Lists.ManageProductCategories" xml:space="preserve">
+    <value>Manage categories</value>
+  </data>
+  <data name="Lists.NoProductCategories" xml:space="preserve">
+    <value>No product category IDs are present in this platform's imported product links.</value>
+  </data>
+  <data name="Lists.FilterProductCategories" xml:space="preserve">
+    <value>Filter by category ID...</value>
+  </data>
+  <data name="Lists.AddProductCategory" xml:space="preserve">
+    <value>Add category</value>
+  </data>
+  <data name="Lists.UniqueProductCategoryLinks" xml:space="preserve">
+    <value>Unique category-product pairs</value>
+  </data>
+  <data name="Lists.ProductCount" xml:space="preserve">
+    <value>Products</value>
+  </data>
+  <data name="Lists.UnknownProductCategory" xml:space="preserve">
+    <value>Unmapped category</value>
+  </data>
+  <data name="Lists.NoProductCategoriesForProduct" xml:space="preserve">
+    <value>None</value>
+  </data>
+  <data name="Lists.RemoveAllCategoryLinks" xml:space="preserve">
+    <value>Remove all product links</value>
+  </data>
+  <data name="Lists.RemoveCategoryLinksConfirm" xml:space="preserve">
+    <value>Remove all product links from category {0}? Its reference description will remain.</value>
+  </data>
+  <data name="Options.ItemTypeMusic" xml:space="preserve">
+    <value>Music</value>
+  </data>
+  <data name="Options.ItemTypeNoteSkin" xml:space="preserve">
+    <value>Note skin</value>
+  </data>
+  <data name="Options.ItemTypeStatusBarSkin" xml:space="preserve">
+    <value>Status bar skin</value>
+  </data>
+  <data name="Options.ItemTypePartner" xml:space="preserve">
+    <value>Partner</value>
+  </data>
+  <data name="Options.ItemTypeAddOn" xml:space="preserve">
+    <value>Add-on</value>
+  </data>
+  <data name="Options.ItemTypeMaxPoint" xml:space="preserve">
+    <value>MAX point</value>
+  </data>
+  <data name="Options.ItemTypeQPoint" xml:space="preserve">
+    <value>Q point</value>
+  </data>
+  <data name="Options.ItemTypeUnlock" xml:space="preserve">
+    <value>Unlock</value>
+  </data>
+  <data name="Options.ItemTypeIngame" xml:space="preserve">
+    <value>In-game</value>
+  </data>
+  <data name="Options.ItemTypeMusicPack" xml:space="preserve">
+    <value>Music pack</value>
+  </data>
+  <data name="Options.ItemTypeItemPack" xml:space="preserve">
+    <value>Item pack</value>
+  </data>
+  <data name="Options.ItemTypeTicket" xml:space="preserve">
+    <value>Ticket</value>
+  </data>
+  <data name="Options.EffectTypeNone" xml:space="preserve">
+    <value>Not set</value>
+  </data>
+  <data name="Options.EffectTypeMaxPointPlus" xml:space="preserve">
+    <value>Maximum points</value>
+  </data>
+  <data name="Options.EffectTypeRecover" xml:space="preserve">
+    <value>Recovery</value>
+  </data>
+  <data name="Options.EffectTypeHpPlus" xml:space="preserve">
+    <value>HP increase</value>
+  </data>
+  <data name="Options.EffectTypeLuckyPlus" xml:space="preserve">
+    <value>Luck increase</value>
+  </data>
+  <data name="Options.EffectTypeFeverPlus" xml:space="preserve">
+    <value>Fever increase</value>
+  </data>
+  <data name="Options.EffectTypeGaugeRefill" xml:space="preserve">
+    <value>Gauge refill</value>
+  </data>
+  <data name="Options.EffectTypeBreakShield" xml:space="preserve">
+    <value>Break shield</value>
+  </data>
+  <data name="Options.EffectTypeAntiGameOver" xml:space="preserve">
+    <value>Prevent game over</value>
+  </data>
+  <data name="Options.EffectTypeAntiEffector" xml:space="preserve">
+    <value>Prevent effectors</value>
+  </data>
+  <data name="Options.EffectTypeQPoint" xml:space="preserve">
+    <value>Q points</value>
+  </data>
+  <data name="Options.EffectTypeExpPlus" xml:space="preserve">
+    <value>Experience increase</value>
+  </data>
+  <data name="Fields.PlatformProductId" xml:space="preserve">
+    <value>Platform product ID</value>
+  </data>
+  <data name="Fields.StoreProductId" xml:space="preserve">
+    <value>Store product ID</value>
+  </data>
+  <data name="Fields.ProductType" xml:space="preserve">
+    <value>Product type</value>
+  </data>
+  <data name="Fields.SaleStartDate" xml:space="preserve">
+    <value>Sale start date</value>
+  </data>
+  <data name="Fields.SaleEndDate" xml:space="preserve">
+    <value>Sale end date</value>
+  </data>
+  <data name="Options.ProductTypeUnlock" xml:space="preserve">
+    <value>In-game unlock purchase</value>
+  </data>
+  <data name="Options.ProductTypePack" xml:space="preserve">
+    <value>Product pack</value>
+  </data>
+  <data name="Options.ProductTypeTicket" xml:space="preserve">
+    <value>Ticket purchase</value>
+  </data>
+  <data name="Options.ProductStatusNew" xml:space="preserve">
+    <value>New</value>
+  </data>
+  <data name="Options.ProductStatusHot" xml:space="preserve">
+    <value>Popular</value>
+  </data>
+  <data name="Options.ProductStatusBest" xml:space="preserve">
+    <value>Recommended</value>
+  </data>
+  <data name="Options.PatternLine2" xml:space="preserve">
+    <value>2 lines</value>
+  </data>
+  <data name="Options.PatternLine3" xml:space="preserve">
+    <value>3 lines</value>
+  </data>
+  <data name="Options.PatternLine4" xml:space="preserve">
+    <value>4 lines</value>
+  </data>
+  <data name="Options.PatternEasy" xml:space="preserve">
+    <value>Easy</value>
+  </data>
+  <data name="Options.PatternNormal" xml:space="preserve">
+    <value>Normal</value>
+  </data>
+  <data name="Options.PatternHard" xml:space="preserve">
+    <value>Hard</value>
+  </data>
+  <data name="Options.PatternExpert" xml:space="preserve">
+    <value>Expert</value>
+  </data>
+  <data name="Options.PointNone" xml:space="preserve">
+    <value>No reward</value>
+  </data>
+  <data name="Options.PointMax" xml:space="preserve">
+    <value>MAX point</value>
+  </data>
+  <data name="Options.PointQ" xml:space="preserve">
+    <value>Q point</value>
+  </data>
+  <data name="Options.AchievementConditionAllCombo" xml:space="preserve">
+    <value>Full combo</value>
+  </data>
+  <data name="Options.AchievementConditionBreak" xml:space="preserve">
+    <value>Break notes</value>
+  </data>
+  <data name="Options.AchievementConditionEffector" xml:space="preserve">
+    <value>Effector</value>
+  </data>
+  <data name="Options.AchievementConditionItemUse" xml:space="preserve">
+    <value>Item use</value>
+  </data>
+  <data name="Options.AchievementConditionLine" xml:space="preserve">
+    <value>Consecutive notes</value>
+  </data>
+  <data name="Options.AchievementConditionPerfect" xml:space="preserve">
+    <value>Perfect judgment</value>
+  </data>
+  <data name="Options.AchievementConditionQuest" xml:space="preserve">
+    <value>Quest completion</value>
+  </data>
+  <data name="Options.AchievementConditionSignature" xml:space="preserve">
+    <value>Signature chart</value>
+  </data>
+  <data name="Options.AchievementConditionTotalMPoint" xml:space="preserve">
+    <value>Total MAX points</value>
+  </data>
+  <data name="Options.AchievementConditionTotalScore" xml:space="preserve">
+    <value>Total score</value>
+  </data>
+  <data name="Options.ProductStatusNone" xml:space="preserve">
+    <value>No badge</value>
+  </data>
+  <data name="Options.ProductTypeRawCode" xml:space="preserve">
+    <value>Unmapped type code</value>
+  </data>
+  <data name="Options.ItemTypeRawCode" xml:space="preserve">
+    <value>Unmapped item type code</value>
+  </data>
+  <data name="Lists.Pagination" xml:space="preserve">
+    <value>Table pagination</value>
+  </data>
+  <data name="Lists.PaginationSummary" xml:space="preserve">
+    <value>{0} items</value>
+  </data>
+  <data name="Lists.PageOf" xml:space="preserve">
+    <value>Page {0} of {1}</value>
+  </data>
+  <data name="Lists.FirstPage" xml:space="preserve">
+    <value>First page</value>
+  </data>
+  <data name="Lists.PreviousPage" xml:space="preserve">
+    <value>Previous page</value>
+  </data>
+  <data name="Lists.NextPage" xml:space="preserve">
+    <value>Next page</value>
+  </data>
+  <data name="Lists.LastPage" xml:space="preserve">
+    <value>Last page</value>
+  </data>
+  <data name="Home.RecentProjects" xml:space="preserve">
+    <value>Recent Projects</value>
+  </data>
+  <data name="Home.OpenRecent" xml:space="preserve">
+    <value>Open</value>
+  </data>
+  <data name="Home.RemoveRecent" xml:space="preserve">
+    <value>Remove from recent projects</value>
+  </data>
+  <data name="Home.RecentProjectMissing" xml:space="preserve">
+    <value>Folder not found</value>
+  </data>
+  <data name="Nav.Tables" xml:space="preserve">
+    <value>Tables</value>
+  </data>
+  <data name="Tables.NoTables" xml:space="preserve">
+    <value>No unmodeled CSV tables are available in this project.</value>
+  </data>
+  <data name="Tables.SelectTable" xml:space="preserve">
+    <value>CSV table</value>
+  </data>
+  <data name="Tables.SourceFiles" xml:space="preserve">
+    <value>Source files</value>
+  </data>
+  <data name="Tables.RowCount" xml:space="preserve">
+    <value>{0} rows · {1}</value>
+  </data>
+  <data name="Tables.AddRow" xml:space="preserve">
+    <value>Add row</value>
+  </data>
+  <data name="Tables.EditRow" xml:space="preserve">
+    <value>Edit row {0}</value>
+  </data>
+  <data name="Tables.SaveRow" xml:space="preserve">
+    <value>Save row</value>
+  </data>
+  <data name="Tables.RowSaved" xml:space="preserve">
+    <value>CSV row saved.</value>
+  </data>
+  <data name="Editor.ItemSyncAllLanguagesHint" xml:space="preserve">
+    <value>Item name, description, and summary will be copied to all five language tables when you save.</value>
+  </data>
+  <data name="Lists.SelectItemTypes" xml:space="preserve">
+    <value>Select item types</value>
+  </data>
+  <data name="Lists.SelectedItemTypes" xml:space="preserve">
+    <value>{0} selected</value>
+  </data>
+  <data name="Lists.ClearItemTypeFilters" xml:space="preserve">
+    <value>Clear type filters</value>
+  </data>
+  <data name="Lists.LinkedItem" xml:space="preserve">
+    <value>Linked item</value>
+  </data>
+  <data name="Lists.ItemCover" xml:space="preserve">
+    <value>Item cover</value>
+  </data>
+  <data name="Lists.LinkedProducts" xml:space="preserve">
+    <value>Linked products</value>
+  </data>
+  <data name="Lists.Price" xml:space="preserve">
+    <value>Price</value>
+  </data>
+  <data name="Lists.None" xml:space="preserve">
+    <value>None</value>
+  </data>
+  <data name="Editor.SongCommerce" xml:space="preserve">
+    <value>Link item and products</value>
+  </data>
+  <data name="Editor.SongCommerceHint" xml:space="preserve">
+    <value>Item link to product_item.csv, required for song jacket. Product link to product_product.csv, must set price here.</value>
+  </data>
+  <data name="Editor.CreateSongItem" xml:space="preserve">
+    <value>Create song item</value>
+  </data>
+  <data name="Editor.NoSongItem" xml:space="preserve">
+    <value>No matching S item is linked to this song. Create one to edit its item and product data.</value>
+  </data>
+  <data name="Editor.SongItemIdConflict" xml:space="preserve">
+    <value>Item ID {0} is already occupied. Suggested next available ID: {1}.</value>
+  </data>
+  <data name="Editor.SongItemIdTaken" xml:space="preserve">
+    <value>Item ID {0} is already in use. Choose another ID.</value>
+  </data>
+  <data name="Editor.SongProducts" xml:space="preserve">
+    <value>Linked products</value>
+  </data>
+  <data name="Editor.AddSongProduct" xml:space="preserve">
+    <value>Add product</value>
+  </data>
+  <data name="Editor.CreateStandardSongProducts" xml:space="preserve">
+    <value>Create two standard products</value>
+  </data>
+  <data name="Editor.NoSongProducts" xml:space="preserve">
+    <value>No products are linked to this item.</value>
+  </data>
+  <data name="Editor.SongProductIdTaken" xml:space="preserve">
+    <value>Product ID {0} is already in use.</value>
+  </data>
+  <data name="Editor.SongProductIdDuplicate" xml:space="preserve">
+    <value>Product IDs must be unique.</value>
+  </data>
+  <data name="Editor.SongItemCardTitle" xml:space="preserve">
+    <value>Linked song item</value>
+  </data>
+  <data name="Editor.SongItemCardLink" xml:space="preserve">
+    <value>Linked from song ID {0}</value>
+  </data>
+  <data name="Editor.SongProductCardTitle" xml:space="preserve">
+    <value>Product ID {0} · linked item ID {1}</value>
+  </data>
+  <data name="Common.Close" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="SongCoverPreview.Title" xml:space="preserve">
+    <value>Cover art preview: {0}</value>
+  </data>
+  <data name="SongCoverPreview.Sprite" xml:space="preserve">
+    <value>Sprite</value>
+  </data>
+  <data name="SongCoverPreview.Loading" xml:space="preserve">
+    <value>Scanning atlas…</value>
+  </data>
+  <data name="SongCoverPreview.Found" xml:space="preserve">
+    <value>Present</value>
+  </data>
+  <data name="SongCoverPreview.Missing" xml:space="preserve">
+    <value>Missing</value>
+  </data>
+  <data name="SongCoverPreview.ReadError" xml:space="preserve">
+    <value>Read failed</value>
+  </data>
+  <data name="SongCoverPreview.NoProject" xml:space="preserve">
+    <value>No project is currently open.</value>
+  </data>
+  <data name="SongCoverPreview.InvalidSprite" xml:space="preserve">
+    <value>Expected a sprite name in the eNN_name format.</value>
+  </data>
+  <data name="SongCoverPreview.SpriteMissing" xml:space="preserve">
+    <value>This sprite is not present in the atlas.</value>
+  </data>
+  <data name="SongCoverPreview.Path" xml:space="preserve">
+    <value>Path</value>
+  </data>
+  <data name="Editor.DeleteSongProductConfirm" xml:space="preserve">
+    <value>Delete product ID {0}? It will be removed when you save this song.</value>
+  </data>
+  <data name="Editor.RestoreSongProduct" xml:space="preserve">
+    <value>Undo deletion</value>
+  </data>
+  <data name="Editor.SongProductPendingDelete" xml:space="preserve">
+    <value>This product will be removed when you save the song.</value>
+  </data>
+  <data name="Editor.SongPriceNotice" xml:space="preserve">
+    <value>Don't set MAX and Q Point here. Add a Product below and set the price.</value>
+  </data>
 </root>

@@ -33,8 +33,10 @@
         <TemplateColumn TGridItem="Quest" Title='@L["Editor.Missions"]' Width="10.25rem" MinWidth="10.25rem" Context="q">@q.Missions.Count</TemplateColumn>
         <TemplateColumn TGridItem="Quest" Title='@L["Lists.Actions"]' Width="9rem" MinWidth="9rem" Context="q">
             <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="4">
-                <FluentButton IconStart="@(new Icons.Regular.Size20.Edit())" Appearance="ButtonAppearance.Default" OnClick="() => Edit(q.Id)" Title='@L["Common.Edit"]' />
-                <FluentButton IconStart="@(new Icons.Regular.Size20.Delete())" Appearance="ButtonAppearance.Default" OnClick="() => DeleteAsync(q)" Title='@L["Common.Delete"]' />
+                <FluentButton IconStart="@(new Icons.Regular.Size20.Edit())" Size="ButtonSize.Small" OnClick="() => Edit(q.Id)" Title='@L["Common.Edit"]'>
+                    @L["Common.Edit"]
+                </FluentButton>
+                <FluentButton IconStart="@(new Icons.Regular.Size20.Delete())" Size="ButtonSize.Small" OnClick="() => DeleteAsync(q)" Title='@L["Common.Delete"]' />
             </FluentStack>
         </TemplateColumn>
     </Columns>

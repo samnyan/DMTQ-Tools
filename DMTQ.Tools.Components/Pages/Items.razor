@@ -92,11 +92,13 @@
         <TemplateColumn TGridItem="Item" Title='@L["Lists.Actions"]' Width="14rem" MinWidth="14rem" Context="item">
             <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="4">
                 <FluentButton IconStart="@(new Icons.Regular.Size20.Edit())"
-                              Appearance="ButtonAppearance.Default"
+                              Size="ButtonSize.Small"
                               OnClick="() => EditItem(item.Id)"
-                              Title='@L["Common.Edit"]' />
+                              Title='@L["Common.Edit"]'>
+                    @L["Common.Edit"]
+                </FluentButton>
                 <FluentButton IconStart="@(new Icons.Regular.Size20.Delete())"
-                              Appearance="ButtonAppearance.Default"
+                              Size="ButtonSize.Small"
                               OnClick="() => DeleteItemAsync(item)"
                               Title='@L["Common.Delete"]' />
             </FluentStack>

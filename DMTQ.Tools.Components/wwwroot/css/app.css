@@ -880,8 +880,10 @@ h2 {
 .editor-form fluent-number-field,
 .editor-form fluent-select {
     box-sizing: border-box;
+    display: block;
     width: 100%;
     max-width: 100%;
+    min-width: 0;
 }
 
 /* ── Section hint text ── */
@@ -917,6 +919,88 @@ section {
     justify-content: space-between;
     gap: 1rem;
     margin-bottom: 0.5rem;
+}
+
+.song-products-header {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.75rem 1rem;
+    min-height: 2.5rem;
+}
+
+.song-products-header .section-heading {
+    margin: 0;
+    white-space: nowrap;
+}
+
+.song-products-header fluent-stack {
+    flex: 0 0 auto;
+    align-self: center;
+}
+
+.song-item-card,
+.song-product-card {
+    box-sizing: border-box;
+    display: block;
+    width: 100%;
+    border: 1px solid var(--colorNeutralStroke1);
+    border-radius: var(--borderRadiusMedium);
+    background: var(--colorNeutralBackground1);
+}
+
+.song-product-card-pending {
+    border-color: var(--colorPaletteRedBorder1);
+    opacity: 0.78;
+}
+
+.song-product-card fluent-text-field,
+.song-product-card fluent-select {
+    box-sizing: border-box;
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+}
+
+.song-related-card-heading {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.25rem 1rem;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--colorNeutralStroke2);
+}
+
+.song-related-card-heading h3,
+.song-related-card-heading h4 {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+    line-height: 1.4;
+}
+
+.song-related-card-heading span {
+    color: var(--colorNeutralForeground3);
+    font-size: 0.85rem;
+}
+
+.song-product-cards {
+    gap: 0.75rem;
+}
+
+.song-product-date-row {
+    margin-top: 0.25rem;
+}
+
+.song-section-divider {
+    margin-block: 0.75rem;
+}
+
+.song-localized-section {
+    padding-top: 0.5rem;
 }
 
 .choice-grid {

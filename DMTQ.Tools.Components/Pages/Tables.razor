@@ -63,7 +63,9 @@
                         }
                         <TemplateColumn TGridItem="LogicalTableRow" Title='@L["Lists.Actions"]' Context="row">
                             <FluentButton Size="ButtonSize.Small" IconOnly="true" Title='@L["Common.Edit"]'
-                                          OnClick="@(() => BeginEditRow(row))" IconRest="@(new Icons.Regular.Size20.Edit())" />
+                                          OnClick="@(() => BeginEditRow(row))" IconRest="@(new Icons.Regular.Size20.Edit())">
+                                @L["Common.Edit"]
+                            </FluentButton>
                         </TemplateColumn>
                     </FluentDataGrid>
                 </div>
