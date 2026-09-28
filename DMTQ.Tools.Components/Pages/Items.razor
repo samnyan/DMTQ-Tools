@@ -152,8 +152,10 @@
         message = null;
         errorMessage = null;
         var result = await DialogService.ShowConfirmationAsync(
-            L["Lists.DeleteConfirm", L["Nav.Items"].Value.ToLowerInvariant(), ItemCatalog.GetDisplayName(item, selectedLanguage)].Value,
-            L["Common.Delete"].Value, L["Common.Cancel"].Value, L["Nav.Items"].Value);
+            message: L["Lists.DeleteConfirm", L["Nav.Items"].Value.ToLowerInvariant(), ItemCatalog.GetDisplayName(item, selectedLanguage)].Value,
+            title: L["Nav.Items"].Value,
+            primaryButton: L["Common.Delete"].Value,
+            secondaryButton: L["Common.Cancel"].Value);
         if (result.Cancelled) return;
 
         try

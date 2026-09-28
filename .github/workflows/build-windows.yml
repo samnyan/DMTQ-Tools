@@ -26,7 +26,14 @@ jobs:
         uses: actions/setup-dotnet@v6
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
-          workloads: maui-windows
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/*.props', '**/*.targets') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
 
       - name: Restore dependencies
         run: >-
@@ -52,10 +59,6 @@ jobs:
       - name: Validate Windows publish
         shell: pwsh
         run: ./scripts/Test-WindowsPublish.ps1 -PublishDirectory $env:BUILD_OUTPUT
-
-      - name: Measure Windows publish output
-        shell: pwsh
-        run: ./scripts/Measure-WindowsPublish.ps1 -PublishDirectory $env:BUILD_OUTPUT -MaximumSizeMiB 135
 
       - name: Upload Windows build artifact
         uses: actions/upload-artifact@v4

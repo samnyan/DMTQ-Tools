@@ -63,8 +63,10 @@
     private async Task DeleteAsync(Quest quest)
     {
         if (State.CurrentPackage is null) return;
-        var result = await DialogService.ShowConfirmationAsync(L["Lists.DeleteConfirm", L["Nav.Quests"].Value, quest.Id].Value,
-            L["Common.Delete"].Value, L["Common.Cancel"].Value, L["Nav.Quests"].Value);
+        var result = await DialogService.ShowConfirmationAsync(message: L["Lists.DeleteConfirm", L["Nav.Quests"].Value, quest.Id].Value,
+            title: L["Nav.Quests"].Value,
+            primaryButton: L["Common.Delete"].Value,
+            secondaryButton: L["Common.Cancel"].Value);
         if (result.Cancelled) return;
         try
         {

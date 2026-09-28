@@ -202,9 +202,10 @@
             {
                 // Empty directory — ask to create
                 var result = await DialogService.ShowConfirmationAsync(
-                    L["Home.EmptyFolderConfirm"].Value,
-                    L["Home.Confirm"].Value, L["Common.Cancel"].Value,
-                    L["Home.NewProject"].Value);
+                    message: L["Home.EmptyFolderConfirm"].Value,
+                    title: L["Home.Confirm"].Value,
+                    primaryButton: L["Home.NewProject"].Value,
+                    secondaryButton: L["Common.Cancel"].Value);
                 if (!result.Cancelled)
                 {
                     await Workflow.CreateProjectAsync(root);

@@ -50,8 +50,10 @@
     private async Task DeleteAsync(SlangEntry entry)
     {
         if (State.CurrentPackage is null) return;
-        var result = await DialogService.ShowConfirmationAsync(L["Lists.DeleteConfirm", L["Nav.Slang"].Value, entry.Value].Value,
-            L["Common.Delete"].Value, L["Common.Cancel"].Value, L["Nav.Slang"].Value);
+        var result = await DialogService.ShowConfirmationAsync(message: L["Lists.DeleteConfirm", L["Nav.Slang"].Value, entry.Value].Value,
+            title: L["Nav.Slang"].Value,
+            primaryButton: L["Common.Delete"].Value,
+            secondaryButton: L["Common.Cancel"].Value);
         if (result.Cancelled) return;
         try { EditService.Remove(State.CurrentPackage, entry.Id); await Workflow.SaveProjectAsync(); message = L["Lists.Deleted", L["Nav.Slang"].Value, entry.Value].Value; }
         catch (Exception ex) { errorMessage = ex.Message; }

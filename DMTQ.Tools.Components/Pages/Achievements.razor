@@ -78,8 +78,10 @@
     {
         if (State.CurrentPackage is null) return;
         var result = await DialogService.ShowConfirmationAsync(
-            L["Lists.DeleteConfirm", L["Nav.Achievements"].Value, item.Id].Value,
-            L["Common.Delete"].Value, L["Common.Cancel"].Value, L["Nav.Achievements"].Value);
+            message: L["Lists.DeleteConfirm", L["Nav.Achievements"].Value, item.Id].Value,
+            title: L["Nav.Achievements"].Value,
+            primaryButton: L["Common.Delete"].Value,
+            secondaryButton: L["Common.Cancel"].Value);
         if (result.Cancelled) return;
         try
         {

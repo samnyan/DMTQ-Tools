@@ -297,8 +297,10 @@
             var height = (int)Math.Round(region.Height);
             if ((image.Width != width || image.Height != height) &&
                 (await DialogService.ShowConfirmationAsync(
-                    L["AtlasEditor.StretchConfirm", image.Width, image.Height, width, height].Value,
-                    L["AtlasEditor.ReplaceImage"].Value, L["AtlasEditor.Stretch"].Value, L["Common.Cancel"].Value)).Cancelled)
+                    message: L["AtlasEditor.StretchConfirm", image.Width, image.Height, width, height].Value,
+                    title: L["AtlasEditor.ReplaceImage"].Value,
+                    primaryButton: L["AtlasEditor.Stretch"].Value,
+                    secondaryButton: L["Common.Cancel"].Value)).Cancelled)
                 return;
 
             _sprites[index].SetImage(bytes, Path.GetExtension(path).Equals(".png", StringComparison.OrdinalIgnoreCase) ? "image/png" : "image/jpeg", image.Width, image.Height);
@@ -312,8 +314,10 @@
         if (_document is null || index < 0 || index >= _sprites.Count) return;
         var name = _sprites[index].Name;
         var result = await DialogService.ShowConfirmationAsync(
-            L["AtlasEditor.DeleteConfirm", name].Value,
-            L["AtlasEditor.DeleteTitle"].Value, L["AtlasEditor.Remove"].Value, L["Common.Cancel"].Value);
+            message: L["AtlasEditor.DeleteConfirm", name].Value,
+            title: L["AtlasEditor.DeleteTitle"].Value,
+            primaryButton: L["AtlasEditor.Remove"].Value,
+            secondaryButton: L["Common.Cancel"].Value);
         if (!result.Cancelled) RemoveSprite(index);
     }
 

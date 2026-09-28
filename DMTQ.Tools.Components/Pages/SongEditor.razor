@@ -746,8 +746,10 @@
         if (currentSong is null) return;
 
         var result = await DialogService.ShowConfirmationAsync(
-            L["Lists.DeleteConfirm", L["Editor.Patterns"].Value, pattern.PatternId].Value,
-            L["Common.Delete"].Value, L["Common.Cancel"].Value, L["Editor.Patterns"].Value);
+            message: L["Lists.DeleteConfirm", L["Editor.Patterns"].Value, pattern.PatternId].Value,
+            title: L["Editor.Patterns"].Value,
+            primaryButton: L["Common.Delete"].Value,
+            secondaryButton: L["Common.Cancel"].Value);
         if (result.Cancelled) return;
 
         isBusy = true;

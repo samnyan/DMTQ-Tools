@@ -220,8 +220,10 @@
         errorMessage = null;
 
         var result = await DialogService.ShowConfirmationAsync(
-            L["Lists.DeleteConfirm", L["Nav.Resources"].Value.ToLowerInvariant(), entry.FileName].Value,
-            L["Common.Delete"].Value, L["Common.Cancel"].Value, L["Nav.Resources"].Value);
+            message: L["Lists.DeleteConfirm", L["Nav.Resources"].Value.ToLowerInvariant(), entry.FileName].Value,
+            title: L["Nav.Resources"].Value,
+            primaryButton: L["Common.Delete"].Value,
+            secondaryButton: L["Common.Cancel"].Value);
         if (result.Cancelled) return;
 
         try
