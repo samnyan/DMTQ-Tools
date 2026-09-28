@@ -177,11 +177,12 @@ public sealed class SpriteAtlasBundleService
         var shaderName = shader["m_ParsedForm"]["m_Name"].IsDummy
             ? shader["m_Name"].AsString
             : shader["m_ParsedForm"]["m_Name"].AsString;
-        var expectedShader = kind == SpriteAtlasKind.NGUI2
-            ? "NGUI2Unlit/Transparent Colored"
-            : "Unlit/Premultiplied Colored";
-        if (!string.Equals(shaderName, expectedShader, StringComparison.Ordinal))
-            throw new InvalidDataException($"The {kind} atlas template uses shader '{shaderName}', expected '{expectedShader}'.");
+        var supportedShaders = kind == SpriteAtlasKind.NGUI2
+            ? new[] { "NGUI2Unlit/Transparent Colored" }
+            : new[] { "Unlit/Premultiplied Colored", "Unlit/Transparent Colored" };
+        if (!supportedShaders.Contains(shaderName, StringComparer.Ordinal))
+            throw new InvalidDataException(
+                $"The {kind} atlas template uses unsupported shader '{shaderName}'. Supported shader(s): {string.Join(", ", supportedShaders)}.");
     }
 
     private static AssetTypeValueField FindMainTexturePointer(AssetTypeValueField material)

@@ -58,6 +58,11 @@
                         <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8" Style="margin-top: 8px;">
                             <FluentButton Appearance="ButtonAppearance.Default" Size="ButtonSize.Small"
                                           OnClick="() => PickAndReplaceFile(card)">@L["Dialog.ReplaceFile"]</FluentButton>
+                            @if (CanEditAtlas(card))
+                            {
+                                <FluentButton Appearance="ButtonAppearance.Default" Size="ButtonSize.Small"
+                                              OnClick="() => OpenAtlasEditorAsync(card)">@L["Dialog.EditCover"]</FluentButton>
+                            }
                             <FluentButton Appearance="ButtonAppearance.Default" Size="ButtonSize.Small"
                                           OnClick="() => RemovePlatform(card)">@L["Common.Delete"]</FluentButton>
                         </FluentStack>
@@ -115,6 +120,31 @@
     private string FullPathPreview => string.IsNullOrWhiteSpace(Content.FileName)
         ? "(enter a file name)"
         : BuildFullPath(Content.Category, Content.FileName);
+
+    private bool CanEditAtlas(PlatformCardData card)
+    {
+        var extension = Path.GetExtension(Content.FileName);
+        var isBundle = extension.Equals(".unity", StringComparison.OrdinalIgnoreCase)
+            || extension.Equals(".unity3d", StringComparison.OrdinalIgnoreCase);
+        var fileName = Path.GetFileName(Content.FileName);
+        var isAtlas = fileName.StartsWith("d_e", StringComparison.OrdinalIgnoreCase)
+            || fileName.StartsWith("d3_e", StringComparison.OrdinalIgnoreCase);
+        var isSupportedPlatform = card.Platform.Equals("android", StringComparison.OrdinalIgnoreCase)
+            || card.Platform.Equals("ios", StringComparison.OrdinalIgnoreCase);
+
+        return Content.Category.Equals("dlc", StringComparison.OrdinalIgnoreCase)
+            && isBundle
+            && isAtlas
+            && isSupportedPlatform
+            && card.Exist
+            && !card.IsNew;
+    }
+
+    private Task OpenAtlasEditorAsync(PlatformCardData card)
+    {
+        Content.RequestedAtlasPlatform = card.Platform;
+        return DialogInstance.CloseAsync(Content);
+    }
 
     private static string BuildFullPath(string category, string fileName)
     {

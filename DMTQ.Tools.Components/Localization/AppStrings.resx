@@ -501,4 +501,11 @@
   <data name="Lists.SelectItemTypes" xml:space="preserve"><value>Select item types</value></data>
   <data name="Lists.SelectedItemTypes" xml:space="preserve"><value>{0} selected</value></data>
   <data name="Lists.ClearItemTypeFilters" xml:space="preserve"><value>Clear type filters</value></data>
+  <data name="Dialog.EditCover" xml:space="preserve"><value>Edit cover art</value></data>
+  <data name="AtlasEditor.ProjectSave" xml:space="preserve"><value>Save to project</value></data>
+  <data name="AtlasEditor.ProjectExport" xml:space="preserve"><value>Export bundle</value></data>
+  <data name="AtlasEditor.ProjectPath" xml:space="preserve"><value>Project path</value></data>
+  <data name="AtlasEditor.ProjectPlatform" xml:space="preserve"><value>Platform</value></data>
+  <data name="AtlasEditor.SaveToProject" xml:space="preserve"><value>Save to project</value></data>
+  <data name="AtlasEditor.SavedToProject" xml:space="preserve"><value>Saved to project: {0}</value></data>
 </root>

@@ -3,6 +3,7 @@
 @using Assets.Lib.Models
 @using Assets.Lib.Services
 @using AssetsTools.NET.Texture
+@using DMTQ.Tools.Core.Services
 @using Microsoft.JSInterop
 @using StbImageSharp
 @inject SpriteAtlasBundleService BundleService
@@ -10,6 +11,10 @@
 @inject IProjectFileSaver FileSaver
 @inject IAtlasDummyTemplateProvider TemplateProvider
 @inject IDialogService DialogService
+@inject IProjectState State
+@inject IProjectWorkflow Workflow
+@inject NavigationManager Navigation
+@inject INotificationService NotificationService
 @inject IJSRuntime JS
 @implements IAsyncDisposable
 
@@ -104,13 +109,37 @@
                 <FluentButton Class="add-sprite-button" Appearance="ButtonAppearance.Default" OnClick="AddSprite" Disabled="@_isBusy">@L["AtlasEditor.AddSprite"]</FluentButton>
             </section>
         </div>
-        <section class="atlas-export panel-surface">
-            <div class="atlas-export-grid bundle-export-grid">
-                <FluentSelect TOption="UnityTargetPlatform" TValue="UnityTargetPlatform" Items="@Platforms"
-                              OptionText="PlatformLabel" OptionValue="@(platform => platform)" @bind-Value="_platform" Label='@L["AtlasEditor.Platform"]' />
-                <span class="template-name">@L["AtlasEditor.TemplateForPlatform", TemplateFileName(SelectedKind, _platform)].Value</span>
-                <FluentButton Appearance="ButtonAppearance.Primary" OnClick="ExportBundleAsync" Disabled="@_isBusy">@L["AtlasEditor.ExportBundle"]</FluentButton>
-            </div>
+        <section class="atlas-save-options panel-surface @(_projectContext is null ? null : "has-project-save")">
+            @if (_projectContext is not null)
+            {
+                <section class="atlas-save-panel project-save-panel">
+                    <h2>@L["AtlasEditor.ProjectSave"]</h2>
+                    <div class="project-save-location">
+                        <span>@L["AtlasEditor.ProjectPath"]</span><code>@_projectContext.RelativePath</code>
+                        <span>@L["AtlasEditor.ProjectPlatform"]</span><strong>@PlatformLabel(_projectContext.Platform)</strong>
+                    </div>
+                    <FluentButton Appearance="ButtonAppearance.Primary" OnClick="SaveToProjectAsync" Disabled="@_isBusy">
+                        <span class="atlas-save-button-content">
+                            @if (_busyOperation == AtlasBusyOperation.SaveToProject) { <FluentSpinner /> }
+                            @L["AtlasEditor.SaveToProject"]
+                        </span>
+                    </FluentButton>
+                </section>
+            }
+            <section class="atlas-save-panel bundle-export-panel">
+                <h2>@L["AtlasEditor.ProjectExport"]</h2>
+                <div class="atlas-export-grid bundle-export-grid">
+                    <FluentSelect TOption="UnityTargetPlatform" TValue="UnityTargetPlatform" Items="@Platforms"
+                                  OptionText="PlatformLabel" OptionValue="@(platform => platform)" @bind-Value="_platform" Label='@L["AtlasEditor.Platform"]' />
+                    <span class="template-name">@L["AtlasEditor.TemplateForPlatform", TemplateFileName(SelectedKind, _platform)].Value</span>
+                    <FluentButton Appearance="ButtonAppearance.Default" OnClick="ExportBundleAsync" Disabled="@_isBusy">
+                        <span class="atlas-save-button-content">
+                            @if (_busyOperation == AtlasBusyOperation.ExportBundle) { <FluentSpinner /> }
+                            @L["AtlasEditor.ExportBundle"]
+                        </span>
+                    </FluentButton>
+                </div>
+            </section>
         </section>
     }
     @if (_isBusy)
@@ -123,8 +152,16 @@
     private static readonly string[] AtlasKinds = ["NGUI2", "NGUI3"];
     private static readonly UnityTargetPlatform[] Platforms = [UnityTargetPlatform.Android, UnityTargetPlatform.IOS];
 
+    private enum AtlasBusyOperation
+    {
+        SaveToProject,
+        ExportBundle
+    }
+
     private readonly List<AtlasEditorImage> _sprites = [];
     private readonly List<AtlasRegionValues> _regionValues = [];
+    private string? _lastProjectRequest;
+    private AtlasProjectContext? _projectContext;
     private ElementReference _previewCanvas;
     private IJSObjectReference? _previewModule;
     private SpriteAtlasDocument? _document;
@@ -139,11 +176,33 @@
     private string _busyMessage = string.Empty;
     private MessageBarIntent _statusIntent = MessageBarIntent.Info;
     private bool _isBusy;
+    private AtlasBusyOperation? _busyOperation;
+    private IToastInstance? _progressToast;
+    private const string OperationProgressToastId = "atlas-editor-operation-progress";
 
     private bool _canvasNeedsRender;
     private bool _isConfiguringNew;
     private string _atlasWidthText { get => _atlasWidth.ToString(CultureInfo.InvariantCulture); set { if (int.TryParse(value, out var parsed)) _atlasWidth = parsed; } }
     private string _atlasHeightText { get => _atlasHeight.ToString(CultureInfo.InvariantCulture); set { if (int.TryParse(value, out var parsed)) _atlasHeight = parsed; } }
+
+    [SupplyParameterFromQuery(Name = "projectFile")]
+    public string? ProjectFile { get; set; }
+
+    [SupplyParameterFromQuery(Name = "platform")]
+    public string? ProjectPlatform { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (string.IsNullOrWhiteSpace(ProjectFile) && string.IsNullOrWhiteSpace(ProjectPlatform))
+            return;
+
+        var requestKey = $"{ProjectPlatform}|{ProjectFile}";
+        if (string.Equals(_lastProjectRequest, requestKey, StringComparison.Ordinal))
+            return;
+
+        _lastProjectRequest = requestKey;
+        await OpenProjectAtlasAsync(ProjectFile, ProjectPlatform);
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -177,6 +236,8 @@
 
     private string AtlasKindLabel(string value) => value == "NGUI3" ? L["AtlasEditor.NGUI3"].Value : L["AtlasEditor.NGUI2"].Value;
 
+    private string PlatformLabel(string value) => TryParsePlatform(value, out var platform) ? PlatformLabel(platform) : value;
+
     private string PlatformLabel(UnityTargetPlatform value) => value switch
     {
         UnityTargetPlatform.Android => "Android",
@@ -205,6 +266,7 @@
         _previewPng = SpriteAtlasImage.Compose(_document, new Dictionary<string, byte[]>(StringComparer.Ordinal));
         _sprites.Clear();
         _regionValues.Clear();
+        _projectContext = null;
         _isConfiguringNew = false;
         _canvasNeedsRender = true;
         _status = null;
@@ -230,16 +292,77 @@
         }
     }
 
-    private void SetFromBundle(string path, SpriteAtlasBundleContent content)
+    private async Task OpenProjectAtlasAsync(string? projectFile, string? platformKey)
+    {
+        _isBusy = true;
+        _busyMessage = L["AtlasEditor.OpenBundle"].Value;
+        string? temporaryPath = null;
+        try
+        {
+            if (string.IsNullOrWhiteSpace(projectFile) || string.IsNullOrWhiteSpace(platformKey))
+                throw new InvalidDataException("Both project file and platform are required.");
+            if (State.CurrentPackage is null || string.IsNullOrWhiteSpace(State.ProjectRoot))
+                throw new InvalidOperationException("Open a project before editing a project atlas.");
+
+            var relativePath = FileUtility.NormalizePackageRelativePath(projectFile);
+            if (!IsAtlasResourcePath(relativePath))
+                throw new InvalidDataException($"'{relativePath}' is not a supported song atlas resource.");
+            if (!TryParsePlatform(platformKey, out var projectPlatform))
+                throw new InvalidDataException($"Unsupported project platform '{platformKey}'.");
+
+            var resource = State.CurrentPackage.Resources.FirstOrDefault(item =>
+                item.FileName.Equals(relativePath, StringComparison.OrdinalIgnoreCase));
+            var platformResource = resource?.PlatformManifest.FirstOrDefault(item =>
+                item.Platform.Equals(platformKey, StringComparison.OrdinalIgnoreCase) && item.Exist);
+            if (resource is null || platformResource is null)
+                throw new FileNotFoundException($"The project does not contain '{relativePath}' for {platformKey}.");
+
+            var projectRoot = Path.GetFullPath(State.ProjectRoot);
+            var platformRoot = Path.GetFullPath(Path.Combine(projectRoot, "resources", platformKey));
+            var sourcePath = Path.GetFullPath(Path.Combine(platformRoot, relativePath.Replace('/', Path.DirectorySeparatorChar)));
+            var platformRootPrefix = platformRoot.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
+            if (!sourcePath.StartsWith(platformRootPrefix, StringComparison.OrdinalIgnoreCase))
+                throw new InvalidDataException("The project resource path is outside its platform directory.");
+
+            if (!File.Exists(sourcePath))
+            {
+                var compressedPath = sourcePath + ".lz4";
+                if (!File.Exists(compressedPath))
+                    throw new FileNotFoundException($"The project atlas file was not found: {sourcePath}");
+
+                temporaryPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N") + Path.GetExtension(sourcePath));
+                await FileUtility.DecompressFileAsync(compressedPath, temporaryPath);
+                sourcePath = temporaryPath;
+            }
+
+            SetFromBundle(relativePath, BundleService.Read(sourcePath), new AtlasProjectContext(projectRoot, relativePath, platformKey, resource.Compressed));
+            _platform = projectPlatform;
+        }
+        catch (Exception exception)
+        {
+            ShowError(exception);
+        }
+        finally
+        {
+            if (temporaryPath is not null && File.Exists(temporaryPath))
+                File.Delete(temporaryPath);
+            _isBusy = false;
+        }
+    }
+
+    private void SetFromBundle(string path, SpriteAtlasBundleContent content, AtlasProjectContext? projectContext = null)
     {
         _isConfiguringNew = false;
+        _projectContext = projectContext;
         _document = content.Document;
         _atlasName = content.Document.AtlasName;
         _kindValue = content.Document.Kind.ToString();
         _atlasWidth = content.Document.TextureWidth;
         _atlasHeight = content.Document.TextureHeight;
         _previewPng = content.AtlasPng;
-        _platform = GuessPlatform(path) ?? _platform;
+        _platform = projectContext is null
+            ? GuessPlatform(path) ?? _platform
+            : TryParsePlatform(projectContext.Platform, out var projectPlatform) ? projectPlatform : _platform;
         _sprites.Clear();
         foreach (var sprite in content.Document.Sprites)
         {
@@ -376,28 +499,133 @@
 
     private async Task ExportBundleAsync()
     {
+        if (_isBusy) return;
         if (!TryValidateDocument(out var document)) return;
-        _isBusy = true;
-        _busyMessage = L["AtlasEditor.ExportBundle"].Value;
+        await BeginSaveOperationAsync(AtlasBusyOperation.ExportBundle, L["AtlasEditor.ExportBundle"].Value);
         var temporaryPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N") + ".unity3d");
         try
         {
-            var templatePath = await TemplateProvider.GetTemplatePathAsync(SelectedKind.ToString(), PlatformKey(_platform));
-            var template = new UnityBundleTemplate { Platform = _platform, BundlePath = templatePath };
-            BundleService.Export(template, document, _previewPng, temporaryPath);
+            await BuildBundleAsync(document, _platform, temporaryPath);
             await using var output = File.OpenRead(temporaryPath);
             var saved = await FileSaver.SaveFileAsync(document.AtlasName + ".unity3d", output);
-            if (saved is not null) ShowSuccess(Path.GetFileName(saved));
+            if (saved is not null)
+                ShowOperationToast(ToastIntent.Success, L["AtlasEditor.Title"].Value,
+                    L["AtlasEditor.Exported", Path.GetFileName(saved)].Value);
         }
         catch (Exception exception)
         {
-            ShowError(exception);
+            ShowOperationToast(ToastIntent.Error, L["AtlasEditor.Title"].Value,
+                L["AtlasEditor.Error", exception.Message].Value);
         }
         finally
         {
-            if (File.Exists(temporaryPath)) File.Delete(temporaryPath);
+            try
+            {
+                if (File.Exists(temporaryPath)) File.Delete(temporaryPath);
+            }
+            finally
+            {
+                await FinishSaveOperationAsync();
+            }
+        }
+    }
+
+    private async Task SaveToProjectAsync()
+    {
+        if (_isBusy) return;
+        if (_projectContext is null || !TryValidateDocument(out var document)) return;
+
+        await BeginSaveOperationAsync(AtlasBusyOperation.SaveToProject, L["AtlasEditor.ProjectSave"].Value);
+        var temporaryPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N") + Path.GetExtension(_projectContext.RelativePath));
+        try
+        {
+            if (string.IsNullOrWhiteSpace(State.ProjectRoot)
+                || !Path.GetFullPath(State.ProjectRoot).Equals(_projectContext.ProjectRoot, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("The active project changed after this atlas was opened.");
+            }
+
+            if (!TryParsePlatform(_projectContext.Platform, out var projectPlatform))
+                throw new InvalidDataException($"Unsupported project platform '{_projectContext.Platform}'.");
+
+            await BuildBundleAsync(document, projectPlatform, temporaryPath);
+            await Workflow.AddOrReplaceResourceAsync(
+                temporaryPath,
+                _projectContext.RelativePath,
+                _projectContext.Platform,
+                [],
+                _projectContext.Compressed);
+            ShowOperationToast(ToastIntent.Success, L["AtlasEditor.Title"].Value,
+                L["AtlasEditor.SavedToProject", _projectContext.RelativePath].Value);
+        }
+        catch (Exception exception)
+        {
+            ShowOperationToast(ToastIntent.Error, L["AtlasEditor.Title"].Value,
+                L["AtlasEditor.Error", exception.Message].Value);
+        }
+        finally
+        {
+            try
+            {
+                if (File.Exists(temporaryPath)) File.Delete(temporaryPath);
+            }
+            finally
+            {
+                await FinishSaveOperationAsync();
+            }
+        }
+    }
+
+    private async Task BeginSaveOperationAsync(AtlasBusyOperation operation, string message)
+    {
+        _isBusy = true;
+        _busyOperation = operation;
+        _busyMessage = message;
+        _progressToast = null;
+        _ = NotificationService.ShowToastAsync(options =>
+        {
+            options.Id = OperationProgressToastId;
+            options.Intent = ToastIntent.Progress;
+            options.Title = message;
+            options.Message = message;
+            options.Lifetime = TimeSpan.Zero;
+            options.AllowDismiss = false;
+            options.OnStatusChange = args => _progressToast = args.Instance;
+        });
+        _progressToast = NotificationService.GetToastInstance(OperationProgressToastId);
+        await Task.Yield();
+    }
+
+    private async Task FinishSaveOperationAsync()
+    {
+        var toast = _progressToast ?? NotificationService.GetToastInstance(OperationProgressToastId);
+        _progressToast = null;
+        try
+        {
+            if (toast is not null) await toast.CloseAsync();
+        }
+        finally
+        {
+            _busyOperation = null;
             _isBusy = false;
         }
+    }
+
+    private void ShowOperationToast(ToastIntent intent, string title, string message)
+    {
+        _ = NotificationService.ShowToastAsync(options =>
+        {
+            options.Intent = intent;
+            options.Title = title;
+            options.Message = message;
+        });
+    }
+
+    private async Task BuildBundleAsync(SpriteAtlasDocument document, UnityTargetPlatform platform, string outputPath)
+    {
+        var templatePath = await TemplateProvider.GetTemplatePathAsync(document.Kind.ToString(), PlatformKey(platform));
+        var template = new UnityBundleTemplate { Platform = platform, BundlePath = templatePath };
+        BundleService.Export(template, document, _previewPng, outputPath);
     }
 
     private bool TryValidateDocument(out SpriteAtlasDocument document)
@@ -520,9 +748,11 @@
 
     private void ResetWorkspace()
     {
+        var wasProjectAtlas = _projectContext is not null;
         _sprites.Clear();
         _isConfiguringNew = false;
         _document = null;
+        _projectContext = null;
         _atlasName = "d_e10";
         _kindValue = "NGUI2";
         _atlasWidth = 512;
@@ -532,6 +762,8 @@
         _previewPng = [];
         _regionValues.Clear();
         _status = null;
+        if (wasProjectAtlas)
+            Navigation.NavigateTo("/atlas-editor", replace: true);
     }
 
     private void CancelNewAtlas() => _isConfiguringNew = false;
@@ -544,6 +776,23 @@
         UnityTargetPlatform.Windows => "windows",
         _ => throw new ArgumentOutOfRangeException(nameof(platform), platform, null)
     };
+
+    private static bool TryParsePlatform(string platformKey, out UnityTargetPlatform platform)
+        => Enum.TryParse(platformKey, ignoreCase: true, out platform)
+            && Enum.IsDefined(platform);
+
+    private static bool IsAtlasResourcePath(string path)
+    {
+        if (!path.StartsWith("dlc/", StringComparison.OrdinalIgnoreCase)) return false;
+
+        var fileName = Path.GetFileName(path);
+        var isAtlasName = fileName.StartsWith("d_e", StringComparison.OrdinalIgnoreCase)
+            || fileName.StartsWith("d3_e", StringComparison.OrdinalIgnoreCase);
+        var extension = Path.GetExtension(fileName);
+        var isUnityBundle = extension.Equals(".unity", StringComparison.OrdinalIgnoreCase)
+            || extension.Equals(".unity3d", StringComparison.OrdinalIgnoreCase);
+        return isAtlasName && isUnityBundle;
+    }
 
     private static string TemplateFileName(SpriteAtlasKind kind, UnityTargetPlatform platform)
         => $"{(kind == SpriteAtlasKind.NGUI3 ? "d3" : "d")}_{PlatformKey(platform)}_dummy.unity3d";
@@ -614,4 +863,6 @@
         public string Width { get; set; } = "1";
         public string Height { get; set; } = "1";
     }
+
+    private sealed record AtlasProjectContext(string ProjectRoot, string RelativePath, string Platform, bool Compressed);
 }

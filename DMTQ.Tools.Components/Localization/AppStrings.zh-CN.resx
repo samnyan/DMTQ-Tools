@@ -309,4 +309,11 @@
   <data name="Lists.SelectItemTypes" xml:space="preserve"><value>选择道具类型</value></data>
   <data name="Lists.SelectedItemTypes" xml:space="preserve"><value>已选 {0} 项</value></data>
   <data name="Lists.ClearItemTypeFilters" xml:space="preserve"><value>清除类型筛选</value></data>
+  <data name="Dialog.EditCover" xml:space="preserve"><value>编辑封面图</value></data>
+  <data name="AtlasEditor.ProjectSave" xml:space="preserve"><value>工程保存</value></data>
+  <data name="AtlasEditor.ProjectExport" xml:space="preserve"><value>导出资源包</value></data>
+  <data name="AtlasEditor.ProjectPath" xml:space="preserve"><value>工程路径</value></data>
+  <data name="AtlasEditor.ProjectPlatform" xml:space="preserve"><value>平台</value></data>
+  <data name="AtlasEditor.SaveToProject" xml:space="preserve"><value>保存到工程</value></data>
+  <data name="AtlasEditor.SavedToProject" xml:space="preserve"><value>已保存到工程：{0}</value></data>
 </root>

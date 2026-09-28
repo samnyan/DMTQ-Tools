@@ -113,6 +113,22 @@
     gap: .75rem;
 }
 
+.atlas-save-options {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+    gap: 1rem;
+}
+
+.atlas-save-options:not(.has-project-save) { grid-template-columns: minmax(0, 1fr); }
+.atlas-save-panel { display: flex; min-width: 0; flex-direction: column; align-items: flex-start; gap: .75rem; }
+.atlas-save-panel h2 { margin: 0; }
+.project-save-location { display: flex; flex-wrap: wrap; align-items: baseline; gap: .35rem .6rem; }
+.project-save-location span { color: var(--colorNeutralForeground3); }
+.project-save-location code { overflow-wrap: anywhere; color: var(--colorNeutralForeground1); }
+.atlas-save-button-content { display: inline-flex; align-items: center; gap: .5rem; }
+.atlas-save-button-content fluent-progress-ring { width: 1rem; height: 1rem; }
+
 .bundle-export-grid { grid-template-columns: minmax(12rem, .7fr) minmax(10rem, 1fr) auto; }
 .template-name { overflow: hidden; color: var(--colorNeutralForeground3); font-size: .85rem; text-overflow: ellipsis; white-space: nowrap; }
 .atlas-empty { padding: 3rem 1rem; color: var(--colorNeutralForeground3); text-align: center; }
@@ -121,6 +137,7 @@
 @media (max-width: 1100px) {
     .atlas-settings { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .atlas-workspace { grid-template-columns: minmax(0, 1fr); }
+    .atlas-save-options { grid-template-columns: minmax(0, 1fr); }
     .atlas-preview-column { position: static; }
     .bundle-export-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .atlas-info { grid-template-columns: repeat(2, minmax(0, 1fr)); }

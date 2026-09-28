@@ -6,6 +6,7 @@ public sealed class ResourceDialogData
     public string FileName { get; set; } = "";
     public string Category { get; set; } = "dlc";
     public bool Compressed { get; set; }
+    public string? RequestedAtlasPlatform { get; set; }
     public List<PlatformCardData> Platforms { get; set; } = [];
 }
 

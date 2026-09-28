@@ -178,6 +178,12 @@
         };
     }
 
+    private static string BuildResourcePath(string category, string fileName)
+    {
+        var prefix = FileUtility.GetCategoryPathPrefix(category);
+        return string.IsNullOrEmpty(prefix) ? fileName : $"{prefix}/{fileName}";
+    }
+
     private async Task AddNewResource()
     {
         message = null;
@@ -209,7 +215,17 @@
             options.Parameters = new Dictionary<string, object?> { [nameof(ResourceEditDialog.Content)] = data };
         });
         if (!result.Cancelled)
+        {
+            if (!string.IsNullOrWhiteSpace(data.RequestedAtlasPlatform))
+            {
+                var relativePath = BuildResourcePath(data.Category, data.FileName);
+                var route = $"/atlas-editor?projectFile={Uri.EscapeDataString(relativePath)}&platform={Uri.EscapeDataString(data.RequestedAtlasPlatform)}";
+                Navigation.NavigateTo(route);
+                return;
+            }
+
             await ApplyDialogChanges(data, entry);
+        }
     }
 
     private async Task DeleteResourceAsync(ResourceCatalogEntry entry)
