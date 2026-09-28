@@ -10,6 +10,7 @@ public sealed class JsonPatchProjectRepository : IPatchProjectRepository
 {
     private const int CurrentSchemaVersion = 2;
     private const string ProjectFileName = "project.json";
+    private const string SlangFileName = "slang.json";
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -30,8 +31,91 @@ public sealed class JsonPatchProjectRepository : IPatchProjectRepository
 
         Directory.CreateDirectory(projectRoot);
         var document = ProjectDocument.FromPackage(package, exportCompressionMode, exportOptions);
+        await WriteJsonAtomicallyAsync(
+            Path.Combine(projectRoot, SlangFileName),
+            package.SlangEntries,
+            cancellationToken).ConfigureAwait(false);
+        await WriteJsonAtomicallyAsync(
+            Path.Combine(projectRoot, ProjectFileName),
+            document,
+            cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task<PatchProjectSnapshot> LoadAsync(
+        string projectRoot,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(projectRoot);
+
         var jsonPath = Path.Combine(projectRoot, ProjectFileName);
-        var tempPath = Path.Combine(projectRoot, $".{ProjectFileName}.{Guid.NewGuid():N}.tmp");
+        if (!File.Exists(jsonPath))
+        {
+            throw new FileNotFoundException("Could not find GameTableManager project file.", jsonPath);
+        }
+
+        await using var stream = File.OpenRead(jsonPath);
+        using var jsonDocument = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken)
+            .ConfigureAwait(false);
+        var root = jsonDocument.RootElement;
+        var document = root.Deserialize<ProjectDocument>(JsonOptions);
+        if (document is null)
+        {
+            throw new InvalidDataException("GameTableManager project file is empty or invalid.");
+        }
+
+        if (document.SchemaVersion is < 1 or > CurrentSchemaVersion)
+        {
+            throw new InvalidDataException($"Unsupported GameTableManager project schema version {document.SchemaVersion}.");
+        }
+
+        var snapshot = document.ToSnapshot(projectRoot);
+        var slangPath = Path.Combine(projectRoot, SlangFileName);
+        if (File.Exists(slangPath))
+        {
+            await using var slangStream = File.OpenRead(slangPath);
+            var slangEntries = await JsonSerializer.DeserializeAsync<List<SlangEntry>>(
+                slangStream,
+                JsonOptions,
+                cancellationToken).ConfigureAwait(false);
+            if (slangEntries is null)
+            {
+                throw new InvalidDataException("GameTableManager slang file is empty or invalid.");
+            }
+
+            snapshot.Package.SlangEntries.Clear();
+            snapshot.Package.SlangEntries.AddRange(slangEntries);
+        }
+        else if (TryGetLegacySlangEntries(root, out var legacySlangEntries))
+        {
+            snapshot.Package.SlangEntries.AddRange(legacySlangEntries);
+        }
+
+        return snapshot;
+    }
+
+    private static bool TryGetLegacySlangEntries(JsonElement projectJson, out List<SlangEntry> entries)
+    {
+        foreach (var property in projectJson.EnumerateObject())
+        {
+            if (property.Name.Equals("SlangEntries", StringComparison.OrdinalIgnoreCase))
+            {
+                entries = property.Value.Deserialize<List<SlangEntry>>(JsonOptions) ?? [];
+                return true;
+            }
+        }
+
+        entries = [];
+        return false;
+    }
+
+    private static async Task WriteJsonAtomicallyAsync<T>(
+        string jsonPath,
+        T value,
+        CancellationToken cancellationToken)
+    {
+        var directory = Path.GetDirectoryName(jsonPath)
+                        ?? throw new InvalidOperationException("JSON output path must have a parent directory.");
+        var tempPath = Path.Combine(directory, $".{Path.GetFileName(jsonPath)}.{Guid.NewGuid():N}.tmp");
         try
         {
             await using (var stream = new FileStream(
@@ -42,7 +126,7 @@ public sealed class JsonPatchProjectRepository : IPatchProjectRepository
                 bufferSize: 81920,
                 FileOptions.Asynchronous | FileOptions.WriteThrough))
             {
-                await JsonSerializer.SerializeAsync(stream, document, JsonOptions, cancellationToken)
+                await JsonSerializer.SerializeAsync(stream, value, JsonOptions, cancellationToken)
                     .ConfigureAwait(false);
                 await stream.FlushAsync(cancellationToken).ConfigureAwait(false);
                 stream.Flush(flushToDisk: true);
@@ -60,34 +144,6 @@ public sealed class JsonPatchProjectRepository : IPatchProjectRepository
             catch (IOException) { }
             catch (UnauthorizedAccessException) { }
         }
-    }
-
-    public async Task<PatchProjectSnapshot> LoadAsync(
-        string projectRoot,
-        CancellationToken cancellationToken = default)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(projectRoot);
-
-        var jsonPath = Path.Combine(projectRoot, ProjectFileName);
-        if (!File.Exists(jsonPath))
-        {
-            throw new FileNotFoundException("Could not find GameTableManager project file.", jsonPath);
-        }
-
-        await using var stream = File.OpenRead(jsonPath);
-        var document = await JsonSerializer.DeserializeAsync<ProjectDocument>(stream, JsonOptions, cancellationToken)
-            .ConfigureAwait(false);
-        if (document is null)
-        {
-            throw new InvalidDataException("GameTableManager project file is empty or invalid.");
-        }
-
-        if (document.SchemaVersion is < 1 or > CurrentSchemaVersion)
-        {
-            throw new InvalidDataException($"Unsupported GameTableManager project schema version {document.SchemaVersion}.");
-        }
-
-        return document.ToSnapshot(projectRoot);
     }
 
     private sealed class ProjectDocument
@@ -108,8 +164,6 @@ public sealed class JsonPatchProjectRepository : IPatchProjectRepository
         public List<IngameItemEffect> IngameItemEffects { get; set; } = [];
         public Dictionary<string, PlatformTableData> PlatformTables { get; set; } =
             new(StringComparer.OrdinalIgnoreCase);
-        public List<SlangEntry> SlangEntries { get; set; } = [];
-
         public static ProjectDocument FromPackage(
             PatchPackage package,
             string exportCompressionMode,
@@ -134,8 +188,7 @@ public sealed class JsonPatchProjectRepository : IPatchProjectRepository
                 IngameItemEffects = [..package.IngameItemEffects],
                 PlatformTables = new Dictionary<string, PlatformTableData>(
                     package.PlatformTables,
-                    StringComparer.OrdinalIgnoreCase),
-                SlangEntries = [..package.SlangEntries]
+                    StringComparer.OrdinalIgnoreCase)
             };
         }
 
@@ -159,7 +212,6 @@ public sealed class JsonPatchProjectRepository : IPatchProjectRepository
             package.PlatformTables = new Dictionary<string, PlatformTableData>(
                 PlatformTables,
                 StringComparer.OrdinalIgnoreCase);
-            package.SlangEntries.AddRange(SlangEntries);
 
             var options = new PackageExportOptions();
             foreach (var item in CompressionOverrides)
