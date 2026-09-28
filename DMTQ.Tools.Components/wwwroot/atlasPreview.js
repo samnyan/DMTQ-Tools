@@ -1,4 +1,6 @@
-export async function drawAtlas(canvas, pngBase64, width, height, sprites, selectedIndex) {
+export async function drawAtlas(canvasId, pngBase64, width, height, sprites, selectedIndex) {
+    const canvas = typeof canvasId === "string" ? document.getElementById(canvasId) : canvasId;
+    if (!(canvas instanceof HTMLCanvasElement)) return;
     const context = canvas.getContext("2d");
     if (!context) return;
 

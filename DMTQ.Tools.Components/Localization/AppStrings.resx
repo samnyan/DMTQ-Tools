@@ -292,7 +292,7 @@
     <value>Platform</value>
   </data>
   <data name="Import.ImportPlatform" xml:space="preserve">
-    <value>Import Platform</value>
+    <value>Import Patch</value>
   </data>
   <data name="Import.Precondition" xml:space="preserve">
     <value>Create or open a project on the Project page before importing.</value>
@@ -302,6 +302,21 @@
   </data>
   <data name="Import.Completed" xml:space="preserve">
     <value>Import completed.</value>
+  </data>
+  <data name="Import.InstallPackTitle" xml:space="preserve">
+    <value>Import client InstallPack</value>
+  </data>
+  <data name="Import.InstallPackRoot" xml:space="preserve">
+    <value>StreamingAssets root</value>
+  </data>
+  <data name="Import.ImportInstallPack" xml:space="preserve">
+    <value>Import InstallPack</value>
+  </data>
+  <data name="Import.ImportingInstallPack" xml:space="preserve">
+    <value>Importing InstallPack resources...</value>
+  </data>
+  <data name="Import.InstallPackCompleted" xml:space="preserve">
+    <value>InstallPack import: {0} files, {1} skipped, {2} errors.</value>
   </data>
   <data name="Common.Languages" xml:space="preserve">
     <value>Languages</value>
@@ -603,6 +618,42 @@
   <data name="Dialog.ReplaceFile" xml:space="preserve">
     <value>Replace File</value>
   </data>
+  <data name="Dialog.IsInstallPack" xml:space="preserve">
+    <value>Included in InstallPack</value>
+  </data>
+  <data name="Resources.InstallPack" xml:space="preserve">
+    <value>InstallPack</value>
+  </data>
+  <data name="Resources.BuiltInMarker" xml:space="preserve">
+    <value>(built-in)</value>
+  </data>
+  <data name="SongCoverPreview.EditAtlas" xml:space="preserve">
+    <value>Edit atlas</value>
+  </data>
+  <data name="Eyecatch.CreateFamily" xml:space="preserve">
+    <value>Create atlas family in project</value>
+  </data>
+  <data name="Eyecatch.CreateFamilyHint" xml:space="preserve">
+    <value>Generate NGUI2 and NGUI3 bundles for Android and iOS from this atlas.</value>
+  </data>
+  <data name="Eyecatch.CreatedFamily" xml:space="preserve">
+    <value>Created atlas family {0} for Android and iOS.</value>
+  </data>
+  <data name="Eyecatch.NewAtlas" xml:space="preserve">
+    <value>New atlas</value>
+  </data>
+  <data name="Eyecatch.PlatformSpriteNameMismatch" xml:space="preserve">
+    <value>Bundles for this atlas contain different sprite names. Batch overwrite is blocked to protect sprites that exist only in one variant.</value>
+  </data>
+  <data name="Eyecatch.PlatformSpriteNameMismatchShort" xml:space="preserve">
+    <value>Sprite names differ</value>
+  </data>
+  <data name="Eyecatch.ConfirmLayoutRebuild" xml:space="preserve">
+    <value>Android and iOS use the same sprite names but different order or regions. Rebuilding will use the Android variant as the layout source (or iOS if Android is missing) for each mismatched NGUI type. Continue?</value>
+  </data>
+  <data name="Eyecatch.AcceptReferenceLayout" xml:space="preserve">
+    <value>Use reference layout</value>
+  </data>
   <data name="Dialog.EditCover" xml:space="preserve">
     <value>Edit cover art</value>
   </data>
@@ -656,6 +707,96 @@
   </data>
   <data name="Nav.AtlasEditor" xml:space="preserve">
     <value>Song Jackets</value>
+  </data>
+  <data name="Eyecatch.Title" xml:space="preserve">
+    <value>Song Jacket Atlases</value>
+  </data>
+  <data name="Eyecatch.Subtitle" xml:space="preserve">
+    <value>Build a project index of NGUI2/NGUI3 atlas bundles and their Android/iOS variants.</value>
+  </data>
+  <data name="Eyecatch.Search" xml:space="preserve">
+    <value>Search atlas name or path...</value>
+  </data>
+  <data name="Eyecatch.BuildIndex" xml:space="preserve">
+    <value>Build resource index</value>
+  </data>
+  <data name="Eyecatch.Building" xml:space="preserve">
+    <value>Building index...</value>
+  </data>
+  <data name="Eyecatch.BuildStarting" xml:space="preserve">
+    <value>Preparing atlas scan...</value>
+  </data>
+  <data name="Eyecatch.BuildProgress" xml:space="preserve">
+    <value>Reading {0}/{1}: {2}</value>
+  </data>
+  <data name="Eyecatch.BuildComplete" xml:space="preserve">
+    <value>Indexed {0} atlas groups; {1} platform variants are ready.</value>
+  </data>
+  <data name="Eyecatch.BuildFailed" xml:space="preserve">
+    <value>Atlas index build failed: {0}</value>
+  </data>
+  <data name="Eyecatch.NotIndexed" xml:space="preserve">
+    <value>The index has not been built. Build it to scan bundles and extract atlas images.</value>
+  </data>
+  <data name="Eyecatch.AtlasKey" xml:space="preserve">
+    <value>Atlas key</value>
+  </data>
+  <data name="Eyecatch.SpriteCount" xml:space="preserve">
+    <value>Sprites</value>
+  </data>
+  <data name="Eyecatch.Status" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="Eyecatch.Preview" xml:space="preserve">
+    <value>Preview</value>
+  </data>
+  <data name="Eyecatch.Edit" xml:space="preserve">
+    <value>Edit</value>
+  </data>
+  <data name="Eyecatch.EditThis" xml:space="preserve">
+    <value>Edit this bundle</value>
+  </data>
+  <data name="Eyecatch.BuildAllVariants" xml:space="preserve">
+    <value>Build all four variants</value>
+  </data>
+  <data name="Eyecatch.BundlesBuilt" xml:space="preserve">
+    <value>All four bundles for {0} were rebuilt.</value>
+  </data>
+  <data name="Eyecatch.Sprites" xml:space="preserve">
+    <value>Sprite list</value>
+  </data>
+  <data name="Eyecatch.Ready" xml:space="preserve">
+    <value>Ready</value>
+  </data>
+  <data name="Eyecatch.Error" xml:space="preserve">
+    <value>Error</value>
+  </data>
+  <data name="Eyecatch.Unindexed" xml:space="preserve">
+    <value>Not indexed</value>
+  </data>
+  <data name="Eyecatch.Missing" xml:space="preserve">
+    <value>Missing</value>
+  </data>
+  <data name="Eyecatch.SourceChanged" xml:space="preserve">
+    <value>Source changed</value>
+  </data>
+  <data name="Eyecatch.Dirty" xml:space="preserve">
+    <value>Dirty</value>
+  </data>
+  <data name="Eyecatch.LayoutMismatch" xml:space="preserve">
+    <value>Platform layout mismatch</value>
+  </data>
+  <data name="Eyecatch.PlatformLayoutMismatch" xml:space="preserve">
+    <value>Android and iOS use the same sprite names but different order or regions. Batch build can use the Android layout for both after confirmation.</value>
+  </data>
+  <data name="Eyecatch.HasErrors" xml:space="preserve">
+    <value>Contains errors</value>
+  </data>
+  <data name="Eyecatch.AllPlatforms" xml:space="preserve">
+    <value>All variants indexed</value>
+  </data>
+  <data name="Eyecatch.PartialPlatforms" xml:space="preserve">
+    <value>Partial variants</value>
   </data>
   <data name="AtlasEditor.Title" xml:space="preserve">
     <value>Song Jacket Atlas</value>
@@ -773,6 +914,69 @@
   </data>
   <data name="AtlasEditor.SaveToProject" xml:space="preserve">
     <value>Save to project</value>
+  </data>
+  <data name="AtlasEditor.SaveAllVariants" xml:space="preserve">
+    <value>Apply to all four variants</value>
+  </data>
+  <data name="AtlasEditor.Variant" xml:space="preserve">
+    <value>Current atlas file</value>
+  </data>
+  <data name="AtlasEditor.ConfirmSaveAllVariants" xml:space="preserve">
+    <value>This writes the current sprite names and layout to the NGUI2, NGUI3, Android, and iOS resources for this atlas ID. Existing platform layouts differ; continuing will make them match the current layout.</value>
+  </data>
+  <data name="AtlasEditor.DiscardVariantEdits" xml:space="preserve">
+    <value>Switching files will discard unsaved edits. Continue?</value>
+  </data>
+  <data name="AtlasEditor.ConfirmSwitchVariant" xml:space="preserve">
+    <value>Switch file</value>
+  </data>
+  <data name="AtlasEditor.SavedAllVariants" xml:space="preserve">
+    <value>Atlas {0} was saved to all four variants</value>
+  </data>
+  <data name="AtlasEditor.CheckFourAtlases" xml:space="preserve">
+    <value>Check four atlases</value>
+  </data>
+  <data name="AtlasEditor.ContentConsistency" xml:space="preserve">
+    <value>Sprite content</value>
+  </data>
+  <data name="AtlasEditor.LayoutConsistency" xml:space="preserve">
+    <value>Sprite layout</value>
+  </data>
+  <data name="AtlasEditor.CheckNotRun" xml:space="preserve">
+    <value>Not checked</value>
+  </data>
+  <data name="AtlasEditor.CheckIncomplete" xml:space="preserve">
+    <value>{0}/4 atlases available</value>
+  </data>
+  <data name="AtlasEditor.ContentMismatch" xml:space="preserve">
+    <value>Sprite names differ</value>
+  </data>
+  <data name="AtlasEditor.ContentMatch" xml:space="preserve">
+    <value>Sprite names match</value>
+  </data>
+  <data name="AtlasEditor.LayoutNotCompared" xml:space="preserve">
+    <value>Content differs; not compared</value>
+  </data>
+  <data name="AtlasEditor.LayoutMismatch" xml:space="preserve">
+    <value>Sprite regions differ</value>
+  </data>
+  <data name="AtlasEditor.OrderMismatch" xml:space="preserve">
+    <value>Only sprite order differs</value>
+  </data>
+  <data name="AtlasEditor.LayoutMatch" xml:space="preserve">
+    <value>Content and layout match</value>
+  </data>
+  <data name="AtlasEditor.CheckFamilyMissing" xml:space="preserve">
+    <value>No variants were found for this atlas ID.</value>
+  </data>
+  <data name="AtlasEditor.ContentMismatchSaveBlocked" xml:space="preserve">
+    <value>The four platform atlases have different sprite-name lists. Batch save is blocked to protect platform-specific sprites from being deleted. Review and align the content first.</value>
+  </data>
+  <data name="AtlasEditor.SourceChangedSaveBlocked" xml:space="preserve">
+    <value>An atlas source changed after indexing. Recheck the four atlases and resolve the conflict before batch saving.</value>
+  </data>
+  <data name="AtlasEditor.ConfirmIncompleteVariants" xml:space="preserve">
+    <value>Only {0}/4 atlases can be read. Continuing will generate missing or unreadable variants from the current atlas content.</value>
   </data>
   <data name="AtlasEditor.SavedToProject" xml:space="preserve">
     <value>Saved to project: {0}</value>
@@ -1754,5 +1958,11 @@
   </data>
   <data name="Editor.SongPriceNotice" xml:space="preserve">
     <value>Don't set MAX and Q Point here. Add a Product below and set the price.</value>
+  </data>
+  <data name="Nav.ImportPatch" xml:space="preserve">
+    <value>Import Update Patch</value>
+  </data>
+  <data name="Import.InstallPackRootPlaceholder" xml:space="preserve">
+    <value>StreamingAssets directory containing InstallPack/android and InstallPack/ios</value>
   </data>
 </root>

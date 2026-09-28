@@ -1,0 +1,236 @@
+@page "/eyecatch"
+@using Assets.Lib.Models
+@using DMTQ_Tools.Components.Services
+@using DMTQ.Tools.Core.Services
+@inject IProjectState State
+@inject NavigationManager Navigation
+@inject IProjectFilePicker FilePicker
+@inject EyecatchIndexService IndexService
+@inject IDialogService DialogService
+
+<PageTitle>@L["Eyecatch.Title"]</PageTitle>
+
+<section class="eyecatch-page">
+    <div class="list-toolbar-layout eyecatch-toolbar">
+        <div class="list-toolbar-filters">
+            <ToolbarField Unlabeled Search>
+                <FluentTextInput Value="@_filter" ValueChanged="@(value => _filter = value ?? string.Empty)"
+                                 Immediate="true" Placeholder='@L["Eyecatch.Search"]' class="list-filter" />
+            </ToolbarField>
+        </div>
+        <div class="list-toolbar-actions">
+            <ToolbarField Unlabeled>
+                <FluentButton Appearance="ButtonAppearance.Default" OnClick="CreateNewAtlas" Disabled="@_isBusy">
+                    @L["Eyecatch.NewAtlas"]
+                </FluentButton>
+            </ToolbarField>
+            <ToolbarField Unlabeled>
+                <FluentButton Appearance="ButtonAppearance.Default" OnClick="OpenExistingAtlasAsync" Disabled="@_isBusy">
+                    @L["AtlasEditor.OpenBundle"]
+                </FluentButton>
+            </ToolbarField>
+            <ToolbarField Unlabeled>
+                <FluentButton Appearance="ButtonAppearance.Primary" OnClick="BuildIndexAsync" Disabled="@(_isBusy || State.CurrentPackage is null)">
+                    @if (_isBusy) { <FluentSpinner /> }
+                    @_buildButtonLabel
+                </FluentButton>
+            </ToolbarField>
+        </div>
+    </div>
+
+    @if (State.CurrentPackage is null || string.IsNullOrWhiteSpace(State.ProjectRoot))
+    {
+        <FluentMessageBar Intent="MessageBarIntent.Warning" Title='@L["Common.NoProject"]' />
+    }
+    else if (_index is null || _index.LastBuiltAtUtc is null)
+    {
+        <FluentMessageBar Intent="MessageBarIntent.Info" Title='@L["Eyecatch.NotIndexed"]' />
+    }
+
+    @if (_isBusy && !string.IsNullOrWhiteSpace(_progressText))
+    {
+        <FluentMessageBar Intent="MessageBarIntent.Info" Title="@_progressText" />
+    }
+    @if (!string.IsNullOrWhiteSpace(_message))
+    {
+        <FluentMessageBar Intent="@_messageIntent" Title="@_message" />
+    }
+
+    <FluentDataGrid Items="@FilteredAtlases.AsQueryable()" Pagination="@_pagination" Class="eyecatch-grid"
+                    ResizableColumns="true" ShowHover="true">
+        <PropertyColumn TGridItem="EyecatchAtlasFamily" TProp="string" Property="@(item => item.AtlasKey)"
+                        Title='@L["Eyecatch.AtlasKey"]' Sortable="true" Width="1fr" MinWidth="10rem" />
+        <TemplateColumn TGridItem="EyecatchAtlasFamily" Title='@L["Eyecatch.SpriteCount"]' Context="family"
+                        Width="8rem" MinWidth="8rem">
+            <span class="eyecatch-nowrap">2: @SpriteCount(family, SpriteAtlasKind.NGUI2) · 3: @SpriteCount(family, SpriteAtlasKind.NGUI3)</span>
+        </TemplateColumn>
+        <TemplateColumn TGridItem="EyecatchAtlasFamily" Title="Android" Context="family" Width="9rem" MinWidth="9rem">
+            @PlatformStatus(family, "android")
+        </TemplateColumn>
+        <TemplateColumn TGridItem="EyecatchAtlasFamily" Title="iOS" Context="family" Width="9rem" MinWidth="9rem">
+            @PlatformStatus(family, "ios")
+        </TemplateColumn>
+        <TemplateColumn TGridItem="EyecatchAtlasFamily" Title='@L["Eyecatch.Status"]' Context="family" Width="9rem" MinWidth="9rem">
+            <span class="eyecatch-nowrap">@FamilyStatus(family)</span>
+        </TemplateColumn>
+        <TemplateColumn TGridItem="EyecatchAtlasFamily" Title='@L["Lists.Actions"]' Context="family" Width="10rem" MinWidth="10rem">
+            <div class="eyecatch-row-actions">
+                <FluentButton Size="ButtonSize.Small" OnClick="@(() => PreviewFamilyAsync(family))" Disabled="@_isBusy">
+                    @L["Eyecatch.Preview"]
+                </FluentButton>
+                <FluentButton Size="ButtonSize.Small" Appearance="ButtonAppearance.Primary"
+                              OnClick="@(() => OpenFirstEditor(family))" Disabled="@(!HasEditableVariant(family) || _isBusy)">
+                    @L["Eyecatch.Edit"]
+                </FluentButton>
+            </div>
+        </TemplateColumn>
+    </FluentDataGrid>
+    <FluentPaginator State="@_pagination" />
+</section>
+
+@code {
+    private EyecatchProjectIndex? _index;
+    private readonly PaginationState _pagination = new() { ItemsPerPage = 25 };
+    private string _filter = string.Empty;
+    private string _message = string.Empty;
+    private MessageBarIntent _messageIntent = MessageBarIntent.Info;
+    private string _progressText = string.Empty;
+    private string _buildButtonLabel = "Build index";
+    private bool _isBusy;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!string.IsNullOrWhiteSpace(State.ProjectRoot))
+            _index = await IndexService.LoadAsync(State.ProjectRoot);
+    }
+
+    private IEnumerable<EyecatchAtlasFamily> FilteredAtlases
+    {
+        get
+        {
+            var atlases = _index?.Atlases ?? [];
+            return string.IsNullOrWhiteSpace(_filter)
+                ? atlases
+                : atlases.Where(item => item.AtlasKey.Contains(_filter, StringComparison.OrdinalIgnoreCase)
+                    || item.Variants.Any(variant => variant.AtlasName.Contains(_filter, StringComparison.OrdinalIgnoreCase)
+                        || variant.ResourcePath.Contains(_filter, StringComparison.OrdinalIgnoreCase)));
+        }
+    }
+
+    private async Task BuildIndexAsync()
+    {
+        if (_isBusy || State.CurrentPackage is null || string.IsNullOrWhiteSpace(State.ProjectRoot)) return;
+        _isBusy = true;
+        _message = string.Empty;
+        _progressText = L["Eyecatch.BuildStarting"].Value;
+        _buildButtonLabel = L["Eyecatch.Building"].Value;
+        try
+        {
+            var progress = new Progress<EyecatchIndexProgress>(value =>
+            {
+                _progressText = L["Eyecatch.BuildProgress", value.Completed, value.Total, value.CurrentResource].Value;
+                StateHasChanged();
+            });
+            _index = await IndexService.BuildAsync(State.CurrentPackage, State.ProjectRoot, progress);
+            _messageIntent = MessageBarIntent.Info;
+            _message = L["Eyecatch.BuildComplete", _index.Atlases.Count, _index.Atlases.Sum(atlas => atlas.Variants.Count(variant => variant.Status == EyecatchVariantStatus.Ready))].Value;
+        }
+        catch (Exception exception)
+        {
+            _messageIntent = MessageBarIntent.Error;
+            _message = L["Eyecatch.BuildFailed", exception.Message].Value;
+            State.Diagnostics.Add("Eyecatch index build failed: " + exception.Message);
+        }
+        finally
+        {
+            _isBusy = false;
+            _progressText = string.Empty;
+            _buildButtonLabel = L["Eyecatch.BuildIndex"].Value;
+        }
+    }
+
+    private async Task OpenExistingAtlasAsync()
+    {
+        if (_isBusy) return;
+        var path = await FilePicker.PickFileAsync([".unity", ".unity3d", ".lz4"]);
+        if (!string.IsNullOrWhiteSpace(path))
+            Navigation.NavigateTo($"/atlas-editor?externalFile={Uri.EscapeDataString(path)}");
+    }
+
+    private async Task PreviewFamilyAsync(EyecatchAtlasFamily family)
+    {
+        if (string.IsNullOrWhiteSpace(State.ProjectRoot)) return;
+        await DialogService.ShowDialogAsync<EyecatchAtlasPreviewDialog>(options =>
+        {
+            options.Header.Title = family.AtlasKey;
+            options.Width = "min(1100px, 96vw)";
+            options.Height = "min(900px, 92vh)";
+            options.Footer.PrimaryAction.Label = L["Common.Close"].Value;
+            options.Parameters = new Dictionary<string, object?>
+            {
+                [nameof(EyecatchAtlasPreviewDialog.AtlasKey)] = family.AtlasKey
+            };
+        });
+        _index = await IndexService.LoadAsync(State.ProjectRoot);
+    }
+
+    private int SpriteCount(EyecatchAtlasFamily family, SpriteAtlasKind kind)
+        => family.Variants.Where(variant => variant.Kind == kind && variant.Status == EyecatchVariantStatus.Ready)
+            .Select(variant => variant.Document?.Sprites.Count ?? 0).DefaultIfEmpty(0).Max();
+
+    private RenderFragment PlatformStatus(EyecatchAtlasFamily family, string platform) => builder =>
+    {
+        var variants = OrderedVariants(family).Where(variant => variant.Platform.Equals(platform, StringComparison.OrdinalIgnoreCase));
+        var text = string.Join(" · ", variants.Select(variant => $"{(variant.Kind == SpriteAtlasKind.NGUI2 ? "2" : "3")} {VariantStatus(variant)}"));
+        builder.OpenElement(0, "span");
+        builder.AddAttribute(1, "class", "eyecatch-nowrap");
+        builder.AddAttribute(2, "title", text);
+        builder.AddContent(3, text);
+        builder.CloseElement();
+    };
+
+    private string FamilyStatus(EyecatchAtlasFamily family)
+    {
+        if (family.HasSpriteNameMismatch) return L["Eyecatch.PlatformSpriteNameMismatchShort"].Value;
+        if (family.HasPlatformLayoutMismatch) return L["Eyecatch.LayoutMismatch"].Value;
+        if (family.Variants.Any(variant => variant.Status == EyecatchVariantStatus.SourceChanged)) return L["Eyecatch.SourceChanged"].Value;
+        if (family.Variants.Any(variant => variant.IsDirty)) return L["Eyecatch.Dirty"].Value;
+        if (family.Variants.Any(variant => variant.Status == EyecatchVariantStatus.Error)) return L["Eyecatch.HasErrors"].Value;
+        return family.Variants.Count(variant => variant.Status == EyecatchVariantStatus.Ready) switch
+        {
+            4 => L["Eyecatch.AllPlatforms"].Value,
+            > 0 => L["Eyecatch.PartialPlatforms"].Value,
+            _ => L["Eyecatch.Missing"].Value
+        };
+    }
+
+    private string VariantStatus(EyecatchAtlasVariant variant) => variant.Status switch
+    {
+        EyecatchVariantStatus.Ready => L["Eyecatch.Ready"].Value,
+        EyecatchVariantStatus.Error => L["Eyecatch.Error"].Value,
+        EyecatchVariantStatus.SourceChanged => L["Eyecatch.SourceChanged"].Value,
+        EyecatchVariantStatus.Unindexed => L["Eyecatch.Unindexed"].Value,
+        _ => L["Eyecatch.Missing"].Value
+    };
+
+    private static IEnumerable<EyecatchAtlasVariant> OrderedVariants(EyecatchAtlasFamily family)
+        => family.Variants.OrderBy(variant => variant.Kind).ThenBy(variant => variant.Platform == "android" ? 0 : 1);
+
+    private static bool CanEdit(EyecatchAtlasVariant variant)
+        => variant.Exists && variant.ResourceRegistered && !string.IsNullOrWhiteSpace(variant.ResourcePath)
+            && variant.Status == EyecatchVariantStatus.Ready;
+
+    private static bool HasEditableVariant(EyecatchAtlasFamily family) => family.Variants.Any(CanEdit);
+
+    private void OpenFirstEditor(EyecatchAtlasFamily family)
+    {
+        var variant = OrderedVariants(family).FirstOrDefault(CanEdit);
+        if (variant is not null)
+            Navigation.NavigateTo($"/atlas-editor?projectFile={Uri.EscapeDataString(variant.ResourcePath)}&platform={Uri.EscapeDataString(variant.Platform)}");
+    }
+
+    private void CreateNewAtlas()
+    {
+        if (!_isBusy) Navigation.NavigateTo("/atlas-editor?new=true");
+    }
+}

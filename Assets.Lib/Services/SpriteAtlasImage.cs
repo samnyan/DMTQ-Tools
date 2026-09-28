@@ -89,6 +89,15 @@ public static class SpriteAtlasImage
         return EncodePng(pixels, width, height);
     }
 
+    /// <summary>Decodes PNG or JPEG bytes and encodes the image as PNG.</summary>
+    public static byte[] NormalizeToPng(byte[] imageBytes)
+    {
+        if (imageBytes is null || imageBytes.Length == 0)
+            throw new ArgumentException("Image data is empty.", nameof(imageBytes));
+        var image = ImageResult.FromMemory(imageBytes, StbImageSharp.ColorComponents.RedGreenBlueAlpha);
+        return EncodePng(image.Data, image.Width, image.Height);
+    }
+
     private static void CopyResampled(byte[] source, int sourceWidth, int sourceHeight,
         byte[] destination, int destinationWidth, int x, int y, int width, int height)
     {

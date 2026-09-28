@@ -43,6 +43,10 @@
                         <div style="font-size: 0.85rem; color: var(--colorNeutralForeground1);">
                             @L["Dialog.ExistSizeChecksum", card.Exist ? "✓" : "✗", FormatSize(card.SourceFileSize), card.SourceChecksum]
                         </div>
+                        @if (card.Platform is "android" or "ios")
+                        {
+                            <FluentSwitch @bind-Value="card.IsInstallPack" Label='@L["Dialog.IsInstallPack"]' />
+                        }
                         @if (!string.IsNullOrEmpty(card.SourceChecksum))
                         {
                             <div style="font-size: 0.85rem; color: var(--colorNeutralForeground1);">

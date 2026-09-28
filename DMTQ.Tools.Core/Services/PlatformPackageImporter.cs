@@ -91,11 +91,16 @@ public sealed class PlatformPackageImporter
                         _ => Path.Combine("resources", platform, relativePath).Replace('\\', '/')
                     };
 
-                    bool fileExists = sourcePath is not null;
+                    var archivedPath = Path.Combine(projectRoot, projectRelativePath.Replace('/', Path.DirectorySeparatorChar));
+                    var existingResource = package.Resources.FirstOrDefault(resource =>
+                        resource.FileName.Equals(relativePath, StringComparison.OrdinalIgnoreCase));
+                    var existingPlatformEntry = existingResource?.PlatformManifest.FirstOrDefault(manifestEntry =>
+                        manifestEntry.Platform.Equals(platform, StringComparison.OrdinalIgnoreCase));
+                    bool fileExists = sourcePath is not null
+                        || (existingPlatformEntry?.IsInstallPack == true && File.Exists(archivedPath));
 
-                    if (fileExists)
+                    if (sourcePath is not null)
                     {
-                        var archivedPath = Path.Combine(projectRoot, projectRelativePath.Replace('/', Path.DirectorySeparatorChar));
                         Directory.CreateDirectory(Path.GetDirectoryName(archivedPath) ?? projectRoot);
 
                         if (entry.Compressed)
@@ -119,8 +124,7 @@ public sealed class PlatformPackageImporter
                     }
 
                     // Find or create ResourceFile keyed by relativePath
-                    var resourceFile = package.Resources.FirstOrDefault(r =>
-                        r.FileName.Equals(relativePath, StringComparison.OrdinalIgnoreCase));
+                    var resourceFile = existingResource;
 
                     if (resourceFile is null)
                     {

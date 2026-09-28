@@ -10,6 +10,7 @@
 @inject ItemEditService ItemEditSvc
 @inject ProductEditService ProductEditSvc
 @inject IDialogService DialogService
+@inject EyecatchIndexService EyecatchIndex
 
 <div class="song-editor-page">
 
@@ -138,7 +139,35 @@
                                     </FluentGridItem>
 
                                     <FluentGridItem Xs="12" Sm="6" Md="6">
-                                        <FluentTextInput @bind-Value="songItemDraft.ImgUrl1" Label='@L["Fields.ImageUrl1"]' Width="100%" />
+                                        <div class="song-item-cover-editor">
+                                            <FluentTextInput @bind-Value="songItemDraft.ImgUrl1" Label='@L["Fields.ImageUrl1"]' Width="100%" />
+                                            <div class="song-item-cover-preview-row">
+                                                <button type="button" class="song-item-cover-preview"
+                                                        disabled="@string.IsNullOrWhiteSpace(songItemDraft.ImgUrl1)"
+                                                        title='@L["SongCoverPreview.Title", songItemDraft.ImgUrl1]'
+                                                        @onclick="ShowSongItemCoverPreviewAsync">
+                                                    @if (!string.IsNullOrWhiteSpace(songItemCoverImageUrl))
+                                                    {
+                                                        <img src="@songItemCoverImageUrl" alt="@songItemDraft.ImgUrl1" />
+                                                    }
+                                                    else
+                                                    {
+                                                        <span aria-hidden="true">?</span>
+                                                    }
+                                                </button>
+                                                <div class="song-item-cover-actions">
+                                                    <FluentButton Appearance="ButtonAppearance.Default"
+                                                                  OnClick="OpenSongItemAtlasEditorAsync"
+                                                                  Disabled="@(string.IsNullOrWhiteSpace(songItemDraft.ImgUrl1) || State.CurrentPackage is null || string.IsNullOrWhiteSpace(State.ProjectRoot))">
+                                                        @L["SongCoverPreview.EditAtlas"]
+                                                    </FluentButton>
+                                                </div>
+                                            </div>
+                                            @if (!string.IsNullOrWhiteSpace(songItemCoverMessage))
+                                            {
+                                                <p class="song-item-cover-message">@songItemCoverMessage</p>
+                                            }
+                                        </div>
                                     </FluentGridItem>
                                     <FluentGridItem Xs="12" Sm="6" Md="6">
                                         <FluentTextInput @bind-Value="songItemDraft.ImgUrl2" Label='@L["Fields.ImageUrl2"]' Width="100%" />
@@ -398,6 +427,10 @@
     private bool isBusy;
     private bool _syncOriginalText = true;
     private Item? songItemDraft;
+    private string? songItemCoverImageUrl;
+    private string? lastCoverSpriteName;
+    private string? lastCoverProjectRoot;
+    private string songItemCoverMessage = string.Empty;
     private int? songItemIdInput;
     private string? originalSongItemId;
     private bool itemIdWasConflictSuggested;
@@ -526,6 +559,106 @@
                 itemIdWasConflictSuggested,
                 _syncOriginalText));
         }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        var spriteName = songItemDraft?.ImgUrl1;
+        var projectRoot = State.ProjectRoot;
+        if (string.Equals(lastCoverSpriteName, spriteName, StringComparison.Ordinal)
+            && string.Equals(lastCoverProjectRoot, projectRoot, StringComparison.Ordinal)) return;
+
+        lastCoverSpriteName = spriteName;
+        lastCoverProjectRoot = projectRoot;
+        songItemCoverImageUrl = null;
+        if (!string.IsNullOrWhiteSpace(spriteName) && !string.IsNullOrWhiteSpace(projectRoot))
+        {
+            try
+            {
+                songItemCoverImageUrl = await EyecatchIndex.FindSpriteImageDataUrlAsync(projectRoot, spriteName);
+            }
+            catch (Exception exception)
+            {
+                State.Diagnostics.Add($"Could not load song item cover '{spriteName}': {exception.Message}");
+            }
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task ShowSongItemCoverPreviewAsync()
+    {
+        var spriteName = songItemDraft?.ImgUrl1;
+        if (string.IsNullOrWhiteSpace(spriteName)) return;
+
+        await DialogService.ShowDialogAsync<SongCoverPreviewDialog>(options =>
+        {
+            options.Header.Title = L["SongCoverPreview.Title", spriteName].Value;
+            options.Width = "min(1000px, 95vw)";
+            options.Footer.PrimaryAction.Label = L["Common.Close"].Value;
+            options.Parameters = new Dictionary<string, object?>
+            {
+                [nameof(SongCoverPreviewDialog.SpriteName)] = spriteName
+            };
+        });
+    }
+
+    private async Task OpenSongItemAtlasEditorAsync()
+    {
+        var spriteName = songItemDraft?.ImgUrl1;
+        if (string.IsNullOrWhiteSpace(spriteName) || State.CurrentPackage is null || string.IsNullOrWhiteSpace(State.ProjectRoot)) return;
+
+        var separator = spriteName.IndexOf('_');
+        var atlasKey = separator > 1 ? spriteName[..separator] : string.Empty;
+        if (atlasKey.Length < 2 || !atlasKey.StartsWith("e", StringComparison.OrdinalIgnoreCase)
+            || !int.TryParse(atlasKey.AsSpan(1), out _))
+        {
+            songItemCoverMessage = L["SongCoverPreview.InvalidSprite"].Value;
+            return;
+        }
+
+        var atlasNames = new[] { $"d_{atlasKey}", $"d3_{atlasKey}" };
+        var candidates = State.CurrentPackage.Resources
+            .Where(resource => resource.Category.Equals("dlc", StringComparison.OrdinalIgnoreCase)
+                && atlasNames.Contains(Path.GetFileNameWithoutExtension(resource.FileName), StringComparer.OrdinalIgnoreCase))
+            .SelectMany(resource => resource.PlatformManifest
+                .Where(file => file.Exist)
+                .Select(file => new { Resource = resource, file.Platform }))
+            .Where(candidate => candidate.Platform.Equals("android", StringComparison.OrdinalIgnoreCase)
+                || candidate.Platform.Equals("ios", StringComparison.OrdinalIgnoreCase))
+            .Select(candidate => new
+            {
+                candidate.Resource.FileName,
+                candidate.Platform,
+                IsNgui2 = Path.GetFileNameWithoutExtension(candidate.Resource.FileName).StartsWith("d_", StringComparison.OrdinalIgnoreCase),
+                PlatformPath = Path.GetFullPath(Path.Combine(State.ProjectRoot, "resources", candidate.Platform,
+                    candidate.Resource.FileName.Replace('/', Path.DirectorySeparatorChar).Replace('\\', Path.DirectorySeparatorChar)))
+            })
+            .Where(candidate => File.Exists(candidate.PlatformPath) || File.Exists(candidate.PlatformPath + ".lz4"))
+            .OrderBy(candidate => candidate.Platform.Equals(State.SelectedExportPlatform, StringComparison.OrdinalIgnoreCase) ? 0 : 1)
+            .ThenBy(candidate => candidate.IsNgui2 ? 0 : 1)
+            .ToArray();
+
+        var selected = candidates.FirstOrDefault();
+        var isNew = selected is null;
+        var projectFile = selected?.FileName;
+        var platform = selected?.Platform;
+        await DialogService.ShowDialogAsync<SongItemAtlasEditorDialog>(options =>
+        {
+            options.Header.Title = L["AtlasEditor.Title"].Value;
+            options.Width = "min(1500px, 98vw)";
+            options.Height = "94vh";
+            options.Footer.PrimaryAction.Label = L["Common.Close"].Value;
+            options.Parameters = new Dictionary<string, object?>
+            {
+                [nameof(SongItemAtlasEditorDialog.ProjectFile)] = projectFile,
+                [nameof(SongItemAtlasEditorDialog.Platform)] = platform,
+                [nameof(SongItemAtlasEditorDialog.IsNewAtlas)] = isNew,
+                [nameof(SongItemAtlasEditorDialog.InitialAtlasName)] = $"d_{atlasKey}",
+                [nameof(SongItemAtlasEditorDialog.InitialSpriteName)] = spriteName
+            };
+        });
+        songItemCoverMessage = string.Empty;
     }
 
     private void LoadSongCommerceDrafts()

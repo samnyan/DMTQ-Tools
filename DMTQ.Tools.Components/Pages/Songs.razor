@@ -79,19 +79,11 @@
         <TemplateColumn TGridItem="Song" Title='@L["Lists.LinkedItem"]' Width="1.1fr" MinWidth="8.5rem" Context="song">
             @LinkedItemLabel(song)
         </TemplateColumn>
-        <TemplateColumn TGridItem="Song" Title='@L["Lists.ItemCover"]' Width="0.9fr" MinWidth="7rem" Context="song">
+        <TemplateColumn TGridItem="Song" Title='@L["Lists.ItemCover"]' Width="1.1fr" MinWidth="9rem" Context="song">
             @{
                 var spriteName = ItemCover(song);
             }
-            @if (string.IsNullOrWhiteSpace(spriteName))
-            {
-                @L["Lists.None"]
-            }
-            else
-            {
-                <a href="#" class="song-cover-preview-link" @onclick="@(() => ShowCoverPreviewAsync(spriteName))"
-                   @onclick:preventDefault="true">@spriteName</a>
-            }
+            <SongCoverCell SpriteName="@spriteName" PreviewRequested="ShowCoverPreviewAsync" />
         </TemplateColumn>
         <TemplateColumn TGridItem="Song" Title='@L["Lists.LinkedProducts"]' Width="0.8fr" MinWidth="8rem" Context="song">
             @ProductIds(song)

@@ -1,0 +1,26 @@
+@using DMTQ_Tools.Components.Pages
+@inherits FluentDialogInstance
+
+<FluentDialogBody>
+    <div class="song-item-atlas-editor-dialog">
+        <AtlasEditor ProjectFile="@ProjectFile"
+                     ProjectPlatform="@Platform"
+                     NewAtlasRequest="@IsNewAtlas"
+                     InitialAtlasName="@InitialAtlasName"
+                     InitialSpriteName="@InitialSpriteName"
+                     IsDialogMode="true"
+                     CloseRequested="CloseDialogAsync" />
+    </div>
+</FluentDialogBody>
+
+@code {
+    [Parameter] public string? ProjectFile { get; set; }
+    [Parameter] public string? Platform { get; set; }
+    [Parameter] public bool IsNewAtlas { get; set; }
+    [Parameter] public string? InitialAtlasName { get; set; }
+    [Parameter] public string? InitialSpriteName { get; set; }
+
+    private Task CloseDialogAsync() => DialogInstance.CancelAsync();
+
+    protected override Task OnActionClickedAsync(bool primary) => DialogInstance.CancelAsync();
+}

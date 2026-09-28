@@ -72,7 +72,7 @@
         <PropertyColumn TGridItem="ResourceCatalogEntry" TProp="string" Property="@(r => r.FileName)" Title='@L["Lists.FileName"]' Sortable="true" />
         <PropertyColumn TGridItem="ResourceCatalogEntry" TProp="string" Property="@(r => r.Category)" Title="Category" Sortable="true" />
         <TemplateColumn TGridItem="ResourceCatalogEntry" Title='@L["Lists.Platforms"]' Context="resource">
-            @string.Join(", ", resource.PlatformManifest.Select(m => $"{m.Platform} {(m.Exist ? "✓" : "✗")}"))
+            @string.Join(", ", resource.PlatformManifest.Select(PlatformStatusLabel))
         </TemplateColumn>
         <TemplateColumn TGridItem="ResourceCatalogEntry" Title='@L["Lists.Size"]' Context="resource">
             @FormatFileSize(resource.PlatformManifest.FirstOrDefault()?.SourceFileSize ?? 0)
@@ -161,6 +161,14 @@
         return $"{bytes / 1048576}MB";
     }
 
+    private string PlatformStatusLabel(PlatformManifestInfo entry)
+    {
+        var builtIn = L["Resources.BuiltInMarker"].Value;
+        return entry.IsInstallPack
+            ? $"{entry.Platform} {builtIn}"
+            : $"{entry.Platform} {(entry.Exist ? "✓" : "✗")}";
+    }
+
     private static ResourceDialogData BuildDialogData(ResourceCatalogEntry entry)
     {
         var (category, fileNameOnly) = FileUtility.ParseResourcePath(entry.FileName);
@@ -174,6 +182,7 @@
             {
                 Platform = m.Platform,
                 Exist = m.Exist,
+                IsInstallPack = m.IsInstallPack,
                 SourceFileSize = m.SourceFileSize,
                 SourceChecksum = m.SourceChecksum
             }).ToList()
@@ -304,6 +313,14 @@
             if (original is not null && original.Compressed != data.Compressed)
             {
                 await Workflow.SetResourceCompressionAsync(fullPath, null, data.Compressed);
+            }
+
+            foreach (var card in data.Platforms.Where(card => !card.MarkedForDeletion))
+            {
+                var originalEntry = original?.PlatformManifest.FirstOrDefault(entry =>
+                    entry.Platform.Equals(card.Platform, StringComparison.OrdinalIgnoreCase));
+                if (card.IsInstallPack != (originalEntry?.IsInstallPack ?? false))
+                    await Workflow.SetResourceInstallPackAsync(fullPath, card.Platform, card.IsInstallPack);
             }
 
             await Workflow.SaveProjectAsync();

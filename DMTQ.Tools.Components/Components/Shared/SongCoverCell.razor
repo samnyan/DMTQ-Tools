@@ -1,0 +1,54 @@
+@using DMTQ_Tools.Components.Services
+@inject IProjectState State
+@inject EyecatchIndexService IndexService
+
+<div class="song-cover-cell">
+    @if (string.IsNullOrWhiteSpace(SpriteName))
+    {
+        <span>@L["Lists.None"]</span>
+    }
+    else
+    {
+        <button type="button" class="song-cover-cell-preview" title='@L["SongCoverPreview.Title", SpriteName]'
+                aria-label='@L["SongCoverPreview.Title", SpriteName]' @onclick="OpenPreviewAsync">
+            @if (!string.IsNullOrWhiteSpace(_imageUrl))
+            {
+                <img class="song-cover-cell-image" src="@_imageUrl" alt="" />
+            }
+            else
+            {
+                <span class="song-cover-cell-placeholder" aria-hidden="true">?</span>
+            }
+        </button>
+        <a href="#" class="song-cover-preview-link" title="@SpriteName" @onclick="OpenPreviewAsync" @onclick:preventDefault="true">@SpriteName</a>
+    }
+</div>
+
+@code {
+    [Parameter] public string? SpriteName { get; set; }
+    [Parameter] public EventCallback<string> PreviewRequested { get; set; }
+
+    private string? _lastSpriteName;
+    private string? _imageUrl;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (string.Equals(_lastSpriteName, SpriteName, StringComparison.Ordinal)) return;
+        _lastSpriteName = SpriteName;
+        try
+        {
+            _imageUrl = !string.IsNullOrWhiteSpace(State.ProjectRoot) && !string.IsNullOrWhiteSpace(SpriteName)
+                ? await IndexService.FindSpriteImageDataUrlAsync(State.ProjectRoot, SpriteName)
+                : null;
+        }
+        catch (InvalidDataException exception)
+        {
+            _imageUrl = null;
+            State.Diagnostics.Add($"Invalid song cover sprite name '{SpriteName}': {exception.Message}");
+        }
+    }
+
+    private Task OpenPreviewAsync() => string.IsNullOrWhiteSpace(SpriteName)
+        ? Task.CompletedTask
+        : PreviewRequested.InvokeAsync(SpriteName);
+}

@@ -22,6 +22,7 @@ public sealed class ResourceManagerService
                     {
                         Platform = m.Platform,
                         Exist = m.Exist,
+                        IsInstallPack = m.IsInstallPack,
                         SourceFileSize = m.SourceFileSize,
                         SourceChecksum = m.SourceChecksum
                     })
@@ -167,6 +168,36 @@ public sealed class ResourceManagerService
         ArgumentNullException.ThrowIfNull(package);
         var resource = FindResource(package, packageRelativePath);
         resource.Compressed = compressed;
+    }
+
+    /// <summary>Changes InstallPack status and captures the current file as its built-in baseline.</summary>
+    public async Task SetInstallPackAsync(
+        PatchPackage package,
+        string packageRelativePath,
+        string platform,
+        bool isInstallPack,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(package);
+        var resource = FindResource(package, packageRelativePath);
+        var platformEntry = resource.PlatformManifest.FirstOrDefault(entry =>
+            entry.Platform.Equals(platform, StringComparison.OrdinalIgnoreCase))
+            ?? throw new InvalidOperationException($"Resource '{resource.FileName}' has no '{platform}' platform entry.");
+        cancellationToken.ThrowIfCancellationRequested();
+        platformEntry.IsInstallPack = isInstallPack;
+        if (!isInstallPack)
+        {
+            platformEntry.InstallPackBaselineChecksum = string.Empty;
+            return;
+        }
+
+        var path = resource.Category.Equals("preview", StringComparison.OrdinalIgnoreCase)
+                    || resource.Category.Equals("slang", StringComparison.OrdinalIgnoreCase)
+            ? Path.Combine(package.ProjectInfo.ProjectRoot, "resources", resource.FileName.Replace('/', Path.DirectorySeparatorChar))
+            : Path.Combine(package.ProjectInfo.ProjectRoot, "resources", platformEntry.Platform, resource.FileName.Replace('/', Path.DirectorySeparatorChar));
+        platformEntry.InstallPackBaselineChecksum = File.Exists(path)
+            ? await FileUtility.ComputeMd5Async(path, cancellationToken).ConfigureAwait(false)
+            : string.Empty;
     }
 
     public void SetPreviewIncludedPlatforms(PatchPackage package, string packageRelativePath, IReadOnlyCollection<string> includedPlatforms)

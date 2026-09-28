@@ -198,13 +198,34 @@ public sealed class PlatformPackageExporter
         // Resolve source path: try platform-specific path first, then generic
         var sourcePath = ResolveResourceSourcePath(projectRoot, resource.FileName, resource.Category, options.Platform);
 
+        var platformEntry = resource.PlatformManifest.FirstOrDefault(m =>
+            m.Platform.Equals(options.Platform, StringComparison.OrdinalIgnoreCase)
+            || m.Platform.Equals("share", StringComparison.OrdinalIgnoreCase));
+        if (platformEntry?.IsInstallPack == true)
+        {
+            if (!string.IsNullOrWhiteSpace(platformEntry.InstallPackBaselineChecksum))
+            {
+                if (!File.Exists(sourcePath))
+                {
+                    result.FilesSkippedAsBaseline++;
+                    result.Messages.Add($"InstallPack baseline resource omitted: {relativePath}");
+                    return;
+                }
+
+                var currentChecksum = await FileUtility.ComputeMd5Async(sourcePath, cancellationToken).ConfigureAwait(false);
+                if (currentChecksum.Equals(platformEntry.InstallPackBaselineChecksum, StringComparison.OrdinalIgnoreCase))
+                {
+                    result.FilesSkippedAsBaseline++;
+                    result.Messages.Add($"Unchanged InstallPack resource omitted: {relativePath}");
+                    return;
+                }
+            }
+        }
+
         if (!File.Exists(sourcePath))
         {
             // Add manifest entry from platform manifest even if file missing on disk
             // (file may be built into IPA/APK — client needs manifest entry for checksum)
-            var platformEntry = resource.PlatformManifest.FirstOrDefault(m =>
-                m.Platform.Equals(options.Platform, StringComparison.OrdinalIgnoreCase)
-                || m.Platform.Equals("share", StringComparison.OrdinalIgnoreCase));
             if (platformEntry is not null)
             {
                 result.Manifest.Entries.Add(new PatchFileEntry(

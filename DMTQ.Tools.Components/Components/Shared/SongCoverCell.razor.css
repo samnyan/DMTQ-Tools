@@ -1,0 +1,6 @@
+.song-cover-cell { display: flex; align-items: center; gap: .35rem; min-width: 0; white-space: nowrap; }
+.song-cover-cell-preview { display: grid; flex: 0 0 2rem; width: 2rem; height: 2rem; place-items: center; overflow: hidden; padding: 0; border: 0; border-radius: var(--borderRadiusSmall); background: var(--colorNeutralBackground2); cursor: pointer; }
+.song-cover-cell-preview:hover { outline: 2px solid var(--colorBrandStroke1); }
+.song-cover-cell-image { display: block; width: 100%; height: 100%; object-fit: cover; }
+.song-cover-cell-placeholder { color: var(--colorNeutralForeground3); font-size: .85rem; }
+.song-cover-preview-link { flex: 1 1 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

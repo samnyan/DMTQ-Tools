@@ -13,6 +13,8 @@
 @inject IDialogService DialogService
 @inject IProjectState State
 @inject IProjectWorkflow Workflow
+@inject EyecatchIndexService EyecatchIndexService
+@inject EyecatchBundleBuildService EyecatchBundleBuildService
 @inject NavigationManager Navigation
 @inject INotificationService NotificationService
 @inject IJSRuntime JS
@@ -23,7 +25,7 @@
         <div><h1>@L["AtlasEditor.Title"]</h1><p>@L["AtlasEditor.Subtitle"]</p></div>
         @if (_document is not null)
         {
-            <FluentButton Appearance="ButtonAppearance.Default" OnClick="ResetWorkspace" Disabled="@_isBusy">@L["AtlasEditor.CloseAtlas"]</FluentButton>
+            <FluentButton Appearance="ButtonAppearance.Default" OnClick="CloseAtlasAsync" Disabled="@_isBusy">@L["AtlasEditor.CloseAtlas"]</FluentButton>
         }
     </header>
     @if (_document is null && !_isConfiguringNew)
@@ -59,6 +61,40 @@
             <div><span>@L["AtlasEditor.Size"]</span><strong>@_document.TextureWidth × @_document.TextureHeight</strong></div>
             <div><span>@L["AtlasEditor.Sprites"]</span><strong>@_sprites.Count</strong></div>
         </section>
+        @if (_projectContext is not null)
+        {
+            <section class="atlas-variant-switch panel-surface">
+                <strong>@L["AtlasEditor.Variant"]</strong>
+                <div class="atlas-variant-buttons">
+                    @foreach (var variant in _projectVariantChoices)
+                    {
+                        var selected = variant.Kind == _document.Kind
+                            && variant.Platform.Equals(_projectContext.Platform, StringComparison.OrdinalIgnoreCase);
+                        <FluentButton Size="ButtonSize.Small"
+                                      Appearance="@(selected ? ButtonAppearance.Primary : ButtonAppearance.Default)"
+                                      OnClick="@(() => SwitchProjectVariantAsync(variant))"
+                                      Disabled="@(_isBusy || !variant.Exists || selected)">
+                            @KindShortLabel(variant.Kind) · @PlatformLabel(variant.Platform)
+                        </FluentButton>
+                    }
+                </div>
+                <div class="atlas-family-check">
+                    <div>
+                        <span>@L["AtlasEditor.ContentConsistency"]</span>
+                        <strong class="@(_familyContentMismatch ? "is-warning" : null)">@FamilyContentStatus</strong>
+                    </div>
+                    <div>
+                        <span>@L["AtlasEditor.LayoutConsistency"]</span>
+                        <strong class="@(_familyLayoutMismatch ? "is-warning" : null)">@FamilyLayoutStatus</strong>
+                    </div>
+                    <FluentButton Size="ButtonSize.Small" Appearance="ButtonAppearance.Default"
+                                  OnClick="CheckFourAtlasesAsync" Disabled="@(_isBusy || State.CurrentPackage is null)">
+                        @if (_checkingFamily) { <FluentSpinner /> }
+                        @L["AtlasEditor.CheckFourAtlases"]
+                    </FluentButton>
+                </div>
+            </section>
+        }
         <div class="atlas-workspace">
             <section class="atlas-preview-column panel-surface">
                 <div class="atlas-section-heading">
@@ -66,7 +102,7 @@
                     <FluentButton Appearance="ButtonAppearance.Default" OnClick="ExportAtlasPngAsync" Disabled="@_isBusy">@L["AtlasEditor.ExportTexture"]</FluentButton>
                 </div>
                 <div class="atlas-canvas-scroll">
-                    <canvas class="atlas-canvas" aria-label='@L["AtlasEditor.Preview"]' role="img" @ref="_previewCanvas"></canvas>
+                    <canvas id="@_previewCanvasId" class="atlas-canvas" aria-label='@L["AtlasEditor.Preview"]' role="img"></canvas>
                 </div>
             </section>
             <section class="atlas-sprite-column">
@@ -109,7 +145,7 @@
                 <FluentButton Class="add-sprite-button" Appearance="ButtonAppearance.Default" OnClick="AddSprite" Disabled="@_isBusy">@L["AtlasEditor.AddSprite"]</FluentButton>
             </section>
         </div>
-        <section class="atlas-save-options panel-surface @(_projectContext is null ? null : "has-project-save")">
+        <section class="atlas-save-options panel-surface @(_projectContext is not null || _isNewAtlas ? "has-project-save" : null)">
             @if (_projectContext is not null)
             {
                 <section class="atlas-save-panel project-save-panel">
@@ -118,10 +154,32 @@
                         <span>@L["AtlasEditor.ProjectPath"]</span><code>@_projectContext.RelativePath</code>
                         <span>@L["AtlasEditor.ProjectPlatform"]</span><strong>@PlatformLabel(_projectContext.Platform)</strong>
                     </div>
-                    <FluentButton Appearance="ButtonAppearance.Primary" OnClick="SaveToProjectAsync" Disabled="@_isBusy">
+                    <div class="atlas-save-actions">
+                        <FluentButton Appearance="ButtonAppearance.Primary" OnClick="SaveToProjectAsync" Disabled="@_isBusy">
+                            <span class="atlas-save-button-content">
+                                @if (_busyOperation == AtlasBusyOperation.SaveToProject) { <FluentSpinner /> }
+                                @L["AtlasEditor.SaveToProject"]
+                            </span>
+                        </FluentButton>
+                        <FluentButton Appearance="ButtonAppearance.Default" OnClick="SaveAllVariantsAsync"
+                                      Disabled="@(_isBusy || !CanSaveAllVariants)">
+                            <span class="atlas-save-button-content">
+                                @if (_busyOperation == AtlasBusyOperation.SaveAllVariants) { <FluentSpinner /> }
+                                @L["AtlasEditor.SaveAllVariants"]
+                            </span>
+                        </FluentButton>
+                    </div>
+                </section>
+            }
+            else if (_isNewAtlas && State.CurrentPackage is not null && !string.IsNullOrWhiteSpace(State.ProjectRoot))
+            {
+                <section class="atlas-save-panel project-save-panel">
+                    <h2>@L["Eyecatch.CreateFamily"]</h2>
+                    <p>@L["Eyecatch.CreateFamilyHint"]</p>
+                    <FluentButton Appearance="ButtonAppearance.Primary" OnClick="SaveNewFamilyAsync" Disabled="@_isBusy">
                         <span class="atlas-save-button-content">
                             @if (_busyOperation == AtlasBusyOperation.SaveToProject) { <FluentSpinner /> }
-                            @L["AtlasEditor.SaveToProject"]
+                            @L["Eyecatch.CreateFamily"]
                         </span>
                     </FluentButton>
                 </section>
@@ -155,14 +213,24 @@
     private enum AtlasBusyOperation
     {
         SaveToProject,
+        SaveAllVariants,
         ExportBundle
     }
 
     private readonly List<AtlasEditorImage> _sprites = [];
     private readonly List<AtlasRegionValues> _regionValues = [];
+    private readonly List<ProjectAtlasVariantChoice> _projectVariantChoices = [];
     private string? _lastProjectRequest;
     private AtlasProjectContext? _projectContext;
-    private ElementReference _previewCanvas;
+    private bool _hasUnsavedEdits;
+    private bool _familyCheckPerformed;
+    private bool _familyContentMismatch;
+    private bool _familyLayoutMismatch;
+    private bool _familyOrderMismatch;
+    private int _familyReadyCount;
+    private bool _checkingFamily;
+    private bool _isNewAtlas;
+    private readonly string _previewCanvasId = $"atlas-preview-{Guid.NewGuid():N}";
     private IJSObjectReference? _previewModule;
     private SpriteAtlasDocument? _document;
     private byte[] _previewPng = [];
@@ -184,30 +252,107 @@
     private bool _isConfiguringNew;
     private string _atlasWidthText { get => _atlasWidth.ToString(CultureInfo.InvariantCulture); set { if (int.TryParse(value, out var parsed)) _atlasWidth = parsed; } }
     private string _atlasHeightText { get => _atlasHeight.ToString(CultureInfo.InvariantCulture); set { if (int.TryParse(value, out var parsed)) _atlasHeight = parsed; } }
+    private bool CanSaveAllVariants => _projectContext is not null && _document is not null
+        && State.CurrentPackage is not null && !string.IsNullOrWhiteSpace(AtlasKeyFromName(_document.AtlasName));
+    private string FamilyContentStatus => !_familyCheckPerformed
+        ? L["AtlasEditor.CheckNotRun"].Value
+        : _familyReadyCount < 4
+            ? L["AtlasEditor.CheckIncomplete", _familyReadyCount].Value
+            : _familyContentMismatch ? L["AtlasEditor.ContentMismatch"].Value : L["AtlasEditor.ContentMatch"].Value;
+    private string FamilyLayoutStatus => !_familyCheckPerformed
+        ? L["AtlasEditor.CheckNotRun"].Value
+        : _familyReadyCount < 4
+            ? L["AtlasEditor.CheckIncomplete", _familyReadyCount].Value
+            : _familyContentMismatch ? L["AtlasEditor.LayoutNotCompared"].Value
+            : _familyLayoutMismatch ? L["AtlasEditor.LayoutMismatch"].Value
+            : _familyOrderMismatch ? L["AtlasEditor.OrderMismatch"].Value
+            : L["AtlasEditor.LayoutMatch"].Value;
 
-    [SupplyParameterFromQuery(Name = "projectFile")]
+    [Parameter]
     public string? ProjectFile { get; set; }
 
-    [SupplyParameterFromQuery(Name = "platform")]
+    [Parameter]
     public string? ProjectPlatform { get; set; }
+
+    [Parameter]
+    public bool NewAtlasRequest { get; set; }
+
+    [SupplyParameterFromQuery(Name = "projectFile")]
+    public string? QueryProjectFile { get; set; }
+
+    [SupplyParameterFromQuery(Name = "platform")]
+    public string? QueryProjectPlatform { get; set; }
+
+    [SupplyParameterFromQuery(Name = "new")]
+    public bool QueryNewAtlasRequest { get; set; }
+
+    [Parameter]
+    public string? InitialAtlasName { get; set; }
+
+    [Parameter]
+    public string? InitialSpriteName { get; set; }
+
+    [Parameter]
+    public bool IsDialogMode { get; set; }
+
+    [Parameter]
+    public EventCallback CloseRequested { get; set; }
+
+    [Parameter]
+    public string? ExternalFile { get; set; }
+
+    [SupplyParameterFromQuery(Name = "externalFile")]
+    public string? QueryExternalFile { get; set; }
+
+    private string? RequestedProjectFile => IsDialogMode ? ProjectFile : QueryProjectFile;
+    private string? RequestedProjectPlatform => IsDialogMode ? ProjectPlatform : QueryProjectPlatform;
+    private bool IsNewAtlasRequested => IsDialogMode ? NewAtlasRequest : QueryNewAtlasRequest;
+    private string? RequestedExternalFile => IsDialogMode ? ExternalFile : QueryExternalFile;
 
     protected override async Task OnParametersSetAsync()
     {
-        if (string.IsNullOrWhiteSpace(ProjectFile) && string.IsNullOrWhiteSpace(ProjectPlatform))
+        var externalFile = RequestedExternalFile;
+        var projectFile = RequestedProjectFile;
+        var projectPlatform = RequestedProjectPlatform;
+        if (!string.IsNullOrWhiteSpace(externalFile)
+            && string.IsNullOrWhiteSpace(projectFile)
+            && string.IsNullOrWhiteSpace(projectPlatform))
+        {
+            var externalRequestKey = $"external|{externalFile}";
+            if (!string.Equals(_lastProjectRequest, externalRequestKey, StringComparison.Ordinal))
+            {
+                _lastProjectRequest = externalRequestKey;
+                await OpenExternalBundleAsync(externalFile);
+            }
+            return;
+        }
+
+        if (IsNewAtlasRequested && string.IsNullOrWhiteSpace(projectFile) && string.IsNullOrWhiteSpace(projectPlatform))
+        {
+            if (!string.Equals(_lastProjectRequest, "new-atlas", StringComparison.Ordinal))
+            {
+                _lastProjectRequest = "new-atlas";
+                BeginNewAtlas();
+                if (!string.IsNullOrWhiteSpace(InitialAtlasName))
+                    _atlasName = NormalizeAtlasName(InitialAtlasName, SelectedKind);
+            }
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(projectFile) && string.IsNullOrWhiteSpace(projectPlatform))
             return;
 
-        var requestKey = $"{ProjectPlatform}|{ProjectFile}";
+        var requestKey = $"{projectPlatform}|{projectFile}";
         if (string.Equals(_lastProjectRequest, requestKey, StringComparison.Ordinal))
             return;
 
         _lastProjectRequest = requestKey;
-        await OpenProjectAtlasAsync(ProjectFile, ProjectPlatform);
+        await OpenProjectAtlasAsync(projectFile, projectPlatform);
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
-            _previewModule = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/DMTQ.Tools.Components/atlasPreview.js?v=4");
+            _previewModule = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/DMTQ.Tools.Components/atlasPreview.js?v=5");
 
         if (!_canvasNeedsRender || _previewModule is null || _document is null || _previewPng.Length == 0)
             return;
@@ -221,7 +366,7 @@
             sprite.Width,
             sprite.Height
         });
-        await _previewModule.InvokeVoidAsync("drawAtlas", _previewCanvas, Convert.ToBase64String(_previewPng),
+        await _previewModule.InvokeVoidAsync("drawAtlas", _previewCanvasId, Convert.ToBase64String(_previewPng),
             _document.TextureWidth, _document.TextureHeight, entries, _selectedSpriteIndex);
     }
 
@@ -267,15 +412,34 @@
         _sprites.Clear();
         _regionValues.Clear();
         _projectContext = null;
+        _projectVariantChoices.Clear();
+        _hasUnsavedEdits = true;
+        _isNewAtlas = true;
         _isConfiguringNew = false;
         _canvasNeedsRender = true;
         _status = null;
+        if (!string.IsNullOrWhiteSpace(InitialSpriteName))
+        {
+            AddSprite();
+            if (_sprites.Count > 0)
+            {
+                var spriteName = InitialSpriteName.Trim();
+                _sprites[^1].Name = spriteName;
+                _document.Sprites[^1].Name = spriteName;
+                ComposePreview();
+            }
+        }
     }
 
     private async Task OpenBundleAsync()
     {
         var path = await FilePicker.PickFileAsync([".unity", ".unity3d", ".lz4"]);
         if (string.IsNullOrWhiteSpace(path)) return;
+        await OpenExternalBundleAsync(path);
+    }
+
+    private async Task OpenExternalBundleAsync(string path)
+    {
         _isBusy = true;
         _busyMessage = L["AtlasEditor.OpenBundle"].Value;
         try
@@ -335,8 +499,27 @@
                 sourcePath = temporaryPath;
             }
 
-            SetFromBundle(relativePath, BundleService.Read(sourcePath), new AtlasProjectContext(projectRoot, relativePath, platformKey, resource.Compressed));
+            var content = BundleService.Read(sourcePath);
+            if (File.Exists(Path.Combine(projectRoot, "eyecatch.json")))
+            {
+                var index = await EyecatchIndexService.LoadAsync(projectRoot);
+                var variant = index.Atlases
+                    .SelectMany(atlas => atlas.Variants)
+                    .FirstOrDefault(item => item.Kind == content.Document.Kind
+                        && item.Platform.Equals(platformKey, StringComparison.OrdinalIgnoreCase)
+                        && item.ResourcePath.Equals(relativePath, StringComparison.OrdinalIgnoreCase)
+                        && item.IsDirty);
+                var indexedAtlas = await EyecatchIndexService.ReadImageBytesAsync(projectRoot, variant?.AtlasImagePath);
+                if (variant?.Document is not null && indexedAtlas is not null)
+                {
+                    content.Document = variant.Document.Clone();
+                    content.AtlasPng = indexedAtlas;
+                }
+            }
+
+            SetFromBundle(relativePath, content, new AtlasProjectContext(projectRoot, relativePath, platformKey, resource.Compressed));
             _platform = projectPlatform;
+            await LoadProjectVariantChoicesAsync(content.Document, relativePath, platformKey, projectRoot);
         }
         catch (Exception exception)
         {
@@ -353,7 +536,10 @@
     private void SetFromBundle(string path, SpriteAtlasBundleContent content, AtlasProjectContext? projectContext = null)
     {
         _isConfiguringNew = false;
+        _projectVariantChoices.Clear();
         _projectContext = projectContext;
+        _isNewAtlas = false;
+        _hasUnsavedEdits = false;
         _document = content.Document;
         _atlasName = content.Document.AtlasName;
         _kindValue = content.Document.Kind.ToString();
@@ -375,6 +561,163 @@
         _selectedSpriteIndex = 0;
         _status = L["AtlasEditor.Loaded", Path.GetFileName(path), content.OriginalTextureFormat, _sprites.Count].Value;
         _statusIntent = MessageBarIntent.Success;
+    }
+
+    private async Task LoadProjectVariantChoicesAsync(
+        SpriteAtlasDocument currentDocument,
+        string currentPath,
+        string currentPlatform,
+        string projectRoot)
+    {
+        _projectVariantChoices.Clear();
+        if (State.CurrentPackage is null) return;
+
+        var atlasKey = AtlasKeyFromName(currentDocument.AtlasName);
+        if (string.IsNullOrWhiteSpace(atlasKey)) return;
+        var index = await EyecatchIndexService.LoadAsync(projectRoot);
+        var family = index.Atlases.FirstOrDefault(atlas => atlas.AtlasKey.Equals(atlasKey, StringComparison.OrdinalIgnoreCase));
+        if (family is null)
+            ClearFamilyCheck();
+        else
+            UpdateFamilyCheck(family);
+
+        foreach (var kind in Enum.GetValues<SpriteAtlasKind>())
+        foreach (var platform in new[] { "android", "ios" })
+        {
+            var atlasName = (kind == SpriteAtlasKind.NGUI3 ? "d3_" : "d_") + atlasKey;
+            var indexedVariant = family?.Variants.FirstOrDefault(variant => variant.Kind == kind
+                && variant.Platform.Equals(platform, StringComparison.OrdinalIgnoreCase));
+            var relativePath = indexedVariant?.ResourcePath;
+            if (string.IsNullOrWhiteSpace(relativePath))
+            {
+                relativePath = State.CurrentPackage.Resources
+                    .Where(resource => resource.Category.Equals("dlc", StringComparison.OrdinalIgnoreCase)
+                        && Path.GetFileNameWithoutExtension(resource.FileName).Equals(atlasName, StringComparison.OrdinalIgnoreCase)
+                        && resource.PlatformManifest.Any(entry => entry.Platform.Equals(platform, StringComparison.OrdinalIgnoreCase)))
+                    .OrderBy(resource => Path.GetExtension(resource.FileName).Equals(".unity3d", StringComparison.OrdinalIgnoreCase) ? 0 : 1)
+                    .Select(resource => resource.FileName)
+                    .FirstOrDefault();
+            }
+
+            relativePath ??= $"dlc/{atlasName}.unity3d";
+            relativePath = FileUtility.NormalizePackageRelativePath(relativePath);
+            var fullPath = Path.Combine(projectRoot, "resources", platform, relativePath.Replace('/', Path.DirectorySeparatorChar));
+            var exists = (kind == currentDocument.Kind && platform.Equals(currentPlatform, StringComparison.OrdinalIgnoreCase)
+                    && relativePath.Equals(currentPath, StringComparison.OrdinalIgnoreCase))
+                || File.Exists(fullPath) || File.Exists(fullPath + ".lz4");
+            _projectVariantChoices.Add(new ProjectAtlasVariantChoice(kind, platform, relativePath, exists));
+        }
+    }
+
+    private async Task CheckFourAtlasesAsync()
+    {
+        if (_isBusy || State.CurrentPackage is null || _projectContext is null || _document is null
+            || string.IsNullOrWhiteSpace(State.ProjectRoot)) return;
+
+        _isBusy = true;
+        _checkingFamily = true;
+        _busyMessage = L["AtlasEditor.CheckFourAtlases"].Value;
+        try
+        {
+            var projectRoot = Path.GetFullPath(State.ProjectRoot);
+            var atlasKey = AtlasKeyFromName(_document.AtlasName);
+            var index = await EyecatchIndexService.BuildAsync(State.CurrentPackage, projectRoot);
+            var family = index.Atlases.FirstOrDefault(atlas => atlas.AtlasKey.Equals(atlasKey, StringComparison.OrdinalIgnoreCase));
+            if (family is null)
+                ClearFamilyCheck(checkedCompleted: true);
+            else
+                UpdateFamilyCheck(family);
+
+            await LoadProjectVariantChoicesAsync(_document, _projectContext.RelativePath, _projectContext.Platform, projectRoot);
+        }
+        catch (Exception exception)
+        {
+            ShowError(exception);
+        }
+        finally
+        {
+            _checkingFamily = false;
+            _isBusy = false;
+            _busyMessage = string.Empty;
+        }
+    }
+
+    private void UpdateFamilyCheck(EyecatchAtlasFamily family)
+    {
+        var ready = family.Variants
+            .Where(variant => variant.Status == EyecatchVariantStatus.Ready && variant.Document is not null)
+            .GroupBy(variant => $"{variant.Kind}/{variant.Platform}", StringComparer.OrdinalIgnoreCase)
+            .Select(group => group.First())
+            .ToArray();
+        _familyCheckPerformed = true;
+        _familyReadyCount = ready.Length;
+        _familyContentMismatch = false;
+        _familyLayoutMismatch = false;
+        _familyOrderMismatch = false;
+        if (ready.Length < 4) return;
+
+        var reference = ready[0].Document;
+        var referenceNames = reference.Sprites.Select(sprite => sprite.Name).ToHashSet(StringComparer.Ordinal);
+        _familyContentMismatch = ready.Skip(1).Any(variant =>
+        {
+            var names = variant.Document.Sprites.Select(sprite => sprite.Name).ToHashSet(StringComparer.Ordinal);
+            return names.Count != reference.Sprites.Count || !names.SetEquals(referenceNames);
+        });
+        if (_familyContentMismatch) return;
+
+        _familyOrderMismatch = ready.Skip(1).Any(variant =>
+            !reference.Sprites.Select(sprite => sprite.Name)
+                .SequenceEqual(variant.Document.Sprites.Select(sprite => sprite.Name), StringComparer.Ordinal));
+        _familyLayoutMismatch = ready.Skip(1).Any(variant => !SameSpriteLayout(reference, variant.Document));
+    }
+
+    private void ClearFamilyCheck(bool checkedCompleted = false)
+    {
+        _familyCheckPerformed = checkedCompleted;
+        _familyReadyCount = 0;
+        _familyContentMismatch = false;
+        _familyLayoutMismatch = false;
+        _familyOrderMismatch = false;
+    }
+
+    private static bool SameSpriteLayout(SpriteAtlasDocument left, SpriteAtlasDocument right)
+    {
+        if (left.TextureWidth != right.TextureWidth || left.TextureHeight != right.TextureHeight
+            || left.Sprites.Count != right.Sprites.Count) return false;
+        if (right.Sprites.Select(sprite => sprite.Name).Distinct(StringComparer.Ordinal).Count() != right.Sprites.Count)
+            return false;
+        var rightByName = right.Sprites.ToDictionary(sprite => sprite.Name, StringComparer.Ordinal);
+        return left.Sprites.All(sprite => rightByName.TryGetValue(sprite.Name, out var other)
+            && sprite.X == other.X && sprite.Y == other.Y
+            && sprite.Width == other.Width && sprite.Height == other.Height
+            && sprite.InnerX == other.InnerX && sprite.InnerY == other.InnerY
+            && sprite.InnerWidth == other.InnerWidth && sprite.InnerHeight == other.InnerHeight);
+    }
+
+    private async Task SwitchProjectVariantAsync(ProjectAtlasVariantChoice variant)
+    {
+        if (_isBusy || _projectContext is null || !variant.Exists) return;
+        if (_hasUnsavedEdits)
+        {
+            var confirmation = await DialogService.ShowConfirmationAsync(
+                message: L["AtlasEditor.DiscardVariantEdits"].Value,
+                title: L["AtlasEditor.Variant"].Value,
+                primaryButton: L["AtlasEditor.ConfirmSwitchVariant"].Value,
+                secondaryButton: L["Common.Cancel"].Value);
+            if (confirmation.Cancelled) return;
+        }
+
+        await OpenProjectAtlasAsync(variant.RelativePath, variant.Platform);
+        if (_projectContext is null
+            || !_projectContext.RelativePath.Equals(variant.RelativePath, StringComparison.OrdinalIgnoreCase)
+            || !_projectContext.Platform.Equals(variant.Platform, StringComparison.OrdinalIgnoreCase))
+            return;
+
+        ProjectFile = variant.RelativePath;
+        ProjectPlatform = variant.Platform;
+        _lastProjectRequest = $"{ProjectPlatform}|{ProjectFile}";
+        if (!IsDialogMode)
+            Navigation.NavigateTo($"/atlas-editor?projectFile={Uri.EscapeDataString(ProjectFile)}&platform={Uri.EscapeDataString(ProjectPlatform)}", replace: true);
     }
 
     private async Task ExportAtlasPngAsync()
@@ -555,6 +898,13 @@
                 _projectContext.Platform,
                 [],
                 _projectContext.Compressed);
+            await EyecatchIndexService.ApplyEditedVariantAsync(
+                _projectContext.ProjectRoot,
+                _projectContext.Platform,
+                _projectContext.RelativePath,
+                document,
+                _previewPng);
+            _hasUnsavedEdits = false;
             ShowOperationToast(ToastIntent.Success, L["AtlasEditor.Title"].Value,
                 L["AtlasEditor.SavedToProject", _projectContext.RelativePath].Value);
         }
@@ -573,6 +923,151 @@
             {
                 await FinishSaveOperationAsync();
             }
+        }
+    }
+
+    private async Task SaveAllVariantsAsync()
+    {
+        if (_isBusy || !CanSaveAllVariants || !TryValidateDocument(out var document)) return;
+        var projectContext = _projectContext!;
+        var projectRoot = Path.GetFullPath(State.ProjectRoot!);
+        if (!projectRoot.Equals(projectContext.ProjectRoot, StringComparison.OrdinalIgnoreCase))
+        {
+            ShowOperationToast(ToastIntent.Error, L["AtlasEditor.Title"].Value,
+                L["AtlasEditor.Error", "The active project changed after this atlas was opened."].Value);
+            return;
+        }
+
+        await BeginSaveOperationAsync(AtlasBusyOperation.SaveAllVariants, L["AtlasEditor.SaveAllVariants"].Value);
+        try
+        {
+            var index = await EyecatchIndexService.BuildAsync(State.CurrentPackage!, projectRoot);
+            var atlasKey = AtlasKeyFromName(document.AtlasName);
+            var family = index.Atlases.FirstOrDefault(atlas => atlas.AtlasKey.Equals(atlasKey, StringComparison.OrdinalIgnoreCase));
+            if (family is null)
+                throw new FileNotFoundException(L["AtlasEditor.CheckFamilyMissing"].Value);
+
+            UpdateFamilyCheck(family);
+            await LoadProjectVariantChoicesAsync(document, projectContext.RelativePath, projectContext.Platform, projectRoot);
+
+            if (_familyContentMismatch)
+            {
+                await ShowFamilySaveWarningAsync(L["AtlasEditor.ContentMismatchSaveBlocked"].Value);
+                return;
+            }
+            if (family.Variants.Any(variant => variant.Status == EyecatchVariantStatus.SourceChanged))
+            {
+                await ShowFamilySaveWarningAsync(L["AtlasEditor.SourceChangedSaveBlocked"].Value);
+                return;
+            }
+
+            if (_familyReadyCount < 4)
+            {
+                var incompleteConfirmation = await DialogService.ShowConfirmationAsync(
+                    message: L["AtlasEditor.ConfirmIncompleteVariants", _familyReadyCount].Value,
+                    title: L["AtlasEditor.CheckFourAtlases"].Value,
+                    primaryButton: L["AtlasEditor.SaveAllVariants"].Value,
+                    secondaryButton: L["Common.Cancel"].Value);
+                if (incompleteConfirmation.Cancelled) return;
+            }
+
+            if (family is not null && HasLayoutMismatch(document, family))
+            {
+                var confirmation = await DialogService.ShowConfirmationAsync(
+                    message: L["AtlasEditor.ConfirmSaveAllVariants"].Value,
+                    title: L["AtlasEditor.SaveAllVariants"].Value,
+                    primaryButton: L["AtlasEditor.SaveAllVariants"].Value,
+                    secondaryButton: L["Common.Cancel"].Value);
+                if (confirmation.Cancelled) return;
+            }
+
+            await EyecatchBundleBuildService.ApplyDocumentToFamilyAsync(
+                State.CurrentPackage!, projectRoot, atlasKey, document, _previewPng);
+            await LoadProjectVariantChoicesAsync(document, projectContext.RelativePath, projectContext.Platform, projectRoot);
+            _hasUnsavedEdits = false;
+            ShowOperationToast(ToastIntent.Success, L["AtlasEditor.Title"].Value,
+                L["AtlasEditor.SavedAllVariants", atlasKey].Value);
+        }
+        catch (Exception exception)
+        {
+            ShowOperationToast(ToastIntent.Error, L["AtlasEditor.Title"].Value,
+                L["AtlasEditor.Error", exception.Message].Value);
+        }
+        finally
+        {
+            await FinishSaveOperationAsync();
+        }
+    }
+
+    private async Task ShowFamilySaveWarningAsync(string message)
+    {
+        await DialogService.ShowDialogAsync<AtlasFamilyWarningDialog>(options =>
+        {
+            options.Header.Title = L["AtlasEditor.CheckFourAtlases"].Value;
+            options.Width = "min(560px, 92vw)";
+            options.Footer.PrimaryAction.Label = L["Common.Close"].Value;
+            options.Parameters = new Dictionary<string, object?>
+            {
+                [nameof(AtlasFamilyWarningDialog.Message)] = message
+            };
+        });
+    }
+
+    private static bool HasLayoutMismatch(SpriteAtlasDocument source, EyecatchAtlasFamily family)
+    {
+        foreach (var variant in family.Variants.Where(item => item.Status == EyecatchVariantStatus.Ready))
+        {
+            var target = variant.Document;
+            if (source.TextureWidth != target.TextureWidth || source.TextureHeight != target.TextureHeight
+                || source.Sprites.Count != target.Sprites.Count)
+                return true;
+            for (var index = 0; index < source.Sprites.Count; index++)
+            {
+                var left = source.Sprites[index];
+                var right = target.Sprites[index];
+                if (!left.Name.Equals(right.Name, StringComparison.Ordinal)
+                    || left.X != right.X || left.Y != right.Y || left.Width != right.Width || left.Height != right.Height
+                    || left.InnerX != right.InnerX || left.InnerY != right.InnerY
+                    || left.InnerWidth != right.InnerWidth || left.InnerHeight != right.InnerHeight)
+                    return true;
+            }
+        }
+        return false;
+    }
+
+    private async Task SaveNewFamilyAsync()
+    {
+        if (_isBusy || !_isNewAtlas || !TryValidateDocument(out var document)
+            || State.CurrentPackage is null || string.IsNullOrWhiteSpace(State.ProjectRoot)) return;
+
+        var projectRoot = Path.GetFullPath(State.ProjectRoot);
+        await BeginSaveOperationAsync(AtlasBusyOperation.SaveToProject, L["Eyecatch.CreateFamily"].Value);
+        try
+        {
+            var index = await EyecatchBundleBuildService.CreateFamilyAsync(
+                State.CurrentPackage, projectRoot, document, _previewPng);
+            var key = document.AtlasName.StartsWith("d3_", StringComparison.OrdinalIgnoreCase)
+                ? document.AtlasName[3..]
+                : document.AtlasName[2..];
+            var family = index.Atlases.First(atlas => atlas.AtlasKey.Equals(key, StringComparison.OrdinalIgnoreCase));
+            var current = family.Variants.First(variant => variant.Kind == document.Kind
+                && variant.Platform.Equals("android", StringComparison.OrdinalIgnoreCase));
+            _platform = UnityTargetPlatform.Android;
+            _projectContext = new AtlasProjectContext(projectRoot, current.ResourcePath, current.Platform, Compressed: true);
+            _isNewAtlas = false;
+            _hasUnsavedEdits = false;
+            await LoadProjectVariantChoicesAsync(current.Document, current.ResourcePath, current.Platform, projectRoot);
+            ShowOperationToast(ToastIntent.Success, L["Eyecatch.CreateFamily"].Value,
+                L["Eyecatch.CreatedFamily", key].Value);
+        }
+        catch (Exception exception)
+        {
+            ShowOperationToast(ToastIntent.Error, L["AtlasEditor.Title"].Value,
+                L["AtlasEditor.Error", exception.Message].Value);
+        }
+        finally
+        {
+            await FinishSaveOperationAsync();
         }
     }
 
@@ -666,6 +1161,7 @@
             _previewPng = SpriteAtlasImage.Compose(_document, new Dictionary<string, byte[]>(StringComparer.Ordinal));
             SyncRegionValues();
             _canvasNeedsRender = true;
+            _hasUnsavedEdits = true;
             return;
         }
         ComposePreview();
@@ -718,6 +1214,7 @@
             SyncRegionValues();
             _canvasNeedsRender = true;
             _status = null;
+            _hasUnsavedEdits = true;
         }
         catch (Exception exception)
         {
@@ -753,6 +1250,9 @@
         _isConfiguringNew = false;
         _document = null;
         _projectContext = null;
+        _projectVariantChoices.Clear();
+        _hasUnsavedEdits = false;
+        _isNewAtlas = false;
         _atlasName = "d_e10";
         _kindValue = "NGUI2";
         _atlasWidth = 512;
@@ -762,8 +1262,17 @@
         _previewPng = [];
         _regionValues.Clear();
         _status = null;
-        if (wasProjectAtlas)
+        if (wasProjectAtlas && !IsDialogMode)
             Navigation.NavigateTo("/atlas-editor", replace: true);
+    }
+
+    private Task CloseAtlasAsync()
+    {
+        if (IsDialogMode)
+            return CloseRequested.InvokeAsync();
+
+        ResetWorkspace();
+        return Task.CompletedTask;
     }
 
     private void CancelNewAtlas() => _isConfiguringNew = false;
@@ -815,6 +1324,21 @@
 
     private static string PixelValue(float value) => value.ToString("0.##", CultureInfo.InvariantCulture);
 
+    private string KindShortLabel(SpriteAtlasKind kind) => kind == SpriteAtlasKind.NGUI3
+        ? L["AtlasEditor.NGUI3"].Value
+        : L["AtlasEditor.NGUI2"].Value;
+
+    private static string AtlasKeyFromName(string atlasName)
+    {
+        var fileName = Path.GetFileNameWithoutExtension(atlasName);
+        var key = fileName.StartsWith("d3_e", StringComparison.OrdinalIgnoreCase)
+            ? fileName[3..]
+            : fileName.StartsWith("d_e", StringComparison.OrdinalIgnoreCase)
+                ? fileName[2..]
+                : string.Empty;
+        return key.Length > 1 && key[0] == 'e' && key[1..].All(char.IsDigit) ? key : string.Empty;
+    }
+
     private static UnityTargetPlatform? GuessPlatform(string path)
     {
         var normalized = path.Replace('\\', '/').ToLowerInvariant();
@@ -863,6 +1387,8 @@
         public string Width { get; set; } = "1";
         public string Height { get; set; } = "1";
     }
+
+    private sealed record ProjectAtlasVariantChoice(SpriteAtlasKind Kind, string Platform, string RelativePath, bool Exists);
 
     private sealed record AtlasProjectContext(string ProjectRoot, string RelativePath, string Platform, bool Compressed);
 }

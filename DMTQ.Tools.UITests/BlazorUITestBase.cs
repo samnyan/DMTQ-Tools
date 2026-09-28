@@ -117,13 +117,16 @@ public abstract class BlazorUITestBase : Bunit.TestContext
     {
         public Task CreateProjectAsync(string projectRoot) { state.SetProjectRoot(projectRoot); return Task.CompletedTask; }
         public Task ImportPlatformPackageAsync(string packageRoot, string platform, CancellationToken ct = default) => Task.CompletedTask;
+        public Task<InstallPackImportResult> ImportInstallPackAsync(string root, string platform, CancellationToken ct = default) => Task.FromResult(new InstallPackImportResult());
         public Task ExportPlatformPackageAsync(string exportRoot, string platform, PlatformExportMode mode, CancellationToken ct = default) => Task.CompletedTask;
         public Task SaveProjectAsync(CancellationToken ct = default) => Task.CompletedTask;
         public Task OpenProjectAsync(string projectRoot, CancellationToken ct = default) => Task.CompletedTask;
         public Task AddOrReplaceResourceAsync(string s, string p, string? pl, IReadOnlyCollection<string> ip, bool c, CancellationToken ct = default) => Task.CompletedTask;
+        public Task AddOrReplaceResourcesAsync(IReadOnlyCollection<ResourceReplacement> replacements, CancellationToken ct = default) => Task.CompletedTask;
         public Task AddResourceStubAsync(string p, bool c, CancellationToken ct = default) => Task.CompletedTask;
         public Task RemoveResourceAsync(string p, string? pl, CancellationToken ct = default) => Task.CompletedTask;
         public Task SetResourceCompressionAsync(string p, string? pl, bool c, CancellationToken ct = default) => Task.CompletedTask;
+        public Task SetResourceInstallPackAsync(string p, string platform, bool isInstallPack, CancellationToken ct = default) => Task.CompletedTask;
         public Task SetPreviewIncludedPlatformsAsync(string p, IReadOnlyCollection<string> ip, CancellationToken ct = default) => Task.CompletedTask;
     }
 

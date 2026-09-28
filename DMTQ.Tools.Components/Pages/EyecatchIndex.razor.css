@@ -1,0 +1,18 @@
+.eyecatch-page {
+    display: flex;
+    width: 100%;
+    min-height: 100%;
+    min-width: 0;
+    flex-direction: column;
+    gap: .75rem;
+}
+
+.eyecatch-toolbar { flex: 0 0 auto; }
+.eyecatch-grid { width: 100%; min-width: 0; }
+.eyecatch-nowrap { display: inline-block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom; }
+.eyecatch-row-actions { display: flex; align-items: center; gap: .35rem; white-space: nowrap; }
+
+@media (max-width: 900px) {
+    .eyecatch-toolbar { grid-template-columns: minmax(0, 1fr); }
+    .eyecatch-toolbar .list-toolbar-actions { justify-content: flex-start; }
+}

@@ -4,6 +4,7 @@ using DMTQ.Tools.Core.Services;
 using DMTQ.Tools.Core.Services.Pattern;
 using DMTQ_Tools.Components.Localization;
 using DMTQ_Tools.Components.Shared;
+using DMTQ_Tools.Components.Services;
 using DMTQ_Tools.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.FluentUI.AspNetCore.Components;
@@ -58,6 +59,7 @@ namespace DMTQ_Tools
             builder.Services.AddSingleton<ResourceManagerService>();
             builder.Services.AddSingleton<PackageQaService>();
             builder.Services.AddSingleton<PlatformPackageImporter>();
+            builder.Services.AddSingleton<InstallPackImporter>();
             builder.Services.AddSingleton<PlatformPackageExporter>();
 
             builder.Services.AddSingleton<IFolderPicker, MauiFolderPicker>();
@@ -67,6 +69,8 @@ namespace DMTQ_Tools
             builder.Services.AddSingleton<PatternBinarySerializer>();
             builder.Services.AddSingleton<PatternTextSerializer>();
             builder.Services.AddSingleton<SpriteAtlasBundleService>();
+            builder.Services.AddSingleton<EyecatchIndexService>();
+            builder.Services.AddSingleton<EyecatchBundleBuildService>();
 
             var state = new GameTableManagerState();
             builder.Services.AddSingleton<IProjectState>(state);

@@ -37,6 +37,9 @@ public sealed class PlatformManifestEntry
     /// <summary>Whether the local physical file exists under the project resources tree.</summary>
     public bool Exist { get; set; }
 
+    /// <summary>Whether this platform's resource is shipped in the client's InstallPack.</summary>
+    public bool IsInstallPack { get; set; }
+
     /// <summary>Original uncompressed file size from the patch manifest.</summary>
     [JsonConverter(typeof(FlexibleInt64JsonConverter))]
     public long SourceFileSize { get; set; }
@@ -53,4 +56,7 @@ public sealed class PlatformManifestEntry
 
     /// <summary>Actual local file MD5 checksum (computed when the file was archived).</summary>
     public string Checksum { get; set; } = string.Empty;
+
+    /// <summary>Uncompressed MD5 of the resource as originally copied from InstallPack.</summary>
+    public string InstallPackBaselineChecksum { get; set; } = string.Empty;
 }

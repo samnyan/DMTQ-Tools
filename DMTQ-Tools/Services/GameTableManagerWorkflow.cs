@@ -13,19 +13,22 @@ public sealed class GameTableManagerWorkflow : IProjectWorkflow
     private readonly PlatformPackageImporter _platformImporter;
     private readonly PlatformPackageExporter _platformExporter;
     private readonly ResourceManagerService _resourceManager;
+    private readonly InstallPackImporter _installPackImporter;
 
     public GameTableManagerWorkflow(
         GameTableManagerState state,
         IPatchProjectRepository repository,
         PlatformPackageImporter platformImporter,
         PlatformPackageExporter platformExporter,
-        ResourceManagerService resourceManager)
+        ResourceManagerService resourceManager,
+        InstallPackImporter installPackImporter)
     {
         _state = state;
         _repository = repository;
         _platformImporter = platformImporter;
         _platformExporter = platformExporter;
         _resourceManager = resourceManager;
+        _installPackImporter = installPackImporter;
     }
 
     public async Task CreateProjectAsync(string projectRoot)
@@ -85,6 +88,30 @@ public sealed class GameTableManagerWorkflow : IProjectWorkflow
         _state.Diagnostics.Add("Auto-saved after import.");
     }
 
+    public async Task<InstallPackImportResult> ImportInstallPackAsync(
+        string streamingAssetsRoot,
+        string platform,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(streamingAssetsRoot);
+        ArgumentException.ThrowIfNullOrWhiteSpace(platform);
+        if (string.IsNullOrWhiteSpace(_state.ProjectRoot))
+            throw new InvalidOperationException("Create or open a project directory before importing InstallPack files.");
+
+        if (_state.CurrentPackage is null)
+            _state.SetPackage(new PatchPackage { ProjectInfo = new ProjectInfo(_state.ProjectRoot, null, null, null) });
+
+        var result = await _installPackImporter.ImportAsync(
+            _state.CurrentPackage!, streamingAssetsRoot, platform, cancellationToken).ConfigureAwait(false);
+        await _repository.SaveAsync(_state.CurrentPackage!, _state.ExportCompressionMode,
+            _state.CreateExportOptions(), _state.ProjectRoot, cancellationToken).ConfigureAwait(false);
+        _state.IsDirty = false;
+        _state.Diagnostics.Add($"Imported {result.ImportedFiles} {platform} InstallPack resources.");
+        foreach (var error in result.Errors)
+            _state.Diagnostics.Add("InstallPack import error: " + error);
+        return result;
+    }
+
     public async Task ExportPlatformPackageAsync(
         string exportRoot,
         string platform,
@@ -126,6 +153,112 @@ public sealed class GameTableManagerWorkflow : IProjectWorkflow
         _state.Diagnostics.Add($"Resource added or replaced: {packageRelativePath}");
     }
 
+    public async Task AddOrReplaceResourcesAsync(
+        IReadOnlyCollection<ResourceReplacement> replacements,
+        CancellationToken cancellationToken = default)
+    {
+        if (replacements.Count == 0) return;
+        if (_state.CurrentPackage is null || string.IsNullOrWhiteSpace(_state.ProjectRoot))
+            throw new InvalidOperationException("Import or open a project before managing resources.");
+
+        var package = _state.CurrentPackage;
+        var projectRoot = Path.GetFullPath(_state.ProjectRoot);
+        var backupRoot = Path.Combine(Path.GetTempPath(), $"dmtq-resource-transaction-{Guid.NewGuid():N}");
+        var resourceSnapshot = package.Resources.Select(CloneResource).ToArray();
+        var fileBackups = new List<(string Destination, string? Backup)>();
+        Directory.CreateDirectory(backupRoot);
+        try
+        {
+            var uniqueTargets = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var replacement in replacements)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                if (!File.Exists(replacement.SourceFilePath))
+                    throw new FileNotFoundException("Replacement source file was not found.", replacement.SourceFilePath);
+                var relativePath = FileUtility.NormalizePackageRelativePath(replacement.FileName);
+                var platform = replacement.Platform.Trim().ToLowerInvariant();
+                if (platform is not ("android" or "ios"))
+                    throw new InvalidDataException($"Unsupported resource platform '{replacement.Platform}'.");
+                var targetKey = platform + "/" + relativePath;
+                if (!uniqueTargets.Add(targetKey))
+                    throw new InvalidDataException($"The batch contains duplicate target '{targetKey}'.");
+
+                var destination = Path.GetFullPath(Path.Combine(projectRoot, "resources", platform,
+                    relativePath.Replace('/', Path.DirectorySeparatorChar)));
+                var resourcesRoot = Path.GetFullPath(Path.Combine(projectRoot, "resources", platform));
+                var rootPrefix = resourcesRoot.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
+                if (!destination.StartsWith(rootPrefix, StringComparison.OrdinalIgnoreCase))
+                    throw new InvalidDataException($"Resource target escapes its platform folder: {relativePath}");
+
+                if (File.Exists(destination))
+                {
+                    var backup = Path.Combine(backupRoot, fileBackups.Count.ToString(System.Globalization.CultureInfo.InvariantCulture));
+                    Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
+                    File.Copy(destination, backup);
+                    fileBackups.Add((destination, backup));
+                }
+                else
+                {
+                    fileBackups.Add((destination, null));
+                }
+            }
+
+            foreach (var replacement in replacements)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                await _resourceManager.AddOrReplaceResourceAsync(package, replacement.SourceFilePath,
+                    replacement.FileName, replacement.Platform, [], replacement.Compressed, cancellationToken)
+                    .ConfigureAwait(false);
+            }
+
+            await _repository.SaveAsync(package, _state.ExportCompressionMode, _state.CreateExportOptions(),
+                projectRoot, cancellationToken).ConfigureAwait(false);
+            _state.IsDirty = false;
+            _state.Diagnostics.Add($"Applied {replacements.Count} resource replacements as one project transaction.");
+        }
+        catch
+        {
+            package.Resources.Clear();
+            package.Resources.AddRange(resourceSnapshot);
+            foreach (var (destination, backup) in fileBackups)
+            {
+                if (backup is null)
+                {
+                    if (File.Exists(destination)) File.Delete(destination);
+                    continue;
+                }
+                Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
+                File.Copy(backup, destination, overwrite: true);
+            }
+            throw;
+        }
+        finally
+        {
+            if (Directory.Exists(backupRoot)) Directory.Delete(backupRoot, recursive: true);
+        }
+    }
+
+    private static ResourceFile CloneResource(ResourceFile resource)
+        => new()
+        {
+            FileName = resource.FileName,
+            Category = resource.Category,
+            Compressed = resource.Compressed,
+            AcquireOnDemand = resource.AcquireOnDemand,
+            PlatformManifest = resource.PlatformManifest.Select(entry => new PlatformManifestEntry
+            {
+                Platform = entry.Platform,
+                Exist = entry.Exist,
+                IsInstallPack = entry.IsInstallPack,
+                SourceFileSize = entry.SourceFileSize,
+                SourceChecksum = entry.SourceChecksum,
+                SourceCompressedFileSize = entry.SourceCompressedFileSize,
+                SourceCompressedChecksum = entry.SourceCompressedChecksum,
+                Checksum = entry.Checksum,
+                InstallPackBaselineChecksum = entry.InstallPackBaselineChecksum
+            }).ToList()
+        };
+
     public async Task AddResourceStubAsync(
         string packageRelativePath,
         bool compressed,
@@ -153,6 +286,20 @@ public sealed class GameTableManagerWorkflow : IProjectWorkflow
         _resourceManager.SetCompression(_state.CurrentPackage, packageRelativePath, platform, compressed);
         await SaveProjectAsync(cancellationToken).ConfigureAwait(false);
         _state.Diagnostics.Add($"Resource compression updated: {packageRelativePath} = {compressed}");
+    }
+
+    public async Task SetResourceInstallPackAsync(
+        string packageRelativePath,
+        string platform,
+        bool isInstallPack,
+        CancellationToken cancellationToken = default)
+    {
+        if (_state.CurrentPackage is null)
+            throw new InvalidOperationException("Import or open a project before managing resources.");
+
+        await _resourceManager.SetInstallPackAsync(
+            _state.CurrentPackage, packageRelativePath, platform, isInstallPack, cancellationToken).ConfigureAwait(false);
+        await SaveProjectAsync(cancellationToken).ConfigureAwait(false);
     }
 
     public async Task SetPreviewIncludedPlatformsAsync(string packageRelativePath, IReadOnlyCollection<string> includedPlatforms, CancellationToken cancellationToken = default)

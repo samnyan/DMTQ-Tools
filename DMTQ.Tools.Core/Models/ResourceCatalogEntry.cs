@@ -19,6 +19,7 @@ public sealed class PlatformManifestInfo
 {
     public string Platform { get; init; } = string.Empty;
     public bool Exist { get; init; }
+    public bool IsInstallPack { get; init; }
     public long SourceFileSize { get; init; }
     public string SourceChecksum { get; init; } = string.Empty;
 }

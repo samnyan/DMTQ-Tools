@@ -14,6 +14,7 @@ public sealed class PlatformCardData
 {
     public string Platform { get; set; } = "";
     public bool Exist { get; set; }
+    public bool IsInstallPack { get; set; }
     public long SourceFileSize { get; set; }
     public string SourceChecksum { get; set; } = "";
     public string? LocalChecksum { get; set; }

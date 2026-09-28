@@ -49,6 +49,14 @@
 .atlas-info > div { display: flex; min-width: 0; flex-direction: column; gap: .25rem; }
 .atlas-info span { color: var(--colorNeutralForeground3); font-size: .8rem; }
 .atlas-info strong { overflow: hidden; font-weight: 600; text-overflow: ellipsis; }
+.atlas-variant-switch { display: flex; align-items: center; gap: 1rem; }
+.atlas-variant-switch > strong { flex: 0 0 auto; }
+.atlas-variant-buttons { display: flex; min-width: 0; flex-wrap: wrap; gap: .5rem; }
+.atlas-family-check { display: flex; min-width: 0; align-items: center; gap: 1rem; margin-left: auto; }
+.atlas-family-check > div { display: flex; min-width: 0; flex-direction: column; gap: .15rem; }
+.atlas-family-check span { color: var(--colorNeutralForeground3); font-size: .75rem; }
+.atlas-family-check strong { font-size: .85rem; }
+.atlas-family-check .is-warning { color: var(--colorPaletteDarkOrangeForeground1); }
 
 .atlas-workspace {
     display: grid;
@@ -123,6 +131,7 @@
 .atlas-save-options:not(.has-project-save) { grid-template-columns: minmax(0, 1fr); }
 .atlas-save-panel { display: flex; min-width: 0; flex-direction: column; align-items: flex-start; gap: .75rem; }
 .atlas-save-panel h2 { margin: 0; }
+.atlas-save-actions { display: flex; flex-wrap: wrap; gap: .6rem; }
 .project-save-location { display: flex; flex-wrap: wrap; align-items: baseline; gap: .35rem .6rem; }
 .project-save-location span { color: var(--colorNeutralForeground3); }
 .project-save-location code { overflow-wrap: anywhere; color: var(--colorNeutralForeground1); }
@@ -141,6 +150,8 @@
     .atlas-preview-column { position: static; }
     .bundle-export-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .atlas-info { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .atlas-variant-switch { align-items: flex-start; flex-direction: column; }
+    .atlas-family-check { align-items: flex-start; flex-wrap: wrap; margin-left: 0; }
 }
 
 @media (max-width: 900px) {

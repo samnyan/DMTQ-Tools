@@ -292,7 +292,7 @@
     <value>平台</value>
   </data>
   <data name="Import.ImportPlatform" xml:space="preserve">
-    <value>导入平台</value>
+    <value>导入补丁包</value>
   </data>
   <data name="Import.Precondition" xml:space="preserve">
     <value>请先在“项目”页面创建或打开项目。</value>
@@ -302,6 +302,21 @@
   </data>
   <data name="Import.Completed" xml:space="preserve">
     <value>导入完成。</value>
+  </data>
+  <data name="Import.InstallPackTitle" xml:space="preserve">
+    <value>导入客户端 InstallPack</value>
+  </data>
+  <data name="Import.InstallPackRoot" xml:space="preserve">
+    <value>StreamingAssets 根目录</value>
+  </data>
+  <data name="Import.ImportInstallPack" xml:space="preserve">
+    <value>导入 InstallPack</value>
+  </data>
+  <data name="Import.ImportingInstallPack" xml:space="preserve">
+    <value>正在导入 InstallPack 资源...</value>
+  </data>
+  <data name="Import.InstallPackCompleted" xml:space="preserve">
+    <value>InstallPack 导入完成：{0} 个文件，{1} 个跳过，{2} 个错误。</value>
   </data>
   <data name="Common.Languages" xml:space="preserve">
     <value>语言</value>
@@ -603,6 +618,42 @@
   <data name="Dialog.ReplaceFile" xml:space="preserve">
     <value>替换文件</value>
   </data>
+  <data name="Dialog.IsInstallPack" xml:space="preserve">
+    <value>已内置在游戏中（InstallPack）</value>
+  </data>
+  <data name="Resources.InstallPack" xml:space="preserve">
+    <value>游戏内置</value>
+  </data>
+  <data name="Resources.BuiltInMarker" xml:space="preserve">
+    <value>(内置)</value>
+  </data>
+  <data name="SongCoverPreview.EditAtlas" xml:space="preserve">
+    <value>编辑图集</value>
+  </data>
+  <data name="Eyecatch.CreateFamily" xml:space="preserve">
+    <value>在工程中创建图集资源</value>
+  </data>
+  <data name="Eyecatch.CreateFamilyHint" xml:space="preserve">
+    <value>基于当前图集生成 Android 和 iOS 的 NGUI2、NGUI3 资源包。</value>
+  </data>
+  <data name="Eyecatch.CreatedFamily" xml:space="preserve">
+    <value>已创建图集族 {0}，包含 Android 和 iOS 资源。</value>
+  </data>
+  <data name="Eyecatch.NewAtlas" xml:space="preserve">
+    <value>新建图集</value>
+  </data>
+  <data name="Eyecatch.PlatformSpriteNameMismatch" xml:space="preserve">
+    <value>该图集的不同资源包包含不同名称的 Sprite。为保护变体独有的 Sprite，已禁止批量覆盖。</value>
+  </data>
+  <data name="Eyecatch.PlatformSpriteNameMismatchShort" xml:space="preserve">
+    <value>Sprite 名称不同</value>
+  </data>
+  <data name="Eyecatch.ConfirmLayoutRebuild" xml:space="preserve">
+    <value>Android 和 iOS 的 Sprite 名称相同，但顺序或区域位置不同。继续后，每个布局不一致的 NGUI 类型会采用 Android 变体作为基准（Android 缺失时采用 iOS）。是否继续？</value>
+  </data>
+  <data name="Eyecatch.AcceptReferenceLayout" xml:space="preserve">
+    <value>采用基准布局</value>
+  </data>
   <data name="Dialog.EditCover" xml:space="preserve">
     <value>编辑封面图</value>
   </data>
@@ -656,6 +707,96 @@
   </data>
   <data name="Nav.AtlasEditor" xml:space="preserve">
     <value>歌曲封面图集</value>
+  </data>
+  <data name="Eyecatch.Title" xml:space="preserve">
+    <value>歌曲封面图集</value>
+  </data>
+  <data name="Eyecatch.Subtitle" xml:space="preserve">
+    <value>构建工程内的 NGUI2/NGUI3 图集索引，查看 Android/iOS 资源包和贴图内容。</value>
+  </data>
+  <data name="Eyecatch.Search" xml:space="preserve">
+    <value>搜索图集名称或路径...</value>
+  </data>
+  <data name="Eyecatch.BuildIndex" xml:space="preserve">
+    <value>构建资源索引</value>
+  </data>
+  <data name="Eyecatch.Building" xml:space="preserve">
+    <value>正在构建索引...</value>
+  </data>
+  <data name="Eyecatch.BuildStarting" xml:space="preserve">
+    <value>准备扫描图集...</value>
+  </data>
+  <data name="Eyecatch.BuildProgress" xml:space="preserve">
+    <value>正在读取 {0}/{1}：{2}</value>
+  </data>
+  <data name="Eyecatch.BuildComplete" xml:space="preserve">
+    <value>已索引 {0} 组图集；{1} 个平台变体可用。</value>
+  </data>
+  <data name="Eyecatch.BuildFailed" xml:space="preserve">
+    <value>构建图集索引失败：{0}</value>
+  </data>
+  <data name="Eyecatch.NotIndexed" xml:space="preserve">
+    <value>尚未构建资源索引。点击“构建资源索引”扫描资源包并拆分贴图。</value>
+  </data>
+  <data name="Eyecatch.AtlasKey" xml:space="preserve">
+    <value>图集编号</value>
+  </data>
+  <data name="Eyecatch.SpriteCount" xml:space="preserve">
+    <value>Sprite 数量</value>
+  </data>
+  <data name="Eyecatch.Status" xml:space="preserve">
+    <value>状态</value>
+  </data>
+  <data name="Eyecatch.Preview" xml:space="preserve">
+    <value>预览</value>
+  </data>
+  <data name="Eyecatch.Edit" xml:space="preserve">
+    <value>编辑</value>
+  </data>
+  <data name="Eyecatch.EditThis" xml:space="preserve">
+    <value>编辑此资源包</value>
+  </data>
+  <data name="Eyecatch.BuildAllVariants" xml:space="preserve">
+    <value>生成全部四种变体</value>
+  </data>
+  <data name="Eyecatch.BundlesBuilt" xml:space="preserve">
+    <value>图集 {0} 的四个资源包已重新生成。</value>
+  </data>
+  <data name="Eyecatch.Sprites" xml:space="preserve">
+    <value>Sprite 清单</value>
+  </data>
+  <data name="Eyecatch.Ready" xml:space="preserve">
+    <value>可用</value>
+  </data>
+  <data name="Eyecatch.Error" xml:space="preserve">
+    <value>读取失败</value>
+  </data>
+  <data name="Eyecatch.Unindexed" xml:space="preserve">
+    <value>未索引</value>
+  </data>
+  <data name="Eyecatch.Missing" xml:space="preserve">
+    <value>缺失</value>
+  </data>
+  <data name="Eyecatch.SourceChanged" xml:space="preserve">
+    <value>源文件已变更</value>
+  </data>
+  <data name="Eyecatch.Dirty" xml:space="preserve">
+    <value>待重建</value>
+  </data>
+  <data name="Eyecatch.LayoutMismatch" xml:space="preserve">
+    <value>平台布局不一致</value>
+  </data>
+  <data name="Eyecatch.PlatformLayoutMismatch" xml:space="preserve">
+    <value>Android 与 iOS 的 Sprite 名称相同，但顺序或区域不同。确认后可以将 Android 布局应用到两个平台。</value>
+  </data>
+  <data name="Eyecatch.HasErrors" xml:space="preserve">
+    <value>存在错误</value>
+  </data>
+  <data name="Eyecatch.AllPlatforms" xml:space="preserve">
+    <value>四种变体均已索引</value>
+  </data>
+  <data name="Eyecatch.PartialPlatforms" xml:space="preserve">
+    <value>部分变体可用</value>
   </data>
   <data name="AtlasEditor.Title" xml:space="preserve">
     <value>歌曲封面图集</value>
@@ -773,6 +914,69 @@
   </data>
   <data name="AtlasEditor.SaveToProject" xml:space="preserve">
     <value>保存到工程</value>
+  </data>
+  <data name="AtlasEditor.SaveAllVariants" xml:space="preserve">
+    <value>应用到同组四个平台图集</value>
+  </data>
+  <data name="AtlasEditor.Variant" xml:space="preserve">
+    <value>当前图集文件</value>
+  </data>
+  <data name="AtlasEditor.ConfirmSaveAllVariants" xml:space="preserve">
+    <value>这会把当前 Sprite 名称和布局写入此图集 ID 的 NGUI2、NGUI3、Android 和 iOS 资源。平台间布局不同，确认后将统一为当前布局。</value>
+  </data>
+  <data name="AtlasEditor.DiscardVariantEdits" xml:space="preserve">
+    <value>切换文件将丢弃尚未保存的修改。是否继续？</value>
+  </data>
+  <data name="AtlasEditor.ConfirmSwitchVariant" xml:space="preserve">
+    <value>切换图集文件</value>
+  </data>
+  <data name="AtlasEditor.SavedAllVariants" xml:space="preserve">
+    <value>已将图集 {0} 保存到四个平台变体</value>
+  </data>
+  <data name="AtlasEditor.CheckFourAtlases" xml:space="preserve">
+    <value>检查四个图集</value>
+  </data>
+  <data name="AtlasEditor.ContentConsistency" xml:space="preserve">
+    <value>Sprite 内容</value>
+  </data>
+  <data name="AtlasEditor.LayoutConsistency" xml:space="preserve">
+    <value>区域排布</value>
+  </data>
+  <data name="AtlasEditor.CheckNotRun" xml:space="preserve">
+    <value>尚未检查</value>
+  </data>
+  <data name="AtlasEditor.CheckIncomplete" xml:space="preserve">
+    <value>仅 {0}/4 个图集可用</value>
+  </data>
+  <data name="AtlasEditor.ContentMismatch" xml:space="preserve">
+    <value>Sprite 名称不一致</value>
+  </data>
+  <data name="AtlasEditor.ContentMatch" xml:space="preserve">
+    <value>Sprite 名称一致</value>
+  </data>
+  <data name="AtlasEditor.LayoutNotCompared" xml:space="preserve">
+    <value>内容不同，无法比较</value>
+  </data>
+  <data name="AtlasEditor.LayoutMismatch" xml:space="preserve">
+    <value>区域位置或尺寸不同</value>
+  </data>
+  <data name="AtlasEditor.OrderMismatch" xml:space="preserve">
+    <value>仅 Sprite 顺序不同</value>
+  </data>
+  <data name="AtlasEditor.LayoutMatch" xml:space="preserve">
+    <value>内容与排布一致</value>
+  </data>
+  <data name="AtlasEditor.CheckFamilyMissing" xml:space="preserve">
+    <value>未找到此图集 ID 的平台变体。</value>
+  </data>
+  <data name="AtlasEditor.ContentMismatchSaveBlocked" xml:space="preserve">
+    <value>四个平台图集的 Sprite 名称清单不一致。为避免删除某个平台专有的 Sprite，已阻止批量保存。请先检查并统一内容。</value>
+  </data>
+  <data name="AtlasEditor.SourceChangedSaveBlocked" xml:space="preserve">
+    <value>索引后有图集源文件发生变化。请重新检查四个图集并解决冲突后再批量保存。</value>
+  </data>
+  <data name="AtlasEditor.ConfirmIncompleteVariants" xml:space="preserve">
+    <value>当前只有 {0}/4 个图集可读取。继续后将根据当前图集内容生成缺失或不可读取的变体。</value>
   </data>
   <data name="AtlasEditor.SavedToProject" xml:space="preserve">
     <value>已保存到工程：{0}</value>
@@ -1754,5 +1958,11 @@
   </data>
   <data name="Editor.SongPriceNotice" xml:space="preserve">
     <value>不要在这里设置 MAX 和 Q点，必须在下方创建商品并设置价格才有效。</value>
+  </data>
+  <data name="Nav.ImportPatch" xml:space="preserve">
+    <value>导入更新包补丁</value>
+  </data>
+  <data name="Import.InstallPackRootPlaceholder" xml:space="preserve">
+    <value>原安装包的 InstallPack/android 或者 InstallPack/ios</value>
   </data>
 </root>

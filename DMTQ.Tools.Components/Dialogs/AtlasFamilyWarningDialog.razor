@@ -1,0 +1,11 @@
+@inherits FluentDialogInstance
+
+<FluentDialogBody>
+    <FluentMessageBar Intent="MessageBarIntent.Warning" Title="@Message" />
+</FluentDialogBody>
+
+@code {
+    [Parameter, EditorRequired] public string Message { get; set; } = string.Empty;
+
+    protected override Task OnActionClickedAsync(bool primary) => DialogInstance.CancelAsync();
+}

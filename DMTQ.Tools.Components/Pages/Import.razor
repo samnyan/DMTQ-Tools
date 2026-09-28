@@ -2,7 +2,7 @@
 @inject IProjectState State
 @inject IProjectWorkflow Workflow
 
-<h1>@L["Nav.Import"]</h1>
+<h4 class="mb-1">@L["Nav.ImportPatch"]</h4>
 
 <FluentStack Orientation="Orientation.Vertical" Style="margin-bottom: 1rem;">
     <FluentSelect Items="@(new[] { "android", "ios" })"
@@ -14,7 +14,7 @@
 
     <FluentTextInput @bind-Value="packageRoot"
                      Label='@L["Import.SourceDirectory"]'
-                     Placeholder="D:\GitHub\DMTQ-Tools\external\patch\phone_new\1.003.005\android"
+                     Placeholder="patch\phone_new\1.003.005\android"
                      Style="width: 100%;" />
 
     <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8">
@@ -63,8 +63,21 @@
 
 }
 
+<FluentDivider class="my-4" />
+<h4 class="mb-1">@L["Import.InstallPackTitle"]</h4>
+<FluentTextInput @bind-Value="installPackRoot"
+                 Label='@L["Import.InstallPackRoot"]'
+                 Placeholder='@L["Import.InstallPackRootPlaceholder"]'
+                 Style="width: 100%;" />
+<FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8">
+    <FluentButton Appearance="ButtonAppearance.Default"
+                  OnClick="ImportInstallPack"
+                  Disabled="@isBusy">@L["Import.ImportInstallPack"]</FluentButton>
+</FluentStack>
+
 @code {
     private string packageRoot = string.Empty;
+    private string installPackRoot = string.Empty;
     private string platform = "android";
     private string? message;
     private bool isBusy;
@@ -90,6 +103,28 @@
         {
             message = ex.Message;
             State.Diagnostics.Add("Import error: " + ex.Message);
+        }
+        finally
+        {
+            isBusy = false;
+        }
+    }
+
+    private async Task ImportInstallPack()
+    {
+        isBusy = true;
+        message = L["Import.ImportingInstallPack"].Value;
+        try
+        {
+            var result = await Workflow.ImportInstallPackAsync(installPackRoot, platform);
+            message = L["Import.InstallPackCompleted", result.ImportedFiles, result.SkippedEntries, result.Errors.Count].Value;
+            foreach (var error in result.Errors)
+                State.Diagnostics.Add("InstallPack import error: " + error);
+        }
+        catch (Exception ex)
+        {
+            message = ex.Message;
+            State.Diagnostics.Add("InstallPack import error: " + ex.Message);
         }
         finally
         {
