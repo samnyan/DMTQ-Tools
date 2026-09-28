@@ -145,6 +145,8 @@ public sealed class ProductEditService
 
         target.CategoryIds.Clear();
         target.CategoryIds.AddRange(source.CategoryIds);
+        target.CategoryLinkMetadata.Clear();
+        target.CategoryLinkMetadata.AddRange(source.CategoryLinkMetadata);
     }
 
     private static IngameItem CloneIngameItem(IngameItem source)

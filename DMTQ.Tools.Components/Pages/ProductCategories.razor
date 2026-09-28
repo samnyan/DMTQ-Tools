@@ -1,0 +1,336 @@
+@page "/product-categories"
+@page "/product-categories/{CategoryId}"
+@inject NavigationManager Navigation
+@inject IProjectState State
+@inject IProjectWorkflow Workflow
+@inject ProductCatalogService ProductCatalog
+@inject ProductCategoryCatalogService CategoryCatalog
+@inject EditorDraftStore DraftStore
+@inject IDialogService DialogService
+
+<div class="list-page">
+    @if (State.CurrentPackage is null)
+    {
+        <FluentMessageBar Title='@L["Common.NoProject"]' Intent="MessageBarIntent.Warning" />
+    }
+    else if (CategoryId is null)
+    {
+        <ProjectListShell TItem="ProductCategorySummary"
+                          Title='@L["Nav.ProductCategories"]'
+                          EmptyMessage='@L["Lists.NoProductCategories"]'
+                          FilteredItems="@FilteredCategories"
+                          Pagination="@pagination"
+                          ErrorMessage="@errorMessage">
+            <Toolbar>
+                <div class="list-toolbar-layout">
+                    <div class="list-toolbar-filters">
+                        <ToolbarField Unlabeled Search>
+                            <FluentTextInput Value="@filter" ValueChanged="SetFilterAsync" Immediate="true"
+                                             Placeholder='@L["Lists.FilterProductCategories"]' class="list-filter" />
+                        </ToolbarField>
+                    </div>
+                    <div class="list-toolbar-actions">
+                        <ToolbarField>
+                            <FluentTextInput @bind-Value="newCategoryId" Label='@L["Fields.CategoryId"]' />
+                        </ToolbarField>
+                        <ToolbarField Unlabeled>
+                            <FluentButton Appearance="ButtonAppearance.Primary"
+                                          IconStart="@(new Icons.Regular.Size20.Add())"
+                                          OnClick="CreateCategory">@L["Lists.AddProductCategory"]</FluentButton>
+                        </ToolbarField>
+                    </div>
+                </div>
+            </Toolbar>
+            <Metrics>
+                <FluentGrid class="metric-grid" Spacing="3">
+                    <FluentGridItem Xs="12" Sm="6" Md="3">
+                        <FluentCard><span class="metric-label">@L["Nav.ProductCategories"]</span><strong>@Catalog.Count</strong></FluentCard>
+                    </FluentGridItem>
+                    <FluentGridItem Xs="12" Sm="6" Md="3">
+                        <FluentCard><span class="metric-label">@L["Lists.UniqueProductCategoryLinks"]</span><strong>@Catalog.Sum(category => category.ProductIds.Count)</strong></FluentCard>
+                    </FluentGridItem>
+                </FluentGrid>
+                <FluentMessageBar Title='@L["Editor.ProductCategoryMappingsAreInferred"]' Intent="MessageBarIntent.Info" />
+            </Metrics>
+            <Columns>
+                <PropertyColumn TGridItem="ProductCategorySummary" TProp="string" Property="@(category => category.Id)"
+                                Title='@L["Fields.CategoryId"]' Sortable="true" Width="10rem" MinWidth="10rem" />
+                <TemplateColumn TGridItem="ProductCategorySummary" Title='@L["Fields.CategoryName"]' Width="2fr" MinWidth="18rem" Context="category">
+                    @CategoryName(category)
+                </TemplateColumn>
+                <TemplateColumn TGridItem="ProductCategorySummary" Title='@L["Lists.ProductCount"]' Sortable="true" Width="9rem" MinWidth="9rem" Context="category">
+                    @category.ProductIds.Count
+                </TemplateColumn>
+                <TemplateColumn TGridItem="ProductCategorySummary" Title='@L["Fields.Notes"]' Width="2fr" MinWidth="18rem" Context="category">
+                    @category.Notes
+                </TemplateColumn>
+                <TemplateColumn TGridItem="ProductCategorySummary" Title='@L["Lists.Products"]' Width="2fr" MinWidth="18rem" Context="category">
+                    @ProductPreview(category)
+                </TemplateColumn>
+                <TemplateColumn TGridItem="ProductCategorySummary" Title='@L["Lists.Actions"]' Width="9rem" MinWidth="9rem" Context="category">
+                    <FluentButton IconStart="@(new Icons.Regular.Size20.Edit())" Appearance="ButtonAppearance.Default"
+                                  OnClick="() => EditCategory(category.Id)" Title='@L["Common.Edit"]' />
+                </TemplateColumn>
+            </Columns>
+        </ProjectListShell>
+    }
+    else if (State.CurrentPackage is not null)
+    {
+        <FluentStack Orientation="Orientation.Vertical" class="editor-form-sections">
+            <div class="section-title-row">
+                <div>
+                    <h1 class="page-title">@L["Nav.ProductCategories"] — @CategoryId</h1>
+                    <p class="section-hint">@L["Editor.ProductCategoryMembershipHint"]</p>
+                    <p class="section-hint">@L["Editor.ProductCategoryMappingsAreInferred"]</p>
+                </div>
+            </div>
+            <FluentTextInput @bind-Value="categoryName" Label='@L["Fields.CategoryName"]' Required />
+            <FluentTextInput @bind-Value="categoryNotes" Label='@L["Fields.Notes"]' />
+            <FluentMessageBar Title='@L["Editor.ProductCategoryMappingsAreInferred"]' Intent="MessageBarIntent.Info" />
+            <div class="list-toolbar-layout">
+                <ToolbarField Unlabeled Search>
+                    <FluentTextInput Value="@productFilter" ValueChanged="SetProductFilter" Immediate="true"
+                                     Placeholder='@L["Lists.FilterProducts"]' class="list-filter" />
+                </ToolbarField>
+            </div>
+            <div class="category-product-choices">
+                @foreach (var product in FilteredProducts)
+                {
+                    <FluentCheckbox Value="@selectedProductIds.Contains(product.Id)"
+                                    ValueChanged="@(value => ToggleProduct(product.Id, value == true))"
+                                    Label="@($"{product.Id} — {product.StoreProductId}")" />
+                }
+            </div>
+            @if (!string.IsNullOrWhiteSpace(errorMessage))
+            {
+                <FluentMessageBar Title="@errorMessage" Intent="MessageBarIntent.Error" />
+            }
+            <EditorSaveFailure Exception="@saveException" Context="Product category save" />
+            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8">
+                <FluentButton Appearance="ButtonAppearance.Primary" OnClick="SaveCategoryAsync" Disabled="@isBusy">@L["Common.Save"]</FluentButton>
+                @if (selectedProductIds.Count > 0)
+                {
+                    <FluentButton Appearance="ButtonAppearance.Outline" OnClick="DeleteCategoryAsync" Disabled="@isBusy">@L["Lists.RemoveAllCategoryLinks"]</FluentButton>
+                }
+                <FluentButton Appearance="ButtonAppearance.Default" OnClick="BackToCategories">@L["Editor.BackTo", L["Nav.ProductCategories"].Value]</FluentButton>
+            </FluentStack>
+        </FluentStack>
+    }
+</div>
+
+@code {
+    [Parameter] public string? CategoryId { get; set; }
+    [SupplyParameterFromQuery(Name = "q")] public string? SearchQuery { get; set; }
+
+    private readonly PaginationState pagination = new() { ItemsPerPage = 25 };
+    private string? newCategoryId;
+    private string categoryName = string.Empty;
+    private string? categoryNotes;
+    private string? productFilter;
+    private string? errorMessage;
+    private Exception? saveException;
+    private bool isBusy;
+    private string? loadedCategoryKey;
+    private HashSet<string> selectedProductIds = new(StringComparer.OrdinalIgnoreCase);
+    private string filter => SearchQuery ?? string.Empty;
+    private string RecoveryKey => $"product-category:{CategoryId}";
+    private IReadOnlyList<Product> Products => State.CurrentPackage is null
+        ? []
+        : ProductCatalog.BuildCatalog(State.CurrentPackage, State.SelectedExportPlatform);
+
+    private IReadOnlyList<ProductCategorySummary> Catalog => State.CurrentPackage is null
+        ? []
+        : CategoryCatalog.BuildCatalog(State.CurrentPackage, State.SelectedExportPlatform);
+
+    private IEnumerable<ProductCategorySummary> FilteredCategories => string.IsNullOrWhiteSpace(filter)
+        ? Catalog
+        : Catalog.Where(category => category.Id.Contains(filter, StringComparison.OrdinalIgnoreCase));
+
+    private IEnumerable<Product> FilteredProducts => string.IsNullOrWhiteSpace(productFilter)
+        ? Products
+        : Products.Where(product => product.Id.Contains(productFilter, StringComparison.OrdinalIgnoreCase)
+            || product.StoreProductId.Contains(productFilter, StringComparison.OrdinalIgnoreCase));
+
+    protected override void OnParametersSet()
+    {
+        if (CategoryId is null)
+        {
+            loadedCategoryKey = null;
+            return;
+        }
+        if (State.CurrentPackage is null) return;
+
+        if (string.Equals(loadedCategoryKey, RecoveryKey, StringComparison.Ordinal)) return;
+        loadedCategoryKey = RecoveryKey;
+        if (DraftStore.TryGet<CategoryDraft>(RecoveryKey, out var recovered) && recovered is not null)
+        {
+            selectedProductIds = new HashSet<string>(recovered.ProductIds, StringComparer.OrdinalIgnoreCase);
+            categoryName = recovered.Name;
+            categoryNotes = recovered.Notes;
+        }
+        else
+        {
+            selectedProductIds = Products
+                .Where(product => product.CategoryIds.Contains(CategoryId, StringComparer.OrdinalIgnoreCase))
+                .Select(product => product.Id)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            State.CurrentPackage.ProductCategoryMappings.TryGetValue(CategoryId, out var mapping);
+            categoryName = mapping?.Name ?? string.Empty;
+            categoryNotes = mapping?.Notes;
+        }
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (CategoryId is not null)
+            DraftStore.Set(RecoveryKey, new CategoryDraft(selectedProductIds.ToArray(), categoryName, categoryNotes));
+    }
+
+    private Task SetFilterAsync(string? value)
+    {
+        SearchQuery = value;
+        TableNavigationState.UpdateQuery(Navigation, ("q", value), ("page", "1"));
+        return Task.CompletedTask;
+    }
+
+    private void SetProductFilter(string? value) => productFilter = value;
+
+    private string ProductPreview(ProductCategorySummary category)
+    {
+        var preview = string.Join(", ", category.ProductIds.Take(5));
+        return category.ProductIds.Count > 5 ? $"{preview}, …" : preview;
+    }
+
+    private string CategoryName(ProductCategorySummary category)
+        => string.IsNullOrWhiteSpace(category.Name) ? L["Lists.UnknownProductCategory"].Value : category.Name;
+
+    private void CreateCategory()
+    {
+        var id = newCategoryId?.Trim();
+        if (!int.TryParse(id, out var numericId) || numericId < 0)
+        {
+            errorMessage = L["Editor.CategoryIdMustBeNumeric"].Value;
+            return;
+        }
+
+        errorMessage = null;
+        newCategoryId = null;
+        Navigation.NavigateTo($"/product-categories/{numericId}");
+    }
+
+    private void EditCategory(string id) => Navigation.NavigateTo($"/product-categories/{Uri.EscapeDataString(id)}");
+
+    private void ToggleProduct(string productId, bool selected)
+    {
+        if (selected) selectedProductIds.Add(productId);
+        else selectedProductIds.Remove(productId);
+    }
+
+    private async Task SaveCategoryAsync()
+    {
+        if (State.CurrentPackage is null || CategoryId is null) return;
+        if (!int.TryParse(CategoryId, out _))
+        {
+            errorMessage = L["Editor.CategoryIdMustBeNumeric"].Value;
+            return;
+        }
+        if (selectedProductIds.Count == 0 && string.IsNullOrWhiteSpace(categoryName))
+        {
+            errorMessage = L["Editor.CategoryNameOrProductRequired"].Value;
+            return;
+        }
+
+        isBusy = true;
+        errorMessage = null;
+        saveException = null;
+        var snapshots = Products.ToDictionary(product => product.Id,
+            product => new ProductLinkSnapshot(product.CategoryIds.ToList(), product.CategoryLinkMetadata.ToList()),
+            StringComparer.OrdinalIgnoreCase);
+        var wasDirty = State.IsDirty;
+        var hadMapping = State.CurrentPackage.ProductCategoryMappings.TryGetValue(CategoryId, out var originalMapping);
+        try
+        {
+            foreach (var product in Products)
+            {
+                var wasSelected = product.CategoryIds.Contains(CategoryId, StringComparer.OrdinalIgnoreCase);
+                var shouldBeSelected = selectedProductIds.Contains(product.Id);
+                if (shouldBeSelected && !wasSelected)
+                    product.AddCategoryId(CategoryId);
+                else if (!shouldBeSelected && wasSelected)
+                    product.RemoveCategoryIds(CategoryId);
+            }
+
+            if (!string.IsNullOrWhiteSpace(categoryName))
+                State.CurrentPackage.ProductCategoryMappings[CategoryId] = new ProductCategoryMapping(categoryName.Trim(), categoryNotes?.Trim());
+
+            State.IsDirty = true;
+            await Workflow.SaveProjectAsync();
+            DraftStore.Remove(RecoveryKey);
+            Navigation.NavigateTo("/product-categories");
+        }
+        catch (Exception ex)
+        {
+            foreach (var product in Products)
+            {
+                product.CategoryIds.Clear();
+                product.CategoryIds.AddRange(snapshots[product.Id].CategoryIds);
+                product.CategoryLinkMetadata.Clear();
+                product.CategoryLinkMetadata.AddRange(snapshots[product.Id].Metadata);
+            }
+            State.IsDirty = wasDirty;
+            if (hadMapping) State.CurrentPackage.ProductCategoryMappings[CategoryId] = originalMapping!;
+            else State.CurrentPackage.ProductCategoryMappings.Remove(CategoryId);
+            saveException = ex;
+        }
+        finally { isBusy = false; }
+    }
+
+    private async Task DeleteCategoryAsync()
+    {
+        if (State.CurrentPackage is null || CategoryId is null) return;
+        var result = await DialogService.ShowConfirmationAsync(
+            message: L["Lists.RemoveCategoryLinksConfirm", CategoryId].Value,
+            title: L["Nav.ProductCategories"].Value,
+            primaryButton: L["Common.Delete"].Value,
+            secondaryButton: L["Common.Cancel"].Value);
+        if (result.Cancelled) return;
+
+        isBusy = true;
+        saveException = null;
+        var snapshots = Products.ToDictionary(product => product.Id,
+            product => new ProductLinkSnapshot(product.CategoryIds.ToList(), product.CategoryLinkMetadata.ToList()),
+            StringComparer.OrdinalIgnoreCase);
+        var wasDirty = State.IsDirty;
+        try
+        {
+            foreach (var product in Products)
+                product.RemoveCategoryIds(CategoryId);
+            State.IsDirty = true;
+            await Workflow.SaveProjectAsync();
+            DraftStore.Remove(RecoveryKey);
+            Navigation.NavigateTo("/product-categories");
+        }
+        catch (Exception ex)
+        {
+            foreach (var product in Products)
+            {
+                product.CategoryIds.Clear();
+                product.CategoryIds.AddRange(snapshots[product.Id].CategoryIds);
+                product.CategoryLinkMetadata.Clear();
+                product.CategoryLinkMetadata.AddRange(snapshots[product.Id].Metadata);
+            }
+            State.IsDirty = wasDirty;
+            saveException = ex;
+        }
+        finally { isBusy = false; }
+    }
+
+    private void BackToCategories()
+    {
+        if (CategoryId is not null) DraftStore.Remove(RecoveryKey);
+        Navigation.NavigateTo("/product-categories");
+    }
+
+    private sealed record CategoryDraft(string[] ProductIds, string Name, string? Notes);
+    private sealed record ProductLinkSnapshot(List<string> CategoryIds, List<CategoryProductLinkMetadata> Metadata);
+}

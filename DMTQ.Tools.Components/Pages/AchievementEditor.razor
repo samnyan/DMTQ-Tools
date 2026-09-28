@@ -21,7 +21,7 @@
             <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Stretch" class="editor-form-sections">
                 <section>
                     <h2 class="section-heading">@L["Editor.AchievementRules"]</h2>
-                    <FluentGrid Spacing="2">
+                    <FluentGrid Spacing="1">
                         <FluentGridItem Xs="12" Md="4">@if (IsCreate) { <FluentTextInput style="width:100%" @bind-Value="idInput" Label='@L["Fields.AchievementId"]' Required /> } else { <FluentTextInput style="width:100%" Value="@draft!.Id" Label='@L["Fields.AchievementId"]' ReadOnly="true" /> }</FluentGridItem>
                         <FluentGridItem Xs="12" Md="4"><FluentSelect Items="@ConditionTypeOptions" @bind-Value="selectedConditionType" Label='@L["Fields.ConditionType"]' /></FluentGridItem>
                         <FluentGridItem Xs="12" Md="4"><FluentTextInput style="width:100%" @bind-Value="draft!.ConditionValue" Label='@L["Fields.ConditionValue"]' /></FluentGridItem>
@@ -43,7 +43,7 @@
                     {
                         <div class="language-panel">
                             <h3 class="lang-heading">@language</h3>
-                            <FluentGrid Spacing="2">
+                            <FluentGrid Spacing="1">
                                 <FluentGridItem Xs="12" Md="4"><FluentTextInput style="width:100%" Value="@draft!.NamesByLanguage[language]" ValueChanged="@(value => draft!.NamesByLanguage[language] = value)" Label='@L["Fields.Name"]' /></FluentGridItem>
                                 <FluentGridItem Xs="12" Md="6"><FluentTextArea style="width:100%" Value="@draft!.PreDescriptionsByLanguage[language]" ValueChanged="@(value => draft!.PreDescriptionsByLanguage[language] = value)" Label='@L["Fields.PreDescription"]' Height="100px" Resize="TextAreaResize.Vertical" /></FluentGridItem>
                                 <FluentGridItem Xs="12" Md="6"><FluentTextArea style="width:100%" Value="@draft!.AfterDescriptionsByLanguage[language]" ValueChanged="@(value => draft!.AfterDescriptionsByLanguage[language] = value)" Label='@L["Fields.AfterDescription"]' Height="100px" Resize="TextAreaResize.Vertical" /></FluentGridItem>

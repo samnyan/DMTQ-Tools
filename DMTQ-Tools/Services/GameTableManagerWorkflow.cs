@@ -40,7 +40,8 @@ public sealed class GameTableManagerWorkflow : IProjectWorkflow
 
         var package = new PatchPackage
         {
-            ProjectInfo = new ProjectInfo(projectRoot, null, "0.0.0", null)
+            ProjectInfo = new ProjectInfo(projectRoot, null, "0.0.0", null),
+            ProductCategoryMappings = ProductCategoryDefaults.Create()
         };
         _state.SetPackage(package);
         await _repository.SaveAsync(

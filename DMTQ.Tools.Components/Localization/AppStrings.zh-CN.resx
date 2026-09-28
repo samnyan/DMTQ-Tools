@@ -8,7 +8,7 @@
   <data name="Language.Title" xml:space="preserve"><value>语言</value></data>
   <data name="Language.English" xml:space="preserve"><value>English</value></data>
   <data name="Language.Chinese" xml:space="preserve"><value>中文</value></data>
-  <data name="Nav.Project" xml:space="preserve"><value>项目</value></data><data name="Nav.Import" xml:space="preserve"><value>导入</value></data><data name="Nav.Songs" xml:space="preserve"><value>歌曲</value></data><data name="Nav.Products" xml:space="preserve"><value>商品</value></data><data name="Nav.Items" xml:space="preserve"><value>道具</value></data><data name="Nav.Resources" xml:space="preserve"><value>资源</value></data><data name="Nav.Export" xml:space="preserve"><value>导出</value></data><data name="Nav.Diagnostics" xml:space="preserve"><value>诊断</value></data>
+  <data name="Nav.Project" xml:space="preserve"><value>项目</value></data><data name="Nav.Import" xml:space="preserve"><value>导入</value></data><data name="Nav.Songs" xml:space="preserve"><value>歌曲</value></data><data name="Nav.Products" xml:space="preserve"><value>商品</value></data><data name="Nav.ProductCategories" xml:space="preserve"><value>商品类别</value></data><data name="Nav.Items" xml:space="preserve"><value>道具</value></data><data name="Nav.Resources" xml:space="preserve"><value>资源</value></data><data name="Nav.Export" xml:space="preserve"><value>导出</value></data><data name="Nav.Diagnostics" xml:space="preserve"><value>诊断</value></data>
   <data name="Header.UnsavedChanges" xml:space="preserve"><value>有未保存的更改</value></data><data name="Header.Saving" xml:space="preserve"><value>保存中...</value></data>
   <data name="Header.SaveProject" xml:space="preserve"><value>保存工程</value></data><data name="Header.AutoSave" xml:space="preserve"><value>自动保存</value></data><data name="Header.AutoSaveFailed" xml:space="preserve"><value>自动保存失败</value></data><data name="Header.AutoSaveHint" xml:space="preserve"><value>项目数据变更后短暂等待并自动保存。</value></data><data name="Header.SaveFailed" xml:space="preserve"><value>保存失败</value></data><data name="Header.ToggleNavigation" xml:space="preserve"><value>切换导航栏</value></data>
   <data name="Errors.SaveFailed" xml:space="preserve"><value>无法保存这些更改。</value></data><data name="Errors.ShowDetails" xml:space="preserve"><value>查看技术详情</value></data><data name="Errors.UnexpectedTitle" xml:space="preserve"><value>发生意外错误</value></data><data name="Errors.UnexpectedMessage" xml:space="preserve"><value>当前页面无法继续运行。本次应用会话中的工程数据和编辑草稿仍保留。可前往“诊断”页面继续操作，无需重新加载应用。</value></data><data name="Errors.ErrorId" xml:space="preserve"><value>错误编号：{0}</value></data><data name="Errors.ReturnToDiagnostics" xml:space="preserve"><value>前往诊断页面</value></data>
@@ -45,7 +45,7 @@
   <data name="Fields.AchievementId" xml:space="preserve"><value>成就 ID</value></data>
   <data name="Fields.QuestId" xml:space="preserve"><value>任务 ID</value></data>
   <data name="Fields.ProductId" xml:space="preserve"><value>商品 ID</value></data>
-  <data name="Fields.CategoryId" xml:space="preserve"><value>类别 ID</value></data>
+  <data name="Fields.CategoryId" xml:space="preserve"><value>类别 ID</value></data><data name="Fields.CategoryName" xml:space="preserve"><value>类别用途</value></data><data name="Fields.Notes" xml:space="preserve"><value>备注</value></data>
   <data name="Fields.ItemType" xml:space="preserve"><value>道具类型</value></data>
   <data name="Fields.ItemLevel" xml:space="preserve"><value>道具等级</value></data>
   <data name="Fields.Update" xml:space="preserve"><value>更新标记</value></data>
@@ -174,6 +174,18 @@
   <data name="Editor.AddLinkedGameItem" xml:space="preserve"><value>新增游戏道具</value></data>
   <data name="Editor.PatternDraftSavedWithSong" xml:space="preserve"><value>谱面改动属于尚未保存的歌曲，会在保存歌曲时一并写入。</value></data>
   <data name="Editor.CategoryIdExplanation" xml:space="preserve"><value>类别 ID 由游戏服务器提供。CSV 只保存 ID 和商品关联，不包含类别名称。已有 ID 来自导入的数据；仅在确定服务器 ID 时添加自定义值。</value></data>
+  <data name="Editor.CategoryNameUnavailable" xml:space="preserve"><value>离线表只包含类别 ID 和商品关联。游戏客户端定义了服务端类别名称字段，但此导出数据不包含类别名称。</value></data>
+  <data name="Editor.ProductCategoryMappingsAreInferred" xml:space="preserve"><value>类别用途是根据关联的商品和道具归纳的本地对照说明，不是游戏官方名称。</value></data><data name="Editor.CategoryNameOrProductRequired" xml:space="preserve"><value>请填写类别用途，或至少选择一个商品。</value></data>
+  <data name="Editor.ProductCategoryMembershipHint" xml:space="preserve"><value>选择属于此类别的商品。没有修改商品归属时，现有 CSV 重复关联行会原样保留。</value></data>
+  <data name="Editor.CategoryIdMustBeNumeric" xml:space="preserve"><value>请输入游戏服务器提供的数字类别 ID。</value></data>
+  <data name="Editor.CategoryNeedsProduct" xml:space="preserve"><value>保存类别前至少选择一个商品；游戏表只保存类别与商品的关联。</value></data>
+  <data name="Lists.ManageProductCategories" xml:space="preserve"><value>管理类别</value></data>
+  <data name="Lists.NoProductCategories" xml:space="preserve"><value>当前平台导入的商品关联中没有类别 ID。</value></data>
+  <data name="Lists.FilterProductCategories" xml:space="preserve"><value>按类别 ID 筛选...</value></data>
+  <data name="Lists.AddProductCategory" xml:space="preserve"><value>添加类别</value></data>
+  <data name="Lists.UniqueProductCategoryLinks" xml:space="preserve"><value>类别商品去重关联数</value></data>
+  <data name="Lists.ProductCount" xml:space="preserve"><value>关联商品数</value></data>
+  <data name="Lists.UnknownProductCategory" xml:space="preserve"><value>未映射类别</value></data><data name="Lists.NoProductCategoriesForProduct" xml:space="preserve"><value>无</value></data><data name="Lists.RemoveAllCategoryLinks" xml:space="preserve"><value>移除全部商品关联</value></data><data name="Lists.RemoveCategoryLinksConfirm" xml:space="preserve"><value>移除类别 {0} 的全部商品关联？对照说明会保留。</value></data>
   <data name="Options.ItemTypeMusic" xml:space="preserve"><value>音乐</value></data>
   <data name="Options.ItemTypeNoteSkin" xml:space="preserve"><value>音符皮肤</value></data>
   <data name="Options.ItemTypeStatusBarSkin" xml:space="preserve"><value>状态栏皮肤</value></data>
@@ -204,6 +216,7 @@
   <data name="Fields.SaleStartDate" xml:space="preserve"><value>开售时间</value></data>
   <data name="Fields.SaleEndDate" xml:space="preserve"><value>停售时间</value></data>
   <data name="Options.ProductTypeUnlock" xml:space="preserve"><value>游戏内解锁购买</value></data>
+  <data name="Options.ProductTypePack" xml:space="preserve"><value>商品包</value></data>
   <data name="Options.ProductTypeTicket" xml:space="preserve"><value>票券购买</value></data>
   <data name="Options.ProductStatusNew" xml:space="preserve"><value>新品</value></data>
   <data name="Options.ProductStatusHot" xml:space="preserve"><value>热门</value></data>
@@ -292,4 +305,8 @@
   <data name="Tables.EditRow" xml:space="preserve"><value>编辑行 {0}</value></data>
   <data name="Tables.SaveRow" xml:space="preserve"><value>保存行</value></data>
   <data name="Tables.RowSaved" xml:space="preserve"><value>CSV 行已保存。</value></data>
+  <data name="Editor.ItemSyncAllLanguagesHint" xml:space="preserve"><value>保存时会将道具名称、描述和摘要同步到全部五种语言的数据表。</value></data>
+  <data name="Lists.SelectItemTypes" xml:space="preserve"><value>选择道具类型</value></data>
+  <data name="Lists.SelectedItemTypes" xml:space="preserve"><value>已选 {0} 项</value></data>
+  <data name="Lists.ClearItemTypeFilters" xml:space="preserve"><value>清除类型筛选</value></data>
 </root>

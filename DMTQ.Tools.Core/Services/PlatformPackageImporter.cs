@@ -394,7 +394,10 @@ public sealed class PlatformPackageImporter
         if (entries.Any(entry => entry.TableName.Equals("category_categoryproduct", StringComparison.OrdinalIgnoreCase)))
         {
             foreach (var product in tables.Products)
+            {
                 product.CategoryIds.Clear();
+                product.CategoryLinkMetadata.Clear();
+            }
         }
 
         var achievementDict = tables.Achievements.ToDictionary(a => a.Id, StringComparer.OrdinalIgnoreCase);

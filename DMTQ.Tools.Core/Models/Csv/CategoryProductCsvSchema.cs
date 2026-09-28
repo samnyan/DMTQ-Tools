@@ -27,9 +27,12 @@ public sealed class CategoryProductCsvSchema : CsvLookupSchema<Product>
         if (fields.TryGetValue("category_id", out var categoryId)
             && !string.IsNullOrWhiteSpace(categoryId))
         {
-            // Current client patches intentionally repeat identical links five or
-            // ten times. Preserve row multiplicity for lossless round-tripping.
-            product.CategoryIds.Add(categoryId);
+            // Repeated links are intentional in client patches. Retain each row
+            // and the remaining source columns for round-trip export.
+            product.AddCategoryId(
+                categoryId,
+                fields.GetValueOrDefault("display_order", "0"),
+                fields.GetValueOrDefault("update", "0"));
         }
     }
 
@@ -48,14 +51,21 @@ public sealed class CategoryProductCsvSchema : CsvLookupSchema<Product>
         // Header
         csv.WriteField("category_id");
         csv.WriteField("product_id");
+        csv.WriteField("display_order");
+        csv.WriteField("update");
         csv.NextRecord();
 
         foreach (var product in products)
         {
-            foreach (var categoryId in product.CategoryIds)
+            for (var index = 0; index < product.CategoryIds.Count; index++)
             {
-                csv.WriteField(categoryId);
+                var metadata = index < product.CategoryLinkMetadata.Count
+                    ? product.CategoryLinkMetadata[index]
+                    : new CategoryProductLinkMetadata("0", "0");
+                csv.WriteField(product.CategoryIds[index]);
                 csv.WriteField(product.Id);
+                csv.WriteField(metadata.DisplayOrder);
+                csv.WriteField(metadata.Update);
                 csv.NextRecord();
             }
         }

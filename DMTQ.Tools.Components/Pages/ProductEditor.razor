@@ -22,7 +22,7 @@
             <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Stretch" class="editor-form-sections">
                 <section>
                     <h2 class="section-heading">@L["Editor.ProductInformation"]</h2>
-                    <FluentGrid Spacing="2">
+                    <FluentGrid Spacing="1">
                         <FluentGridItem Xs="12" Md="6">
                             @if (IsCreate)
                             {
@@ -60,7 +60,7 @@
 
                 <section>
                     <h2 class="section-heading">@L["Editor.PriceSaleWindow"]</h2>
-                    <FluentGrid Spacing="2">
+                    <FluentGrid Spacing="1">
                         <FluentGridItem Xs="12" Md="6">
                             <FluentTextInput style="width: 100%;" @bind-Value="currentProduct!.CostGamePoint" Label='@L["Fields.CostGamePoint"]' />
                         </FluentGridItem>
@@ -80,12 +80,13 @@
                     <h2 class="section-heading">@L["Editor.ProductCategories"]</h2>
                     <p class="section-hint">@L["Editor.ProductCategoriesHint"]</p>
                     <p class="section-hint">@L["Editor.CategoryIdExplanation"]</p>
+                    <FluentButton Appearance="ButtonAppearance.Subtle" OnClick="OpenCategoryManager">@L["Lists.ManageProductCategories"]</FluentButton>
                     <div class="choice-grid">
                         @foreach (var categoryId in AvailableCategoryIds)
                         {
                             <FluentCheckbox Value="@HasCategory(categoryId)"
                                             ValueChanged="@(value => ToggleCategory(categoryId, value == true))"
-                                            Label="@categoryId" />
+                                            Label="@CategoryLabel(categoryId)" />
                         }
                     </div>
                     <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8" VerticalAlignment="VerticalAlignment.Center">
@@ -168,11 +169,7 @@
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .OrderBy(type => type, StringComparer.OrdinalIgnoreCase);
         var options = new[] { $" — {L["Options.EffectTypeNone"].Value}" }
-            .Concat(knownTypes.Select(type => type.Equals("I", StringComparison.OrdinalIgnoreCase)
-                ? $"{type} — {L["Options.ProductTypeUnlock"].Value}"
-                : type.Equals("ticket", StringComparison.OrdinalIgnoreCase)
-                    ? $"{type} — {L["Options.ProductTypeTicket"].Value}"
-                    : $"{type} — {L["Options.ProductTypeRawCode"].Value}"))
+            .Concat(knownTypes.Select(type => $"{type} — {ProductTypeDisplay.GetName(type, L)}"))
             .ToArray();
 
         return currentProduct is null || string.IsNullOrWhiteSpace(currentProduct.ProductType)
@@ -260,8 +257,19 @@
     private IEnumerable<string> AvailableCategoryIds => Catalog
         .SelectMany(product => product.CategoryIds)
         .Concat(currentProduct?.CategoryIds ?? [])
+        .Concat(State.CurrentPackage is { } package
+            ? package.ProductCategoryMappings.Keys
+            : Enumerable.Empty<string>())
         .Distinct(StringComparer.OrdinalIgnoreCase)
         .OrderBy(id => id, StringComparer.OrdinalIgnoreCase);
+
+    private string CategoryLabel(string categoryId)
+    {
+        var name = State.CurrentPackage?.ProductCategoryMappings.GetValueOrDefault(categoryId)?.Name;
+        return string.IsNullOrWhiteSpace(name)
+            ? $"{categoryId} — {L["Lists.UnknownProductCategory"].Value}"
+            : $"{categoryId} — {name}";
+    }
 
     protected override void OnParametersSet()
     {
@@ -358,9 +366,9 @@
     private void ToggleCategory(string categoryId, bool selected)
     {
         if (currentProduct is null) return;
-        currentProduct.CategoryIds.RemoveAll(id => id.Equals(categoryId, StringComparison.OrdinalIgnoreCase));
+        currentProduct.RemoveCategoryIds(categoryId);
         if (selected)
-            currentProduct.CategoryIds.Add(categoryId);
+            currentProduct.AddCategoryId(categoryId);
     }
 
     private void AddCategory()
@@ -368,9 +376,12 @@
         if (currentProduct is null || !newCategoryId.HasValue || newCategoryId.Value < 0) return;
         var categoryId = newCategoryId.Value.ToString(System.Globalization.CultureInfo.InvariantCulture);
         if (!HasCategory(categoryId))
-            currentProduct.CategoryIds.Add(categoryId);
+            currentProduct.AddCategoryId(categoryId);
         newCategoryId = null;
     }
+
+    private void OpenCategoryManager()
+        => Navigation.NavigateTo(TableNavigationState.CreateEditorUrl(Navigation, "/product-categories"));
 
     private void AddIngameItem()
         => ingameItemDrafts.Add(new IngameItem

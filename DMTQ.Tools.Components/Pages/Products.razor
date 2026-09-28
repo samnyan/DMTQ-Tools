@@ -52,7 +52,12 @@
     <Columns>
         <PropertyColumn TGridItem="Product" TProp="string" Property="@(product => product.Id)" Title="Product ID" Sortable="true" Width="7rem" MinWidth="7rem" />
         <PropertyColumn TGridItem="Product" TProp="string" Property="@(product => product.ItemId)" Title="Item ID" Sortable="true" Width="6.5rem" MinWidth="6.5rem" />
-        <PropertyColumn TGridItem="Product" TProp="string" Property="@(product => product.ProductType)" Title="Type" Sortable="true" Width="6.25rem" MinWidth="6.25rem" />
+        <TemplateColumn TGridItem="Product" Title='@L["Fields.ProductType"]' Sortable="true" Width="14rem" MinWidth="12rem" Context="product">
+            @GetProductTypeLabel(product.ProductType)
+        </TemplateColumn>
+        <TemplateColumn TGridItem="Product" Title='@L["Nav.ProductCategories"]' Width="2fr" MinWidth="18rem" Context="product">
+            @GetProductCategoryLabels(product)
+        </TemplateColumn>
         <PropertyColumn TGridItem="Product" TProp="string" Property="@(product => product.PlatformProductId)" Title='@L["Lists.PlatformSku"]' Sortable="true" Width="7rem" MinWidth="7rem" />
         <PropertyColumn TGridItem="Product" TProp="string" Property="@(product => product.StoreProductId)" Title='@L["Lists.StoreSku"]' Sortable="true" Width="1fr" MinWidth="18rem" />
         <PropertyColumn TGridItem="Product" TProp="string" Property="@(product => product.CostGamePoint)" Title='@L["Lists.GamePoint"]' Width="8rem" MinWidth="8rem" />
@@ -108,8 +113,33 @@
                 || product.ItemId.Contains(filter, StringComparison.OrdinalIgnoreCase)
                 || product.PlatformProductId.Contains(filter, StringComparison.OrdinalIgnoreCase)
                 || product.StoreProductId.Contains(filter, StringComparison.OrdinalIgnoreCase)
-                || product.ProductType.Contains(filter, StringComparison.OrdinalIgnoreCase));
+                || product.ProductType.Contains(filter, StringComparison.OrdinalIgnoreCase)
+                || GetProductTypeLabel(product.ProductType).Contains(filter, StringComparison.OrdinalIgnoreCase)
+                || GetProductCategoryLabels(product).Contains(filter, StringComparison.OrdinalIgnoreCase));
         }
+    }
+
+    private string GetProductTypeLabel(string? type)
+    {
+        var code = type?.Trim() ?? string.Empty;
+        var name = ProductTypeDisplay.GetName(code, L);
+        return string.IsNullOrWhiteSpace(code) ? $"— {name}" : $"{code} — {name}";
+    }
+
+    private string GetProductCategoryLabels(Product product)
+    {
+        if (State.CurrentPackage is null || product.CategoryIds.Count == 0)
+            return L["Lists.NoProductCategoriesForProduct"].Value;
+
+        return string.Join(" · ", product.CategoryIds
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Select(id =>
+            {
+                var name = State.CurrentPackage.ProductCategoryMappings.GetValueOrDefault(id)?.Name;
+                return string.IsNullOrWhiteSpace(name)
+                    ? $"{id} — {L["Lists.UnknownProductCategory"].Value}"
+                    : $"{id} — {name}";
+            }));
     }
 
     private Task SetFilterAsync(string? value)

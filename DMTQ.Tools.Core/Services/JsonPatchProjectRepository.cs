@@ -102,6 +102,7 @@ public sealed class JsonPatchProjectRepository : IPatchProjectRepository
         public List<Achievement> Achievements { get; set; } = [];
         public List<Quest> Quests { get; set; } = [];
         public List<Product> Products { get; set; } = [];
+        public Dictionary<string, ProductCategoryMapping> ProductCategoryMappings { get; set; } = ProductCategoryDefaults.Create();
         public List<Item> Items { get; set; } = [];
         public List<IngameItem> IngameItems { get; set; } = [];
         public List<IngameItemEffect> IngameItemEffects { get; set; } = [];
@@ -125,6 +126,9 @@ public sealed class JsonPatchProjectRepository : IPatchProjectRepository
                 Achievements = [..package.Achievements],
                 Quests = [..package.Quests],
                 Products = [..package.Products],
+                ProductCategoryMappings = new Dictionary<string, ProductCategoryMapping>(
+                    package.ProductCategoryMappings,
+                    StringComparer.OrdinalIgnoreCase),
                 Items = [..package.Items],
                 IngameItems = [..package.IngameItems],
                 IngameItemEffects = [..package.IngameItemEffects],
@@ -148,6 +152,7 @@ public sealed class JsonPatchProjectRepository : IPatchProjectRepository
             package.Achievements.AddRange(Achievements);
             package.Quests.AddRange(Quests);
             package.Products.AddRange(Products);
+            package.ProductCategoryMappings = ProductCategoryMappings;
             package.Items.AddRange(Items);
             package.IngameItems.AddRange(IngameItems);
             package.IngameItemEffects.AddRange(IngameItemEffects);

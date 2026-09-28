@@ -41,6 +41,7 @@ public abstract class BlazorUITestBase : Bunit.TestContext
         Services.AddSingleton<SongEditService>();
         Services.AddSingleton<ProductCatalogService>();
         Services.AddSingleton<ProductEditService>();
+        Services.AddSingleton<ProductCategoryCatalogService>();
         Services.AddSingleton<ItemCatalogService>();
         Services.AddSingleton<ItemEditService>();
         Services.AddSingleton<AchievementCatalogService>();

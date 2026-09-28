@@ -1,4 +1,5 @@
 @inherits LayoutComponentBase
+@inject IThemeService ThemeService
 @inject IProjectState State
 @inject IProjectWorkflow Workflow
 @inject ILanguagePreferenceStore PreferenceStore
@@ -71,6 +72,7 @@
                                   class="header-language"
                                   Label="@CurrentLanguageLabel"
                                   Appearance="ButtonAppearance.Subtle"
+                                  Color="var(--colorNeutralForegroundOnBrand)"
                                   IconStart="@(new Icons.Regular.Size20.Globe())"
                                   Title='@L["Language.Title"]' />
                 <FluentMenuList>
@@ -147,6 +149,19 @@
         State.StateChanged += OnStateChanged;
         Language.LanguageChanged += OnLanguageChanged;
         if (_autoSaveEnabled && State.IsDirty) QueueAutoSave();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await ThemeService.SetThemeAsync(new ThemeSettings(
+                "#6264A7",
+                HueTorsion: 0,
+                Vibrancy: 0,
+                Mode: ThemeMode.Light,
+                IsExact: true));
+        }
     }
 
     private void OnStateChanged() => InvokeAsync(() =>

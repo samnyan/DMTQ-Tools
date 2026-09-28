@@ -30,7 +30,7 @@
 
                 <section>
                     <h2 class="section-heading">@L["Editor.BasicInfo"]</h2>
-                    <FluentGrid Spacing="2">
+                    <FluentGrid Spacing="1">
                         <FluentGridItem Xs="12" Sm="6" Md="3">
                             @if (IsCreate)
                             {
@@ -49,7 +49,7 @@
 
                 <section>
                     <h2 class="section-heading">@L["Editor.Credits"]</h2>
-                    <FluentGrid Spacing="2">
+                    <FluentGrid Spacing="1">
                         <FluentGridItem Xs="12" Sm="6" Md="4"><FluentTextInput style="width: 100%;" @bind-Value="songArtistName" Label='@L["Fields.Artist"]' Immediate="true" /></FluentGridItem>
                         <FluentGridItem Xs="12" Sm="6" Md="4"><FluentTextInput style="width: 100%;" @bind-Value="songComposedBy" Label='@L["Fields.Composer"]' Immediate="true" /></FluentGridItem>
                         <FluentGridItem Xs="12" Sm="6" Md="4"><FluentTextInput style="width: 100%;" @bind-Value="songSinger" Label='@L["Fields.Singer"]' Immediate="true" /></FluentGridItem>
@@ -62,7 +62,7 @@
                 <section>
                     <h2 class="section-heading">@L["Editor.GameplaySettings"]</h2>
                     <p class="section-hint">@L["Editor.SongCodesHint"]</p>
-                    <FluentGrid Spacing="2">
+                    <FluentGrid Spacing="1">
                         <FluentGridItem Xs="12" Sm="6" Md="4"><FluentSwitch @bind-Value="bgaOriginal" Label='@L["Fields.OriginalBga"]' /></FluentGridItem>
                         <FluentGridItem Xs="12" Sm="6" Md="4"><FluentSwitch @bind-Value="bgaLoop" Label='@L["Fields.LoopBga"]' /></FluentGridItem>
                         <FluentGridItem Xs="12" Sm="6" Md="4"><FluentNumberInput @bind-Value="costPoint" Label='@L["Fields.CostGamePoint"]' /></FluentGridItem>
@@ -148,7 +148,7 @@
                                 var loc = GetOrCreateLocalization(lang);
                                 <div>
                                     <h3 class="lang-heading">@LanguageLabel(lang)</h3>
-                                    <FluentGrid Spacing="2">
+                                    <FluentGrid Spacing="1">
                                         <FluentGridItem Xs="12" Sm="6" Md="4" Lg="2">
                                             <FluentTextInput style="width: 100%;" @bind-Value="loc.FullName" Label='@L["Fields.FullName"]' />
                                         </FluentGridItem>

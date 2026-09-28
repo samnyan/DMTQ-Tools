@@ -2,7 +2,7 @@
 
 <section>
     <h2 class="section-heading">@L["Editor.ItemInformation"]</h2>
-    <FluentGrid Spacing="2">
+    <FluentGrid Spacing="1">
         @if (ShowItemId)
         {
             <FluentGridItem Xs="12" Md="6">
@@ -23,7 +23,7 @@
 
 <section>
     <h3 class="section-subheading">@L["Editor.ItemText"]</h3>
-    <FluentGrid Spacing="2">
+    <FluentGrid Spacing="1">
         <FluentGridItem Xs="12" Md="6">
             <FluentTextArea style="width: 100%;" @bind-Value="itemDescription" Label='@L["Fields.Description"]' Immediate="true" Height="120px" Resize="TextAreaResize.Vertical" />
         </FluentGridItem>
@@ -35,7 +35,7 @@
 
 <section>
     <h3 class="section-subheading">@L["Editor.ItemRules"]</h3>
-    <FluentGrid Spacing="2">
+    <FluentGrid Spacing="1">
         <FluentGridItem Xs="12" Md="4">
             <FluentTextInput style="width: 100%;" @bind-Value="Content.RepeatCount" Label='@L["Fields.RepeatCount"]' />
         </FluentGridItem>
@@ -96,6 +96,10 @@
     [Parameter] public bool IsItemIdRequired { get; set; }
 
     private LocalizedItemFields? localizedFields;
+
+    public bool IsSyncOriginalText => localizedFields?.IsSyncOriginalText == true;
+
+    public void SyncLocalizedFields() => localizedFields?.CopyBaseToAllLanguages();
 
     private string itemName
     {

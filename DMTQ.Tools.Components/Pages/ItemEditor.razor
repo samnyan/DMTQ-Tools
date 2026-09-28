@@ -20,7 +20,8 @@
     {
         <EditForm Model="@currentItem" OnValidSubmit="SaveAsync" FormName="item-editor" class="editor-form">
             <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Stretch" class="editor-form-sections">
-                <ItemDataFields Content="@(currentItem!)"
+                <ItemDataFields @ref="itemDataFields"
+                                Content="@(currentItem!)"
                                 ShowItemId="true"
                                 ItemId="@(IsCreate ? itemIdInput : currentItem!.Id)"
                                 ItemIdChanged="@(value => itemIdInput = value)"
@@ -50,7 +51,7 @@
                     }
                     else
                     {
-                        <FluentGrid Spacing="2">
+                        <FluentGrid Spacing="1">
                             <FluentGridItem Xs="12" Md="4"><FluentSelect TOption="string" TValue="string"
                                                                            Items="EffectTypeOptions"
                                                                            Value="@GetSelectedEffectType()"
@@ -95,6 +96,7 @@
     private Exception? saveException;
     private bool isBusy;
     private IngameItemEffect? effectDraft;
+    private ItemDataFields? itemDataFields;
 
     private string[] EffectTypeOptions
     {
@@ -193,6 +195,9 @@
 
         try
         {
+            if (itemDataFields?.IsSyncOriginalText == true)
+                itemDataFields.SyncLocalizedFields();
+
             if (IsCreate)
             {
                 if (string.IsNullOrWhiteSpace(itemIdInput))

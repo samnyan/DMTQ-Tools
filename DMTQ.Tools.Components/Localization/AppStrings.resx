@@ -12,6 +12,7 @@
   <data name="Nav.Import" xml:space="preserve"><value>Import</value></data>
   <data name="Nav.Songs" xml:space="preserve"><value>Songs</value></data>
   <data name="Nav.Products" xml:space="preserve"><value>Products</value></data>
+  <data name="Nav.ProductCategories" xml:space="preserve"><value>Product categories</value></data>
   <data name="Nav.Items" xml:space="preserve"><value>Items</value></data>
   <data name="Nav.Resources" xml:space="preserve"><value>Resources</value></data>
   <data name="Nav.Export" xml:space="preserve"><value>Export</value></data>
@@ -276,6 +277,8 @@
   <data name="Fields.QuestId" xml:space="preserve"><value>Quest ID</value></data>
   <data name="Fields.ProductId" xml:space="preserve"><value>Product ID</value></data>
   <data name="Fields.CategoryId" xml:space="preserve"><value>Category ID</value></data>
+  <data name="Fields.CategoryName" xml:space="preserve"><value>Category usage</value></data>
+  <data name="Fields.Notes" xml:space="preserve"><value>Notes</value></data>
   <data name="Fields.ItemType" xml:space="preserve"><value>Item type</value></data>
   <data name="Fields.ItemLevel" xml:space="preserve"><value>Item level</value></data>
   <data name="Fields.Update" xml:space="preserve"><value>Update</value></data>
@@ -400,6 +403,22 @@
   <data name="Editor.AddLinkedGameItem" xml:space="preserve"><value>Add new game item</value></data>
   <data name="Editor.PatternDraftSavedWithSong" xml:space="preserve"><value>Pattern changes are part of this unsaved song and will be saved with it.</value></data>
   <data name="Editor.CategoryIdExplanation" xml:space="preserve"><value>Category IDs are supplied by the game server. This CSV stores only the ID and product link, not category names. Existing IDs come from imported rows; add a custom ID only when you know the server value.</value></data>
+  <data name="Editor.CategoryNameUnavailable" xml:space="preserve"><value>The offline tables contain category IDs and product links only. The game client defines a server category name field, but this export has no category-name data.</value></data>
+  <data name="Editor.ProductCategoryMappingsAreInferred" xml:space="preserve"><value>Category descriptions are inferred from associated products and items. They are local reference labels, not official game names.</value></data>
+  <data name="Editor.CategoryNameOrProductRequired" xml:space="preserve"><value>Enter a category description or select at least one product.</value></data>
+  <data name="Editor.ProductCategoryMembershipHint" xml:space="preserve"><value>Select the products that belong to this category. Existing repeated CSV links are preserved until you change a product's membership.</value></data>
+  <data name="Editor.CategoryIdMustBeNumeric" xml:space="preserve"><value>Enter a numeric category ID supplied by the game server.</value></data>
+  <data name="Editor.CategoryNeedsProduct" xml:space="preserve"><value>Select at least one product before saving a category; the game table stores category-product links only.</value></data>
+  <data name="Lists.ManageProductCategories" xml:space="preserve"><value>Manage categories</value></data>
+  <data name="Lists.NoProductCategories" xml:space="preserve"><value>No product category IDs are present in this platform's imported product links.</value></data>
+  <data name="Lists.FilterProductCategories" xml:space="preserve"><value>Filter by category ID...</value></data>
+  <data name="Lists.AddProductCategory" xml:space="preserve"><value>Add category</value></data>
+  <data name="Lists.UniqueProductCategoryLinks" xml:space="preserve"><value>Unique category-product pairs</value></data>
+  <data name="Lists.ProductCount" xml:space="preserve"><value>Products</value></data>
+  <data name="Lists.UnknownProductCategory" xml:space="preserve"><value>Unmapped category</value></data>
+  <data name="Lists.NoProductCategoriesForProduct" xml:space="preserve"><value>None</value></data>
+  <data name="Lists.RemoveAllCategoryLinks" xml:space="preserve"><value>Remove all product links</value></data>
+  <data name="Lists.RemoveCategoryLinksConfirm" xml:space="preserve"><value>Remove all product links from category {0}? Its reference description will remain.</value></data>
   <data name="Options.ItemTypeMusic" xml:space="preserve"><value>Music</value></data>
   <data name="Options.ItemTypeNoteSkin" xml:space="preserve"><value>Note skin</value></data>
   <data name="Options.ItemTypeStatusBarSkin" xml:space="preserve"><value>Status bar skin</value></data>
@@ -430,6 +449,7 @@
   <data name="Fields.SaleStartDate" xml:space="preserve"><value>Sale start date</value></data>
   <data name="Fields.SaleEndDate" xml:space="preserve"><value>Sale end date</value></data>
   <data name="Options.ProductTypeUnlock" xml:space="preserve"><value>In-game unlock purchase</value></data>
+  <data name="Options.ProductTypePack" xml:space="preserve"><value>Product pack</value></data>
   <data name="Options.ProductTypeTicket" xml:space="preserve"><value>Ticket purchase</value></data>
   <data name="Options.ProductStatusNew" xml:space="preserve"><value>New</value></data>
   <data name="Options.ProductStatusHot" xml:space="preserve"><value>Popular</value></data>
@@ -477,4 +497,8 @@
   <data name="Tables.EditRow" xml:space="preserve"><value>Edit row {0}</value></data>
   <data name="Tables.SaveRow" xml:space="preserve"><value>Save row</value></data>
   <data name="Tables.RowSaved" xml:space="preserve"><value>CSV row saved.</value></data>
+  <data name="Editor.ItemSyncAllLanguagesHint" xml:space="preserve"><value>Item name, description, and summary will be copied to all five language tables when you save.</value></data>
+  <data name="Lists.SelectItemTypes" xml:space="preserve"><value>Select item types</value></data>
+  <data name="Lists.SelectedItemTypes" xml:space="preserve"><value>{0} selected</value></data>
+  <data name="Lists.ClearItemTypeFilters" xml:space="preserve"><value>Clear type filters</value></data>
 </root>

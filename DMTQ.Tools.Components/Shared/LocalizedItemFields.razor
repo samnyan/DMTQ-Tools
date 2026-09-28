@@ -2,32 +2,38 @@
 
 <section>
     <h2 class="section-heading">@L["Editor.LocalizedDescriptions"]</h2>
-    <p class="section-hint">@L["Editor.ItemDescriptionsHint"]</p>
-    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8" VerticalAlignment="VerticalAlignment.Center" class="localized-item-actions">
+    <div class="section-inline-control">
+        <FluentSwitch @bind-Value="syncOriginalText" Label='@L["Editor.SyncAllLanguages"]' />
+        @if (!syncOriginalText)
+        {
             <FluentButton Appearance="ButtonAppearance.Default" OnClick="CopyBaseToAllLanguages">
                 @L["Editor.CopyBaseToLanguages"]
             </FluentButton>
-            <FluentSwitch @bind-Value="syncOriginalText" Label='@L["Editor.SyncOriginalText"]' />
-    </FluentStack>
-    <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Stretch">
-        @foreach (var language in Languages)
-        {
-            <div @key="language">
-                <h3 class="lang-heading">@language</h3>
-                <FluentGrid Spacing="2">
-                    <FluentGridItem Xs="12" Md="4">
-                        <FluentTextInput style="width: 100%;" Value="@Content.NamesByLanguage[language]" ValueChanged="@(value => Content.NamesByLanguage[language] = value)" Label='@L["Fields.Name"]' />
-                    </FluentGridItem>
-                    <FluentGridItem Xs="12" Md="6">
-                        <FluentTextArea style="width: 100%;" Value="@Content.DescriptionsByLanguage[language]" ValueChanged="@(value => Content.DescriptionsByLanguage[language] = value)" Label='@L["Fields.Description"]' Height="100px" Resize="TextAreaResize.Vertical" />
-                    </FluentGridItem>
-                    <FluentGridItem Xs="12" Md="6">
-                        <FluentTextArea style="width: 100%;" Value="@Content.SummariesByLanguage[language]" ValueChanged="@(value => Content.SummariesByLanguage[language] = value)" Label='@L["Fields.Summary"]' Height="100px" Resize="TextAreaResize.Vertical" />
-                    </FluentGridItem>
-                </FluentGrid>
-            </div>
         }
-    </FluentStack>
+    </div>
+    <p class="section-hint">@(syncOriginalText ? L["Editor.ItemSyncAllLanguagesHint"] : L["Editor.DescriptionsHint"])</p>
+    @if (!syncOriginalText)
+    {
+        <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Stretch">
+            @foreach (var language in Languages)
+            {
+                <div @key="language">
+                    <h3 class="lang-heading">@language</h3>
+                    <FluentGrid Spacing="1">
+                        <FluentGridItem Xs="12" Sm="6" Md="4">
+                            <FluentTextInput style="width: 100%;" Value="@Content.NamesByLanguage[language]" ValueChanged="@(value => Content.NamesByLanguage[language] = value)" Label='@L["Fields.Name"]' />
+                        </FluentGridItem>
+                        <FluentGridItem Xs="12" Sm="6" Md="4">
+                            <FluentTextArea style="width: 100%;" Value="@Content.DescriptionsByLanguage[language]" ValueChanged="@(value => Content.DescriptionsByLanguage[language] = value)" Label='@L["Fields.Description"]' Height="100px" Resize="TextAreaResize.Vertical" />
+                        </FluentGridItem>
+                        <FluentGridItem Xs="12" Sm="6" Md="4">
+                            <FluentTextArea style="width: 100%;" Value="@Content.SummariesByLanguage[language]" ValueChanged="@(value => Content.SummariesByLanguage[language] = value)" Label='@L["Fields.Summary"]' Height="100px" Resize="TextAreaResize.Vertical" />
+                        </FluentGridItem>
+                    </FluentGrid>
+                </div>
+            }
+        </FluentStack>
+    }
 </section>
 
 @code {
@@ -37,7 +43,8 @@
 
     public bool IsSyncOriginalText => _syncOriginalText;
 
-    private bool _syncOriginalText;
+    private bool _syncOriginalText = true;
+    private Item? _lastContent;
 
     private bool syncOriginalText
     {
@@ -52,6 +59,12 @@
 
     protected override void OnParametersSet()
     {
+        if (!ReferenceEquals(Content, _lastContent))
+        {
+            _lastContent = Content;
+            _syncOriginalText = true;
+        }
+
         foreach (var language in Languages)
         {
             Content.NamesByLanguage.TryAdd(language, string.Empty);

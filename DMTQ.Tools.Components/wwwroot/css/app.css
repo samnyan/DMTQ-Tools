@@ -56,16 +56,9 @@ h2 {
     height: 3.5rem;
     padding: 0 1rem;
     min-width: 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.22);
-    background-color: var(--colorBrandBackground, #6264a7);
-    color: #fff;
-    --colorNeutralForeground1: #fff;
-    --colorNeutralForeground3: rgba(255, 255, 255, 0.82);
-    --colorNeutralStroke1: rgba(255, 255, 255, 0.3);
-}
-
-body {
-    --colorBrandBackground: #6264a7;
+    border-bottom: 1px solid color-mix(in srgb, var(--colorNeutralForegroundOnBrand) 22%, transparent);
+    background-color: var(--colorBrandBackground);
+    color: var(--colorNeutralForegroundOnBrand);
 }
 
 .header-identity {
@@ -88,10 +81,7 @@ body {
 
 .header-nav-toggle {
     flex: 0 0 auto;
-    color: #fff;
-    --colorNeutralForeground1: #fff;
-    --colorNeutralBackground1Hover: rgba(255, 255, 255, 0.14);
-    --colorNeutralBackground1Pressed: rgba(255, 255, 255, 0.2);
+    --colorNeutralForeground1: var(--colorNeutralForegroundOnBrand);
 }
 
 .header-breadcrumb {
@@ -101,24 +91,23 @@ body {
 }
 
 .header-breadcrumb nav {
-    color: #fff;
-    --colorNeutralForeground1: #fff;
-    --colorNeutralForeground3: rgba(255, 255, 255, 0.82);
-    --colorNeutralForeground2Link: rgba(255, 255, 255, 0.9);
-    --colorNeutralForeground2LinkHover: #fff;
-    --colorBrandForegroundLink: #fff;
-    --colorBrandForegroundLinkHover: #fff;
-    --colorBrandForegroundLinkPressed: #fff;
-    --colorBrandForegroundLinkSelected: #fff;
+    --colorNeutralForeground1: var(--colorNeutralForegroundOnBrand);
+    --colorNeutralForeground3: var(--colorNeutralForegroundOnBrand);
+    --colorNeutralForeground2Link: var(--colorNeutralForegroundOnBrand);
+    --colorNeutralForeground2LinkHover: var(--colorNeutralForegroundOnBrand);
+    --colorBrandForegroundLink: var(--colorNeutralForegroundOnBrand);
+    --colorBrandForegroundLinkHover: var(--colorNeutralForegroundOnBrand);
+    --colorBrandForegroundLinkPressed: var(--colorNeutralForegroundOnBrand);
+    --colorBrandForegroundLinkSelected: var(--colorNeutralForegroundOnBrand);
 }
 
 .breadcrumb-parent-link {
-    color: #fff;
+    color: var(--colorNeutralForegroundOnBrand);
     text-decoration: none;
 }
 
 .breadcrumb-parent-link:hover {
-    color: #fff;
+    color: var(--colorNeutralForegroundOnBrand);
     text-decoration: underline;
 }
 
@@ -168,7 +157,7 @@ body {
 .header-project-actions {
     min-width: 0;
     padding-left: 0.75rem;
-    border-left: 1px solid rgba(255, 255, 255, 0.28);
+    border-left: 1px solid color-mix(in srgb, var(--colorNeutralForegroundOnBrand) 28%, transparent);
 }
 
 .header-platform {
@@ -176,13 +165,13 @@ body {
 }
 
 .header-platform > span {
-    color: rgba(255, 255, 255, 0.84);
+    color: var(--colorNeutralForegroundOnBrand);
 }
 
 .header-project-name {
     max-width: min(16vw, 14rem);
     overflow: hidden;
-    color: #fff;
+    color: var(--colorNeutralForegroundOnBrand);
     font-size: 0.85rem;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -194,53 +183,34 @@ body {
     height: 0.45rem;
     margin-right: 0.4rem;
     border-radius: 50%;
-    background: #ffcf70;
+    background: var(--colorPaletteYellowBackground3);
     content: "";
     vertical-align: 0.05rem;
 }
 
-.app-header fluent-button,
-.app-header fluent-select,
-.app-header fluent-menu-button {
-    color: #242424;
-    --colorNeutralForeground1: #242424;
-    --colorNeutralBackground1: #fff;
-    --colorNeutralBackground1Hover: #f3f3f3;
-    --colorNeutralStroke1: rgba(0, 0, 0, 0.18);
-}
-
 .app-header .header-nav-toggle,
 .app-header .header-language {
-    color: #fff;
-    --colorNeutralForeground1: #fff;
-    --colorNeutralBackground1Hover: rgba(255, 255, 255, 0.14);
-    --colorNeutralBackground1Pressed: rgba(255, 255, 255, 0.2);
+    --colorNeutralForeground1: var(--colorNeutralForegroundOnBrand);
     --colorNeutralStroke1: transparent;
 }
 
-.app-header fluent-switch {
-    color: #fff;
-    --colorNeutralForeground1: #fff;
-}
-
 .app-header .header-auto-save {
+    color: var(--colorNeutralForegroundOnBrand);
+    --colorNeutralForeground1: var(--colorNeutralForegroundOnBrand);
+    --colorNeutralForeground2: var(--colorNeutralForegroundOnBrand);
+    --neutral-foreground-rest: var(--colorNeutralForegroundOnBrand);
     flex: 0 0 auto;
 }
 
 .app-header .header-save-button {
     min-width: 7rem;
-    color: #242424;
-    --colorNeutralForeground1: #242424;
-    --colorNeutralBackground1: #fff;
-    --colorNeutralBackground1Hover: #f3f3f3;
-    --colorNeutralStroke1: rgba(0, 0, 0, 0.18);
 }
 
 .header-save-error {
     flex: 0 0 auto;
     max-width: 8rem;
     overflow: hidden;
-    color: #ffe0e0;
+    color: var(--colorStatusDangerForeground1);
     font-size: 0.75rem;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -266,7 +236,7 @@ body {
     max-width: 15.5rem;
     overflow: hidden;
     border-right: 1px solid var(--colorNeutralStroke1);
-    background: var(--colorNeutralBackground2, #f5f5f5);
+    background: var(--colorNeutralBackground2);
     transition: flex-basis 160ms ease, width 160ms ease, border-color 160ms ease;
 }
 
@@ -344,22 +314,22 @@ body {
     align-items: center;
     flex-wrap: wrap;
     gap: 0.5rem;
-    border-top: 1px solid var(--colorNeutralStroke1, #d8dee6);
-    background: var(--colorNeutralBackground1, #fff);
+    border-top: 1px solid var(--colorNeutralStroke1);
+    background: var(--colorNeutralBackground1);
     padding: 0.55rem 0.25rem;
-    box-shadow: 0 -3px 10px rgba(0, 0, 0, 0.06);
+    box-shadow: var(--shadow4);
 }
 
 .song-editor-status {
-    color: var(--colorNeutralForeground3, #5f6b7a);
+    color: var(--colorNeutralForeground3);
     font-size: 0.875rem;
 }
 
 .linked-item-card {
     max-width: 56rem;
-    border: 1px solid var(--colorNeutralStroke1, #d8dee6);
+    border: 1px solid var(--colorNeutralStroke1);
     border-radius: 8px;
-    background: var(--colorNeutralBackground1, #fff);
+    background: var(--colorNeutralBackground1);
     padding: 1rem;
 }
 
@@ -373,7 +343,7 @@ body {
 }
 
 .linked-item-state {
-    color: var(--colorNeutralForeground3, #5f6b7a);
+    color: var(--colorNeutralForeground3);
     font-size: 0.875rem;
     font-weight: 600;
 }
@@ -386,7 +356,7 @@ body {
 }
 
 .linked-item-details dt {
-    color: var(--colorNeutralForeground3, #5f6b7a);
+    color: var(--colorNeutralForeground3);
 }
 
 .linked-item-details dd {
@@ -431,7 +401,7 @@ body {
 
 .linked-item-option span {
     min-width: 0;
-    color: var(--colorNeutralForeground3, #5f6b7a);
+    color: var(--colorNeutralForeground3);
     overflow-wrap: anywhere;
 }
 
@@ -460,9 +430,9 @@ body {
 
 .recent-project-list {
     overflow: hidden;
-    border: 1px solid var(--colorNeutralStroke1, #d8dee6);
+    border: 1px solid var(--colorNeutralStroke1);
     border-radius: 6px;
-    background: var(--colorNeutralBackground1, #fff);
+    background: var(--colorNeutralBackground1);
 }
 
 .recent-project-row {
@@ -475,7 +445,7 @@ body {
 }
 
 .recent-project-row + .recent-project-row {
-    border-top: 1px solid var(--colorNeutralStroke2, #e5e7eb);
+    border-top: 1px solid var(--colorNeutralStroke2);
 }
 
 .recent-project-details {
@@ -497,7 +467,7 @@ body {
 }
 
 .recent-project-details span {
-    color: var(--colorNeutralForeground3, #5f6b7a);
+    color: var(--colorNeutralForeground3);
     font-size: 0.8rem;
 }
 
@@ -508,7 +478,7 @@ body {
 }
 
 .recent-project-missing {
-    color: var(--error, #b42318);
+    color: var(--colorPaletteRedForeground1);
     font-size: 0.8rem;
     white-space: nowrap;
 }
@@ -612,6 +582,11 @@ body {
     min-width: 8rem;
 }
 
+.item-type-select {
+    width: 16rem;
+    min-width: 14rem;
+}
+
 .metric-grid fluent-grid-item {
     box-sizing: border-box;
     min-width: 0;
@@ -666,9 +641,9 @@ body {
 
 /* ── Error UI ── */
 #blazor-error-ui {
-    background: lightyellow;
+    background: var(--colorPaletteYellowBackground1);
     bottom: 0;
-    box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
+    box-shadow: var(--shadow4);
     display: none;
     left: 0;
     padding: 0.6rem 1.25rem 0.7rem 1.25rem;
@@ -691,7 +666,7 @@ body {
     display: grid;
     place-items: center;
     padding: 1rem;
-    background: rgba(20, 24, 32, 0.58);
+    background: var(--colorBackgroundOverlay);
 }
 
 .global-error-dialog {
@@ -700,11 +675,11 @@ body {
     max-height: 90vh;
     overflow: auto;
     padding: 1.5rem;
-    border: 1px solid var(--colorNeutralStroke1, #d1d1d1);
+    border: 1px solid var(--colorNeutralStroke1);
     border-radius: 0.5rem;
-    background: var(--colorNeutralBackground1, #fff);
-    color: var(--colorNeutralForeground1, #242424);
-    box-shadow: 0 1.5rem 4rem rgba(0, 0, 0, 0.28);
+    background: var(--colorNeutralBackground1);
+    color: var(--colorNeutralForeground1);
+    box-shadow: var(--shadow64);
 }
 
 .global-error-dialog h1 {
@@ -713,7 +688,7 @@ body {
 }
 
 .global-error-id {
-    color: var(--colorNeutralForeground3, #616161);
+    color: var(--colorNeutralForeground3);
     font-size: 0.875rem;
 }
 
@@ -728,7 +703,7 @@ body {
     overflow: auto;
     padding: 0.75rem;
     border-radius: 0.25rem;
-    background: var(--colorNeutralBackground3, #f5f5f5);
+    background: var(--colorNeutralBackground3);
     white-space: pre-wrap;
     overflow-wrap: anywhere;
     font-size: 0.8rem;
@@ -740,8 +715,8 @@ body {
     padding: 0.5rem 1rem;
     border: 0;
     border-radius: 0.25rem;
-    background: var(--colorBrandBackground, #5b5fc7);
-    color: var(--colorNeutralForegroundOnBrand, #fff);
+    background: var(--colorBrandBackground);
+    color: var(--colorNeutralForegroundOnBrand);
     font: inherit;
     font-weight: 600;
     cursor: pointer;
@@ -750,10 +725,10 @@ body {
 .editor-save-failure {
     min-width: 0;
     padding: 0.75rem;
-    border: 1px solid var(--colorStatusDangerBorder1, #d13438);
+    border: 1px solid var(--colorPaletteRedBorder1);
     border-radius: 0.375rem;
-    color: var(--colorNeutralForeground1, #242424);
-    background: var(--colorStatusDangerBackground1, #fdf3f4);
+    color: var(--colorNeutralForeground1);
+    background: var(--colorPaletteRedBackground1);
 }
 
 .editor-save-failure p {
@@ -772,7 +747,7 @@ body {
         position: sticky;
         top: 0;
         height: env(safe-area-inset-top);
-        background-color: #f7f7f7;
+        background-color: var(--colorNeutralBackground2);
         width: 100%;
         z-index: 1;
     }
@@ -781,11 +756,11 @@ body {
 /* ── Status messages ── */
 .status-message {
     margin-top: 0.75rem;
-    color: #293241;
+    color: var(--colorNeutralForeground1);
 }
 
 .status-message.success {
-    color: #1d6f42;
+    color: var(--colorPaletteGreenForeground1);
 }
 
 /* ── QA summaries ── */
@@ -797,18 +772,18 @@ body {
 }
 
 .qa-summary.success {
-    background: #e6f4ea;
-    color: #1e7e34;
+    background: var(--colorPaletteGreenBackground1);
+    color: var(--colorPaletteGreenForeground1);
 }
 
 .qa-summary.warning {
-    background: #fff8e1;
-    color: #b8860b;
+    background: var(--colorPaletteYellowBackground1);
+    color: var(--colorPaletteYellowForeground2);
 }
 
 .qa-summary.error {
-    background: #fce4e4;
-    color: #b91c1c;
+    background: var(--colorPaletteRedBackground1);
+    color: var(--colorPaletteRedForeground1);
 }
 
 /* ── Diagnostic lists ── */
@@ -825,7 +800,7 @@ body {
 /* ── Metric labels (used inside FluentCard) ── */
 .metric-label {
     display: block;
-    color: #5f6b7a;
+    color: var(--colorNeutralForeground3);
     font-size: 0.8rem;
     margin-bottom: 0.35rem;
     white-space: nowrap;
@@ -833,14 +808,14 @@ body {
 
 /* ── Table counts ── */
 .table-counts {
-    color: #5f6b7a;
+    color: var(--colorNeutralForeground3);
     white-space: nowrap;
 }
 
 /* ── Pattern tool ── */
 .pattern-toolbar {
     padding: 0.75rem;
-    border: 1px solid var(--colorNeutralStroke1, #d8dee6);
+    border: 1px solid var(--colorNeutralStroke1);
     border-radius: 6px;
 }
 
@@ -911,7 +886,7 @@ body {
 
 /* ── Section hint text ── */
 .section-hint {
-    color: #5f6b7a;
+    color: var(--colorNeutralForeground3);
     font-size: 0.85rem;
     margin: 0 0 0.5rem;
 }
@@ -930,10 +905,10 @@ section {
 }
 
 .language-panel {
-    margin-top: 0.75rem;
-    padding: 0.75rem;
-    border: 1px solid var(--colorNeutralStroke1, #d8dee6);
-    border-radius: 6px;
+    margin-top: 0.5rem;
+    padding: 0.5rem;
+    border: 1px solid var(--colorNeutralStroke1);
+    border-radius: var(--borderRadiusMedium);
 }
 
 .section-title-row {
@@ -951,6 +926,17 @@ section {
     margin-bottom: 0.75rem;
 }
 
+.category-product-choices {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr));
+    gap: 0.5rem 1rem;
+    max-height: 55vh;
+    overflow: auto;
+    padding: 0.75rem;
+    border: 1px solid var(--colorNeutralStroke2);
+    border-radius: var(--borderRadiusMedium);
+}
+
 .related-row {
     display: grid;
     grid-template-columns: repeat(4, minmax(8rem, 1fr)) auto;
@@ -960,11 +946,11 @@ section {
 }
 
 .mission-card {
-    padding: 0.75rem;
-    margin-bottom: 0.75rem;
-    border: 1px solid var(--colorNeutralStroke1, #d8dee6);
-    border-radius: 6px;
-    background: var(--colorNeutralBackground1, #fff);
+    padding: 0.5rem;
+    margin-bottom: 0.5rem;
+    border: 1px solid var(--colorNeutralStroke1);
+    border-radius: var(--borderRadiusMedium);
+    background: var(--colorNeutralBackground1);
 }
 
 .mission-language-grid {
@@ -992,24 +978,24 @@ section {
 
 .data-grid th,
 .data-grid td {
-    border: 1px solid #d8dee6;
+    border: 1px solid var(--colorNeutralStroke1);
     padding: 0.35rem 0.5rem;
     white-space: nowrap;
     vertical-align: top;
 }
 
 .data-grid th {
-    background: #f4f7fb;
+    background: var(--colorNeutralBackground2);
     position: sticky;
     top: 0;
 }
 
 /* ── Songs page ── */
 .song-detail {
-    border: 1px solid var(--colorNeutralStroke1, #d8dee6);
+    border: 1px solid var(--colorNeutralStroke1);
     border-radius: 6px;
     padding: 1rem;
-    background: #fff;
+    background: var(--colorNeutralBackground1);
     min-width: 0;
 }
 
@@ -1024,10 +1010,10 @@ section {
 .song-id-badge {
     display: inline-block;
     padding: 0.15rem 0.5rem;
-    background: #eef6ff;
-    border: 1px solid #1b6ec2;
+    background: var(--colorBrandBackground2);
+    border: 1px solid var(--colorBrandStroke1);
     border-radius: 4px;
-    color: #1b6ec2;
+    color: var(--colorBrandForeground1);
     font-size: 0.85rem;
     font-weight: 600;
 }
@@ -1047,7 +1033,7 @@ section {
 }
 
 .song-summary-grid > div {
-    border: 1px solid var(--colorNeutralStroke1, #d8dee6);
+    border: 1px solid var(--colorNeutralStroke1);
     border-radius: 6px;
     padding: 0.75rem;
     min-width: 0;
@@ -1061,7 +1047,7 @@ section {
 .song-add-section {
     margin-top: 0.75rem;
     padding-top: 0.75rem;
-    border-top: 1px solid var(--colorNeutralStroke1, #d8dee6);
+    border-top: 1px solid var(--colorNeutralStroke1);
 }
 
 .song-add-form {
@@ -1073,7 +1059,7 @@ section {
 
 /* ── UI hints ── */
 .hint {
-    color: #5f6b7a;
+    color: var(--colorNeutralForeground3);
     font-size: 0.9rem;
     margin-top: 0.5rem;
 }

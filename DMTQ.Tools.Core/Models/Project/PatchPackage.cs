@@ -21,6 +21,17 @@ public sealed class PatchPackage
     /// <summary>Store product entities from product_product + category_categoryproduct.</summary>
     public List<Product> Products { get; } = [];
 
+    /// <summary>Project-local descriptions for server-owned product category IDs.</summary>
+    private Dictionary<string, ProductCategoryMapping> _productCategoryMappings = ProductCategoryDefaults.Create();
+
+    public Dictionary<string, ProductCategoryMapping> ProductCategoryMappings
+    {
+        get => _productCategoryMappings;
+        set => _productCategoryMappings = value is not null
+            ? new Dictionary<string, ProductCategoryMapping>(value, StringComparer.OrdinalIgnoreCase)
+            : ProductCategoryDefaults.Create();
+    }
+
     /// <summary>In-game item entities from product_item + item_desc_&lt;lang&gt;.</summary>
     public List<Item> Items { get; } = [];
 
