@@ -26,7 +26,7 @@
     {
         <EditForm Model="@currentSong" OnValidSubmit="SaveAsync" FormName="song-editor" class="song-editor-form editor-form">
             <div class="song-editor-scroll">
-                <FluentStack Orientation="Orientation.Vertical" VerticalGap="16" HorizontalAlignment="HorizontalAlignment.Stretch" class="editor-form-sections">
+                <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Stretch" class="editor-form-sections">
 
                 <section>
                     <h2 class="section-heading">@L["Editor.BasicInfo"]</h2>
@@ -142,7 +142,7 @@
                     <p class="section-hint">@(syncOriginalText ? L["Editor.SyncAllLanguagesHint"] : L["Editor.DescriptionsHint"])</p>
                     @if (!syncOriginalText)
                     {
-                        <FluentStack Orientation="Orientation.Vertical" VerticalGap="16" HorizontalAlignment="HorizontalAlignment.Stretch">
+                        <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Stretch">
                             @foreach (var lang in DefaultLanguages)
                             {
                                 var loc = GetOrCreateLocalization(lang);

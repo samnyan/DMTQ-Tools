@@ -9,7 +9,7 @@
             </FluentButton>
             <FluentSwitch @bind-Value="syncOriginalText" Label='@L["Editor.SyncOriginalText"]' />
     </FluentStack>
-    <FluentStack Orientation="Orientation.Vertical" VerticalGap="16" HorizontalAlignment="HorizontalAlignment.Stretch">
+    <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Stretch">
         @foreach (var language in Languages)
         {
             <div @key="language">
