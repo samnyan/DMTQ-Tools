@@ -195,6 +195,15 @@
   <data name="Errors.ReturnToDiagnostics" xml:space="preserve">
     <value>Continue to Diagnostics</value>
   </data>
+  <data name="Errors.Retry" xml:space="preserve">
+    <value>Retry this page</value>
+  </data>
+  <data name="Errors.RouterFallbackTitle" xml:space="preserve">
+    <value>Something went wrong</value>
+  </data>
+  <data name="Errors.RouterFallbackMessage" xml:space="preserve">
+    <value>The application could not render part of the current view. Close this dialog to retry. If the problem continues, restart the app.</value>
+  </data>
   <data name="Header.ToggleNavigation" xml:space="preserve">
     <value>Toggle navigation</value>
   </data>

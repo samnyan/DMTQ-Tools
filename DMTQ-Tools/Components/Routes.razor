@@ -1,8 +1,21 @@
-﻿<Router AppAssembly="@typeof(MauiProgram).Assembly" AdditionalAssemblies="@(new[] { typeof(DMTQ_Tools.Components.Layout.MainLayout).Assembly })">
-    <Found Context="routeData">
-        <DMTQ_Tools.Components.Shared.GlobalErrorBoundary>
-            <RouteView RouteData="@routeData" DefaultLayout="@typeof(Layout.MainLayout)" />
-        </DMTQ_Tools.Components.Shared.GlobalErrorBoundary>
-        <FocusOnNavigate RouteData="@routeData" Selector="h1" />
-    </Found>
-</Router>
+﻿@using Microsoft.FluentUI.AspNetCore.Components
+@using Microsoft.Extensions.Localization
+@using DMTQ_Tools.Components.Localization
+@inject IStringLocalizer<AppStrings> L
+
+<FluentErrorBoundary MaximumErrorCount="10" Style="height: 100%; overflow: hidden;">
+    <ErrorHeader>@L["Errors.RouterFallbackTitle"]</ErrorHeader>
+    <ErrorContent>
+        <p>@L["Errors.RouterFallbackMessage"]</p>
+    </ErrorContent>
+    <ChildContent>
+        <Router AppAssembly="@typeof(MauiProgram).Assembly" AdditionalAssemblies="@(new[] { typeof(DMTQ_Tools.Components.Layout.MainLayout).Assembly })">
+            <Found Context="routeData">
+                <DMTQ_Tools.Components.Shared.GlobalErrorBoundary>
+                    <RouteView RouteData="@routeData" DefaultLayout="@typeof(Layout.MainLayout)" />
+                </DMTQ_Tools.Components.Shared.GlobalErrorBoundary>
+                <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+            </Found>
+        </Router>
+    </ChildContent>
+</FluentErrorBoundary>

@@ -19,9 +19,14 @@ else
                 <summary>@L["Errors.ShowDetails"]</summary>
                 <pre>@CurrentException.ToString()</pre>
             </details>
-            <button class="global-error-confirm" autofocus @onclick="ReturnToDiagnostics">
-                @L["Errors.ReturnToDiagnostics"]
-            </button>
+            <div class="global-error-actions">
+                <FluentButton Appearance="ButtonAppearance.Primary" AutoFocus="true" OnClick="Retry">
+                    @L["Errors.Retry"]
+                </FluentButton>
+                <FluentButton Appearance="ButtonAppearance.Default" OnClick="ReturnToDiagnostics">
+                    @L["Errors.ReturnToDiagnostics"]
+                </FluentButton>
+            </div>
         </section>
     </div>
 }
@@ -43,6 +48,9 @@ else
 
     private void ReturnToDiagnostics()
         => Navigation.NavigateTo($"/diagnostics?recovery={Uri.EscapeDataString(_errorId)}");
+
+    private void Retry()
+        => Recover();
 
     private void OnLocationChanged(object? sender, LocationChangedEventArgs args)
         => _ = InvokeAsync(Recover);
