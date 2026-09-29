@@ -1,0 +1,20 @@
+.pattern-preview-dialog-content {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.pattern-preview-variant-switch {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex: 0 0 auto;
+}
+
+.pattern-preview-unavailable {
+    width: 100%;
+}
+
+.pattern-preview-unavailable .pattern-preview-variant-switch {
+    margin-bottom: 0.75rem;
+}

@@ -1,0 +1,71 @@
+.pattern-tool-stack,
+.pattern-tool-width,
+.pattern-overview-layout,
+.pattern-info-section,
+.pattern-sounds-section,
+.pattern-grid {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.pattern-overview-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+    gap: 1rem;
+    align-items: start;
+}
+
+.pattern-info-section,
+.pattern-sounds-section {
+    min-width: 0;
+}
+
+.pattern-info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.25rem 0.75rem;
+}
+
+.pattern-info-grid > div {
+    display: grid;
+    grid-template-columns: minmax(5rem, auto) minmax(0, 1fr);
+    gap: 0.5rem;
+    align-items: baseline;
+    min-width: 0;
+    padding: 0.25rem 0;
+    border-bottom: 1px solid var(--colorNeutralStroke2);
+}
+
+.pattern-info-grid span {
+    color: var(--colorNeutralForeground3);
+    font-size: 0.85rem;
+}
+
+.pattern-info-grid strong {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 600;
+}
+
+.pattern-validation-list {
+    display: grid;
+    gap: 0.35rem;
+}
+
+.pattern-toolbar-layout {
+    width: 100%;
+}
+
+@media (max-width: 900px) {
+    .pattern-overview-layout {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media (max-width: 520px) {
+    .pattern-info-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}

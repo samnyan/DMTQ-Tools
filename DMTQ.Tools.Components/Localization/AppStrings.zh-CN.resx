@@ -1122,6 +1122,9 @@
   <data name="Pattern.Loaded" xml:space="preserve">
     <value>已加载 {0}。</value>
   </data>
+  <data name="Pattern.Loading" xml:space="preserve">
+    <value>正在加载谱面…</value>
+  </data>
   <data name="Pattern.Saved" xml:space="preserve">
     <value>已保存 {0}。</value>
   </data>
@@ -1136,6 +1139,33 @@
   </data>
   <data name="Pattern.UnsupportedExtensionWithText" xml:space="preserve">
     <value>只支持 .pt、.bytes 和 .txt 文件。</value>
+  </data>
+  <data name="Pattern.Validation.Title" xml:space="preserve">
+    <value>兼容性检查</value>
+  </data>
+  <data name="Pattern.Validation.Passed" xml:space="preserve">
+    <value>当前检查未发现兼容性问题。</value>
+  </data>
+  <data name="Pattern.Validation.BytesOnly" xml:space="preserve">
+    <value>Unity 游戏源码通过 Bytes 加载谱面。此文件已解析，但无法据此检查游戏运行兼容性。</value>
+  </data>
+  <data name="Pattern.Validation.TrackLimit" xml:space="preserve">
+    <value>文件包含超过 {0} 条轨道。Unity 最多保存前 {0} 条轨道。</value>
+  </data>
+  <data name="Pattern.Validation.EventCount" xml:space="preserve">
+    <value>文件头声明有 {0} 个事件，但实际解析出的事件数量不同。</value>
+  </data>
+  <data name="Pattern.Validation.DuplicateSound" xml:space="preserve">
+    <value>音效 ID {0} 重复；Unity 按 ID 映射音效。</value>
+  </data>
+  <data name="Pattern.Validation.SoundLimit" xml:space="preserve">
+    <value>音效 ID {0} 超出 Unity 音效表容量（0–1023）。</value>
+  </data>
+  <data name="Pattern.Validation.NegativeTick" xml:space="preserve">
+    <value>第 {0} 条轨道包含负事件位置，Unity 的无符号 tick 字段无法表示此值。</value>
+  </data>
+  <data name="Pattern.Validation.MissingSound" xml:space="preserve">
+    <value>音符引用的音效 ID {0} 不在音效表中。</value>
   </data>
   <data name="Header.DataPlatform" xml:space="preserve">
     <value>数据平台</value>
@@ -2022,6 +2052,9 @@
   <data name="PatternIndex.FilterConfigured" xml:space="preserve"><value>只看已配谱面</value></data>
   <data name="PatternIndex.FilterUnconfigured" xml:space="preserve"><value>只看未配谱面</value></data>
   <data name="PatternIndex.FilterMissingFile" xml:space="preserve"><value>只看缺少谱面文件</value></data>
+  <data name="PatternIndex.Preview" xml:space="preserve"><value>预览</value></data>
+  <data name="PatternIndex.PreviewVariant" xml:space="preserve"><value>谱面版本</value></data>
+  <data name="PatternIndex.PreviewFileUnavailable" xml:space="preserve"><value>该谱面文件当前不可用，请刷新文件索引。</value></data>
   <data name="PatternIndex.HasFile" xml:space="preserve"><value>谱面文件</value></data>
   <data name="PatternIndex.Earphone" xml:space="preserve"><value>有耳机版</value></data>
   <data name="PatternIndex.HasHeadphone" xml:space="preserve"><value>有耳机版</value></data>

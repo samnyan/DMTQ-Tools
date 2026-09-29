@@ -1122,6 +1122,9 @@
   <data name="Pattern.Loaded" xml:space="preserve">
     <value>Loaded {0}.</value>
   </data>
+  <data name="Pattern.Loading" xml:space="preserve">
+    <value>Loading pattern…</value>
+  </data>
   <data name="Pattern.Saved" xml:space="preserve">
     <value>Saved {0}.</value>
   </data>
@@ -1136,6 +1139,33 @@
   </data>
   <data name="Pattern.UnsupportedExtensionWithText" xml:space="preserve">
     <value>Only .pt, .bytes, and .txt files are supported.</value>
+  </data>
+  <data name="Pattern.Validation.Title" xml:space="preserve">
+    <value>Compatibility checks</value>
+  </data>
+  <data name="Pattern.Validation.Passed" xml:space="preserve">
+    <value>No compatibility issues detected by the available checks.</value>
+  </data>
+  <data name="Pattern.Validation.BytesOnly" xml:space="preserve">
+    <value>The Unity game source loads Bytes patterns. This file was parsed, but runtime compatibility could not be checked.</value>
+  </data>
+  <data name="Pattern.Validation.TrackLimit" xml:space="preserve">
+    <value>The file has more than {0} tracks. Unity stores only the first {0} tracks.</value>
+  </data>
+  <data name="Pattern.Validation.EventCount" xml:space="preserve">
+    <value>The header declares {0} events, but the parsed tracks contain a different number.</value>
+  </data>
+  <data name="Pattern.Validation.DuplicateSound" xml:space="preserve">
+    <value>Sound ID {0} occurs more than once; Unity maps sounds by ID.</value>
+  </data>
+  <data name="Pattern.Validation.SoundLimit" xml:space="preserve">
+    <value>Sound ID {0} is outside Unity's sound table capacity (0–1023).</value>
+  </data>
+  <data name="Pattern.Validation.NegativeTick" xml:space="preserve">
+    <value>Track {0} has a negative event position, which cannot be represented by Unity's unsigned tick field.</value>
+  </data>
+  <data name="Pattern.Validation.MissingSound" xml:space="preserve">
+    <value>A note references sound ID {0}, which is missing from the sound table.</value>
   </data>
   <data name="Header.DataPlatform" xml:space="preserve">
     <value>Data platform</value>
@@ -2022,6 +2052,9 @@
   <data name="PatternIndex.FilterConfigured" xml:space="preserve"><value>Configured only</value></data>
   <data name="PatternIndex.FilterUnconfigured" xml:space="preserve"><value>Unconfigured only</value></data>
   <data name="PatternIndex.FilterMissingFile" xml:space="preserve"><value>Missing files only</value></data>
+  <data name="PatternIndex.Preview" xml:space="preserve"><value>Preview</value></data>
+  <data name="PatternIndex.PreviewVariant" xml:space="preserve"><value>Pattern version</value></data>
+  <data name="PatternIndex.PreviewFileUnavailable" xml:space="preserve"><value>The pattern file is unavailable. Refresh the file index.</value></data>
   <data name="PatternIndex.HasFile" xml:space="preserve"><value>Pattern file</value></data>
   <data name="PatternIndex.Earphone" xml:space="preserve"><value>Headphone versions</value></data>
   <data name="PatternIndex.HasHeadphone" xml:space="preserve"><value>Has headphone version</value></data>

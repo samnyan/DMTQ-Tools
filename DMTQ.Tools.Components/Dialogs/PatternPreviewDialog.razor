@@ -1,0 +1,83 @@
+@using DMTQ.Tools.Core.Models.Pattern
+@using DMTQ_Tools.Components.Pages
+@inherits FluentDialogInstance
+
+<FluentDialogBody>
+    @if (ActiveFilePath is { } filePath)
+    {
+        <div class="pattern-preview-dialog-content">
+            <PatternTool InitialFilePath="@filePath" Embedded="true" @key="filePath">
+                <ToolbarContent>
+                    <div class="pattern-preview-variant-switch" role="group" aria-label='@L["PatternIndex.PreviewVariant"]'>
+                        <FluentButton Appearance="@(!_showHeadphone ? ButtonAppearance.Primary : ButtonAppearance.Default)"
+                                      Disabled="@(Entry.Standard is null)" OnClick="@(() => SelectVariant(false))">
+                            @L["PatternIndex.Standard"]
+                        </FluentButton>
+                        <FluentButton Appearance="@(_showHeadphone ? ButtonAppearance.Primary : ButtonAppearance.Default)"
+                                      Disabled="@(Entry.Headphone is null)" OnClick="@(() => SelectVariant(true))">
+                            @L["PatternIndex.Headphone"]
+                        </FluentButton>
+                    </div>
+                </ToolbarContent>
+            </PatternTool>
+        </div>
+    }
+    else
+    {
+        <div class="pattern-preview-dialog-content pattern-preview-unavailable">
+            <div class="pattern-preview-variant-switch" role="group" aria-label='@L["PatternIndex.PreviewVariant"]'>
+                <FluentButton Appearance="@(!_showHeadphone ? ButtonAppearance.Primary : ButtonAppearance.Default)"
+                              Disabled="@(Entry.Standard is null)" OnClick="@(() => SelectVariant(false))">
+                    @L["PatternIndex.Standard"]
+                </FluentButton>
+                <FluentButton Appearance="@(_showHeadphone ? ButtonAppearance.Primary : ButtonAppearance.Default)"
+                              Disabled="@(Entry.Headphone is null)" OnClick="@(() => SelectVariant(true))">
+                    @L["PatternIndex.Headphone"]
+                </FluentButton>
+            </div>
+            <FluentMessageBar Intent="MessageBarIntent.Warning" Title='@L["PatternIndex.PreviewFileUnavailable"]' />
+        </div>
+    }
+</FluentDialogBody>
+
+@code {
+    [Parameter, EditorRequired] public PatternIndexEntry Entry { get; set; } = default!;
+    [Parameter, EditorRequired] public string ProjectRoot { get; set; } = string.Empty;
+
+    private bool _showHeadphone;
+
+    private string? ActiveFilePath
+        => ResolvePath(_showHeadphone ? Entry.Headphone : Entry.Standard)
+           ?? ResolvePath(Entry.Standard)
+           ?? ResolvePath(Entry.Headphone);
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        _showHeadphone = ResolvePath(Entry.Standard) is null && ResolvePath(Entry.Headphone) is not null;
+    }
+
+    protected override Task OnActionClickedAsync(bool primary)
+        => DialogInstance.CancelAsync();
+
+    private void SelectVariant(bool headphone)
+    {
+        if (headphone ? Entry.Headphone is null : Entry.Standard is null) return;
+        _showHeadphone = headphone;
+    }
+
+    private string? ResolvePath(PatternFileIndex? file)
+    {
+        if (file is null || string.IsNullOrWhiteSpace(file.RelativePath)
+            || string.IsNullOrWhiteSpace(ProjectRoot)) return null;
+
+        var root = Path.GetFullPath(ProjectRoot);
+        var path = Path.GetFullPath(Path.Combine(root,
+            file.RelativePath.Replace('/', Path.DirectorySeparatorChar)));
+        var relative = Path.GetRelativePath(root, path);
+        if (Path.IsPathRooted(relative) || relative == ".."
+            || relative.StartsWith(".." + Path.DirectorySeparatorChar, StringComparison.Ordinal))
+            return null;
+        return File.Exists(path) ? path : null;
+    }
+}

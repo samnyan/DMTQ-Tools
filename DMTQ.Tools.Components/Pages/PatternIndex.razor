@@ -3,6 +3,7 @@
 @using DMTQ.Tools.Core.Services.Pattern
 @inject IProjectState State
 @inject PatternIndexService IndexService
+@inject IDialogService DialogService
 
 <PageTitle>@L["PatternIndex.Title"]</PageTitle>
 
@@ -123,15 +124,11 @@
                     <TemplateColumn TGridItem="PatternIndexRow" Title='@L["Pattern.Events"]' Context="item" Width="5rem" MinWidth="5rem">
                         @(item.MainFile?.EventCount?.ToString() ?? "—")
                     </TemplateColumn>
-                    <TemplateColumn TGridItem="PatternIndexRow" Title='@L["PatternIndex.ParseStatus"]' Context="item">
-                        @if (item.Index.Standard?.ParseError is null && item.Index.Headphone?.ParseError is null)
-                        {
-                            @L["PatternIndex.Valid"]
-                        }
-                        else
-                        {
-                            <span title="@ParseError(item.Index)">@L["PatternIndex.Invalid"]</span>
-                        }
+                    <TemplateColumn TGridItem="PatternIndexRow" Title='@L["Common.Actions"]' Context="item" Width="7rem" MinWidth="7rem">
+                        <FluentButton Size="ButtonSize.Small" Appearance="ButtonAppearance.Primary"
+                                      Disabled="@(!item.HasPatternFile)" OnClick="@(() => PreviewPatternAsync(item))">
+                            @L["PatternIndex.Preview"]
+                        </FluentButton>
                     </TemplateColumn>
                 </FluentDataGrid>
             }
@@ -333,6 +330,24 @@
         }
     }
 
+    private async Task PreviewPatternAsync(PatternIndexRow item)
+    {
+        if (!item.HasPatternFile || string.IsNullOrWhiteSpace(State.ProjectRoot)) return;
+
+        await DialogService.ShowDialogAsync<PatternPreviewDialog>(options =>
+        {
+            options.Header.Title = $"{L["PatternIndex.PatternId"].Value} {item.PatternId}";
+            options.Width = "min(1200px, 96vw)";
+            options.Height = "min(900px, 92vh)";
+            options.Footer.PrimaryAction.Label = L["Common.Close"].Value;
+            options.Parameters = new Dictionary<string, object?>
+            {
+                [nameof(PatternPreviewDialog.Entry)] = item.Index,
+                [nameof(PatternPreviewDialog.ProjectRoot)] = State.ProjectRoot
+            };
+        });
+    }
+
     private int ParseErrorCount => _index?.Patterns.Values.Sum(entry =>
         (entry.Standard?.ParseError is null ? 0 : 1) + (entry.Headphone?.ParseError is null ? 0 : 1)) ?? 0;
 
@@ -383,10 +398,6 @@
             ? standardSize
             : $"{standardSize} (H) {entry.Headphone.FileSize}b";
     }
-
-    private static string ParseError(PatternIndexEntry entry)
-        => string.Join("; ", new[] { entry.Standard?.ParseError, entry.Headphone?.ParseError }
-            .Where(message => !string.IsNullOrWhiteSpace(message)));
 
     private sealed record PatternIndexRow(int PatternId, PatternIndexEntry Index)
     {
