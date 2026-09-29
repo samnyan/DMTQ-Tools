@@ -4,16 +4,12 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
+using DMTQ.Parser.Pattern;
 
 namespace bytes_to_text
 {
     internal static class Program
     {
-        private const int SoundEntrySize = 67;
-        private const int UnityTrackHeaderSize = 74;
-        private const int LegacyTrackHeaderSize = 74;
-        private const int EventSize = 13;
-
         private static int Main(string[] args)
         {
             if (args.Length == 0)
@@ -57,125 +53,49 @@ namespace bytes_to_text
 
         private static Pattern ReadBytes(byte[] data)
         {
-            if (data == null || data.Length < 8)
-                throw new InvalidDataException("Bytes file is shorter than its leading header.");
-
-            var magic = BitConverter.ToInt32(data, 0);
-            var infoOffset = BitConverter.ToInt32(data, 4);
-            if (infoOffset < 8 || infoOffset > data.Length - 26)
-                throw new InvalidDataException("Bytes header offset is outside the file.");
-
-            using (var stream = new MemoryStream(data, false))
-            using (var reader = new BinaryReader(stream))
+            var parsed = new PatternBytesParser().Parse(data);
+            var header = parsed.Header;
+            var pattern = new Pattern
             {
-                stream.Position = infoOffset;
-                var pattern = new Pattern();
-                pattern.Magic = magic;
-                pattern.SoundCount = reader.ReadUInt16();
-                pattern.TrackCount = reader.ReadUInt16();
-                pattern.PositionsPerMeasure = reader.ReadUInt16();
-                pattern.Bpm = reader.ReadSingle();
-                pattern.Tick = reader.ReadUInt32();
-                pattern.PlayTime = reader.ReadSingle();
-                pattern.EndPosition = reader.ReadUInt32();
-                pattern.DeclaredCommandCount = reader.ReadUInt32();
+                Magic = unchecked((int)parsed.VersionAndSignature),
+                SoundCount = header.InstrumentCount,
+                TrackCount = header.TrackCount,
+                PositionsPerMeasure = header.TicksPerMeasure,
+                Bpm = header.Tempo,
+                Tick = header.Tick,
+                PlayTime = header.PlayTime,
+                EndPosition = header.EndTick != 0 ? header.EndTick : header.Tick,
+                DeclaredCommandCount = header.TotalEventCount,
+                LegacyTagB = BitConverter.ToInt32(BitConverter.GetBytes(header.PlayTime), 0),
+                LegacyTagC = unchecked((int)header.EndTick)
+            };
 
-                stream.Position = 8;
-                for (var index = 0; index < pattern.SoundCount; index++)
-                {
-                    EnsureRange(stream.Position, SoundEntrySize, infoOffset, "sound table");
-                    var sound = new Sound { Id = reader.ReadUInt16(), Flags = reader.ReadByte(), Name = ReadFixedAscii(reader, 64) };
-                    pattern.Sounds.Add(sound);
-                }
+            foreach (var sourceSound in parsed.Sounds)
+                pattern.Sounds.Add(new Sound { Id = sourceSound.Id, Flags = sourceSound.Stream, Name = sourceSound.Name });
 
-                var trackStart = stream.Position;
-                if (TryReadUnityTracks(reader, pattern, infoOffset))
-                    return pattern;
-
-                pattern.Tracks.Clear();
-                stream.Position = trackStart;
-                ReadLegacyTracks(reader, pattern, infoOffset);
-                return pattern;
-            }
-        }
-
-        private static bool TryReadUnityTracks(BinaryReader reader, Pattern pattern, int infoOffset)
-        {
-            var start = reader.BaseStream.Position;
-            try
+            foreach (var sourceTrack in parsed.Tracks)
             {
-                for (var trackIndex = 0; trackIndex < pattern.TrackCount; trackIndex++)
-                {
-                    EnsureRange(reader.BaseStream.Position, UnityTrackHeaderSize, infoOffset, "Unity track header");
-                    var track = new Track
-                    {
-                        Id = reader.ReadUInt16(),
-                        Name = ReadFixedAscii(reader, 64),
-                        EndPosition = reader.ReadUInt32()
-                    };
-                    var eventCount = reader.ReadUInt32();
-                    var availableEvents = (infoOffset - reader.BaseStream.Position) / EventSize;
-                    if (eventCount > availableEvents || eventCount > Int32.MaxValue)
-                        throw new InvalidDataException("Unity track event count exceeds the track data.");
-
-                    track.DeclaredCount = (int)eventCount;
-                    for (var eventIndex = 0; eventIndex < eventCount; eventIndex++)
-                        track.Events.Add(ReadEvent(reader));
-                    track.StartPosition = track.Events.Count == 0 ? 0 : track.Events[0].Position;
-                    pattern.Tracks.Add(track);
-                }
-
-                if (reader.BaseStream.Position != infoOffset)
-                    throw new InvalidDataException("Unity track data does not end at the declared header offset.");
-                var actualEventCount = pattern.Tracks.Sum(track => (long)track.Events.Count);
-                if (pattern.DeclaredCommandCount != 0 && actualEventCount != pattern.DeclaredCommandCount)
-                    throw new InvalidDataException("Unity event count does not match the Bytes header.");
-                return true;
-            }
-            catch (Exception exception) when (exception is IOException || exception is ArgumentOutOfRangeException || exception is OverflowException)
-            {
-                pattern.Tracks.Clear();
-                reader.BaseStream.Position = start;
-                return false;
-            }
-        }
-
-        private static void ReadLegacyTracks(BinaryReader reader, Pattern pattern, int infoOffset)
-        {
-            for (var trackIndex = 0; trackIndex < pattern.TrackCount; trackIndex++)
-            {
-                EnsureRange(reader.BaseStream.Position, LegacyTrackHeaderSize, infoOffset, "legacy track header");
                 var track = new Track
                 {
-                    Id = reader.ReadUInt16(),
-                    Name = ReadFixedAscii(reader, 59),
-                    StartPosition = reader.ReadInt32()
+                    Id = sourceTrack.Type,
+                    Name = sourceTrack.Name,
+                    EndPosition = sourceTrack.Length,
+                    DeclaredCount = checked((int)sourceTrack.EventCount)
                 };
-                if (reader.ReadByte() != 0)
-                    throw new InvalidDataException("Legacy track start marker is invalid.");
-                track.ShiftedCount = reader.ReadInt32();
-                track.DeclaredCount = reader.ReadInt32();
-                if (track.DeclaredCount < 0 || track.DeclaredCount > (infoOffset - reader.BaseStream.Position) / EventSize)
-                    throw new InvalidDataException("Legacy track event count exceeds the track data.");
-
-                for (var eventIndex = 0; eventIndex < track.DeclaredCount; eventIndex++)
-                    track.Events.Add(ReadEvent(reader));
-                track.EndPosition = track.Events.Count == 0 ? (uint)Math.Max(0, track.StartPosition) : (uint)track.Events.Max(item => item.Position);
+                foreach (var sourceEvent in sourceTrack.Events)
+                {
+                    track.Events.Add(new Event
+                    {
+                        Position = unchecked((int)sourceEvent.Tick),
+                        Type = sourceEvent.Type,
+                        Data = sourceEvent.RawData
+                    });
+                }
+                track.StartPosition = track.Events.Count == 0 ? 0 : track.Events[0].Position;
                 pattern.Tracks.Add(track);
             }
-
-            if (reader.BaseStream.Position != infoOffset)
-                throw new InvalidDataException("Legacy track data does not end at the declared header offset.");
+            return pattern;
         }
-
-        private static Event ReadEvent(BinaryReader reader)
-        {
-            var item = new Event { Position = reader.ReadInt32(), Type = reader.ReadByte(), Data = reader.ReadBytes(8) };
-            if (item.Data.Length != 8)
-                throw new EndOfStreamException("Pattern event data is truncated.");
-            return item;
-        }
-
         private static Pattern ReadText(string text)
         {
             var pattern = new Pattern();
@@ -446,15 +366,6 @@ namespace bytes_to_text
             return result;
         }
 
-        private static string ReadFixedAscii(BinaryReader reader, int length)
-        {
-            var bytes = reader.ReadBytes(length);
-            if (bytes.Length != length) throw new EndOfStreamException("Fixed-width string is truncated.");
-            var value = Encoding.ASCII.GetString(bytes);
-            var nullIndex = value.IndexOf('\0');
-            return (nullIndex < 0 ? value : value.Substring(0, nullIndex)).TrimEnd();
-        }
-
         private static void WriteFixedAscii(BinaryWriter writer, string value, int length)
         {
             var bytes = Encoding.ASCII.GetBytes(value ?? String.Empty);
@@ -463,10 +374,6 @@ namespace bytes_to_text
             writer.Write(output);
         }
 
-        private static void EnsureRange(long position, int size, int limit, string name)
-        {
-            if (position < 0 || size < 0 || position > limit - size) throw new InvalidDataException("Truncated " + name + ".");
-        }
         private static byte[] ParseHexBytes(string value)
         {
             if (value.Length % 2 != 0) throw new InvalidDataException("Hex data must contain complete bytes.");

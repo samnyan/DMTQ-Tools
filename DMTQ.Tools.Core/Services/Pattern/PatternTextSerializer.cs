@@ -99,7 +99,7 @@ public sealed class PatternTextSerializer
                     document.Header.InitialBpm = ParseFloat(tokens, 1, keyword);
                     break;
                 case "END_POSITION":
-                    document.Header.EndPosition = ParseInt(tokens, 1, keyword);
+                    document.Header.EndPosition = ParseInt64(GetRequired(tokens, 1, keyword), keyword);
                     break;
                 case "TAGB":
                     document.Header.TagB = ParseInt(tokens, 1, keyword);
@@ -265,7 +265,7 @@ public sealed class PatternTextSerializer
 
     private static PatternTrack ParseTrackStart(IReadOnlyList<string> tokens, int fallbackId)
     {
-        var startPosition = ParseInt(tokens, 0, "track position");
+        var startPosition = ParseInt64(tokens[0], "track position");
         var id = tokens.Count > 2 ? checked((short)ParseInt(tokens, 2, "track id")) : checked((short)fallbackId);
         var name = tokens.Count > 3 ? tokens[3] : string.Empty;
         var declaredCount = tokens.Count > 4 ? ParseInt(tokens, 4, "track command count") : 0;
@@ -282,7 +282,7 @@ public sealed class PatternTextSerializer
         foreach (var token in tokens.Skip(6))
         {
             if (token.StartsWith("end=", StringComparison.OrdinalIgnoreCase))
-                track.EndPosition = ParseIntValue(token[4..], "track end position");
+                track.EndPosition = ParseInt64(token[4..], "track end position");
             else if (token.StartsWith("data=", StringComparison.OrdinalIgnoreCase))
                 track.DeclaredDataSize = ParseIntValue(token[5..], "track data size");
         }
@@ -292,7 +292,7 @@ public sealed class PatternTextSerializer
 
     private static PatternCommand ParseCommand(IReadOnlyList<string> tokens)
     {
-        var position = ParseInt(tokens, 0, "event position");
+        var position = ParseInt64(tokens[0], "event position");
         var typeToken = tokens[1];
         var raw = ParseRaw(tokens);
 
@@ -308,6 +308,7 @@ public sealed class PatternTextSerializer
                 Attribute = ParseByte(GetRequired(tokens, 5, "note attribute"), "note attribute"),
                 Length = ParseByte(GetRequired(tokens, 6, "note length"), "note length"),
                 NoteUnknown = ParseUInt16(GetRequired(tokens, 7, "note unknown"), "note unknown"),
+                BytesDuration = ParseOptionalUInt16(tokens, "bytes-duration"),
                 RawParameters = raw ?? new byte[8]
             };
             ApplyKnownFields(command);
@@ -399,6 +400,8 @@ public sealed class PatternTextSerializer
                     .Append(' ').Append(command.Length)
                     .Append(' ').Append(command.NoteUnknown)
                     .Append(' ');
+                if (command.BytesDuration is { } duration)
+                    builder.Append("bytes-duration=").Append(duration).Append(' ');
                 break;
             case PatternCommandType.Volume:
                 builder.Append("VOLUME ").Append(command.Volume)
@@ -434,8 +437,13 @@ public sealed class PatternTextSerializer
                 raw[2] = command.Volume;
                 raw[3] = command.Pan;
                 raw[4] = command.Attribute;
-                raw[5] = command.Length;
-                BinaryPrimitives.WriteUInt16LittleEndian(raw.AsSpan(6, 2), command.NoteUnknown);
+                if (command.BytesDuration is { } duration)
+                    BinaryPrimitives.WriteUInt16LittleEndian(raw.AsSpan(5, 2), duration);
+                else
+                {
+                    raw[5] = command.Length;
+                    BinaryPrimitives.WriteUInt16LittleEndian(raw.AsSpan(6, 2), command.NoteUnknown);
+                }
                 break;
             case PatternCommandType.Volume:
                 raw[0] = command.Volume;
@@ -461,8 +469,13 @@ public sealed class PatternTextSerializer
                 raw[2] = command.Volume;
                 raw[3] = command.Pan;
                 raw[4] = command.Attribute;
-                raw[5] = command.Length;
-                BinaryPrimitives.WriteUInt16LittleEndian(raw.AsSpan(6, 2), command.NoteUnknown);
+                if (command.BytesDuration is { } duration)
+                    BinaryPrimitives.WriteUInt16LittleEndian(raw.AsSpan(5, 2), duration);
+                else
+                {
+                    raw[5] = command.Length;
+                    BinaryPrimitives.WriteUInt16LittleEndian(raw.AsSpan(6, 2), command.NoteUnknown);
+                }
                 break;
             case PatternCommandType.Volume:
                 raw[0] = command.Volume;
@@ -563,8 +576,15 @@ public sealed class PatternTextSerializer
     private static string GetRequired(IReadOnlyList<string> tokens, int index, string name)
         => tokens.Count > index ? tokens[index] : throw new InvalidDataException($"Pattern text is missing {name}.");
 
+    private static ushort? ParseOptionalUInt16(IReadOnlyList<string> tokens, string name)
+    {
+        var prefix = name + "=";
+        var token = tokens.FirstOrDefault(value => value.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
+        return token is null ? null : ParseUInt16(token[prefix.Length..], name);
+    }
+
     private static bool IsInteger(string value)
-        => int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out _);
+        => long.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out _);
 
     private static int ParseInt(IReadOnlyList<string> tokens, int index, string name)
         => ParseIntValue(GetRequired(tokens, index, name), name);

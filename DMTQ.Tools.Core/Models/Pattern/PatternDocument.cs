@@ -48,7 +48,7 @@ public sealed class PatternHeader
     public float InitialBpm { get; set; }
 
     /// <summary>Gets or sets the total pattern end position.</summary>
-    public int EndPosition { get; set; }
+    public long EndPosition { get; set; }
 
     /// <summary>Gets or sets the format-specific tag B value.</summary>
     public int TagB { get; set; }
@@ -87,10 +87,10 @@ public sealed class PatternTrack
     public string Name { get; set; } = string.Empty;
 
     /// <summary>Gets or sets the bytes-format track-start position.</summary>
-    public int StartPosition { get; set; }
+    public long StartPosition { get; set; }
 
     /// <summary>Gets or sets the PT track tick value.</summary>
-    public int EndPosition { get; set; }
+    public long EndPosition { get; set; }
 
     /// <summary>Gets or sets the count stored in the source track header.</summary>
     public int DeclaredCommandCount { get; set; }
@@ -113,7 +113,7 @@ public sealed class PatternCommand
     private byte[] _rawParameters = new byte[8];
 
     /// <summary>Gets or sets the absolute command position.</summary>
-    public int Position { get; set; }
+    public long Position { get; set; }
 
     /// <summary>Gets or sets the command identifier, including unknown identifiers.</summary>
     public byte Type { get; set; }
@@ -132,6 +132,15 @@ public sealed class PatternCommand
 
     /// <summary>Gets or sets the note duration.</summary>
     public byte Length { get; set; }
+
+    /// <summary>Gets or sets the native Bytes note duration, which is a 16-bit value.</summary>
+    public ushort? BytesDuration { get; set; }
+
+    /// <summary>Gets or sets the first native Bytes data word for an unrecognized event type.</summary>
+    public uint? BytesUnknownData1 { get; set; }
+
+    /// <summary>Gets or sets the second native Bytes data word for an unrecognized event type.</summary>
+    public uint? BytesUnknownData2 { get; set; }
 
     /// <summary>Gets or sets the note's unknown 16-bit value.</summary>
     public ushort NoteUnknown { get; set; }
@@ -168,7 +177,7 @@ public sealed class PatternCommand
 
     /// <summary>Creates a note command.</summary>
     public static PatternCommand CreateNote(
-        int position,
+        long position,
         ushort soundIndex,
         byte volume,
         byte pan,
@@ -188,7 +197,7 @@ public sealed class PatternCommand
         };
 
     /// <summary>Creates a volume command.</summary>
-    public static PatternCommand CreateVolume(int position, byte volume)
+    public static PatternCommand CreateVolume(long position, byte volume)
         => new()
         {
             Position = position,
@@ -197,7 +206,7 @@ public sealed class PatternCommand
         };
 
     /// <summary>Creates a BPM change command.</summary>
-    public static PatternCommand CreateBpmChange(int position, float bpm)
+    public static PatternCommand CreateBpmChange(long position, float bpm)
         => new()
         {
             Position = position,
@@ -206,7 +215,7 @@ public sealed class PatternCommand
         };
 
     /// <summary>Creates a beat command.</summary>
-    public static PatternCommand CreateBeat(int position, ushort beat)
+    public static PatternCommand CreateBeat(long position, ushort beat)
         => new()
         {
             Position = position,

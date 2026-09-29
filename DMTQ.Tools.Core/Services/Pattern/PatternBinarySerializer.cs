@@ -1,6 +1,7 @@
 using System.Buffers.Binary;
 using System.Text;
 using DMTQ.Tools.Core.Models.Pattern;
+using DMTQ.Tools.Core.Services.Pattern.Q;
 
 namespace DMTQ.Tools.Core.Services.Pattern;
 
@@ -10,12 +11,6 @@ namespace DMTQ.Tools.Core.Services.Pattern;
 /// </summary>
 public sealed class PatternBinarySerializer
 {
-    private const int BytesHeaderSize = 8;
-    private const int BytesSoundEntrySize = 0x43;
-    private const int BytesTrackHeaderSizeLegacy = 0x3D;
-    private const int BytesTrackHeaderSizeUnity = 74;
-    private const int BytesCommandSize = 0x0D;
-    private const int BytesInfoSize = 0x1A;
     private const int PtHeaderSize = 0x18;
     private const int PtSoundEntrySizePadded = 0x44;
     private const int PtSoundEntrySizeUnpadded = 0x42;
@@ -151,161 +146,7 @@ public sealed class PatternBinarySerializer
         return output.ToArray();
     }
 
-    private static PatternDocument ReadBytes(ReadOnlySpan<byte> data)
-    {
-        var reader = new PatternByteReader(data.ToArray());
-        var document = new PatternDocument { SourceFormat = PatternFormat.Bytes };
-        document.Header.BytesMagic = reader.ReadInt32();
-        var infoOffset = reader.ReadInt32();
-
-        if (infoOffset < BytesHeaderSize || infoOffset > reader.Length - BytesInfoSize)
-        {
-            throw new InvalidDataException($"Invalid bytes info offset {infoOffset}.");
-        }
-
-        reader.Position = infoOffset;
-        var soundCount = ReadNonNegativeCount(reader.ReadInt16(), "sound");
-        var trackCount = ReadNonNegativeCount(reader.ReadInt16(), "track");
-        document.Header.PositionsPerMeasure = reader.ReadInt16();
-        document.Header.InitialBpm = reader.ReadSingle();
-        var fieldA = reader.ReadUInt32();
-        var fieldB = reader.ReadInt32();
-        var fieldC = reader.ReadUInt32();
-        var declaredCommandCount = reader.ReadUInt32();
-
-        reader.Position = BytesHeaderSize;
-        for (var i = 0; i < soundCount; i++)
-        {
-            EnsureRemaining(reader, BytesSoundEntrySize, "sound table");
-            document.Sounds.Add(new PatternSound
-            {
-                Id = reader.ReadUInt16(),
-                Flags = reader.ReadByte(),
-                FileName = reader.ReadFixedAscii(0x40)
-            });
-        }
-
-        var tracksStart = reader.Position;
-        if (TryReadUnityBytesTracks(reader, document, infoOffset, trackCount, declaredCommandCount))
-        {
-            document.Header.BytesTick = fieldA;
-            document.Header.BytesPlayTime = BitConverter.Int32BitsToSingle(fieldB);
-            document.Header.EndPosition = checked((int)fieldC);
-            document.Header.TagB = fieldB;
-            document.Header.TagC = checked((int)fieldC);
-            document.Header.DeclaredCommandCount = checked((int)declaredCommandCount);
-            return document;
-        }
-
-        document.Header.EndPosition = unchecked((int)fieldA);
-        document.Header.TagB = fieldB;
-        document.Header.TagC = unchecked((int)fieldC);
-        document.Header.DeclaredCommandCount = checked((int)declaredCommandCount);
-        reader.Position = tracksStart;
-        while (reader.Position < infoOffset)
-        {
-            EnsureRemaining(reader, BytesTrackHeaderSizeLegacy + BytesCommandSize, "track");
-            var track = new PatternTrack
-            {
-                Id = reader.ReadInt16(),
-                Name = reader.ReadFixedAscii(0x3B)
-            };
-
-            track.StartPosition = reader.ReadInt32();
-            var startType = reader.ReadByte();
-            if (startType != (byte)PatternCommandType.TrackStart)
-            {
-                throw new InvalidDataException($"Bytes track at offset {reader.Position - 1} has no track-start marker.");
-            }
-
-            track.DeclaredShiftedCommandCount = reader.ReadInt32();
-            track.DeclaredCommandCount = reader.ReadInt32();
-            if (track.DeclaredCommandCount < 0 || track.DeclaredCommandCount > reader.Remaining / BytesCommandSize)
-            {
-                throw new InvalidDataException($"Invalid command count {track.DeclaredCommandCount} in bytes track.");
-            }
-
-            for (var commandIndex = 0; commandIndex < track.DeclaredCommandCount; commandIndex++)
-            {
-                track.Commands.Add(ReadFixedCommand(reader, padded: false));
-            }
-
-            track.EndPosition = track.Commands.Count == 0
-                ? track.StartPosition
-                : track.Commands.Max(command => command.Position);
-            document.Tracks.Add(track);
-        }
-
-        if (reader.Position != infoOffset)
-        {
-            throw new InvalidDataException("Bytes track data does not end at the info block.");
-        }
-
-        if (document.Tracks.Count != trackCount)
-        {
-            throw new InvalidDataException($"Bytes header declares {trackCount} tracks but contains {document.Tracks.Count}.");
-        }
-
-        return document;
-    }
-
-    private static bool TryReadUnityBytesTracks(
-        PatternByteReader reader,
-        PatternDocument document,
-        int infoOffset,
-        int declaredTrackCount,
-        uint declaredCommandCount)
-    {
-        var tracksStart = reader.Position;
-        document.Tracks.Clear();
-
-        try
-        {
-            for (var trackIndex = 0; trackIndex < declaredTrackCount; trackIndex++)
-            {
-                if (infoOffset - reader.Position < BytesTrackHeaderSizeUnity)
-                {
-                    throw new InvalidDataException("Unity bytes track header is truncated.");
-                }
-
-                var track = new PatternTrack
-                {
-                    Id = checked((short)reader.ReadUInt16()),
-                    Name = reader.ReadFixedAscii(64),
-                    EndPosition = checked((int)reader.ReadUInt32())
-                };
-                var commandCount = reader.ReadUInt32();
-                var availableEvents = (infoOffset - reader.Position) / BytesCommandSize;
-                if (commandCount > availableEvents || commandCount > int.MaxValue)
-                {
-                    throw new InvalidDataException($"Invalid event count {commandCount} in Unity bytes track.");
-                }
-
-                track.DeclaredCommandCount = (int)commandCount;
-                for (var commandIndex = 0; commandIndex < track.DeclaredCommandCount; commandIndex++)
-                {
-                    track.Commands.Add(ReadFixedCommand(reader, padded: false));
-                }
-
-                track.StartPosition = track.Commands.Count == 0 ? 0 : track.Commands[0].Position;
-                document.Tracks.Add(track);
-            }
-
-            if (reader.Position != infoOffset ||
-                (declaredCommandCount != 0 && (uint)document.CommandCount != declaredCommandCount))
-            {
-                throw new InvalidDataException("Unity bytes tracks do not match the declared header data.");
-            }
-
-            return true;
-        }
-        catch (Exception exception) when (exception is InvalidDataException or OverflowException)
-        {
-            document.Tracks.Clear();
-            reader.Position = tracksStart;
-            return false;
-        }
-    }
+    private static PatternDocument ReadBytes(ReadOnlySpan<byte> data) => new UnityBytesPatternParser().Parse(data);
 
     private static PatternDocument ReadPt(ReadOnlySpan<byte> sourceData)
     {
@@ -499,7 +340,7 @@ public sealed class PatternBinarySerializer
         writer.WriteInt16(pattern.Header.PositionsPerMeasure);
         writer.WriteSingle(pattern.Header.InitialBpm);
         writer.WriteInt16(checked((short)pattern.Tracks.Count));
-        writer.WriteInt32(pattern.Header.EndPosition);
+        writer.WriteInt32(checked((int)pattern.Header.EndPosition));
         writer.WriteInt32(pattern.Header.TagB);
         writer.WriteInt16(checked((short)pattern.Sounds.Count));
 
@@ -527,7 +368,7 @@ public sealed class PatternBinarySerializer
             writer.WriteFixedAscii("EZTR", 4);
             writer.WriteUInt16(0);
             writer.WriteFixedAscii(track.Name, 0x40);
-            writer.WriteInt32(track.EndPosition != 0 ? track.EndPosition : GetTrackEndPosition(track));
+            writer.WriteInt32(checked((int)(track.EndPosition != 0 ? track.EndPosition : GetTrackEndPosition(track))));
             writer.WriteInt32(commandDataSize);
             if (padded)
             {
@@ -539,24 +380,6 @@ public sealed class PatternBinarySerializer
                 WritePtCommand(writer, command, padded);
             }
         }
-    }
-
-    private static PatternCommand ReadFixedCommand(PatternByteReader reader, bool padded)
-    {
-        var command = new PatternCommand
-        {
-            Position = reader.ReadInt32(),
-            Type = reader.ReadByte()
-        };
-
-        if (padded)
-        {
-            _ = reader.ReadBytes(3);
-        }
-
-        command.RawParameters = reader.ReadBytes(8);
-        PopulateKnownFields(command);
-        return command;
     }
 
     private static PatternCommand ReadPtCommand(PatternByteReader reader, bool padded, int dataEnd)
@@ -614,14 +437,14 @@ public sealed class PatternBinarySerializer
 
     private static void WriteFixedCommand(PatternByteWriter writer, PatternCommand command)
     {
-        writer.WriteInt32(command.Position);
+        writer.WriteUInt32(checked((uint)command.Position));
         writer.WriteByte(command.Type);
-        writer.Write(BuildCanonicalParameters(command));
+        writer.Write(BuildCanonicalParameters(command, bytesFormat: true));
     }
 
     private static void WritePtCommand(PatternByteWriter writer, PatternCommand command, bool padded)
     {
-        writer.WriteInt32(command.Position);
+        writer.WriteInt32(checked((int)command.Position));
         writer.WriteByte(command.Type);
         var parameters = BuildCanonicalParameters(command);
         if (padded)
@@ -657,7 +480,7 @@ public sealed class PatternBinarySerializer
                 ? 11
                 : 13;
 
-    private static byte[] BuildCanonicalParameters(PatternCommand command)
+    private static byte[] BuildCanonicalParameters(PatternCommand command, bool bytesFormat = false)
     {
         var parameters = command.RawParameters.ToArray();
         switch (command.Type)
@@ -667,8 +490,15 @@ public sealed class PatternBinarySerializer
                 parameters[2] = command.Volume;
                 parameters[3] = command.Pan;
                 parameters[4] = command.Attribute;
-                parameters[5] = command.Length;
-                BinaryPrimitives.WriteUInt16LittleEndian(parameters.AsSpan(6, 2), command.NoteUnknown);
+                if (bytesFormat && command.BytesDuration is { } duration)
+                {
+                    BinaryPrimitives.WriteUInt16LittleEndian(parameters.AsSpan(5, 2), duration);
+                }
+                else
+                {
+                    parameters[5] = command.Length;
+                    BinaryPrimitives.WriteUInt16LittleEndian(parameters.AsSpan(6, 2), command.NoteUnknown);
+                }
                 break;
             case (byte)PatternCommandType.Volume:
                 parameters[0] = command.Volume;
@@ -709,7 +539,7 @@ public sealed class PatternBinarySerializer
         }
     }
 
-    private static int GetTrackEndPosition(PatternTrack track)
+    private static long GetTrackEndPosition(PatternTrack track)
         => track.Commands.Count == 0 ? track.StartPosition : track.Commands.Max(command => command.Position);
 
     private static bool IsPaddedPtVersion(short version) => version == 1;

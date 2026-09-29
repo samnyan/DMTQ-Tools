@@ -23,7 +23,7 @@ public sealed class PatternBinarySerializerTests
         actual.Header.EndPosition.Should().Be(source.Header.EndPosition);
         actual.Header.TagB.Should().Be(source.Header.TagB);
         actual.Header.TagC.Should().Be(source.Header.TagC);
-        AssertPatternContent(source, actual);
+        AssertPatternContent(source, actual, normalizeBytesTrackNames: true);
     }
 
     [TestMethod]
@@ -68,7 +68,69 @@ public sealed class PatternBinarySerializerTests
         var convertedBytes = _serializer.Serialize(fromPt, PatternFormat.Bytes);
         var final = _serializer.Deserialize(convertedBytes, PatternFormat.Bytes);
 
-        AssertPatternContent(source, final);
+        AssertPatternContent(source, final, normalizeBytesTrackNames: true);
+    }
+
+    [TestMethod]
+    public void BytesRoundtrip_UsesUnityUnsignedTicksAndFullNoteDuration()
+    {
+        var source = CreatePattern();
+        var note = source.Tracks[0].Commands[0];
+        note.Position = uint.MaxValue;
+        note.BytesDuration = 0x1234;
+
+        var bytes = _serializer.Serialize(source, PatternFormat.Bytes);
+        var actual = _serializer.Deserialize(bytes, PatternFormat.Bytes);
+        var actualNote = actual.Tracks[0].Commands[0];
+
+        actualNote.Position.Should().Be(uint.MaxValue);
+        actualNote.BytesDuration.Should().Be(0x1234);
+        actualNote.RawParameters[7].Should().Be(note.RawParameters[7]);
+    }
+
+    [TestMethod]
+    public void BytesTickAboveSignedRangeSurvivesTextRoundtrip()
+    {
+        var source = CreatePattern();
+        source.Tracks[0].Commands[0].Position = uint.MaxValue;
+        var fromBytes = _serializer.Deserialize(_serializer.Serialize(source, PatternFormat.Bytes), PatternFormat.Bytes);
+        var textSerializer = new PatternTextSerializer();
+
+        var fromText = textSerializer.Deserialize(textSerializer.Serialize(fromBytes));
+
+        fromText.Tracks[0].Commands[0].Position.Should().Be(uint.MaxValue);
+    }
+
+    [TestMethod]
+    public void BytesReader_MapsUnknownEventPayloadAsUnityWords()
+    {
+        var source = CreatePattern();
+        source.Tracks[0].Commands.Add(new PatternCommand
+        {
+            Position = 1200,
+            Type = 9,
+            RawParameters = [0x78, 0x56, 0x34, 0x12, 0xEF, 0xCD, 0xAB, 0x90]
+        });
+
+        var actual = _serializer.Deserialize(_serializer.Serialize(source, PatternFormat.Bytes), PatternFormat.Bytes);
+        var unknown = actual.Tracks[0].Commands[^1];
+
+        unknown.BytesUnknownData1.Should().Be(0x12345678);
+        unknown.BytesUnknownData2.Should().Be(0x90ABCDEF);
+    }
+
+    [TestMethod]
+    public void BytesDuration_SurvivesPatternTextConversion()
+    {
+        var source = CreatePattern();
+        source.Tracks[0].Commands[0].BytesDuration = 0x1234;
+        var fromBytes = _serializer.Deserialize(_serializer.Serialize(source, PatternFormat.Bytes), PatternFormat.Bytes);
+        var textSerializer = new PatternTextSerializer();
+
+        var fromText = textSerializer.Deserialize(textSerializer.Serialize(fromBytes));
+        var bytesAgain = _serializer.Deserialize(_serializer.Serialize(fromText, PatternFormat.Bytes), PatternFormat.Bytes);
+
+        bytesAgain.Tracks[0].Commands[0].BytesDuration.Should().Be(0x1234);
     }
 
     [TestMethod]
@@ -125,7 +187,7 @@ public sealed class PatternBinarySerializerTests
         return pattern;
     }
 
-    private static void AssertPatternContent(PatternDocument expected, PatternDocument actual)
+    private static void AssertPatternContent(PatternDocument expected, PatternDocument actual, bool normalizeBytesTrackNames = false)
     {
         actual.Sounds.Should().HaveSameCount(expected.Sounds);
         for (var index = 0; index < expected.Sounds.Count; index++)
@@ -141,7 +203,7 @@ public sealed class PatternBinarySerializerTests
             var expectedTrack = expected.Tracks[trackIndex];
             var actualTrack = actual.Tracks[trackIndex];
             actualTrack.Id.Should().Be(expectedTrack.Id);
-            actualTrack.Name.Should().Be(expectedTrack.Name);
+            actualTrack.Name.Should().Be(normalizeBytesTrackNames ? expectedTrack.Name.ToLowerInvariant() : expectedTrack.Name);
             actualTrack.Commands.Should().HaveSameCount(expectedTrack.Commands);
 
             for (var commandIndex = 0; commandIndex < expectedTrack.Commands.Count; commandIndex++)

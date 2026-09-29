@@ -44,6 +44,12 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\DMTQ.Parser.Pattern\DMTQ.Parser.Pattern.csproj">
+      <Project>{396E13D1-D942-4134-8799-3FA9970606D2}</Project>
+      <Name>DMTQ.Parser.Pattern</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

@@ -30,6 +30,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DMTQ.Tools.Components", "DM
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Assets.Lib", "Assets.Lib\Assets.Lib.csproj", "{4FB8E551-2334-44E9-AB9E-70A51708BC01}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DMTQ.Parser.Pattern", "DMTQ.Parser.Pattern\DMTQ.Parser.Pattern.csproj", "{396E13D1-D942-4134-8799-3FA9970606D2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -185,6 +187,18 @@ Global
 		{4FB8E551-2334-44E9-AB9E-70A51708BC01}.Release|x64.Build.0 = Release|Any CPU
 		{4FB8E551-2334-44E9-AB9E-70A51708BC01}.Release|x86.ActiveCfg = Release|Any CPU
 		{4FB8E551-2334-44E9-AB9E-70A51708BC01}.Release|x86.Build.0 = Release|Any CPU
+		{396E13D1-D942-4134-8799-3FA9970606D2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{396E13D1-D942-4134-8799-3FA9970606D2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{396E13D1-D942-4134-8799-3FA9970606D2}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{396E13D1-D942-4134-8799-3FA9970606D2}.Debug|x64.Build.0 = Debug|Any CPU
+		{396E13D1-D942-4134-8799-3FA9970606D2}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{396E13D1-D942-4134-8799-3FA9970606D2}.Debug|x86.Build.0 = Debug|Any CPU
+		{396E13D1-D942-4134-8799-3FA9970606D2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{396E13D1-D942-4134-8799-3FA9970606D2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{396E13D1-D942-4134-8799-3FA9970606D2}.Release|x64.ActiveCfg = Release|Any CPU
+		{396E13D1-D942-4134-8799-3FA9970606D2}.Release|x64.Build.0 = Release|Any CPU
+		{396E13D1-D942-4134-8799-3FA9970606D2}.Release|x86.ActiveCfg = Release|Any CPU
+		{396E13D1-D942-4134-8799-3FA9970606D2}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
