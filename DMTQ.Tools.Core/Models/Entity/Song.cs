@@ -125,7 +125,7 @@ public sealed class SongPattern
         get => _flg;
         set => _flg = YesNoValue.Normalize(value);
     }
-    public string Update { get; set; } = string.Empty;
+    public string Update { get; set; } = "0";
 }
 
 /// <summary>

@@ -39,11 +39,11 @@
                                 }
                                 else
                                 {
-                                    <FluentTextInput style="width: 100%;" Value="@(currentSong?.Id.ToString() ?? "")" Label='@L["Fields.SongId"]' ReadOnly="true" />
+                                    <FluentTextInput style="width: 100%;" Value="@(currentSong?.Id.ToString() ?? "")" Label='@L["Fields.SongId"]' Disabled="true" />
                                 }
                             </FluentGridItem>
                             
-                            <FluentGridItem Xs="12" Sm="6" Md="3"><FluentTextInput style="width: 100%;" @bind-Value="currentSong!.Name" Label='@L["Fields.SongName"]' /></FluentGridItem>
+                            <FluentGridItem Xs="12" Sm="6" Md="3"><FluentTextInput style="width: 100%;" @bind-Value="currentSong!.Name" Label='@L["Fields.SongName"]' Immediate="true" /></FluentGridItem>
 
                             <FluentGridItem HiddenWhen="GridItemHidden.Xs" Md="6">
                             </FluentGridItem>
@@ -253,7 +253,11 @@
                                                 </FluentGridItem>
                                                 <FluentGridItem Xs="12" Sm="9">
                                                     <FluentTextInput @bind-Value="product.StoreProductId" Label='@L["Fields.StoreProductId"]' Width="100%"
-                                                                     Disabled="@IsSongProductMarkedForDeletion(product)" />
+                                                                     Disabled="@IsSongProductMarkedForDeletion(product)"
+                                                                     Immediate="true"
+                                                                     MessageState="MessageState.Warning"
+                                                                     Message='@L["Editor.SongProductNameFormatWarning"]'
+                                                                     MessageCondition="@(_ => ShouldWarnSongProductNameFormat(product))" />
                                                 </FluentGridItem>
                                                 <FluentGridItem Xs="12" Sm="6" Md="3">
                                                     <FluentTextInput @bind-Value="product.CostGamePoint" Label='@L["Fields.CostGamePoint"]' Disabled="@IsSongProductMarkedForDeletion(product)" Width="100%" />
@@ -347,6 +351,7 @@
                                           IconStart="@(new Icons.Regular.Size20.Add())"
                                           OnClick="OpenAddPatternDialog">@L["Editor.AddPattern"]</FluentButton>
                         </div>
+                        <p class="section-hint">@L["Editor.PatternServerPriceNote"]</p>
 
                         @if (currentSong?.Patterns.Count > 0)
                         {
@@ -365,6 +370,7 @@
                                         @FormatPointType(p.PointType)
                                     </TemplateColumn>
                                     <PropertyColumn Property="@(p => p.PointValue)" Title='@L["Fields.PointValue"]' />
+                                    <PropertyColumn Property="@(p => p.Update)" Title='@L["Fields.UpdateVersion"]' />
                                     <TemplateColumn Title='@L["Fields.PatternEnabled"]' Context="p">
                                         @(p.Flg == "Y" ? "✓" : "")
                                     </TemplateColumn>
@@ -797,25 +803,51 @@
         var tables = State.CurrentPackage.GetPlatformTables(State.SelectedExportPlatform);
         var productId = NextNumericId(tables.Products.Select(product => product.Id).Concat(songProductDrafts.Select(product => product.Id)));
         var platformProductId = NextNumericId(tables.Products.Select(product => product.PlatformProductId).Concat(songProductDrafts.Select(product => product.PlatformProductId)));
-        var product = CreateSongProduct(productId, platformProductId, "com.neowizInternet.game.dmtq.", songItemDraft.ItemName);
+        var product = CreateSongProduct(productId, platformProductId, "com.neowizInternet.game.dmtq.", currentSong?.Name ?? songItemDraft.ItemName);
         songProductDrafts.Add(product);
         songProductIdDrafts[product.Id] = product.Id;
     }
 
-    private void CreateStandardSongProducts()
+    private async Task CreateStandardSongProducts()
     {
         if (State.CurrentPackage is null || songItemDraft is null || songItemIdInput is not > 0
             || songProductDrafts.Any(product => !IsSongProductMarkedForDeletion(product))) return;
+
+        var songName = currentSong?.Name ?? songItemDraft.ItemName;
+        var confirmation = await DialogService.ShowConfirmationAsync(
+            message: L["Editor.GenerateSongProductsConfirm", songName].Value,
+            title: L["Editor.SongProducts"].Value,
+            primaryButton: L["Editor.GenerateSongProductsAction"].Value,
+            secondaryButton: L["Common.Cancel"].Value);
+        if (confirmation.Cancelled) return;
+
         var tables = State.CurrentPackage.GetPlatformTables(State.SelectedExportPlatform);
         var nextPlatformProductId = NextNumericId(tables.Products.Select(product => product.PlatformProductId));
         var itemId = songItemIdInput.Value;
         songProductDrafts =
         [
-            CreateStandardSongProduct(itemId, nextPlatformProductId, "com.neowizInternet.game.dmtq.", "3", songItemDraft.ItemName),
-            CreateStandardSongProduct((long)itemId + 1_000_000, nextPlatformProductId + 1, "com.neowizInternet.game.dmtq_a.", "103", songItemDraft.ItemName)
+            CreateStandardSongProduct(itemId, nextPlatformProductId, "com.neowizInternet.game.dmtq.", "3", songName),
+            CreateStandardSongProduct((long)itemId + 1_000_000, nextPlatformProductId + 1, "com.neowizInternet.game.dmtq_a.", "103", songName)
         ];
         ResetSongProductIds();
     }
+
+    private bool ShouldWarnSongProductNameFormat(Product product)
+    {
+        if (IsSongProductMarkedForDeletion(product) || string.IsNullOrWhiteSpace(currentSong?.Name))
+            return false;
+
+        var normalizedName = NormalizeSongStoreName(currentSong.Name);
+        if (normalizedName.Length == 0) return false;
+
+        var expectedBaseSku = "com.neowizInternet.game.dmtq." + normalizedName;
+        var expectedAlternateSku = "com.neowizInternet.game.dmtq_a." + normalizedName;
+        return !string.Equals(product.StoreProductId, expectedBaseSku, StringComparison.OrdinalIgnoreCase)
+            && !string.Equals(product.StoreProductId, expectedAlternateSku, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string NormalizeSongStoreName(string songName)
+        => string.Concat(songName.Trim().ToLowerInvariant().Where(char.IsLetterOrDigit));
 
     private static Product CreateStandardSongProduct(long productId, int platformProductId, string skuPrefix, string categoryId, string itemName)
     {
@@ -858,7 +890,7 @@
 
     private static Product CreateSongProduct(long productId, int platformProductId, string skuPrefix, string itemName)
     {
-        var skuName = string.Concat(itemName.Trim().ToLowerInvariant().Where(char.IsLetterOrDigit));
+        var skuName = NormalizeSongStoreName(itemName);
         return new Product
         {
             Id = productId.ToString(System.Globalization.CultureInfo.InvariantCulture),
@@ -933,9 +965,9 @@
 
     private string FormatPointType(int value) => value switch
     {
-        0 => $"0 — {L["Options.PointQ"].Value}",
+        0 => $"0 — {L["Options.PointNone"].Value}",
         1 => $"1 — {L["Options.PointMax"].Value}",
-        _ => $"{value} — {L["Fields.ExistingValue"].Value}"
+        _ => $"{value} — {L["Options.PointQ"].Value}"
     };
 
     private void SetOriginalField(Action<Song> update)
@@ -1021,7 +1053,14 @@
             .Select(pattern => pattern.PatternId)
             .DefaultIfEmpty(0)
             .Max() + 1;
-        var pattern = new SongPattern { PatternId = nextPatternId, SongId = currentSong.Id };
+        var pattern = new SongPattern
+        {
+            PatternId = nextPatternId,
+            SongId = currentSong.Id,
+            PointType = 0,
+            PointValue = 0,
+            Update = "0"
+        };
 
         var result = await DialogService.ShowDialogAsync<PatternDialog>(options =>
         {
@@ -1029,9 +1068,13 @@
             options.Footer.PrimaryAction.Label = L["Common.Save"].Value;
             options.Footer.SecondaryAction.Label = L["Common.Cancel"].Value;
             options.Width = "480px";
-            options.Parameters = new Dictionary<string, object?> { [nameof(PatternDialog.Content)] = pattern };
+            options.Parameters = new Dictionary<string, object?>
+            {
+                [nameof(PatternDialog.Content)] = pattern,
+                [nameof(PatternDialog.AllowPatternIdEdit)] = true
+            };
         });
-        if (result.Cancelled || pattern.PatternId == 0)
+        if (result.Cancelled || pattern.PatternId == 0 || pattern.Line == 0)
             return;
 
         try

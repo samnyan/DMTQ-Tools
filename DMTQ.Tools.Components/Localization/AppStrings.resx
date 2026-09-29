@@ -594,6 +594,12 @@
   <data name="Editor.Patterns" xml:space="preserve">
     <value>Patterns</value>
   </data>
+  <data name="Editor.PatternServerPriceNote" xml:space="preserve">
+    <value>The actual point amount is determined by the price returned by the server.</value>
+  </data>
+  <data name="Editor.PatternLineRequired" xml:space="preserve">
+    <value>Select a chart line count.</value>
+  </data>
   <data name="Editor.AddPattern" xml:space="preserve">
     <value>Add Pattern</value>
   </data>
@@ -1381,7 +1387,7 @@
     <value>Star rating</value>
   </data>
   <data name="Fields.PointType" xml:space="preserve">
-    <value>Play reward type</value>
+    <value>Consumption point type</value>
   </data>
   <data name="Fields.ExistingValue" xml:space="preserve">
     <value>Existing value</value>
@@ -1530,8 +1536,11 @@
   <data name="Fields.PatternId" xml:space="preserve">
     <value>Pattern ID</value>
   </data>
+  <data name="Fields.UpdateVersion" xml:space="preserve">
+    <value>Update version</value>
+  </data>
   <data name="Fields.PointValue" xml:space="preserve">
-    <value>Play reward amount</value>
+    <value>Consumption point amount</value>
   </data>
   <data name="Fields.PatternName" xml:space="preserve">
     <value>Pattern name</value>
@@ -1738,7 +1747,7 @@
     <value>Expert</value>
   </data>
   <data name="Options.PointNone" xml:space="preserve">
-    <value>No reward</value>
+    <value>Free</value>
   </data>
   <data name="Options.PointMax" xml:space="preserve">
     <value>MAX point</value>
@@ -1898,6 +1907,15 @@
   </data>
   <data name="Editor.CreateStandardSongProducts" xml:space="preserve">
     <value>Create two standard products</value>
+  </data>
+  <data name="Editor.GenerateSongProductsConfirm" xml:space="preserve">
+    <value>Generate products using “{0}” as the identifier?</value>
+  </data>
+  <data name="Editor.GenerateSongProductsAction" xml:space="preserve">
+    <value>Generate products</value>
+  </data>
+  <data name="Editor.SongProductNameFormatWarning" xml:space="preserve">
+    <value>The store product ID does not match the format generated from the song name.</value>
   </data>
   <data name="Editor.NoSongProducts" xml:space="preserve">
     <value>No products are linked to this item.</value>

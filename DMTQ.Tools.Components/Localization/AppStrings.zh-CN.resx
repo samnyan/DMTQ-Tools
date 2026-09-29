@@ -594,6 +594,12 @@
   <data name="Editor.Patterns" xml:space="preserve">
     <value>谱面</value>
   </data>
+  <data name="Editor.PatternServerPriceNote" xml:space="preserve">
+    <value>实际消费点数金额以服务端获取的价格为准。</value>
+  </data>
+  <data name="Editor.PatternLineRequired" xml:space="preserve">
+    <value>请选择谱面轨道数。</value>
+  </data>
   <data name="Editor.AddPattern" xml:space="preserve">
     <value>添加谱面</value>
   </data>
@@ -1372,7 +1378,7 @@
     <value>关联游戏道具 ID</value>
   </data>
   <data name="Fields.ChartLine" xml:space="preserve">
-    <value>谱面轨数</value>
+    <value>谱面轨道数</value>
   </data>
   <data name="Fields.ChartDifficulty" xml:space="preserve">
     <value>谱面难度</value>
@@ -1381,7 +1387,7 @@
     <value>星级</value>
   </data>
   <data name="Fields.PointType" xml:space="preserve">
-    <value>游玩奖励类型</value>
+    <value>消费点数类型</value>
   </data>
   <data name="Fields.ExistingValue" xml:space="preserve">
     <value>现有值</value>
@@ -1530,8 +1536,11 @@
   <data name="Fields.PatternId" xml:space="preserve">
     <value>谱面 ID</value>
   </data>
+  <data name="Fields.UpdateVersion" xml:space="preserve">
+    <value>更新版本号</value>
+  </data>
   <data name="Fields.PointValue" xml:space="preserve">
-    <value>游玩奖励数量</value>
+    <value>消费点数金额</value>
   </data>
   <data name="Fields.PatternName" xml:space="preserve">
     <value>谱面名称</value>
@@ -1738,13 +1747,13 @@
     <value>专家</value>
   </data>
   <data name="Options.PointNone" xml:space="preserve">
-    <value>无奖励</value>
+    <value>免费</value>
   </data>
   <data name="Options.PointMax" xml:space="preserve">
-    <value>MAX点</value>
+    <value>MAX 点</value>
   </data>
   <data name="Options.PointQ" xml:space="preserve">
-    <value>Q点</value>
+    <value>Q 点</value>
   </data>
   <data name="Options.AchievementConditionAllCombo" xml:space="preserve">
     <value>全连击</value>
@@ -1898,6 +1907,15 @@
   </data>
   <data name="Editor.CreateStandardSongProducts" xml:space="preserve">
     <value>自动创建两条标准商品</value>
+  </data>
+  <data name="Editor.GenerateSongProductsConfirm" xml:space="preserve">
+    <value>确认要用以"{0}"作为标识符生成商品吗？</value>
+  </data>
+  <data name="Editor.GenerateSongProductsAction" xml:space="preserve">
+    <value>生成商品</value>
+  </data>
+  <data name="Editor.SongProductNameFormatWarning" xml:space="preserve">
+    <value>商店商品 ID 与歌曲名称生成的格式不一致。</value>
   </data>
   <data name="Editor.NoSongProducts" xml:space="preserve">
     <value>该物品尚未关联商品。</value>

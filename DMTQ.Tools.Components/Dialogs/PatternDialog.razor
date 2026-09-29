@@ -11,10 +11,15 @@
     <FluentGrid Spacing="3">
         <FluentGridItem Xs="12" Sm="6">
             <FluentNumberInput @bind-Value="Content.PatternId" Label='@(L["Fields.PatternId"].Value + " *")'
-                             Disabled="@(originalId is not null)" Required />
+                             Disabled="@(originalId is not null && !AllowPatternIdEdit)" Required />
         </FluentGridItem>
         <FluentGridItem Xs="12" Sm="6">
-            <FluentSelect Items="LineOptions" @bind-Value="selectedLine" Label='@L["Fields.ChartLine"]' />
+            <FluentSelect Items="LineOptions" @bind-Value="selectedLine"
+                          Label='@(L["Fields.ChartLine"].Value + (AllowPatternIdEdit ? " *" : ""))'
+                          Required="@AllowPatternIdEdit"
+                          MessageState="MessageState.Error"
+                          Message='@L["Editor.PatternLineRequired"]'
+                          MessageCondition="@(_ => showLineRequiredMessage && Content.Line == 0)" />
         </FluentGridItem>
         <FluentGridItem Xs="12" Sm="6">
             <FluentSelect Items="SignatureOptions" @bind-Value="selectedSignature" Label='@L["Fields.ChartDifficulty"]' />
@@ -29,7 +34,7 @@
             <FluentNumberInput @bind-Value="Content.PointValue" Label='@L["Fields.PointValue"]' />
         </FluentGridItem>
         <FluentGridItem Xs="12" Sm="6">
-            <FluentTextInput @bind-Value="Content.Update" Label='@L["Fields.Update"]' />
+            <FluentTextInput @bind-Value="Content.Update" Label='@L["Fields.UpdateVersion"]' />
         </FluentGridItem>
         <FluentGridItem Xs="12">
             <FluentSwitch @bind-Value="flgChecked" Label='@L["Fields.PatternEnabled"]' />
@@ -41,20 +46,32 @@
 
 @code {
     [Parameter] public SongPattern Content { get; set; } = default!;
+    [Parameter] public bool AllowPatternIdEdit { get; set; }
 
     private int? originalId;
+    private bool showLineRequiredMessage;
 
-    private string[] LineOptions =>
-        IncludeExisting([$"3 — {L["Options.PatternLine2"].Value}", $"4 — {L["Options.PatternLine3"].Value}", $"5 — {L["Options.PatternLine4"].Value}"], Content.Line);
+    private string[] LineOptions
+    {
+        get
+        {
+            var options = IncludeExisting(
+                [$"3 — {L["Options.PatternLine2"].Value}", $"4 — {L["Options.PatternLine3"].Value}", $"5 — {L["Options.PatternLine4"].Value}"],
+                Content.Line);
+            return AllowPatternIdEdit && Content.Line == 0
+                ? ["", .. options.Where(option => !option.StartsWith("0 — ", StringComparison.Ordinal))]
+                : options;
+        }
+    }
     private string[] SignatureOptions =>
         IncludeExisting([$"0 — {L["Options.PatternEasy"].Value}", $"1 — {L["Options.PatternNormal"].Value}",
             $"2 — {L["Options.PatternHard"].Value}", $"3 — {L["Options.PatternExpert"].Value}"], Content.Signature);
     private string[] PointTypeOptions =>
-        IncludeExisting([$"0 — {L["Options.PointQ"].Value}", $"1 — {L["Options.PointMax"].Value}"], Content.PointType);
+        [$"0 — {L["Options.PointNone"].Value}", $"1 — {L["Options.PointMax"].Value}", $"2 — {L["Options.PointQ"].Value}"];
 
     private string selectedLine
     {
-        get => GetOption(LineOptions, Content.Line);
+        get => AllowPatternIdEdit && Content.Line == 0 ? string.Empty : GetOption(LineOptions, Content.Line);
         set => Content.Line = GetCode(value);
     }
 
@@ -66,7 +83,7 @@
 
     private string selectedPointType
     {
-        get => GetOption(PointTypeOptions, Content.PointType);
+        get => GetOption(PointTypeOptions, Content.PointType == 0 ? 0 : Content.PointType == 1 ? 1 : 2);
         set => Content.PointType = GetCode(value);
     }
 
@@ -84,7 +101,17 @@
     }
 
     protected override Task OnActionClickedAsync(bool primary)
-        => primary ? DialogInstance.CloseAsync(Content) : DialogInstance.CancelAsync();
+    {
+        if (!primary) return DialogInstance.CancelAsync();
+        if (AllowPatternIdEdit && Content.Line == 0)
+        {
+            showLineRequiredMessage = true;
+            StateHasChanged();
+            return Task.CompletedTask;
+        }
+
+        return DialogInstance.CloseAsync(Content);
+    }
 
     private string GetOption(IReadOnlyList<string> knownOptions, int value)
         => knownOptions.FirstOrDefault(option => GetCode(option) == value)
