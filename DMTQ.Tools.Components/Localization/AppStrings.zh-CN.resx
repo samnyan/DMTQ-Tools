@@ -1419,6 +1419,9 @@
   <data name="Fields.ChartLine" xml:space="preserve">
     <value>谱面轨道数</value>
   </data>
+  <data name="Fields.PatternFile" xml:space="preserve">
+    <value>谱面文件</value>
+  </data>
   <data name="Fields.ChartDifficulty" xml:space="preserve">
     <value>谱面难度</value>
   </data>
@@ -2066,6 +2069,8 @@
   <data name="PatternIndex.PatternId" xml:space="preserve"><value>谱面 ID</value></data>
   <data name="PatternIndex.Variant" xml:space="preserve"><value>版本</value></data>
   <data name="PatternIndex.Standard" xml:space="preserve"><value>标准版</value></data>
+  <data name="PatternIndex.StandardShort" xml:space="preserve"><value>普通</value></data>
+  <data name="PatternIndex.HeadphoneShort" xml:space="preserve"><value>耳机</value></data>
   <data name="PatternIndex.Path" xml:space="preserve"><value>文件路径</value></data>
   <data name="PatternIndex.FileSize" xml:space="preserve"><value>文件大小（字节）</value></data>
   <data name="PatternIndex.ParseStatus" xml:space="preserve"><value>读取状态</value></data>
@@ -2076,4 +2081,9 @@
   <data name="PatternIndex.LoadFailed" xml:space="preserve"><value>读取谱面索引失败：{0}</value></data>
   <data name="PatternIndex.RefreshComplete" xml:space="preserve"><value>已刷新 {0} 个谱面 ID 的文件索引，其中 {1} 个文件无法按 bytes 格式读取。</value></data>
   <data name="PatternIndex.RefreshFailed" xml:space="preserve"><value>刷新谱面文件索引失败：{0}</value></data>
+  <data name="PatternImport.DropTitle" xml:space="preserve"><value>将谱面文件拖到此处，或点击选择文件</value></data>
+  <data name="PatternImport.DropHint" xml:space="preserve"><value>支持 bytes 格式，包括没有扩展名的文件。</value></data>
+  <data name="PatternImport.IsHeadphone" xml:space="preserve"><value>作为耳机版导入</value></data>
+  <data name="PatternImport.ReadFailed" xml:space="preserve"><value>读取谱面文件失败：{0}</value></data>
+  <data name="PatternImport.ProjectRequired" xml:space="preserve"><value>请先打开工程，再导入谱面文件。</value></data>
 </root>

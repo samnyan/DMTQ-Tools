@@ -11,6 +11,44 @@ public sealed class PatternIndexService(PatternBinarySerializer serializer)
     private const string PatternDirectoryName = "Patterns";
     private const string IndexFileName = "patterns.json";
 
+    /// <summary>Writes a newly imported pattern file using the game's extensionless naming convention.</summary>
+    public async Task<string> ImportPatternFileAsync(
+        string projectRoot,
+        int patternId,
+        Stream content,
+        bool isHeadphone,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(projectRoot);
+        ArgumentNullException.ThrowIfNull(content);
+        if (patternId <= 0)
+            throw new ArgumentOutOfRangeException(nameof(patternId), "Pattern ID must be positive.");
+
+        var patternDirectory = Path.Combine(Path.GetFullPath(projectRoot), PatternDirectoryName);
+        Directory.CreateDirectory(patternDirectory);
+        var fileName = patternId.ToString(CultureInfo.InvariantCulture)
+            + (isHeadphone ? "_EARPHONE" : string.Empty);
+        var destination = Path.Combine(patternDirectory, fileName);
+
+        var created = false;
+        try
+        {
+            await using var output = new FileStream(
+                destination, FileMode.CreateNew, FileAccess.Write, FileShare.None,
+                bufferSize: 81920, FileOptions.Asynchronous | FileOptions.WriteThrough);
+            created = true;
+            await content.CopyToAsync(output, cancellationToken).ConfigureAwait(false);
+            await output.FlushAsync(cancellationToken).ConfigureAwait(false);
+            return destination;
+        }
+        catch
+        {
+            if (created && File.Exists(destination))
+                File.Delete(destination);
+            throw;
+        }
+    }
+
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         WriteIndented = true,

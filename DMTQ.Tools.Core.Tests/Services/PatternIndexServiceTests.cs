@@ -8,6 +8,34 @@ namespace DMTQ.Tools.Core.Tests.Services;
 public sealed class PatternIndexServiceTests
 {
     [TestMethod]
+    public async Task ImportPatternFileAsync_WritesExtensionlessVariantAndDoesNotOverwriteExistingFile()
+    {
+        var root = Directory.CreateTempSubdirectory("dmtq-pattern-import-").FullName;
+        try
+        {
+            var service = new PatternIndexService(new PatternBinarySerializer());
+            var expected = new byte[] { 1, 2, 3, 4 };
+            await using (var content = new MemoryStream(expected))
+                await service.ImportPatternFileAsync(root, 42, content, isHeadphone: true);
+
+            var destination = Path.Combine(root, "Patterns", "42_EARPHONE");
+            File.ReadAllBytes(destination).Should().Equal(expected);
+            var replacement = new byte[] { 9 };
+            var writeExisting = async () =>
+            {
+                await using var content = new MemoryStream(replacement);
+                await service.ImportPatternFileAsync(root, 42, content, isHeadphone: true);
+            };
+            await writeExisting.Should().ThrowAsync<IOException>();
+            File.ReadAllBytes(destination).Should().Equal(expected);
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [TestMethod]
     public async Task RefreshAsync_GroupsVersionsByPatternIdAndPersistsBytesMetadata()
     {
         var root = Directory.CreateTempSubdirectory("dmtq-pattern-index-").FullName;

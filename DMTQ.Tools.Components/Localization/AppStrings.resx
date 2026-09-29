@@ -1419,6 +1419,9 @@
   <data name="Fields.ChartLine" xml:space="preserve">
     <value>Chart line count</value>
   </data>
+  <data name="Fields.PatternFile" xml:space="preserve">
+    <value>Pattern file</value>
+  </data>
   <data name="Fields.ChartDifficulty" xml:space="preserve">
     <value>Chart difficulty</value>
   </data>
@@ -2066,6 +2069,8 @@
   <data name="PatternIndex.PatternId" xml:space="preserve"><value>Pattern ID</value></data>
   <data name="PatternIndex.Variant" xml:space="preserve"><value>Variant</value></data>
   <data name="PatternIndex.Standard" xml:space="preserve"><value>Standard</value></data>
+  <data name="PatternIndex.StandardShort" xml:space="preserve"><value>Normal</value></data>
+  <data name="PatternIndex.HeadphoneShort" xml:space="preserve"><value>Headphone</value></data>
   <data name="PatternIndex.Path" xml:space="preserve"><value>File path</value></data>
   <data name="PatternIndex.FileSize" xml:space="preserve"><value>File size (bytes)</value></data>
   <data name="PatternIndex.ParseStatus" xml:space="preserve"><value>Read status</value></data>
@@ -2076,4 +2081,9 @@
   <data name="PatternIndex.LoadFailed" xml:space="preserve"><value>Could not load the pattern index: {0}</value></data>
   <data name="PatternIndex.RefreshComplete" xml:space="preserve"><value>Refreshed files for {0} pattern IDs; {1} files could not be read as bytes.</value></data>
   <data name="PatternIndex.RefreshFailed" xml:space="preserve"><value>Could not refresh the pattern file index: {0}</value></data>
+  <data name="PatternImport.DropTitle" xml:space="preserve"><value>Drop a pattern file here or click to select</value></data>
+  <data name="PatternImport.DropHint" xml:space="preserve"><value>Bytes files are supported, including extensionless files.</value></data>
+  <data name="PatternImport.IsHeadphone" xml:space="preserve"><value>Import as headphone version</value></data>
+  <data name="PatternImport.ReadFailed" xml:space="preserve"><value>Could not read pattern file: {0}</value></data>
+  <data name="PatternImport.ProjectRequired" xml:space="preserve"><value>Open a project before importing a pattern file.</value></data>
 </root>

@@ -3,6 +3,7 @@
 @using DMTQ.Tools.Core.Models.Entity
 @using DMTQ.Tools.Core.Models.Export
 @using DMTQ.Tools.Core.Models.Project
+@using DMTQ_Tools.Components.Models
 @inherits FluentDialogInstance
 
 <FluentDialogBody>
@@ -39,6 +40,25 @@
         <FluentGridItem Xs="12">
             <FluentSwitch @bind-Value="flgChecked" Label='@L["Fields.PatternEnabled"]' />
         </FluentGridItem>
+        @if (AllowPatternIdEdit)
+        {
+            <FluentGridItem Xs="12">
+                <div class="pattern-file-drop" style="position: relative; border: 1px dashed var(--colorNeutralStroke1); border-radius: var(--borderRadiusMedium); padding: 14px; text-align: center;">
+                    <strong>@L["PatternImport.DropTitle"]</strong>
+                    <div>@(FileSelection?.FileName ?? L["PatternImport.DropHint"].Value)</div>
+                    <InputFile OnChange="OnPatternFileChanged"
+                               style="position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;" />
+                </div>
+                @if (FileSelection?.Content is not null)
+                {
+                    <FluentCheckbox @bind-Value="FileSelection.IsHeadphone" Label='@L["PatternImport.IsHeadphone"]' />
+                }
+                @if (!string.IsNullOrWhiteSpace(fileError))
+                {
+                    <FluentMessageBar Intent="MessageBarIntent.Error" Title="@fileError" />
+                }
+            </FluentGridItem>
+        }
     </FluentGrid>
 
 </FluentStack>
@@ -47,9 +67,11 @@
 @code {
     [Parameter] public SongPattern Content { get; set; } = default!;
     [Parameter] public bool AllowPatternIdEdit { get; set; }
+    [Parameter] public PatternFileSelection? FileSelection { get; set; }
 
     private int? originalId;
     private bool showLineRequiredMessage;
+    private string fileError = string.Empty;
 
     private string[] LineOptions
     {
@@ -111,6 +133,29 @@
         }
 
         return DialogInstance.CloseAsync(Content);
+    }
+
+    private async Task OnPatternFileChanged(InputFileChangeEventArgs args)
+    {
+        if (FileSelection is null) return;
+        fileError = string.Empty;
+        var file = args.File;
+        try
+        {
+            await using var stream = file.OpenReadStream(32 * 1024 * 1024);
+            using var buffer = new MemoryStream();
+            await stream.CopyToAsync(buffer);
+            FileSelection.FileName = file.Name;
+            FileSelection.Content = buffer.ToArray();
+            FileSelection.IsHeadphone = Path.GetFileNameWithoutExtension(file.Name)
+                .EndsWith("_EARPHONE", StringComparison.OrdinalIgnoreCase);
+        }
+        catch (Exception exception)
+        {
+            FileSelection.FileName = null;
+            FileSelection.Content = null;
+            fileError = L["PatternImport.ReadFailed", exception.Message].Value;
+        }
     }
 
     private string GetOption(IReadOnlyList<string> knownOptions, int value)

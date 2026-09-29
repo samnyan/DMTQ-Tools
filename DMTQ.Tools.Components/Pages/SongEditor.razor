@@ -1,5 +1,7 @@
 @page "/songs/editor/{SongId}"
-@using DMTQ.Tools.Components.Models
+@using DMTQ_Tools.Components.Models
+@using DMTQ.Tools.Core.Models.Pattern
+@using DMTQ.Tools.Core.Services.Pattern
 @using Icons = Microsoft.FluentUI.AspNetCore.Components.Icons
 @inject NavigationManager Navigation
 @inject IProjectState State
@@ -11,6 +13,7 @@
 @inject ProductEditService ProductEditSvc
 @inject IDialogService DialogService
 @inject EyecatchIndexService EyecatchIndex
+@inject PatternIndexService PatternIndex
 
 <div class="song-editor-page">
 
@@ -359,6 +362,9 @@
                                 <FluentDataGrid Items="@SortedPatterns.AsQueryable()" TGridItem="SongPattern"
                                                 ShowHover="true" ResizableColumns="true">
                                     <PropertyColumn Property="@(p => p.PatternId)" Title='@L["Fields.PatternId"]' Sortable="true" />
+                                    <TemplateColumn Title='@L["Fields.PatternFile"]' Context="p">
+                                        @FormatPatternFileStatus(p.PatternId)
+                                    </TemplateColumn>
                                     <TemplateColumn Title='@L["Fields.ChartLine"]' Context="p">
                                         @FormatChartLine(p.Line)
                                     </TemplateColumn>
@@ -1061,6 +1067,7 @@
             PointValue = 0,
             Update = "0"
         };
+        var fileSelection = new PatternFileSelection();
 
         var result = await DialogService.ShowDialogAsync<PatternDialog>(options =>
         {
@@ -1071,7 +1078,8 @@
             options.Parameters = new Dictionary<string, object?>
             {
                 [nameof(PatternDialog.Content)] = pattern,
-                [nameof(PatternDialog.AllowPatternIdEdit)] = true
+                [nameof(PatternDialog.AllowPatternIdEdit)] = true,
+                [nameof(PatternDialog.FileSelection)] = fileSelection
             };
         });
         if (result.Cancelled || pattern.PatternId == 0 || pattern.Line == 0)
@@ -1082,6 +1090,22 @@
             saveException = null;
             isBusy = true;
             SongEditSvc.AddPattern(currentSong, pattern);
+            if (fileSelection.Content is { Length: > 0 } fileContent)
+            {
+                try
+                {
+                    await using var stream = new MemoryStream(fileContent, writable: false);
+                    await PatternIndex.ImportPatternFileAsync(
+                        State.ProjectRoot ?? throw new InvalidOperationException(L["PatternImport.ProjectRequired"].Value),
+                        pattern.PatternId, stream, fileSelection.IsHeadphone);
+                }
+                catch
+                {
+                    SongEditSvc.RemovePattern(currentSong, pattern.PatternId);
+                    throw;
+                }
+                await TryRefreshPatternFilesAsync();
+            }
             if (IsCreate)
             {
                 message = L["Editor.PatternDraftSavedWithSong"].Value;
@@ -1091,6 +1115,7 @@
                 SongEditSvc.UpdateSong(State.CurrentPackage!, currentSong, State.SelectedExportPlatform);
                 State.IsDirty = true;
                 await Workflow.SaveProjectAsync();
+                await SyncPatternRowsToIndexAsync();
                 message = L["Editor.Saved", L["Editor.Patterns"].Value].Value;
             }
             _lastPackage = null;
@@ -1101,6 +1126,49 @@
             saveException = ex;
         }
         finally { isBusy = false; }
+    }
+
+    private async Task SyncPatternRowsToIndexAsync()
+    {
+        if (string.IsNullOrWhiteSpace(State.ProjectRoot)
+            || !Directory.Exists(State.ProjectRoot)
+            || State.CurrentPackage is null) return;
+        try
+        {
+            await PatternIndex.SyncSongPatternsAsync(State.ProjectRoot, State.CurrentPackage.Songs.SelectMany(song =>
+                song.Patterns.Select(pattern => new PatternSongReference(
+                    pattern.PatternId, song.Id, string.IsNullOrWhiteSpace(song.Name) ? song.FullName : song.Name,
+                    pattern.Line, pattern.Signature, pattern.Difficulty))));
+        }
+        catch (Exception exception)
+        {
+            State.Diagnostics.Add($"Song pattern index synchronization failed: {exception.Message}");
+        }
+    }
+
+    private async Task TryRefreshPatternFilesAsync()
+    {
+        if (string.IsNullOrWhiteSpace(State.ProjectRoot)) return;
+        try
+        {
+            await PatternIndex.RefreshAsync(State.ProjectRoot);
+        }
+        catch (Exception exception)
+        {
+            State.Diagnostics.Add($"Pattern file index refresh failed: {exception.Message}");
+        }
+    }
+
+    private string FormatPatternFileStatus(int patternId)
+    {
+        var patternRoot = string.IsNullOrWhiteSpace(State.ProjectRoot)
+            ? string.Empty
+            : Path.Combine(State.ProjectRoot, "Patterns");
+        var hasStandard = !string.IsNullOrEmpty(patternRoot)
+            && File.Exists(Path.Combine(patternRoot, patternId.ToString(System.Globalization.CultureInfo.InvariantCulture)));
+        var hasHeadphone = !string.IsNullOrEmpty(patternRoot)
+            && File.Exists(Path.Combine(patternRoot, $"{patternId.ToString(System.Globalization.CultureInfo.InvariantCulture)}_EARPHONE"));
+        return $"{L["PatternIndex.StandardShort"].Value}{(hasStandard ? "✓" : "×")} {L["PatternIndex.HeadphoneShort"].Value}{(hasHeadphone ? "✓" : "×")}";
     }
 
     // ── Pattern: Edit via Dialog ──
@@ -1147,6 +1215,7 @@
             SongEditSvc.UpdateSong(State.CurrentPackage!, currentSong, State.SelectedExportPlatform);
             State.IsDirty = true;
             await Workflow.SaveProjectAsync();
+            await SyncPatternRowsToIndexAsync();
             _lastPackage = null;
             message = L["Editor.Saved", L["Editor.Patterns"].Value].Value;
             State.Diagnostics.Add($"Pattern edited: {pattern.PatternId}");
@@ -1184,6 +1253,7 @@
             SongEditSvc.UpdateSong(State.CurrentPackage!, currentSong, State.SelectedExportPlatform);
             State.IsDirty = true;
             await Workflow.SaveProjectAsync();
+            await SyncPatternRowsToIndexAsync();
             _lastPackage = null;
             message = L["Lists.Deleted", L["Editor.Patterns"].Value, pattern.PatternId].Value;
             State.Diagnostics.Add($"Pattern removed: {pattern.PatternId}");
@@ -1298,6 +1368,7 @@
 
             State.IsDirty = true;
             await Workflow.SaveProjectAsync();
+            await SyncPatternRowsToIndexAsync();
         }
         catch
         {
