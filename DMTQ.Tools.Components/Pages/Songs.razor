@@ -67,12 +67,12 @@
     </Metrics>
 
     <Columns>
-        <PropertyColumn TGridItem="Song" TProp="int" Property="@(s => s.Id)" Title="Song ID" Sortable="true" Width="6.25rem" MinWidth="6.25rem" />
-        <TemplateColumn TGridItem="Song" Title='@L["Lists.Name"]' Sortable="true" SortBy="@(GridSort<Song>.ByAscending(s => s.Name))" Width="2fr" MinWidth="14rem" Context="song">
+        <PropertyColumn TGridItem="Song" TProp="int" Property="@(s => s.Id)" Title='@L["Fields.SongId"]' Sortable="true" Width="6.25rem" MinWidth="6.25rem" />
+        <TemplateColumn TGridItem="Song" Title='@L["Fields.SongName"]' Sortable="true" SortBy="@(GridSort<Song>.ByAscending(s => s.Name))" Width="2fr" MinWidth="14rem" Context="song">
             <strong>@DisplayTitle(song)</strong>
         </TemplateColumn>
-        <PropertyColumn TGridItem="Song" TProp="string" Property="@(s => s.Genre)" Title="Genre" Sortable="true" Width="1fr" MinWidth="10rem" />
-        <PropertyColumn TGridItem="Song" TProp="string" Property="@(s => s.ArtistName)" Title='@L["Lists.Artist"]' Sortable="true" Width="1.75fr" MinWidth="12rem" />
+        <PropertyColumn TGridItem="Song" TProp="string" Property="@(s => s.Genre)" Title='@L["Fields.Genre"]' Sortable="true" Width="1fr" MinWidth="10rem" />
+        <PropertyColumn TGridItem="Song" TProp="string" Property="@(s => s.ArtistName)" Title='@L["Fields.Artist"]' Sortable="true" Width="1.75fr" MinWidth="12rem" />
         <TemplateColumn TGridItem="Song" Title='@L["Lists.Patterns"]' Width="6.25rem" MinWidth="6.25rem" Context="song">
             @song.Patterns.Count
         </TemplateColumn>
@@ -172,12 +172,14 @@
     {
         get
         {
-            if (string.IsNullOrWhiteSpace(filter)) return Catalog;
-            return Catalog.Where(song =>
+            IEnumerable<Song> songs = Catalog;
+            if (!string.IsNullOrWhiteSpace(filter))
+                songs = songs.Where(song =>
                 song.Id.ToString().Contains(filter, StringComparison.OrdinalIgnoreCase)
                 || song.Name.Contains(filter, StringComparison.OrdinalIgnoreCase)
                 || song.ArtistName.Contains(filter, StringComparison.OrdinalIgnoreCase)
                 || song.Genre.Contains(filter, StringComparison.OrdinalIgnoreCase));
+            return songs.ByIdentifierDescending(song => song.Id.ToString(System.Globalization.CultureInfo.InvariantCulture));
         }
     }
 

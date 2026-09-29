@@ -150,7 +150,7 @@
                     || item.ItemName.Contains(itemNameFilter, StringComparison.OrdinalIgnoreCase));
             if (selectedItemTypes.Any())
                 items = items.Where(item => selectedItemTypes.Contains(GetItemTypeCode(item.ItemType)));
-            return items;
+            return items.ByIdentifierDescending(item => item.Id);
         }
     }
 

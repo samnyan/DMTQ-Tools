@@ -22,7 +22,7 @@
         <div class="list-grid-scroll">
             @if (_visibleItems.Length > 0)
             {
-                <FluentDataGrid Items="@_visibleItems.AsQueryable()" TGridItem="TItem"
+                <FluentDataGrid ItemsProvider="@_itemsProvider" TGridItem="TItem"
                                 ShowHover="true"
                                 Pagination="@Pagination"
                                 ResizableColumns="true"
@@ -65,6 +65,7 @@
     [Parameter] public string? ErrorMessage { get; set; }
 
     private TItem[] _visibleItems = [];
+    private GridItemsProvider<TItem> _itemsProvider = default!;
 
     protected override async Task OnInitializedAsync()
     {
@@ -73,7 +74,10 @@
     }
 
     protected override void OnParametersSet()
-        => _visibleItems = FilteredItems.ToArray();
+    {
+        _visibleItems = FilteredItems.ToArray();
+        _itemsProvider = GridItemsProviderFactory.Create(_visibleItems);
+    }
 
     private void OnLocationChanged(object? sender, LocationChangedEventArgs args)
         => InvokeAsync(async () =>

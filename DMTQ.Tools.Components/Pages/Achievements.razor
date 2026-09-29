@@ -60,11 +60,18 @@
         ? []
         : CatalogService.BuildCatalog(State.CurrentPackage, State.SelectedExportPlatform);
 
-    private IEnumerable<Achievement> FilteredItems => string.IsNullOrWhiteSpace(filter)
-        ? Catalog
-        : Catalog.Where(item => item.Id.Contains(filter, StringComparison.OrdinalIgnoreCase)
-            || CatalogService.GetDisplayName(item, PreviewLanguage).Contains(filter, StringComparison.OrdinalIgnoreCase)
-            || item.ConditionType.Contains(filter, StringComparison.OrdinalIgnoreCase));
+    private IEnumerable<Achievement> FilteredItems
+    {
+        get
+        {
+            IEnumerable<Achievement> items = Catalog;
+            if (!string.IsNullOrWhiteSpace(filter))
+                items = items.Where(item => item.Id.Contains(filter, StringComparison.OrdinalIgnoreCase)
+                    || CatalogService.GetDisplayName(item, PreviewLanguage).Contains(filter, StringComparison.OrdinalIgnoreCase)
+                    || item.ConditionType.Contains(filter, StringComparison.OrdinalIgnoreCase));
+            return items.ByIdentifierDescending(item => item.Id);
+        }
+    }
 
     private Task SetFilterAsync(string? value)
     {

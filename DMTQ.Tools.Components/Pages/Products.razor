@@ -50,19 +50,19 @@
     </Metrics>
 
     <Columns>
-        <PropertyColumn TGridItem="Product" TProp="string" Property="@(product => product.Id)" Title="Product ID" Sortable="true" Width="7rem" MinWidth="7rem" />
-        <PropertyColumn TGridItem="Product" TProp="string" Property="@(product => product.ItemId)" Title="Item ID" Sortable="true" Width="6.5rem" MinWidth="6.5rem" />
-        <TemplateColumn TGridItem="Product" Title='@L["Fields.ProductType"]' Sortable="true" Width="14rem" MinWidth="12rem" Context="product">
+        <PropertyColumn TGridItem="Product" TProp="string" Property="@(product => product.Id)" Title='@L["Fields.ProductId"]' Sortable="true" Width="7rem" MinWidth="7rem" />
+        <PropertyColumn TGridItem="Product" TProp="string" Property="@(product => product.ItemId)" Title='@L["Fields.ItemId"]' Sortable="true" Width="6.5rem" MinWidth="6.5rem" />
+        <TemplateColumn TGridItem="Product" Title='@L["Fields.ProductType"]' Sortable="true" SortBy="@(GridSort<Product>.ByAscending(product => product.ProductType))" Width="14rem" MinWidth="12rem" Context="product">
             @GetProductTypeLabel(product.ProductType)
         </TemplateColumn>
         <TemplateColumn TGridItem="Product" Title='@L["Nav.ProductCategories"]' Width="2fr" MinWidth="18rem" Context="product">
             @GetProductCategoryLabels(product)
         </TemplateColumn>
-        <PropertyColumn TGridItem="Product" TProp="string" Property="@(product => product.PlatformProductId)" Title='@L["Lists.PlatformSku"]' Sortable="true" Width="7rem" MinWidth="7rem" />
-        <PropertyColumn TGridItem="Product" TProp="string" Property="@(product => product.StoreProductId)" Title='@L["Lists.StoreSku"]' Sortable="true" Width="1fr" MinWidth="18rem" />
-        <PropertyColumn TGridItem="Product" TProp="string" Property="@(product => product.CostGamePoint)" Title='@L["Lists.GamePoint"]' Width="8rem" MinWidth="8rem" />
-        <PropertyColumn TGridItem="Product" TProp="string" Property="@(product => product.CostGameCash)" Title='@L["Lists.GameCash"]' Width="7rem" MinWidth="7rem" />
-        <PropertyColumn TGridItem="Product" TProp="string" Property="@(product => product.Status)" Title="Status" Sortable="true" Width="6.25rem" MinWidth="6.25rem" />
+        <PropertyColumn TGridItem="Product" TProp="string" Property="@(product => product.PlatformProductId)" Title='@L["Fields.PlatformProductId"]' Sortable="true" Width="7rem" MinWidth="7rem" />
+        <PropertyColumn TGridItem="Product" TProp="string" Property="@(product => product.StoreProductId)" Title='@L["Fields.StoreProductId"]' Sortable="true" Width="1fr" MinWidth="18rem" />
+        <PropertyColumn TGridItem="Product" TProp="string" Property="@(product => product.CostGamePoint)" Title='@L["Fields.CostGamePoint"]' Width="8rem" MinWidth="8rem" />
+        <PropertyColumn TGridItem="Product" TProp="string" Property="@(product => product.CostGameCash)" Title='@L["Fields.CostGameCash"]' Width="7rem" MinWidth="7rem" />
+        <PropertyColumn TGridItem="Product" TProp="string" Property="@(product => product.Status)" Title='@L["Fields.Status"]' Sortable="true" Width="6.25rem" MinWidth="6.25rem" />
         <TemplateColumn TGridItem="Product" Title='@L["Lists.Actions"]' Width="11rem" MinWidth="11rem" Context="product">
             <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="4">
                 <FluentButton IconStart="@(new Icons.Regular.Size20.Edit())"
@@ -108,16 +108,17 @@
     {
         get
         {
-            if (string.IsNullOrWhiteSpace(filter)) return Catalog;
-
-            return Catalog.Where(product =>
-                product.Id.Contains(filter, StringComparison.OrdinalIgnoreCase)
-                || product.ItemId.Contains(filter, StringComparison.OrdinalIgnoreCase)
-                || product.PlatformProductId.Contains(filter, StringComparison.OrdinalIgnoreCase)
-                || product.StoreProductId.Contains(filter, StringComparison.OrdinalIgnoreCase)
-                || product.ProductType.Contains(filter, StringComparison.OrdinalIgnoreCase)
-                || GetProductTypeLabel(product.ProductType).Contains(filter, StringComparison.OrdinalIgnoreCase)
-                || GetProductCategoryLabels(product).Contains(filter, StringComparison.OrdinalIgnoreCase));
+            IEnumerable<Product> products = Catalog;
+            if (!string.IsNullOrWhiteSpace(filter))
+                products = products.Where(product =>
+                    product.Id.Contains(filter, StringComparison.OrdinalIgnoreCase)
+                    || product.ItemId.Contains(filter, StringComparison.OrdinalIgnoreCase)
+                    || product.PlatformProductId.Contains(filter, StringComparison.OrdinalIgnoreCase)
+                    || product.StoreProductId.Contains(filter, StringComparison.OrdinalIgnoreCase)
+                    || product.ProductType.Contains(filter, StringComparison.OrdinalIgnoreCase)
+                    || GetProductTypeLabel(product.ProductType).Contains(filter, StringComparison.OrdinalIgnoreCase)
+                    || GetProductCategoryLabels(product).Contains(filter, StringComparison.OrdinalIgnoreCase));
+            return products.ByIdentifierDescending(product => product.Id);
         }
     }
 

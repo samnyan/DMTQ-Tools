@@ -58,7 +58,7 @@
                 <TemplateColumn TGridItem="ProductCategorySummary" Title='@L["Fields.CategoryName"]' Width="2fr" MinWidth="18rem" Context="category">
                     @CategoryName(category)
                 </TemplateColumn>
-                <TemplateColumn TGridItem="ProductCategorySummary" Title='@L["Lists.ProductCount"]' Sortable="true" Width="9rem" MinWidth="9rem" Context="category">
+                <TemplateColumn TGridItem="ProductCategorySummary" Title='@L["Lists.ProductCount"]' Sortable="true" SortBy="@(GridSort<ProductCategorySummary>.ByAscending(category => category.ProductIds.Count))" Width="9rem" MinWidth="9rem" Context="category">
                     @category.ProductIds.Count
                 </TemplateColumn>
                 <TemplateColumn TGridItem="ProductCategorySummary" Title='@L["Fields.Notes"]' Width="2fr" MinWidth="18rem" Context="category">
@@ -144,9 +144,10 @@
         ? []
         : CategoryCatalog.BuildCatalog(State.CurrentPackage, State.SelectedExportPlatform);
 
-    private IEnumerable<ProductCategorySummary> FilteredCategories => string.IsNullOrWhiteSpace(filter)
-        ? Catalog
-        : Catalog.Where(category => category.Id.Contains(filter, StringComparison.OrdinalIgnoreCase));
+    private IEnumerable<ProductCategorySummary> FilteredCategories
+        => Catalog.Where(category => string.IsNullOrWhiteSpace(filter)
+            || category.Id.Contains(filter, StringComparison.OrdinalIgnoreCase))
+            .ByIdentifierDescending(category => category.Id);
 
     private IEnumerable<Product> FilteredProducts => string.IsNullOrWhiteSpace(productFilter)
         ? Products

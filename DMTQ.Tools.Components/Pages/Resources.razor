@@ -70,7 +70,7 @@
 
     <Columns>
         <PropertyColumn TGridItem="ResourceCatalogEntry" TProp="string" Property="@(r => r.FileName)" Title='@L["Lists.FileName"]' Sortable="true" />
-        <PropertyColumn TGridItem="ResourceCatalogEntry" TProp="string" Property="@(r => r.Category)" Title="Category" Sortable="true" />
+        <PropertyColumn TGridItem="ResourceCatalogEntry" TProp="string" Property="@(r => r.Category)" Title='@L["Lists.Category"]' Sortable="true" />
         <TemplateColumn TGridItem="ResourceCatalogEntry" Title='@L["Lists.Platforms"]' Context="resource">
             @string.Join(", ", resource.PlatformManifest.Select(PlatformStatusLabel))
         </TemplateColumn>
@@ -137,7 +137,7 @@
             {
                 query = query.Where(r => r.FileName.Contains(filter, StringComparison.OrdinalIgnoreCase));
             }
-            return query;
+            return query.ByIdentifierDescending(resource => $"{resource.Category}/{resource.FileName}");
         }
     }
 

@@ -14,7 +14,7 @@
     <div class="list-toolbar-layout eyecatch-toolbar">
         <div class="list-toolbar-filters">
             <ToolbarField Unlabeled Search>
-                <FluentTextInput Value="@_filter" ValueChanged="@(value => _filter = value ?? string.Empty)"
+                <FluentTextInput Value="@_filter" ValueChanged="SetFilterAsync"
                                  Immediate="true" Placeholder='@L["Eyecatch.Search"]' class="list-filter" />
             </ToolbarField>
         </div>
@@ -56,7 +56,7 @@
         <FluentMessageBar Intent="@_messageIntent" Title="@_message" />
     }
 
-    <FluentDataGrid Items="@FilteredAtlases.AsQueryable()" Pagination="@_pagination" Class="eyecatch-grid"
+    <FluentDataGrid ItemsProvider="@_atlasItemsProvider" Pagination="@_pagination" Class="eyecatch-grid"
                     ResizableColumns="true" ShowHover="true">
         <PropertyColumn TGridItem="EyecatchAtlasFamily" TProp="string" Property="@(item => item.AtlasKey)"
                         Title='@L["Eyecatch.AtlasKey"]' Sortable="true" Width="1fr" MinWidth="10rem" />
@@ -97,11 +97,14 @@
     private string _progressText = string.Empty;
     private string _buildButtonLabel = "Build index";
     private bool _isBusy;
+    private GridItemsProvider<EyecatchAtlasFamily> _atlasItemsProvider =
+        GridItemsProviderFactory.Create(Array.Empty<EyecatchAtlasFamily>());
 
     protected override async Task OnParametersSetAsync()
     {
         if (!string.IsNullOrWhiteSpace(State.ProjectRoot))
             _index = await IndexService.LoadAsync(State.ProjectRoot);
+        RefreshAtlasItemsProvider();
     }
 
     private IEnumerable<EyecatchAtlasFamily> FilteredAtlases
@@ -109,13 +112,24 @@
         get
         {
             var atlases = _index?.Atlases ?? [];
-            return string.IsNullOrWhiteSpace(_filter)
+            var filteredAtlases = string.IsNullOrWhiteSpace(_filter)
                 ? atlases
                 : atlases.Where(item => item.AtlasKey.Contains(_filter, StringComparison.OrdinalIgnoreCase)
                     || item.Variants.Any(variant => variant.AtlasName.Contains(_filter, StringComparison.OrdinalIgnoreCase)
                         || variant.ResourcePath.Contains(_filter, StringComparison.OrdinalIgnoreCase)));
+            return filteredAtlases.ByIdentifierDescending(item => item.AtlasKey);
         }
     }
+
+    private async Task SetFilterAsync(string? value)
+    {
+        _filter = value ?? string.Empty;
+        await _pagination.SetCurrentPageIndexAsync(0);
+        RefreshAtlasItemsProvider();
+    }
+
+    private void RefreshAtlasItemsProvider()
+        => _atlasItemsProvider = GridItemsProviderFactory.Create(FilteredAtlases.ToArray());
 
     private async Task BuildIndexAsync()
     {
@@ -132,6 +146,7 @@
                 StateHasChanged();
             });
             _index = await IndexService.BuildAsync(State.CurrentPackage, State.ProjectRoot, progress);
+            RefreshAtlasItemsProvider();
             _messageIntent = MessageBarIntent.Info;
             _message = L["Eyecatch.BuildComplete", _index.Atlases.Count, _index.Atlases.Sum(atlas => atlas.Variants.Count(variant => variant.Status == EyecatchVariantStatus.Ready))].Value;
         }
@@ -172,6 +187,7 @@
             };
         });
         _index = await IndexService.LoadAsync(State.ProjectRoot);
+        RefreshAtlasItemsProvider();
     }
 
     private int SpriteCount(EyecatchAtlasFamily family, SpriteAtlasKind kind)

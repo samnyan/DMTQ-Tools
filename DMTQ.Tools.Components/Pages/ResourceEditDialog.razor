@@ -16,18 +16,18 @@
                               OptionText="@(category => FileUtility.GetCategoryPathPrefix(category) + "/")"
                               OptionValue="@(category => category)"
                               @bind-Value="Content.Category"
-                              Label="Category"
+                              Label='@L["Lists.Category"]'
                               Style="min-width: 140px;"
                               Disabled="@(!Content.IsNew)" />
                 <FluentTextInput @bind-Value="Content.FileName"
-                                 Label="File Name"
+                                 Label='@L["Lists.FileName"]'
                                  ReadOnly="@(!Content.IsNew)"
                                  Style="flex: 1;" />
             </FluentStack>
             <div style="font-size: 0.85rem; color: var(--colorNeutralForeground1); padding-left: 4px;">
                 Full path: <code style="font-weight: 600;">@FullPathPreview</code>
             </div>
-            <FluentSwitch @bind-Value="Content.Compressed" Label="Compressed" />
+            <FluentSwitch @bind-Value="Content.Compressed" Label='@L["Lists.Compressed"]' />
         </FluentStack>
     </section>
 

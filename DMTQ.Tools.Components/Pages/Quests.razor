@@ -50,9 +50,17 @@
     private string? message;
     private string? errorMessage;
     private IReadOnlyList<Quest> Catalog => State.CurrentPackage is null ? [] : CatalogService.BuildCatalog(State.CurrentPackage, State.SelectedExportPlatform);
-    private IEnumerable<Quest> FilteredItems => string.IsNullOrWhiteSpace(filter) ? Catalog : Catalog.Where(q =>
-        q.Id.Contains(filter, StringComparison.OrdinalIgnoreCase)
-        || CatalogService.GetDisplayName(q, PreviewLanguage).Contains(filter, StringComparison.OrdinalIgnoreCase));
+    private IEnumerable<Quest> FilteredItems
+    {
+        get
+        {
+            IEnumerable<Quest> items = Catalog;
+            if (!string.IsNullOrWhiteSpace(filter))
+                items = items.Where(q => q.Id.Contains(filter, StringComparison.OrdinalIgnoreCase)
+                    || CatalogService.GetDisplayName(q, PreviewLanguage).Contains(filter, StringComparison.OrdinalIgnoreCase));
+            return items.ByIdentifierDescending(q => q.Id);
+        }
+    }
     private Task SetFilterAsync(string? value)
     {
         SearchQuery = value;

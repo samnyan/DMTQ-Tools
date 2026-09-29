@@ -39,7 +39,9 @@
     private string? message;
     private string? errorMessage;
     private IReadOnlyList<SlangEntry> Catalog => State.CurrentPackage is null ? [] : EditService.BuildCatalog(State.CurrentPackage);
-    private IEnumerable<SlangEntry> FilteredItems => string.IsNullOrWhiteSpace(filter) ? Catalog : Catalog.Where(entry => entry.Value.Contains(filter, StringComparison.OrdinalIgnoreCase));
+    private IEnumerable<SlangEntry> FilteredItems => Catalog
+        .Where(entry => string.IsNullOrWhiteSpace(filter) || entry.Value.Contains(filter, StringComparison.OrdinalIgnoreCase))
+        .ByIdentifierDescending(entry => entry.Value);
     private Task SetFilterAsync(string? value)
     {
         SearchQuery = value;
