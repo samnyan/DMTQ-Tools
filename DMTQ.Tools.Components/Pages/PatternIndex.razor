@@ -1,0 +1,400 @@
+@page "/pattern-index"
+@using DMTQ.Tools.Core.Models.Pattern
+@using DMTQ.Tools.Core.Services.Pattern
+@inject IProjectState State
+@inject PatternIndexService IndexService
+
+<PageTitle>@L["PatternIndex.Title"]</PageTitle>
+
+<section class="list-page">
+    <div class="list-toolbar-layout">
+        <div class="list-toolbar-filters">
+            <ToolbarField Unlabeled Search>
+                <FluentTextInput Value="@_patternIdFilter" ValueChanged="SetPatternIdFilterAsync" Immediate="true"
+                                 Placeholder='@L["PatternIndex.SearchPatternId"]' class="list-filter" />
+            </ToolbarField>
+            <ToolbarField Unlabeled Search>
+                <FluentTextInput Value="@_songIdFilter" ValueChanged="SetSongIdFilterAsync" Immediate="true"
+                                 Placeholder='@L["PatternIndex.SearchSongId"]' class="list-filter" />
+            </ToolbarField>
+            <ToolbarField Unlabeled Search>
+                <FluentTextInput Value="@_songNameFilter" ValueChanged="SetSongNameFilterAsync" Immediate="true"
+                                 Placeholder='@L["PatternIndex.SearchSongName"]' class="list-filter" />
+            </ToolbarField>
+            <ToolbarField>
+                <FluentSelect TOption="string" TValue="string" Items="@SongPatternFilterOptions"
+                              OptionText="GetSongPatternFilterLabel" OptionValue="@(value => value)"
+                              Value="@_songPatternFilter" ValueChanged="SetSongPatternFilterAsync"
+                              Label='@L["PatternIndex.SongPatternFilter"]' class="list-select" />
+            </ToolbarField>
+            <ToolbarField>
+                <FluentSelect TOption="string" TValue="string" Items="@PatternFileFilterOptions"
+                              OptionText="GetPatternFileFilterLabel" OptionValue="@(value => value)"
+                              Value="@_patternFileFilter" ValueChanged="SetPatternFileFilterAsync"
+                              Label='@L["PatternIndex.PatternFileFilter"]' class="list-select" />
+            </ToolbarField>
+        </div>
+        <div class="list-toolbar-actions">
+            <ToolbarField Unlabeled>
+                <FluentButton Appearance="ButtonAppearance.Primary" OnClick="RefreshIndexAsync"
+                              Disabled="@(_isBusy || string.IsNullOrWhiteSpace(State.ProjectRoot))">
+                    @if (_isBusy) { <FluentSpinner /> }
+                    @L["PatternIndex.RefreshFiles"]
+                </FluentButton>
+            </ToolbarField>
+        </div>
+    </div>
+
+    @if (string.IsNullOrWhiteSpace(State.ProjectRoot))
+    {
+        <FluentMessageBar Intent="MessageBarIntent.Warning" Title='@L["Common.NoProject"]' />
+    }
+    else if (_index?.LastIndexedAtUtc is null)
+    {
+        <FluentMessageBar Intent="MessageBarIntent.Info" Title='@L["PatternIndex.NotIndexed"]' />
+    }
+
+    @if (_isBusy)
+    {
+        <FluentMessageBar Intent="MessageBarIntent.Info"
+                          Title='@L["PatternIndex.Progress", _completed, _total, _currentPath]' />
+    }
+    @if (!string.IsNullOrWhiteSpace(_message))
+    {
+        <FluentMessageBar Intent="@_messageIntent" Title="@_message" />
+    }
+
+    @if (_index is not null)
+    {
+        <div class="pattern-index-metrics">
+            <FluentCard class="pattern-index-metric-card"><span class="metric-label">@L["PatternIndex.Total"]</span><strong>@_index.Patterns.Count</strong></FluentCard>
+            <FluentCard class="pattern-index-metric-card"><span class="metric-label">@L["PatternIndex.MissingFiles"]</span><strong>@MissingFileCount</strong></FluentCard>
+            <FluentCard class="pattern-index-metric-card"><span class="metric-label">@L["PatternIndex.MissingSongPatternFiles"]</span><strong>@MissingSongPatternCount</strong></FluentCard>
+            <FluentCard class="pattern-index-metric-card"><span class="metric-label">@L["PatternIndex.Earphone"]</span><strong>@_index.Patterns.Values.Count(item => item.HasHeadphone)</strong></FluentCard>
+            <FluentCard class="pattern-index-metric-card"><span class="metric-label">@L["PatternIndex.ParseErrors"]</span><strong>@ParseErrorCount</strong></FluentCard>
+            @if (_index.LastIndexedAtUtc is { } indexedAt)
+            {
+                <FluentCard class="pattern-index-metric-card"><span class="metric-label">@L["PatternIndex.LastIndexed"]</span><strong>@indexedAt.ToLocalTime().ToString("g")</strong></FluentCard>
+            }
+        </div>
+
+        <div class="list-grid-scroll">
+            @if (_visibleEntries.Length > 0)
+            {
+                <FluentDataGrid ItemsProvider="@_itemsProvider" Pagination="@_pagination"
+                                TGridItem="PatternIndexRow" ShowHover="true" ResizableColumns="true"
+                                HeaderCellAsButtonWithMenu="true">
+                    <PropertyColumn TGridItem="PatternIndexRow" TProp="int" Property="@(item => item.PatternId)"
+                                    Title='@L["PatternIndex.PatternId"]' Sortable="true" Width="7rem" MinWidth="7rem" />
+                    <TemplateColumn TGridItem="PatternIndexRow" Title='@L["PatternIndex.SongIds"]' Context="item" Width="7rem" MinWidth="7rem">
+                        @item.SongIds
+                    </TemplateColumn>
+                    <TemplateColumn TGridItem="PatternIndexRow" Title='@L["PatternIndex.SongNames"]' Context="item" Width="1fr" MinWidth="14rem">
+                        @item.SongNames
+                    </TemplateColumn>
+                    <TemplateColumn TGridItem="PatternIndexRow" Title='@L["PatternIndex.SongPatternTable"]' Context="item" Width="6.5rem" MinWidth="6.5rem">
+                        @(item.HasSongPattern ? L["PatternIndex.Configured"].Value : L["PatternIndex.Unconfigured"].Value)
+                    </TemplateColumn>
+                    <TemplateColumn TGridItem="PatternIndexRow" Title='@L["PatternIndex.HasFile"]' Context="item" Width="6rem" MinWidth="6rem">
+                        @(item.HasPatternFile ? L["PatternIndex.Yes"].Value : L["PatternIndex.No"].Value)
+                    </TemplateColumn>
+                    <TemplateColumn TGridItem="PatternIndexRow" Title='@L["PatternIndex.HasHeadphone"]' Sortable="true"
+                                    SortBy="@(GridSort<PatternIndexRow>.ByAscending(item => item.HasHeadphone))" Context="item" Width="6rem" MinWidth="6rem">
+                        @(item.HasHeadphone ? L["PatternIndex.Yes"].Value : L["PatternIndex.No"].Value)
+                    </TemplateColumn>
+                    <TemplateColumn TGridItem="PatternIndexRow" Title='@L["PatternIndex.FileSize"]' Context="item" Width="10rem" MinWidth="10rem">
+                        <span class="pattern-index-file-sizes">@FormatSizes(item.Index)</span>
+                    </TemplateColumn>
+                    <TemplateColumn TGridItem="PatternIndexRow" Title='@L["Fields.ChartLine"]' Context="item" Width="6rem" MinWidth="6rem">
+                        @FormatDistinct(item.Index.SongPatterns.Select(song => song.Line), FormatChartLine)
+                    </TemplateColumn>
+                    <TemplateColumn TGridItem="PatternIndexRow" Title='@L["Fields.ChartDifficulty"]' Context="item" Width="7rem" MinWidth="7rem">
+                        @FormatDistinct(item.Index.SongPatterns.Select(song => song.Signature), FormatChartDifficulty)
+                    </TemplateColumn>
+                    <TemplateColumn TGridItem="PatternIndexRow" Title='@L["Fields.StarRating"]' Context="item" Width="5rem" MinWidth="5rem">
+                        @FormatDistinct(item.Index.SongPatterns.Select(song => song.Difficulty), value => value.ToString())
+                    </TemplateColumn>
+                    <TemplateColumn TGridItem="PatternIndexRow" Title='@L["Pattern.Tracks"]' Context="item" Width="5rem" MinWidth="5rem">
+                        @(item.MainFile?.TrackCount?.ToString() ?? "—")
+                    </TemplateColumn>
+                    <TemplateColumn TGridItem="PatternIndexRow" Title='@L["Pattern.Sounds"]' Context="item" Width="5rem" MinWidth="5rem">
+                        @(item.MainFile?.SoundCount?.ToString() ?? "—")
+                    </TemplateColumn>
+                    <TemplateColumn TGridItem="PatternIndexRow" Title='@L["Pattern.Events"]' Context="item" Width="5rem" MinWidth="5rem">
+                        @(item.MainFile?.EventCount?.ToString() ?? "—")
+                    </TemplateColumn>
+                    <TemplateColumn TGridItem="PatternIndexRow" Title='@L["PatternIndex.ParseStatus"]' Context="item">
+                        @if (item.Index.Standard?.ParseError is null && item.Index.Headphone?.ParseError is null)
+                        {
+                            @L["PatternIndex.Valid"]
+                        }
+                        else
+                        {
+                            <span title="@ParseError(item.Index)">@L["PatternIndex.Invalid"]</span>
+                        }
+                    </TemplateColumn>
+                </FluentDataGrid>
+            }
+            else if (_index.Patterns.Count > 0)
+            {
+                <FluentMessageBar Intent="MessageBarIntent.Info" Title='@L["PatternIndex.NoMatches"]' />
+            }
+            else if (_index.LastIndexedAtUtc is not null)
+            {
+                <FluentMessageBar Intent="MessageBarIntent.Info" Title='@L["PatternIndex.Empty"]' />
+            }
+        </div>
+
+        @if (_visibleEntries.Length > 0)
+        {
+            <FluentPaginator State="@_pagination" />
+        }
+    }
+</section>
+
+@code {
+    private readonly PaginationState _pagination = new() { ItemsPerPage = 50 };
+    private PatternIndexDocument? _index;
+    private PatternIndexRow[] _visibleEntries = [];
+    private GridItemsProvider<PatternIndexRow> _itemsProvider = GridItemsProviderFactory.Create(Array.Empty<PatternIndexRow>());
+    private string _patternIdFilter = string.Empty;
+    private string _songIdFilter = string.Empty;
+    private string _songNameFilter = string.Empty;
+    private string _songPatternFilter = "all";
+    private string _patternFileFilter = "all";
+    private string _message = string.Empty;
+    private MessageBarIntent _messageIntent = MessageBarIntent.Info;
+    private string _currentPath = string.Empty;
+    private int _completed;
+    private int _total;
+    private bool _isBusy;
+    private static readonly string[] SongPatternFilterOptions = ["all", "configured", "unconfigured"];
+    private static readonly string[] PatternFileFilterOptions = ["all", "missing"];
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (string.IsNullOrWhiteSpace(State.ProjectRoot))
+        {
+            _index = null;
+            RefreshVisibleEntries();
+            return;
+        }
+
+        var indexLoadFailed = false;
+        try
+        {
+            _index = await IndexService.LoadAsync(State.ProjectRoot);
+        }
+        catch (Exception exception)
+        {
+            _index = new PatternIndexDocument();
+            indexLoadFailed = true;
+            _messageIntent = MessageBarIntent.Warning;
+            _message = L["PatternIndex.LoadFailed", exception.Message].Value;
+        }
+
+        if (State.CurrentPackage is not null)
+        {
+            try
+            {
+                _index = await IndexService.SyncSongPatternsAsync(State.ProjectRoot, GetSongPatternReferences());
+                _message = string.Empty;
+            }
+            catch (Exception exception)
+            {
+                _messageIntent = MessageBarIntent.Warning;
+                _message = L["PatternIndex.LoadFailed", exception.Message].Value;
+            }
+        }
+        else if (!indexLoadFailed)
+        {
+            _message = string.Empty;
+        }
+
+        RefreshVisibleEntries();
+    }
+
+    private async Task SetPatternIdFilterAsync(string? value)
+    {
+        _patternIdFilter = value ?? string.Empty;
+        await RefreshFilteredPageAsync();
+    }
+
+    private async Task SetSongIdFilterAsync(string? value)
+    {
+        _songIdFilter = value ?? string.Empty;
+        await RefreshFilteredPageAsync();
+    }
+
+    private async Task SetSongNameFilterAsync(string? value)
+    {
+        _songNameFilter = value ?? string.Empty;
+        await RefreshFilteredPageAsync();
+    }
+
+    private async Task SetSongPatternFilterAsync(string? value)
+    {
+        _songPatternFilter = value ?? "all";
+        await RefreshFilteredPageAsync();
+    }
+
+    private async Task SetPatternFileFilterAsync(string? value)
+    {
+        _patternFileFilter = value ?? "all";
+        await RefreshFilteredPageAsync();
+    }
+
+    private string GetSongPatternFilterLabel(string value) => value switch
+    {
+        "configured" => L["PatternIndex.FilterConfigured"].Value,
+        "unconfigured" => L["PatternIndex.FilterUnconfigured"].Value,
+        _ => L["PatternIndex.FilterAll"].Value
+    };
+
+    private string GetPatternFileFilterLabel(string value) => value switch
+    {
+        "missing" => L["PatternIndex.FilterMissingFile"].Value,
+        _ => L["PatternIndex.FilterAll"].Value
+    };
+
+    private async Task RefreshFilteredPageAsync()
+    {
+        await _pagination.SetCurrentPageIndexAsync(0);
+        RefreshVisibleEntries();
+    }
+
+    private void RefreshVisibleEntries()
+    {
+        IEnumerable<PatternIndexRow> entries = _index?.Patterns
+            .Select(pair => new PatternIndexRow(pair.Key, pair.Value)) ?? [];
+        if (!string.IsNullOrWhiteSpace(_patternIdFilter))
+        {
+            entries = entries.Where(item => item.PatternId.ToString().Contains(_patternIdFilter, StringComparison.OrdinalIgnoreCase));
+        }
+        if (!string.IsNullOrWhiteSpace(_songIdFilter))
+        {
+            entries = entries.Where(item => item.Index.SongPatterns.Any(song =>
+                song.SongId.ToString().Contains(_songIdFilter, StringComparison.OrdinalIgnoreCase)));
+        }
+        if (!string.IsNullOrWhiteSpace(_songNameFilter))
+        {
+            entries = entries.Where(item => item.Index.SongPatterns.Any(song =>
+                song.SongName.Contains(_songNameFilter, StringComparison.OrdinalIgnoreCase)));
+        }
+        if (_songPatternFilter == "configured")
+            entries = entries.Where(item => item.HasSongPattern);
+        else if (_songPatternFilter == "unconfigured")
+            entries = entries.Where(item => !item.HasSongPattern);
+        if (_patternFileFilter == "missing")
+            entries = entries.Where(item => !item.HasPatternFile);
+
+        _visibleEntries = entries.OrderByDescending(item => item.PatternId)
+            .ToArray();
+        _itemsProvider = GridItemsProviderFactory.Create(_visibleEntries);
+    }
+
+    private async Task RefreshIndexAsync()
+    {
+        if (_isBusy || string.IsNullOrWhiteSpace(State.ProjectRoot))
+            return;
+
+        _isBusy = true;
+        _message = string.Empty;
+        _completed = 0;
+        _total = 0;
+        _currentPath = string.Empty;
+        try
+        {
+            var progress = new Progress<PatternIndexProgress>(value =>
+            {
+                _completed = value.Completed;
+                _total = value.Total;
+                _currentPath = value.RelativePath;
+                StateHasChanged();
+            });
+            _index = await IndexService.RefreshAsync(State.ProjectRoot, progress);
+            if (State.CurrentPackage is not null)
+            {
+                _index = await IndexService.SyncSongPatternsAsync(State.ProjectRoot, GetSongPatternReferences());
+            }
+            RefreshVisibleEntries();
+            _messageIntent = MessageBarIntent.Success;
+            _message = L["PatternIndex.RefreshComplete", _index.Patterns.Count(pair => pair.Value.Standard is not null || pair.Value.Headphone is not null), ParseErrorCount].Value;
+        }
+        catch (Exception exception)
+        {
+            _messageIntent = MessageBarIntent.Error;
+            _message = L["PatternIndex.RefreshFailed", exception.Message].Value;
+        }
+        finally
+        {
+            _isBusy = false;
+            _currentPath = string.Empty;
+        }
+    }
+
+    private int ParseErrorCount => _index?.Patterns.Values.Sum(entry =>
+        (entry.Standard?.ParseError is null ? 0 : 1) + (entry.Headphone?.ParseError is null ? 0 : 1)) ?? 0;
+
+    private int MissingFileCount => _index?.Patterns.Values.Count(entry =>
+        entry.SongPatterns.Count > 0 && entry.Standard is null && entry.Headphone is null) ?? 0;
+
+    private int MissingSongPatternCount => _index?.Patterns.Values.Count(entry =>
+        entry.SongPatterns.Count == 0 && (entry.Standard is not null || entry.Headphone is not null)) ?? 0;
+
+    private IEnumerable<PatternSongReference> GetSongPatternReferences()
+        => State.CurrentPackage?.Songs.SelectMany(song => song.Patterns.Select(pattern =>
+            new PatternSongReference(pattern.PatternId, song.Id, SongName(song), pattern.Line, pattern.Signature, pattern.Difficulty))) ?? [];
+
+    private string FormatChartLine(int value) => value switch
+    {
+        3 => $"3 — {L["Options.PatternLine2"].Value}",
+        4 => $"4 — {L["Options.PatternLine3"].Value}",
+        5 => $"5 — {L["Options.PatternLine4"].Value}",
+        _ => $"{value} — {L["Fields.ExistingValue"].Value}"
+    };
+
+    private string FormatChartDifficulty(int value) => value switch
+    {
+        0 => $"0 — {L["Options.PatternEasy"].Value}",
+        1 => $"1 — {L["Options.PatternNormal"].Value}",
+        2 => $"2 — {L["Options.PatternHard"].Value}",
+        3 => $"3 — {L["Options.PatternExpert"].Value}",
+        _ => $"{value} — {L["Fields.ExistingValue"].Value}"
+    };
+
+    private static string FormatDistinct(IEnumerable<int> values, Func<int, string> formatter)
+    {
+        var distinct = values.Distinct().ToArray();
+        return distinct.Length == 0 ? "—" : string.Join(", ", distinct.Select(formatter));
+    }
+
+    private static string SongName(DMTQ.Tools.Core.Models.Entity.Song song)
+    {
+        if (!string.IsNullOrWhiteSpace(song.Name)) return song.Name;
+        if (!string.IsNullOrWhiteSpace(song.FullName)) return song.FullName;
+        return song.Localizations.TryGetValue("CN", out var localization) ? localization.FullName : string.Empty;
+    }
+
+    private static string FormatSizes(PatternIndexEntry entry)
+    {
+        var standardSize = entry.Standard is null ? "—" : $"{entry.Standard.FileSize}b";
+        return entry.Headphone is null
+            ? standardSize
+            : $"{standardSize} (H) {entry.Headphone.FileSize}b";
+    }
+
+    private static string ParseError(PatternIndexEntry entry)
+        => string.Join("; ", new[] { entry.Standard?.ParseError, entry.Headphone?.ParseError }
+            .Where(message => !string.IsNullOrWhiteSpace(message)));
+
+    private sealed record PatternIndexRow(int PatternId, PatternIndexEntry Index)
+    {
+        public bool HasHeadphone => Index.HasHeadphone;
+        public PatternFileIndex? MainFile => Index.Standard ?? Index.Headphone;
+        public bool HasSongPattern => Index.SongPatterns.Count > 0;
+        public bool HasPatternFile => Index.Standard is not null || Index.Headphone is not null;
+        public string SongIds => string.Join(", ", Index.SongPatterns.Select(song => song.SongId));
+        public string SongNames => string.Join(", ", Index.SongPatterns.Select(song => song.SongName));
+    }
+}

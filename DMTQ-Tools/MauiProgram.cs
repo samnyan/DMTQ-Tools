@@ -68,6 +68,7 @@ namespace DMTQ_Tools
             builder.Services.AddSingleton<IProjectFileSaver, MauiFileSaver>();
             builder.Services.AddSingleton<PatternBinarySerializer>();
             builder.Services.AddSingleton<PatternTextSerializer>();
+            builder.Services.AddSingleton<PatternIndexService>();
             builder.Services.AddSingleton<SpriteAtlasBundleService>();
             builder.Services.AddSingleton<EyecatchIndexService>();
             builder.Services.AddSingleton<EyecatchBundleBuildService>();

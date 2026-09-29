@@ -1989,4 +1989,49 @@
   <data name="Import.InstallPackRootPlaceholder" xml:space="preserve">
     <value>原安装包的 InstallPack/android 或者 InstallPack/ios</value>
   </data>
+  <data name="PatternIndex.Title" xml:space="preserve"><value>谱面索引</value></data>
+  <data name="PatternIndex.SearchPatternId" xml:space="preserve"><value>搜索谱面 ID</value></data>
+  <data name="PatternIndex.SearchSongId" xml:space="preserve"><value>搜索歌曲 ID</value></data>
+  <data name="PatternIndex.SearchSongName" xml:space="preserve"><value>搜索歌曲名</value></data>
+  <data name="PatternIndex.RefreshFiles" xml:space="preserve"><value>刷新文件索引</value></data>
+  <data name="PatternIndex.NotIndexed" xml:space="preserve"><value>尚未刷新谱面文件索引。</value></data>
+  <data name="PatternIndex.Progress" xml:space="preserve"><value>正在读取谱面 {0}/{1}：{2}</value></data>
+  <data name="Nav.PatternIndex" xml:space="preserve"><value>谱面</value></data>
+  <data name="PatternIndex.Total" xml:space="preserve"><value>谱面数量</value></data>
+  <data name="PatternIndex.MissingFiles" xml:space="preserve"><value>缺少谱面文件</value></data>
+  <data name="PatternIndex.MissingSongPatterns" xml:space="preserve"><value>缺少歌曲谱面</value></data>
+  <data name="PatternIndex.MissingSongPatternFiles" xml:space="preserve"><value>未配置谱面表的文件</value></data>
+  <data name="PatternIndex.SongIds" xml:space="preserve"><value>歌曲 ID</value></data>
+  <data name="PatternIndex.SongNames" xml:space="preserve"><value>歌曲名</value></data>
+  <data name="PatternIndex.SongPattern" xml:space="preserve"><value>谱面表</value></data>
+  <data name="PatternIndex.SongPatternTable" xml:space="preserve"><value>谱面表</value></data>
+  <data name="PatternIndex.Configured" xml:space="preserve"><value>已配置</value></data>
+  <data name="PatternIndex.Unconfigured" xml:space="preserve"><value>未配置</value></data>
+  <data name="PatternIndex.SongPatternFilter" xml:space="preserve"><value>谱面表配置</value></data>
+  <data name="PatternIndex.PatternFileFilter" xml:space="preserve"><value>谱面文件</value></data>
+  <data name="PatternIndex.FilterAll" xml:space="preserve"><value>全部</value></data>
+  <data name="PatternIndex.FilterConfigured" xml:space="preserve"><value>只看已配谱面</value></data>
+  <data name="PatternIndex.FilterUnconfigured" xml:space="preserve"><value>只看未配谱面</value></data>
+  <data name="PatternIndex.FilterMissingFile" xml:space="preserve"><value>只看缺少谱面文件</value></data>
+  <data name="PatternIndex.HasFile" xml:space="preserve"><value>谱面文件</value></data>
+  <data name="PatternIndex.Earphone" xml:space="preserve"><value>有耳机版</value></data>
+  <data name="PatternIndex.HasHeadphone" xml:space="preserve"><value>有耳机版</value></data>
+  <data name="PatternIndex.Headphone" xml:space="preserve"><value>耳机版</value></data>
+  <data name="PatternIndex.Yes" xml:space="preserve"><value>有</value></data>
+  <data name="PatternIndex.No" xml:space="preserve"><value>无</value></data>
+  <data name="PatternIndex.ParseErrors" xml:space="preserve"><value>读取错误</value></data>
+  <data name="PatternIndex.LastIndexed" xml:space="preserve"><value>上次索引时间</value></data>
+  <data name="PatternIndex.PatternId" xml:space="preserve"><value>谱面 ID</value></data>
+  <data name="PatternIndex.Variant" xml:space="preserve"><value>版本</value></data>
+  <data name="PatternIndex.Standard" xml:space="preserve"><value>标准版</value></data>
+  <data name="PatternIndex.Path" xml:space="preserve"><value>文件路径</value></data>
+  <data name="PatternIndex.FileSize" xml:space="preserve"><value>文件大小（字节）</value></data>
+  <data name="PatternIndex.ParseStatus" xml:space="preserve"><value>读取状态</value></data>
+  <data name="PatternIndex.Valid" xml:space="preserve"><value>可读取</value></data>
+  <data name="PatternIndex.Invalid" xml:space="preserve"><value>读取错误</value></data>
+  <data name="PatternIndex.NoMatches" xml:space="preserve"><value>没有匹配的谱面。</value></data>
+  <data name="PatternIndex.Empty" xml:space="preserve"><value>Patterns 目录下没有找到谱面文件。</value></data>
+  <data name="PatternIndex.LoadFailed" xml:space="preserve"><value>读取谱面索引失败：{0}</value></data>
+  <data name="PatternIndex.RefreshComplete" xml:space="preserve"><value>已刷新 {0} 个谱面 ID 的文件索引，其中 {1} 个文件无法按 bytes 格式读取。</value></data>
+  <data name="PatternIndex.RefreshFailed" xml:space="preserve"><value>刷新谱面文件索引失败：{0}</value></data>
 </root>

@@ -1989,4 +1989,49 @@
   <data name="Import.InstallPackRootPlaceholder" xml:space="preserve">
     <value>StreamingAssets directory containing InstallPack/android and InstallPack/ios</value>
   </data>
+  <data name="PatternIndex.Title" xml:space="preserve"><value>Pattern Index</value></data>
+  <data name="PatternIndex.SearchPatternId" xml:space="preserve"><value>Search pattern ID</value></data>
+  <data name="PatternIndex.SearchSongId" xml:space="preserve"><value>Search song ID</value></data>
+  <data name="PatternIndex.SearchSongName" xml:space="preserve"><value>Search song name</value></data>
+  <data name="PatternIndex.RefreshFiles" xml:space="preserve"><value>Refresh file index</value></data>
+  <data name="PatternIndex.NotIndexed" xml:space="preserve"><value>Pattern file index has not been refreshed yet.</value></data>
+  <data name="PatternIndex.Progress" xml:space="preserve"><value>Reading pattern {0} of {1}: {2}</value></data>
+  <data name="Nav.PatternIndex" xml:space="preserve"><value>Patterns</value></data>
+  <data name="PatternIndex.Total" xml:space="preserve"><value>Indexed patterns</value></data>
+  <data name="PatternIndex.MissingFiles" xml:space="preserve"><value>Missing pattern files</value></data>
+  <data name="PatternIndex.MissingSongPatterns" xml:space="preserve"><value>Missing song patterns</value></data>
+  <data name="PatternIndex.MissingSongPatternFiles" xml:space="preserve"><value>Files without song pattern tables</value></data>
+  <data name="PatternIndex.SongIds" xml:space="preserve"><value>Song ID</value></data>
+  <data name="PatternIndex.SongNames" xml:space="preserve"><value>Song name</value></data>
+  <data name="PatternIndex.SongPattern" xml:space="preserve"><value>Pattern table</value></data>
+  <data name="PatternIndex.SongPatternTable" xml:space="preserve"><value>Pattern table</value></data>
+  <data name="PatternIndex.Configured" xml:space="preserve"><value>Configured</value></data>
+  <data name="PatternIndex.Unconfigured" xml:space="preserve"><value>Not configured</value></data>
+  <data name="PatternIndex.SongPatternFilter" xml:space="preserve"><value>Pattern table</value></data>
+  <data name="PatternIndex.PatternFileFilter" xml:space="preserve"><value>Pattern file</value></data>
+  <data name="PatternIndex.FilterAll" xml:space="preserve"><value>All</value></data>
+  <data name="PatternIndex.FilterConfigured" xml:space="preserve"><value>Configured only</value></data>
+  <data name="PatternIndex.FilterUnconfigured" xml:space="preserve"><value>Unconfigured only</value></data>
+  <data name="PatternIndex.FilterMissingFile" xml:space="preserve"><value>Missing files only</value></data>
+  <data name="PatternIndex.HasFile" xml:space="preserve"><value>Pattern file</value></data>
+  <data name="PatternIndex.Earphone" xml:space="preserve"><value>Headphone versions</value></data>
+  <data name="PatternIndex.HasHeadphone" xml:space="preserve"><value>Has headphone version</value></data>
+  <data name="PatternIndex.Headphone" xml:space="preserve"><value>Headphone</value></data>
+  <data name="PatternIndex.Yes" xml:space="preserve"><value>Yes</value></data>
+  <data name="PatternIndex.No" xml:space="preserve"><value>No</value></data>
+  <data name="PatternIndex.ParseErrors" xml:space="preserve"><value>Read errors</value></data>
+  <data name="PatternIndex.LastIndexed" xml:space="preserve"><value>Last indexed</value></data>
+  <data name="PatternIndex.PatternId" xml:space="preserve"><value>Pattern ID</value></data>
+  <data name="PatternIndex.Variant" xml:space="preserve"><value>Variant</value></data>
+  <data name="PatternIndex.Standard" xml:space="preserve"><value>Standard</value></data>
+  <data name="PatternIndex.Path" xml:space="preserve"><value>File path</value></data>
+  <data name="PatternIndex.FileSize" xml:space="preserve"><value>File size (bytes)</value></data>
+  <data name="PatternIndex.ParseStatus" xml:space="preserve"><value>Read status</value></data>
+  <data name="PatternIndex.Valid" xml:space="preserve"><value>Readable</value></data>
+  <data name="PatternIndex.Invalid" xml:space="preserve"><value>Read error</value></data>
+  <data name="PatternIndex.NoMatches" xml:space="preserve"><value>No matching patterns.</value></data>
+  <data name="PatternIndex.Empty" xml:space="preserve"><value>No pattern files were found under Patterns.</value></data>
+  <data name="PatternIndex.LoadFailed" xml:space="preserve"><value>Could not load the pattern index: {0}</value></data>
+  <data name="PatternIndex.RefreshComplete" xml:space="preserve"><value>Refreshed files for {0} pattern IDs; {1} files could not be read as bytes.</value></data>
+  <data name="PatternIndex.RefreshFailed" xml:space="preserve"><value>Could not refresh the pattern file index: {0}</value></data>
 </root>

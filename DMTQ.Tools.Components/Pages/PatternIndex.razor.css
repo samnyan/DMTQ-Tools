@@ -1,0 +1,35 @@
+.pattern-index-file-sizes {
+    white-space: nowrap;
+}
+
+.pattern-index-metrics {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.pattern-index-metric-card {
+    box-sizing: border-box;
+    min-width: 0;
+    padding: 0.65rem 0.75rem;
+}
+
+.pattern-index-metric-card .metric-label {
+    min-height: 2.2em;
+    margin-bottom: 0.15rem;
+    font-size: 0.72rem;
+    white-space: normal;
+}
+
+@media (max-width: 1100px) {
+    .pattern-index-metrics {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 600px) {
+    .pattern-index-metrics {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
