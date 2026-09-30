@@ -342,6 +342,9 @@
   <data name="Export.Precondition" xml:space="preserve">
     <value>请先导入补丁包再导出。</value>
   </data>
+  <data name="Export.SaveBeforeExport" xml:space="preserve">
+    <value>请先保存工程，再进行导出。</value>
+  </data>
   <data name="Export.PreExportQa" xml:space="preserve">
     <value>导出前 QA：</value>
   </data>

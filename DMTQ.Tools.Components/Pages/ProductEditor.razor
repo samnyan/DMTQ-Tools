@@ -330,15 +330,7 @@
 
                 var product = ProductEditSvc.CreateDraft(currentProduct, productIdInput.Trim());
                 ProductEditSvc.AddProduct(State.CurrentPackage, product, ingameItemDrafts, State.SelectedExportPlatform);
-                var wasDirty = State.IsDirty;
                 State.IsDirty = true;
-                try { await Workflow.SaveProjectAsync(); }
-                catch
-                {
-                    ProductEditSvc.RemoveProduct(State.CurrentPackage, product.Id, State.SelectedExportPlatform);
-                    State.IsDirty = wasDirty;
-                    throw;
-                }
                 State.Diagnostics.Add($"Product added: {product.Id}");
                 NavigateBack();
             }
@@ -346,7 +338,6 @@
             {
                 ProductEditSvc.UpdateProduct(State.CurrentPackage, currentProduct, ingameItemDrafts, State.SelectedExportPlatform);
                 State.IsDirty = true;
-                await Workflow.SaveProjectAsync();
                 State.Diagnostics.Add($"Product edited: {currentProduct.Id}");
                 NavigateBack();
             }

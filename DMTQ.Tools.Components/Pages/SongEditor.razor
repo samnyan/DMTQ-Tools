@@ -1114,7 +1114,6 @@
             {
                 SongEditSvc.UpdateSong(State.CurrentPackage!, currentSong, State.SelectedExportPlatform);
                 State.IsDirty = true;
-                await Workflow.SaveProjectAsync();
                 await SyncPatternRowsToIndexAsync();
                 message = L["Editor.Saved", L["Editor.Patterns"].Value].Value;
             }
@@ -1135,7 +1134,8 @@
             || State.CurrentPackage is null) return;
         try
         {
-            await PatternIndex.SyncSongPatternsAsync(State.ProjectRoot, State.CurrentPackage.Songs.SelectMany(song =>
+            var platformSongs = State.CurrentPackage.GetPlatformTables(State.SelectedExportPlatform).Songs;
+            await PatternIndex.SyncSongPatternsAsync(State.ProjectRoot, platformSongs.SelectMany(song =>
                 song.Patterns.Select(pattern => new PatternSongReference(
                     pattern.PatternId, song.Id, string.IsNullOrWhiteSpace(song.Name) ? song.FullName : song.Name,
                     pattern.Line, pattern.Signature, pattern.Difficulty))));
@@ -1214,7 +1214,6 @@
             }
             SongEditSvc.UpdateSong(State.CurrentPackage!, currentSong, State.SelectedExportPlatform);
             State.IsDirty = true;
-            await Workflow.SaveProjectAsync();
             await SyncPatternRowsToIndexAsync();
             _lastPackage = null;
             message = L["Editor.Saved", L["Editor.Patterns"].Value].Value;
@@ -1252,7 +1251,6 @@
             }
             SongEditSvc.UpdateSong(State.CurrentPackage!, currentSong, State.SelectedExportPlatform);
             State.IsDirty = true;
-            await Workflow.SaveProjectAsync();
             await SyncPatternRowsToIndexAsync();
             _lastPackage = null;
             message = L["Lists.Deleted", L["Editor.Patterns"].Value, pattern.PatternId].Value;
@@ -1367,7 +1365,6 @@
                 SongEditSvc.UpdateSong(package, song, State.SelectedExportPlatform);
 
             State.IsDirty = true;
-            await Workflow.SaveProjectAsync();
             await SyncPatternRowsToIndexAsync();
         }
         catch

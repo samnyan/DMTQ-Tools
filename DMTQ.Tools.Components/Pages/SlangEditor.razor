@@ -62,23 +62,11 @@
     {
         if (State.CurrentPackage is null) return;
         isBusy = true; errorMessage = null; saveException = null;
-        SlangEntry? created = null;
         try
         {
-            if (IsCreate) created = EditService.Add(State.CurrentPackage, editModel.Value);
+            if (IsCreate) EditService.Add(State.CurrentPackage, editModel.Value);
             else EditService.Update(State.CurrentPackage, EntryId, editModel.Value);
-            var wasDirty = State.IsDirty;
             State.IsDirty = true;
-            try { await Workflow.SaveProjectAsync(); }
-            catch
-            {
-                if (created is not null)
-                {
-                    State.CurrentPackage.SlangEntries.Remove(created);
-                    State.IsDirty = wasDirty;
-                }
-                throw;
-            }
             NavigateBack();
         }
         catch (Exception ex) { saveException = ex; }

@@ -122,22 +122,13 @@
                 if (string.IsNullOrWhiteSpace(idInput)) { errorMessage = L["Editor.QuestIdRequired"].Value; return; }
                 var created = EditService.CreateDraft(draft, idInput.Trim());
                 EditService.AddQuest(State.CurrentPackage, created, State.SelectedExportPlatform);
-                var wasDirty = State.IsDirty;
                 State.IsDirty = true;
-                try { await Workflow.SaveProjectAsync(); }
-                catch
-                {
-                    EditService.RemoveQuest(State.CurrentPackage, created.Id, State.SelectedExportPlatform);
-                    State.IsDirty = wasDirty;
-                    throw;
-                }
                 NavigateBack();
             }
             else
             {
                 EditService.UpdateQuest(State.CurrentPackage, draft, State.SelectedExportPlatform);
                 State.IsDirty = true;
-                await Workflow.SaveProjectAsync();
                 NavigateBack();
             }
         }

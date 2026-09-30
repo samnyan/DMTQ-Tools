@@ -95,7 +95,7 @@
         try
         {
             EditService.RemoveAchievement(State.CurrentPackage, item.Id, State.SelectedExportPlatform);
-            await Workflow.SaveProjectAsync();
+            State.IsDirty = true;
             message = L["Lists.Deleted", L["Nav.Achievements"].Value, item.Id].Value;
         }
         catch (Exception ex) { errorMessage = ex.Message; }

@@ -46,7 +46,7 @@
                 <div class="header-project-actions">
                     <span class="header-project-name @(State.IsDirty ? "is-dirty" : null)"
                           title="@(State.IsDirty ? L["Header.UnsavedChanges"].Value : State.ProjectRoot)">
-                        @ProjectDisplayName
+                        @ProjectDisplayName@(State.IsDirty ? "*" : string.Empty)
                     </span>
                     <FluentButton class="header-save-button"
                                   Appearance="ButtonAppearance.Default"

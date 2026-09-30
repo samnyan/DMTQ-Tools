@@ -208,17 +208,14 @@
 
                 var item = ItemEditSvc.CreateDraft(currentItem, itemIdInput.Trim());
                 ItemEditSvc.AddItem(State.CurrentPackage, item, State.SelectedExportPlatform);
-                var wasDirty = State.IsDirty;
                 try
                 {
                     ItemEditSvc.ApplyEffectDraft(State.CurrentPackage, item.Id, effectDraft, State.SelectedExportPlatform);
                     State.IsDirty = true;
-                    await Workflow.SaveProjectAsync();
                 }
                 catch
                 {
                     ItemEditSvc.RemoveItem(State.CurrentPackage, item.Id, State.SelectedExportPlatform);
-                    State.IsDirty = wasDirty;
                     throw;
                 }
                 State.Diagnostics.Add($"Item added: {item.Id}");
@@ -229,7 +226,6 @@
                 ItemEditSvc.UpdateItem(State.CurrentPackage, currentItem, State.SelectedExportPlatform);
                 ItemEditSvc.ApplyEffectDraft(State.CurrentPackage, currentItem.Id, effectDraft, State.SelectedExportPlatform);
                 State.IsDirty = true;
-                await Workflow.SaveProjectAsync();
                 State.Diagnostics.Add($"Item edited: {currentItem.Id}");
                 NavigateBack();
             }

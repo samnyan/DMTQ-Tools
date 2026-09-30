@@ -81,7 +81,7 @@
         try
         {
             EditService.RemoveQuest(State.CurrentPackage, quest.Id, State.SelectedExportPlatform);
-            await Workflow.SaveProjectAsync();
+            State.IsDirty = true;
             message = L["Lists.Deleted", L["Nav.Quests"].Value, quest.Id].Value;
         }
         catch (Exception ex) { errorMessage = ex.Message; }

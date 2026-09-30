@@ -279,7 +279,7 @@
         try
         {
             SongEditor.RemoveSong(State.CurrentPackage, song.Id, State.SelectedExportPlatform);
-            await Workflow.SaveProjectAsync();
+            State.IsDirty = true;
             _lastPackage = null; // invalidate catalog cache
             State.Diagnostics.Add($"Song deleted: {song.Id}");
             message = L["Lists.Deleted", L["Nav.Songs"].Value, DisplayTitle(song)].Value;

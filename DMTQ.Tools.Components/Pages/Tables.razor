@@ -180,7 +180,7 @@
         try
         {
             TableService.SaveRow(State.CurrentPackage, SelectedTable, editingRow, draftValues);
-            await Workflow.SaveProjectAsync();
+            State.IsDirty = true;
             message = L["Tables.RowSaved"].Value;
             draftValues = null;
             editingRow = null;

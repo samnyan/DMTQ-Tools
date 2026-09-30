@@ -161,22 +161,13 @@
                 if (string.IsNullOrWhiteSpace(idInput)) { errorMessage = L["Editor.AchievementIdRequired"].Value; return; }
                 var created = EditService.CreateDraft(draft, idInput.Trim());
                 EditService.AddAchievement(State.CurrentPackage, created, State.SelectedExportPlatform);
-                var wasDirty = State.IsDirty;
                 State.IsDirty = true;
-                try { await Workflow.SaveProjectAsync(); }
-                catch
-                {
-                    EditService.RemoveAchievement(State.CurrentPackage, created.Id, State.SelectedExportPlatform);
-                    State.IsDirty = wasDirty;
-                    throw;
-                }
                 NavigateBack();
             }
             else
             {
                 EditService.UpdateAchievement(State.CurrentPackage, draft, State.SelectedExportPlatform);
                 State.IsDirty = true;
-                await Workflow.SaveProjectAsync();
                 NavigateBack();
             }
         }

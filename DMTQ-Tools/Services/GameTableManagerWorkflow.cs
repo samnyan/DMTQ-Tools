@@ -14,6 +14,7 @@ public sealed class GameTableManagerWorkflow : IProjectWorkflow
     private readonly PlatformPackageExporter _platformExporter;
     private readonly ResourceManagerService _resourceManager;
     private readonly InstallPackImporter _installPackImporter;
+    private readonly SemaphoreSlim _projectSaveGate = new(1, 1);
 
     public GameTableManagerWorkflow(
         GameTableManagerState state,
@@ -103,6 +104,7 @@ public sealed class GameTableManagerWorkflow : IProjectWorkflow
 
         var result = await _installPackImporter.ImportAsync(
             _state.CurrentPackage!, streamingAssetsRoot, platform, cancellationToken).ConfigureAwait(false);
+        _state.IsDirty = true;
         await _repository.SaveAsync(_state.CurrentPackage!, _state.ExportCompressionMode,
             _state.CreateExportOptions(), _state.ProjectRoot, cancellationToken).ConfigureAwait(false);
         _state.IsDirty = false;
@@ -121,6 +123,7 @@ public sealed class GameTableManagerWorkflow : IProjectWorkflow
         ArgumentException.ThrowIfNullOrWhiteSpace(exportRoot);
         ArgumentException.ThrowIfNullOrWhiteSpace(platform);
         if (_state.CurrentPackage is null) throw new InvalidOperationException("Import a package before exporting.");
+        if (_state.IsDirty) throw new InvalidOperationException("Save the project before exporting.");
 
         var result = await _platformExporter.ExportPlatformAsync(_state.CurrentPackage, exportRoot,
             new PlatformExportOptions { Platform = platform, Mode = exportMode, PackageOptions = _state.CreateExportOptions() }, cancellationToken).ConfigureAwait(false);
@@ -132,9 +135,18 @@ public sealed class GameTableManagerWorkflow : IProjectWorkflow
         if (string.IsNullOrWhiteSpace(_state.ProjectRoot)) throw new InvalidOperationException("Create or open a project directory before saving.");
         if (_state.CurrentPackage is null) throw new InvalidOperationException("Import a package before saving.");
 
-        await _repository.SaveAsync(_state.CurrentPackage, _state.ExportCompressionMode, _state.CreateExportOptions(), _state.ProjectRoot, cancellationToken).ConfigureAwait(false);
-        _state.IsDirty = false;
-        _state.Diagnostics.Add("Project saved.");
+        await _projectSaveGate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            if (!_state.IsDirty) return;
+            await _repository.SaveAsync(_state.CurrentPackage, _state.ExportCompressionMode, _state.CreateExportOptions(), _state.ProjectRoot, cancellationToken).ConfigureAwait(false);
+            _state.IsDirty = false;
+            _state.Diagnostics.Add("Project saved.");
+        }
+        finally
+        {
+            _projectSaveGate.Release();
+        }
     }
 
     public async Task OpenProjectAsync(string projectRoot, CancellationToken cancellationToken = default)
@@ -149,6 +161,7 @@ public sealed class GameTableManagerWorkflow : IProjectWorkflow
     {
         if (_state.CurrentPackage is null) throw new InvalidOperationException("Import or open a project before managing resources.");
         await _resourceManager.AddOrReplaceResourceAsync(_state.CurrentPackage, sourceFilePath, packageRelativePath, platform, includedPlatforms, compressed, cancellationToken).ConfigureAwait(false);
+        _state.IsDirty = true;
         await SaveProjectAsync(cancellationToken).ConfigureAwait(false);
         _state.Diagnostics.Add($"Resource added or replaced: {packageRelativePath}");
     }
@@ -211,6 +224,7 @@ public sealed class GameTableManagerWorkflow : IProjectWorkflow
                     .ConfigureAwait(false);
             }
 
+            _state.IsDirty = true;
             await _repository.SaveAsync(package, _state.ExportCompressionMode, _state.CreateExportOptions(),
                 projectRoot, cancellationToken).ConfigureAwait(false);
             _state.IsDirty = false;
@@ -268,6 +282,7 @@ public sealed class GameTableManagerWorkflow : IProjectWorkflow
             throw new InvalidOperationException("Import or open a project before managing resources.");
 
         _resourceManager.AddResourceStub(_state.CurrentPackage, packageRelativePath, compressed);
+        _state.IsDirty = true;
         await SaveProjectAsync(cancellationToken).ConfigureAwait(false);
         _state.Diagnostics.Add($"Resource stub added: {packageRelativePath}");
     }
@@ -276,6 +291,7 @@ public sealed class GameTableManagerWorkflow : IProjectWorkflow
     {
         if (_state.CurrentPackage is null) throw new InvalidOperationException("Import or open a project before managing resources.");
         _resourceManager.RemoveResource(_state.CurrentPackage, packageRelativePath, platform);
+        _state.IsDirty = true;
         await SaveProjectAsync(cancellationToken).ConfigureAwait(false);
         _state.Diagnostics.Add($"Resource removed from project: {packageRelativePath}");
     }
@@ -284,6 +300,7 @@ public sealed class GameTableManagerWorkflow : IProjectWorkflow
     {
         if (_state.CurrentPackage is null) throw new InvalidOperationException("Import or open a project before managing resources.");
         _resourceManager.SetCompression(_state.CurrentPackage, packageRelativePath, platform, compressed);
+        _state.IsDirty = true;
         await SaveProjectAsync(cancellationToken).ConfigureAwait(false);
         _state.Diagnostics.Add($"Resource compression updated: {packageRelativePath} = {compressed}");
     }
@@ -299,6 +316,7 @@ public sealed class GameTableManagerWorkflow : IProjectWorkflow
 
         await _resourceManager.SetInstallPackAsync(
             _state.CurrentPackage, packageRelativePath, platform, isInstallPack, cancellationToken).ConfigureAwait(false);
+        _state.IsDirty = true;
         await SaveProjectAsync(cancellationToken).ConfigureAwait(false);
     }
 
@@ -306,6 +324,7 @@ public sealed class GameTableManagerWorkflow : IProjectWorkflow
     {
         if (_state.CurrentPackage is null) throw new InvalidOperationException("Import or open a project before managing resources.");
         _resourceManager.SetPreviewIncludedPlatforms(_state.CurrentPackage, packageRelativePath, includedPlatforms);
+        _state.IsDirty = true;
         await SaveProjectAsync(cancellationToken).ConfigureAwait(false);
         _state.Diagnostics.Add($"Preview platform inclusion updated: {packageRelativePath}");
     }

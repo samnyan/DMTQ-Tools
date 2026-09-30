@@ -267,7 +267,6 @@
                 State.CurrentPackage.ProductCategoryMappings[CategoryId] = new ProductCategoryMapping(categoryName.Trim(), categoryNotes?.Trim());
 
             State.IsDirty = true;
-            await Workflow.SaveProjectAsync();
             DraftStore.Remove(RecoveryKey);
             Navigation.NavigateTo("/product-categories");
         }
@@ -309,7 +308,6 @@
             foreach (var product in Products)
                 product.RemoveCategoryIds(CategoryId);
             State.IsDirty = true;
-            await Workflow.SaveProjectAsync();
             DraftStore.Remove(RecoveryKey);
             Navigation.NavigateTo("/product-categories");
         }

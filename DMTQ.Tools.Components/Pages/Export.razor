@@ -2,6 +2,7 @@
 @inject IProjectState State
 @inject IProjectWorkflow Workflow
 @inject PackageQaService QaService
+@inject ILanguagePreferenceStore PreferenceStore
 
 <h1>@L["Nav.Export"]</h1>
 
@@ -110,6 +111,7 @@
     private string? message;
     private bool isBusy;
     private QaReport? qaSummary;
+    private const string AutoSavePreferenceKey = "project.autoSave";
 
     private string ValidationText => State.LastValidationResult is null
         ? L["Common.NotRun"].Value
@@ -121,6 +123,23 @@
         message = L["Export.RunningQa"].Value;
         try
         {
+            if (State.IsDirty)
+            {
+                var autoSaveEnabled = bool.TryParse(PreferenceStore.Get(AutoSavePreferenceKey), out var enabled) && enabled;
+                if (!autoSaveEnabled)
+                {
+                    message = L["Export.SaveBeforeExport"].Value;
+                    return;
+                }
+
+                await Workflow.SaveProjectAsync();
+                if (State.IsDirty)
+                {
+                    message = L["Export.SaveBeforeExport"].Value;
+                    return;
+                }
+            }
+
             if (State.CurrentPackage is not null)
             {
                 qaSummary = QaService.Run(State.CurrentPackage);

@@ -238,7 +238,7 @@
         try
         {
             ItemEditor.RemoveItem(State.CurrentPackage, item.Id, State.SelectedExportPlatform);
-            await Workflow.SaveProjectAsync();
+            State.IsDirty = true;
             _lastPackage = null;
             State.Diagnostics.Add($"Item deleted: {item.Id}");
             message = L["Lists.Deleted", L["Nav.Items"].Value, item.Id].Value;

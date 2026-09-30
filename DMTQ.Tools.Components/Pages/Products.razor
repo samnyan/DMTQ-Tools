@@ -171,7 +171,7 @@
         try
         {
             ProductEditor.RemoveProduct(State.CurrentPackage, product.Id, State.SelectedExportPlatform);
-            await Workflow.SaveProjectAsync();
+            State.IsDirty = true;
             _lastPackage = null;
             State.Diagnostics.Add($"Product deleted: {product.Id}");
             message = L["Lists.Deleted", L["Nav.Products"].Value, product.Id].Value;

@@ -12,7 +12,18 @@ public sealed class GameTableManagerState : IProjectState
     public PatchPackage? CurrentPackage { get; private set; }
     public PatchManifest? LastExportManifest { get; private set; }
     public PatchValidationResult? LastValidationResult { get; private set; }
-    public string ExportCompressionMode { get; set; } = "Keep";
+    private string _exportCompressionMode = "Keep";
+    public string ExportCompressionMode
+    {
+        get => _exportCompressionMode;
+        set
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(value);
+            if (string.Equals(_exportCompressionMode, value, StringComparison.Ordinal)) return;
+            _exportCompressionMode = value;
+            MarkDirty();
+        }
+    }
     public PackageExportOptions? RestoredExportOptions { get; private set; }
     public List<string> Diagnostics { get; } = [];
 

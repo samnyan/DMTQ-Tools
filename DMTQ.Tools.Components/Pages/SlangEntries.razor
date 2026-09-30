@@ -59,7 +59,7 @@
             primaryButton: L["Common.Delete"].Value,
             secondaryButton: L["Common.Cancel"].Value);
         if (result.Cancelled) return;
-        try { EditService.Remove(State.CurrentPackage, entry.Id); await Workflow.SaveProjectAsync(); message = L["Lists.Deleted", L["Nav.Slang"].Value, entry.Value].Value; }
+        try { EditService.Remove(State.CurrentPackage, entry.Id); State.IsDirty = true; message = L["Lists.Deleted", L["Nav.Slang"].Value, entry.Value].Value; }
         catch (Exception ex) { errorMessage = ex.Message; }
     }
 }

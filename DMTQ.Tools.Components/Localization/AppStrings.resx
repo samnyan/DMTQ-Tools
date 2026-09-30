@@ -342,6 +342,9 @@
   <data name="Export.Precondition" xml:space="preserve">
     <value>Import a package before exporting.</value>
   </data>
+  <data name="Export.SaveBeforeExport" xml:space="preserve">
+    <value>Save the project before exporting.</value>
+  </data>
   <data name="Export.PreExportQa" xml:space="preserve">
     <value>Pre-export QA:</value>
   </data>
