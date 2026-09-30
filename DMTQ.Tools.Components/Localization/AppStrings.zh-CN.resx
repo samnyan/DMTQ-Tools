@@ -1836,8 +1836,8 @@
   <data name="Options.ProductTypeRawCode" xml:space="preserve">
     <value>未映射产品类型码</value>
   </data>
-  <data name="Options.ItemTypeRawCode" xml:space="preserve">
-    <value>未映射道具类型码</value>
+  <data name="Options.ItemTypeLevelRestrictionUnlock" xml:space="preserve">
+    <value>提前解锁Partner购买等级限制</value>
   </data>
   <data name="Lists.Pagination" xml:space="preserve">
     <value>表格分页</value>

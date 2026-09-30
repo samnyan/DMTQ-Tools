@@ -79,7 +79,7 @@
                 $"I — {L["Options.ItemTypeIngame"].Value}", $"P — {L["Options.ItemTypeMusicPack"].Value}",
                 $"itempack — {L["Options.ItemTypeItemPack"].Value}",
                 $"ticket — {L["Options.ItemTypeTicket"].Value}",
-                $"L — {L["Options.ItemTypeRawCode"].Value}"
+                $"L — {L["Options.ItemTypeLevelRestrictionUnlock"].Value}"
             };
             return string.IsNullOrWhiteSpace(Content.ItemType)
                    || options.Any(option => option.StartsWith(Content.ItemType + " — ", StringComparison.OrdinalIgnoreCase))

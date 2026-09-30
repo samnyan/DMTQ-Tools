@@ -1836,8 +1836,8 @@
   <data name="Options.ProductTypeRawCode" xml:space="preserve">
     <value>Unmapped type code</value>
   </data>
-  <data name="Options.ItemTypeRawCode" xml:space="preserve">
-    <value>Unmapped item type code</value>
+  <data name="Options.ItemTypeLevelRestrictionUnlock" xml:space="preserve">
+    <value>Level restriction unlock price tier</value>
   </data>
   <data name="Lists.Pagination" xml:space="preserve">
     <value>Table pagination</value>

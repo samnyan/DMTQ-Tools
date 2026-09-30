@@ -72,7 +72,7 @@ public sealed class ProductItemPageTests : BlazorUITestBase
             cut.Markup.Should().Contain(language);
         cut.Markup.Should().NotContain("礼物");
         cut.Markup.Should().NotContain("Gift");
-        cut.Markup.Should().Contain("L — Unmapped item type code");
+        cut.Markup.Should().Contain("L — Level restriction unlock price tier");
         cut.Markup.Should().Contain("fluent-button type=\"submit\"");
     }
 
