@@ -1,10 +1,13 @@
 @page "/export"
+@using Assets.Lib.Models
 @inject IProjectState State
 @inject IProjectWorkflow Workflow
 @inject PackageQaService QaService
 @inject ILanguagePreferenceStore PreferenceStore
+@inject IProjectFileSaver FileSaver
+@inject EyecatchIndexService EyecatchIndexService
 
-<h1>@L["Nav.Export"]</h1>
+<h1>@L["Export.UpdatePackage"]</h1>
 
 <FluentStack Orientation="Orientation.Vertical" VerticalGap="16" Style="margin-bottom: 1.25rem;">
     <FluentSelect Items="@(new[] { "android", "ios" })"
@@ -26,8 +29,25 @@
     <FluentButton Appearance="ButtonAppearance.Primary"
                   @onclick="ExportPlatformPackage"
                   Disabled="@(!State.HasPackage || isBusy)">
-        @L["Export.Export"]
+        @L["Export.UpdatePackage"]
     </FluentButton>
+
+    <FluentDivider />
+
+    <section class="toolbar-panel">
+        <h2>@L["Export.SongListExcel"]</h2>
+        <p>@L["Export.SongListExcelDescription"]</p>
+        <FluentButton Appearance="ButtonAppearance.Primary"
+                      OnClick="ExportSongListExcelAsync"
+                      Disabled="@(!State.HasPackage || isBusy)">
+            @if (isBusy) { <FluentSpinner /> }
+            @L["Export.SongListExcelAction"]
+        </FluentButton>
+        @if (!string.IsNullOrWhiteSpace(songListMessage))
+        {
+            <div class="status-message">@songListMessage</div>
+        }
+    </section>
 
     @if (!State.HasPackage)
     {
@@ -109,6 +129,7 @@
 @code {
     private string exportRoot = string.Empty;
     private string? message;
+    private string? songListMessage;
     private bool isBusy;
     private QaReport? qaSummary;
     private const string AutoSavePreferenceKey = "project.autoSave";
@@ -164,6 +185,58 @@
         {
             message = ex.Message;
             State.Diagnostics.Add("Platform export error: " + ex.Message);
+        }
+        finally
+        {
+            isBusy = false;
+        }
+    }
+
+    private async Task ExportSongListExcelAsync()
+    {
+        if (isBusy || State.CurrentPackage is null) return;
+
+        isBusy = true;
+        songListMessage = L["Export.SongListExcelPreparing"].Value;
+        try
+        {
+            var coverSprites = new List<(string AtlasName, string SpriteName)>();
+            if (!string.IsNullOrWhiteSpace(State.ProjectRoot))
+            {
+                try
+                {
+                    var index = await EyecatchIndexService.LoadAsync(State.ProjectRoot);
+                    coverSprites = index.Atlases
+                        .SelectMany(atlas => atlas.Variants)
+                        .Where(variant => variant.Status == EyecatchVariantStatus.Ready)
+                        .SelectMany(variant => variant.SpriteAssets.Select(sprite =>
+                            (AtlasName: string.IsNullOrWhiteSpace(variant.ResourcePath)
+                                ? variant.AtlasName + ".unity3d"
+                                : Path.GetFileName(variant.ResourcePath),
+                             SpriteName: sprite.Name)))
+                        .ToList();
+                }
+                catch (Exception exception)
+                {
+                    State.Diagnostics.Add("Song list Excel could not read the eyecatch index: " + exception.Message);
+                }
+            }
+
+            var content = SongListExcelExporter.Export(
+                State.CurrentPackage,
+                coverSprites);
+            await using var stream = new MemoryStream(content, writable: false);
+            var savedPath = await FileSaver.SaveFileAsync(
+                "DMTQ-Song-List.xlsx",
+                stream);
+            songListMessage = savedPath is null
+                ? L["Export.SongListExcelCancelled"].Value
+                : L["Export.SongListExcelCompleted", savedPath].Value;
+        }
+        catch (Exception exception)
+        {
+            songListMessage = L["Export.SongListExcelFailed", exception.Message].Value;
+            State.Diagnostics.Add("Song list Excel export failed: " + exception.Message);
         }
         finally
         {

@@ -2089,4 +2089,12 @@
   <data name="PatternImport.IsHeadphone" xml:space="preserve"><value>Import as headphone version</value></data>
   <data name="PatternImport.ReadFailed" xml:space="preserve"><value>Could not read pattern file: {0}</value></data>
   <data name="PatternImport.ProjectRequired" xml:space="preserve"><value>Open a project before importing a pattern file.</value></data>
+  <data name="Export.UpdatePackage" xml:space="preserve"><value>Export Update Package</value></data>
+  <data name="Export.SongListExcel" xml:space="preserve"><value>Export Song List Excel</value></data>
+  <data name="Export.SongListExcelDescription" xml:space="preserve"><value>Combine Android and iOS songs by song ID, expand chart slots into line and difficulty columns, and include product and cover sprite sheets.</value></data>
+  <data name="Export.SongListExcelAction" xml:space="preserve"><value>Export Song List Excel</value></data>
+  <data name="Export.SongListExcelPreparing" xml:space="preserve"><value>Preparing Excel file…</value></data>
+  <data name="Export.SongListExcelCancelled" xml:space="preserve"><value>Excel export cancelled.</value></data>
+  <data name="Export.SongListExcelCompleted" xml:space="preserve"><value>Excel file saved to {0}.</value></data>
+  <data name="Export.SongListExcelFailed" xml:space="preserve"><value>Excel export failed: {0}</value></data>
 </root>

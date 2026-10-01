@@ -2089,4 +2089,12 @@
   <data name="PatternImport.IsHeadphone" xml:space="preserve"><value>作为耳机版导入</value></data>
   <data name="PatternImport.ReadFailed" xml:space="preserve"><value>读取谱面文件失败：{0}</value></data>
   <data name="PatternImport.ProjectRequired" xml:space="preserve"><value>请先打开工程，再导入谱面文件。</value></data>
+  <data name="Export.UpdatePackage" xml:space="preserve"><value>导出更新包</value></data>
+  <data name="Export.SongListExcel" xml:space="preserve"><value>导出歌单Excel</value></data>
+  <data name="Export.SongListExcelDescription" xml:space="preserve"><value>合并 Android 和 iOS 中歌曲 ID 相同的数据，谱面按线数和难度展开，并附带商品表与封面贴图表。</value></data>
+  <data name="Export.SongListExcelAction" xml:space="preserve"><value>导出歌单Excel</value></data>
+  <data name="Export.SongListExcelPreparing" xml:space="preserve"><value>正在生成 Excel 文件…</value></data>
+  <data name="Export.SongListExcelCancelled" xml:space="preserve"><value>已取消 Excel 导出。</value></data>
+  <data name="Export.SongListExcelCompleted" xml:space="preserve"><value>Excel 文件已保存到 {0}。</value></data>
+  <data name="Export.SongListExcelFailed" xml:space="preserve"><value>Excel 导出失败：{0}</value></data>
 </root>
