@@ -169,7 +169,7 @@ public sealed class PatternBinarySerializerTests
         pattern.Sounds.Add(new PatternSound { Id = soundIndex, Flags = 2, FileName = "lead.ogg" });
 
         var firstTrack = new PatternTrack { Id = 0, Name = "Top", StartPosition = 0, EndPosition = 3840 };
-        firstTrack.Commands.Add(PatternCommand.CreateNote(192, soundIndex, 127, 64, 5, 6, 0xBEEF));
+        firstTrack.Commands.Add(PatternCommand.CreateNote(192, soundIndex, 127, 64, 5, 6, singleByteSoundIndex ? (ushort)0xEF : (ushort)0xBEEF));
         firstTrack.Commands.Add(PatternCommand.CreateVolume(384, 96));
         firstTrack.Commands.Add(PatternCommand.CreateBpmChange(768, 140.25f));
         firstTrack.Commands.Add(PatternCommand.CreateBeat(960, 4));
@@ -177,7 +177,7 @@ public sealed class PatternBinarySerializerTests
         {
             Position = 1024,
             Type = 0x7F,
-            RawParameters = [1, 2, 3, 4, 5, 6, 7, 8]
+            RawParameters = singleByteSoundIndex ? [1, 2, 3, 4, 5, 6, 0, 0] : [1, 2, 3, 4, 5, 6, 7, 8]
         });
 
         var secondTrack = new PatternTrack { Id = 1, Name = "Middle", StartPosition = 0, EndPosition = 2560 };

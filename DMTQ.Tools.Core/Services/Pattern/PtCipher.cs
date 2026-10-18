@@ -7,6 +7,9 @@ namespace DMTQ.Tools.Core.Services.Pattern;
 /// </summary>
 public sealed class PtCipher
 {
+    private const int HeaderSize = 24;
+    private const int BlockSize = 8;
+    private static readonly uint[] CrcTable = CreateCrcTable();
     private static readonly uint[] MatrixA = [0, 0x9908B0DF];
     private readonly uint[] _mtState = new uint[625];
     private readonly byte[] _key1Bytes = new byte[8];
@@ -19,27 +22,29 @@ public sealed class PtCipher
     /// <param name="input">The complete PT file bytes.</param>
     /// <returns>The transformed PT file bytes.</returns>
     public static byte[] Decrypt(ReadOnlySpan<byte> input)
-        => new PtCipher().Transform(input.ToArray());
+        => new PtCipher().Transform(input, false);
 
     /// <summary>Decrypts a PT file represented by an array.</summary>
     public static byte[] Decrypt(byte[] input)
-        => Decrypt(input.AsSpan());
-
-    private byte[] Transform(byte[] input)
     {
-        if (input.Length < 24)
+        ArgumentNullException.ThrowIfNull(input);
+        return Decrypt(input.AsSpan());
+    }
+
+    /// <summary>Encrypt plaintext PT using plaintext feedback; never guesses direction from sound IDs.</summary>
+    public static byte[] Encrypt(ReadOnlySpan<byte> input)
+        => new PtCipher().Transform(input, true);
+
+    private byte[] Transform(ReadOnlySpan<byte> input, bool encode)
+    {
+        if (input.Length < HeaderSize)
         {
-            return input;
+            throw new InvalidDataException("PT header is truncated.");
         }
 
-        var header = new byte[24];
-        Buffer.BlockCopy(input, 0, header, 0, 24);
-        var data = new byte[input.Length - 24];
-        Buffer.BlockCopy(input, 24, data, 0, data.Length);
-        if (data.Length < 4)
-        {
-            return input;
-        }
+        var result = input.ToArray();
+        var header = input[..HeaderSize];
+        var data = result.AsSpan(HeaderSize);
 
         FillData(header);
         var key2First = CalculateParam2();
@@ -49,15 +54,16 @@ public sealed class PtCipher
         _key1State[0] = CalculateChecksum(header);
         SetKey1(_key1State[0], _key1State[1]);
 
-        var plainBlock = new byte[8];
+        Span<byte> plainBlock = stackalloc byte[BlockSize];
         var blockIndex = 0;
         for (var index = 0; index < data.Length; index++)
         {
+            var original = data[index];
             data[index] ^= (byte)(_key2Bytes[blockIndex] ^ _key1Bytes[blockIndex]);
-            plainBlock[blockIndex] = data[index];
+            plainBlock[blockIndex] = encode ? original : data[index];
 
             blockIndex++;
-            if (blockIndex != 8)
+            if (blockIndex != BlockSize)
             {
                 continue;
             }
@@ -69,9 +75,6 @@ public sealed class PtCipher
             blockIndex = 0;
         }
 
-        var result = new byte[input.Length];
-        Buffer.BlockCopy(header, 0, result, 0, 24);
-        Buffer.BlockCopy(data, 0, result, 24, data.Length);
         return result;
     }
 
@@ -87,13 +90,13 @@ public sealed class PtCipher
         BinaryPrimitives.WriteUInt32LittleEndian(_key2Bytes.AsSpan(4, 4), second);
     }
 
-    private void UpdateKey1(byte[] plainBlock)
+    private void UpdateKey1(ReadOnlySpan<byte> plainBlock)
     {
         var first = _key1State[0];
         var second = _key1State[1];
         uint delta = 0;
-        var blockFirst = BinaryPrimitives.ReadUInt32LittleEndian(plainBlock.AsSpan(0, 4));
-        var blockSecond = BinaryPrimitives.ReadUInt32LittleEndian(plainBlock.AsSpan(4, 4));
+        var blockFirst = BinaryPrimitives.ReadUInt32LittleEndian(plainBlock[..4]);
+        var blockSecond = BinaryPrimitives.ReadUInt32LittleEndian(plainBlock[4..8]);
 
         for (var round = 0; round < 32; round++)
         {
@@ -107,7 +110,7 @@ public sealed class PtCipher
         SetKey1(first, second);
     }
 
-    private void FillData(byte[] header)
+    private void FillData(ReadOnlySpan<byte> header)
     {
         _mtState[0] = 0x12BD6AA;
         for (_mtState[624] = 1; _mtState[624] < 624; _mtState[624]++)
@@ -120,7 +123,7 @@ public sealed class PtCipher
         var headerIndex = 0;
         for (var count = 624; count > 0; count--)
         {
-            var headerValue = BinaryPrimitives.ReadUInt32LittleEndian(header.AsSpan(4 * headerIndex, 4));
+            var headerValue = BinaryPrimitives.ReadUInt32LittleEndian(header.Slice(4 * headerIndex, 4));
             var previous = _mtState[stateIndex - 1];
             _mtState[stateIndex] = unchecked((uint)headerIndex + headerValue +
                 (_mtState[stateIndex] ^ (1664525 * (previous ^ (previous >> 30)))));
@@ -184,7 +187,7 @@ public sealed class PtCipher
         return tempered ^ (tempered >> 18);
     }
 
-    private static uint CalculateCrc32(byte[] data)
+    private static uint[] CreateCrcTable()
     {
         var table = new uint[256];
         const uint polynomial = 0xEDB88320;
@@ -199,22 +202,27 @@ public sealed class PtCipher
             table[index] = value;
         }
 
+        return table;
+    }
+
+    private static uint CalculateCrc32(ReadOnlySpan<byte> data)
+    {
         uint crc = 0xFFFFFFFF;
-        for (var index = 0; index < 24; index++)
+        foreach (var value in data)
         {
-            var tableIndex = (byte)((crc & 0xFF) ^ data[index]);
-            crc = (crc >> 8) ^ table[tableIndex];
+            var tableIndex = (byte)(crc ^ value);
+            crc = (crc >> 8) ^ CrcTable[tableIndex];
         }
 
         return ~crc;
     }
 
-    private static uint CalculateChecksum(byte[] data)
+    private static uint CalculateChecksum(ReadOnlySpan<byte> data)
     {
         uint checksum = 0;
-        for (var index = 0; index < 24; index++)
+        foreach (var value in data)
         {
-            checksum += data[index];
+            checksum += value;
         }
 
         return checksum;

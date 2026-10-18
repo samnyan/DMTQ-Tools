@@ -32,7 +32,7 @@ This tool can help you better understand the bytes format. For more detail pleas
 
 ### pt to text
 
-Convert .pt format to a readable text format. This tool can decrypt .pt file now, but if you want to build it from source, please provide the decrypt api server info in the LoginInfo.cs.
+Convert PT 1.0 / 0.6 charts to editable text using the shared Core parser. Plaintext and encrypted input are supported offline; no API server or LoginInfo credentials are needed. The CLI now requires .NET 10. See [pt-format.md](pt-format.md) for field layouts and version differences.
 
 Combine with bytes to text tool, it should be able to port song from Arcade version.
 

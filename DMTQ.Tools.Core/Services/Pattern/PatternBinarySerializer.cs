@@ -17,6 +17,9 @@ public sealed class PatternBinarySerializer
     private const int PtTrackHeaderSizePadded = 0x50;
     private const int PtTrackHeaderSizeUnpadded = 0x4E;
     private const int PtCommandSizePadded = 0x10;
+    private const int PtCommandSizeUnpadded = 0x0B;
+    private const int PtNameSize = 64;
+    private static readonly Encoding PtNameEncoding = CreatePtNameEncoding();
 
     /// <summary>
     /// Deserializes a pattern from a stream.
@@ -126,7 +129,7 @@ public sealed class PatternBinarySerializer
         ArgumentNullException.ThrowIfNull(pattern);
         options ??= new PatternSerializationOptions
         {
-            PtVersion = pattern.Header.PtVersion is 1 or 1536 ? pattern.Header.PtVersion : (short)1,
+            PtVersion = IsSupportedPtVersion(pattern.Header.PtVersion) ? pattern.Header.PtVersion : (short)1,
             BytesMagic = pattern.Header.BytesMagic
         };
 
@@ -143,7 +146,8 @@ public sealed class PatternBinarySerializer
                 throw new ArgumentOutOfRangeException(nameof(format), format, "Unsupported pattern format.");
         }
 
-        return output.ToArray();
+        var result = output.ToArray();
+        return format == PatternFormat.Pt && options.EncryptPt ? PtCipher.Encrypt(result) : result;
     }
 
     private static PatternDocument ReadBytes(ReadOnlySpan<byte> data) => new UnityBytesPatternParser().Parse(data);
@@ -210,19 +214,25 @@ public sealed class PatternBinarySerializer
         document.Header.PositionsPerMeasure = reader.ReadInt16();
         document.Header.InitialBpm = reader.ReadSingle();
         var declaredTrackCount = ReadNonNegativeCount(reader.ReadInt16(), "track");
-        document.Header.EndPosition = reader.ReadInt32();
+        document.Header.EndPosition = reader.ReadUInt32();
         document.Header.TagB = reader.ReadInt32();
         var soundCount = ReadNonNegativeCount(reader.ReadInt16(), "sound");
 
         for (var i = 0; i < soundCount; i++)
         {
             EnsureRemaining(reader, padded ? PtSoundEntrySizePadded : PtSoundEntrySizeUnpadded, "PT sound table");
+            var soundId = padded ? reader.ReadUInt16() : reader.ReadByte();
+            if (soundId >= 1024)
+            {
+                throw new InvalidDataException($"Invalid PT instrument ID {soundId}.");
+            }
             document.Sounds.Add(new PatternSound
             {
-                Id = padded ? reader.ReadUInt16() : reader.ReadByte(),
+                Id = soundId,
                 Flags = padded ? reader.ReadUInt16() : reader.ReadByte(),
-                FileName = reader.ReadFixedAscii(0x40)
+                PtNameBytes = reader.ReadBytes(0x40)
             });
+            document.Sounds[^1].FileName = DecodePtName(document.Sounds[^1].PtNameBytes!);
         }
 
         while (reader.Remaining > 0)
@@ -233,17 +243,19 @@ public sealed class PatternBinarySerializer
                 throw new InvalidDataException($"PT track at offset {reader.Position - 4} does not start with EZTR.");
             }
 
-            _ = reader.ReadUInt16();
+            var trackField = reader.ReadUInt16();
             var track = new PatternTrack
             {
                 Id = checked((short)document.Tracks.Count),
-                Name = reader.ReadFixedAscii(0x40),
-                EndPosition = reader.ReadInt32(),
+                PtHeaderField = trackField,
+                PtNameBytes = reader.ReadBytes(0x40),
+                EndPosition = reader.ReadUInt32(),
                 DeclaredDataSize = reader.ReadInt32()
             };
+            track.Name = DecodePtName(track.PtNameBytes!);
             if (padded)
             {
-                _ = reader.ReadUInt16();
+                track.PtTrailingField = reader.ReadUInt16();
             }
 
             if (track.DeclaredDataSize < 0 || track.DeclaredDataSize > reader.Remaining)
@@ -251,6 +263,11 @@ public sealed class PatternBinarySerializer
                 throw new InvalidDataException($"Invalid PT track data size {track.DeclaredDataSize}.");
             }
 
+            var eventSize = GetPtCommandSize(padded);
+            if (track.DeclaredDataSize % eventSize != 0)
+            {
+                throw new InvalidDataException("PT track data size is not a multiple of the version-specific event size.");
+            }
             var dataEnd = reader.Position + track.DeclaredDataSize;
             while (reader.Position < dataEnd)
             {
@@ -340,7 +357,7 @@ public sealed class PatternBinarySerializer
         writer.WriteInt16(pattern.Header.PositionsPerMeasure);
         writer.WriteSingle(pattern.Header.InitialBpm);
         writer.WriteInt16(checked((short)pattern.Tracks.Count));
-        writer.WriteInt32(checked((int)pattern.Header.EndPosition));
+        writer.WriteUInt32(checked((uint)pattern.Header.EndPosition));
         writer.WriteInt32(pattern.Header.TagB);
         writer.WriteInt16(checked((short)pattern.Sounds.Count));
 
@@ -359,20 +376,20 @@ public sealed class PatternBinarySerializer
                 writer.WriteByte((byte)sound.Flags);
             }
 
-            writer.WriteFixedAscii(sound.FileName, 0x40);
+            WritePtName(writer, sound.FileName, sound.PtNameBytes);
         }
 
         foreach (var track in pattern.Tracks)
         {
-            var commandDataSize = track.Commands.Sum(command => GetPtCommandSize(command.Type, padded));
+            var commandDataSize = checked(track.Commands.Count * GetPtCommandSize(padded));
             writer.WriteFixedAscii("EZTR", 4);
-            writer.WriteUInt16(0);
-            writer.WriteFixedAscii(track.Name, 0x40);
-            writer.WriteInt32(checked((int)(track.EndPosition != 0 ? track.EndPosition : GetTrackEndPosition(track))));
+            writer.WriteUInt16(track.PtHeaderField);
+            WritePtName(writer, track.Name, track.PtNameBytes);
+            writer.WriteUInt32(checked((uint)(track.EndPosition != 0 ? track.EndPosition : GetTrackEndPosition(track))));
             writer.WriteInt32(commandDataSize);
             if (padded)
             {
-                writer.WriteUInt16(0);
+                writer.WriteUInt16(track.PtTrailingField);
             }
 
             foreach (var command in track.Commands)
@@ -387,27 +404,20 @@ public sealed class PatternBinarySerializer
         EnsureRemaining(reader, 5, "PT command header");
         var command = new PatternCommand
         {
-            Position = reader.ReadInt32(),
+            Position = reader.ReadUInt32(),
             Type = reader.ReadByte()
         };
 
         if (padded)
         {
             EnsureRemaining(reader, 11, "padded PT command");
-            _ = reader.ReadBytes(3);
+            command.PtPadding = reader.ReadBytes(3);
             command.RawParameters = reader.ReadBytes(8);
         }
         else
         {
             var parameters = new byte[8];
-            var parameterLength = command.Type switch
-            {
-                (byte)PatternCommandType.Note => 6,
-                (byte)PatternCommandType.Volume => 6,
-                (byte)PatternCommandType.BpmChange => 6,
-                (byte)PatternCommandType.Beat => 6,
-                _ => 8
-            };
+            const int parameterLength = 6; // All pre-1.0 events are exactly 11 bytes.
 
             if (reader.Position + parameterLength > dataEnd)
             {
@@ -439,17 +449,17 @@ public sealed class PatternBinarySerializer
     {
         writer.WriteUInt32(checked((uint)command.Position));
         writer.WriteByte(command.Type);
-        writer.Write(BuildCanonicalParameters(command, bytesFormat: true));
+        writer.Write(BuildCanonicalParameters(command));
     }
 
     private static void WritePtCommand(PatternByteWriter writer, PatternCommand command, bool padded)
     {
-        writer.WriteInt32(checked((int)command.Position));
+        writer.WriteUInt32(checked((uint)command.Position));
         writer.WriteByte(command.Type);
         var parameters = BuildCanonicalParameters(command);
         if (padded)
         {
-            writer.WriteZeros(3);
+            writer.Write(command.PtPadding);
             writer.Write(parameters);
             return;
         }
@@ -457,30 +467,27 @@ public sealed class PatternBinarySerializer
         if (command.Type == (byte)PatternCommandType.Note)
         {
             EnsureByteSized(command.SoundIndex, "PT v0.6 note sound index");
+            if (parameters[7] != 0)
+            {
+                throw new InvalidDataException("PT 0.6 cannot store the reserved final PT 1.0 note byte.");
+            }
             writer.WriteByte((byte)command.SoundIndex);
             writer.Write(parameters.AsSpan(2, 4));
             writer.WriteByte(parameters[6]);
             return;
         }
 
-        writer.Write(parameters.AsSpan(0, command.Type is
-            (byte)PatternCommandType.Volume or
-            (byte)PatternCommandType.BpmChange or
-            (byte)PatternCommandType.Beat ? 6 : 8));
+        if (parameters[6] != 0 || parameters[7] != 0)
+        {
+            throw new InvalidDataException("PT 0.6 unknown/control payload exceeds six bytes.");
+        }
+        writer.Write(parameters.AsSpan(0, 6));
     }
 
-    private static int GetPtCommandSize(byte commandType, bool padded)
-        => padded
-            ? 16
-            : commandType is
-                ((byte)PatternCommandType.Note or
-                 (byte)PatternCommandType.Volume or
-                 (byte)PatternCommandType.BpmChange or
-                 (byte)PatternCommandType.Beat)
-                ? 11
-                : 13;
+    private static int GetPtCommandSize(bool padded)
+        => padded ? PtCommandSizePadded : PtCommandSizeUnpadded;
 
-    private static byte[] BuildCanonicalParameters(PatternCommand command, bool bytesFormat = false)
+    private static byte[] BuildCanonicalParameters(PatternCommand command)
     {
         var parameters = command.RawParameters.ToArray();
         switch (command.Type)
@@ -490,7 +497,7 @@ public sealed class PatternBinarySerializer
                 parameters[2] = command.Volume;
                 parameters[3] = command.Pan;
                 parameters[4] = command.Attribute;
-                if (bytesFormat && command.BytesDuration is { } duration)
+                if (command.BytesDuration is { } duration)
                 {
                     BinaryPrimitives.WriteUInt16LittleEndian(parameters.AsSpan(5, 2), duration);
                 }
@@ -542,9 +549,42 @@ public sealed class PatternBinarySerializer
     private static long GetTrackEndPosition(PatternTrack track)
         => track.Commands.Count == 0 ? track.StartPosition : track.Commands.Max(command => command.Position);
 
-    private static bool IsPaddedPtVersion(short version) => version == 1;
+    private static Encoding CreatePtNameEncoding()
+    {
+        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+        return Encoding.GetEncoding(949, EncoderFallback.ExceptionFallback, DecoderFallback.ReplacementFallback);
+    }
 
-    private static bool IsSupportedPtVersion(short version) => version is 1 or 1536;
+    private static string DecodePtName(byte[] raw)
+    {
+        var length = Array.IndexOf(raw, (byte)0);
+        return PtNameEncoding.GetString(raw, 0, length < 0 ? raw.Length : length);
+    }
+
+    private static void WritePtName(PatternByteWriter writer, string name, byte[]? original)
+    {
+        if (original is { Length: PtNameSize } && DecodePtName(original) == name)
+        {
+            writer.Write(original);
+            return;
+        }
+        ArgumentNullException.ThrowIfNull(name);
+        var encoded = PtNameEncoding.GetBytes(name);
+        if (encoded.Length > PtNameSize)
+        {
+            throw new InvalidDataException($"PT name exceeds {PtNameSize} bytes.");
+        }
+
+        writer.Write(encoded);
+        writer.WriteZeros(PtNameSize - encoded.Length);
+    }
+
+    private static ushort GetPtVersionCode(short version)
+        => BinaryPrimitives.ReverseEndianness(unchecked((ushort)version));
+
+    private static bool IsPaddedPtVersion(short version) => GetPtVersionCode(version) == 0x0100;
+
+    private static bool IsSupportedPtVersion(short version) => GetPtVersionCode(version) is 0x0100 or 0x0006;
 
     private static int ReadNonNegativeCount(short value, string kind)
         => value >= 0 ? value : throw new InvalidDataException($"Invalid {kind} count {value}.");
@@ -567,7 +607,7 @@ public sealed class PatternBinarySerializer
 
     private sealed class PatternByteReader(byte[] data)
     {
-        private readonly byte[] _data = data.ToArray();
+        private readonly byte[] _data = data;
 
         public int Length => _data.Length;
         public int Position { get; set; }
@@ -617,8 +657,10 @@ public sealed class PatternBinarySerializer
 
         public void ReadBytesInto(byte[] destination, int count)
         {
-            var bytes = ReadBytes(count);
-            bytes.CopyTo(destination, 0);
+            ArgumentNullException.ThrowIfNull(destination);
+            Ensure(count);
+            _data.AsSpan(Position, count).CopyTo(destination);
+            Position += count;
         }
 
         public string ReadFixedAscii(int count)
@@ -685,7 +727,9 @@ public sealed class PatternBinarySerializer
 
         public void WriteZeros(int count)
         {
-            Span<byte> zeros = stackalloc byte[Math.Min(count, 256)];
+            ArgumentOutOfRangeException.ThrowIfNegative(count);
+            Span<byte> zeros = stackalloc byte[256];
+            zeros.Clear();
             while (count > 0)
             {
                 var chunk = Math.Min(count, zeros.Length);

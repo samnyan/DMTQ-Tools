@@ -41,6 +41,10 @@ public sealed class PatternHeader
     /// <summary>Gets or sets the PT format version. Version 1 is the padded layout.</summary>
     public short PtVersion { get; set; } = 1;
 
+    /// <summary>Actual big-endian version word: 0x0100 = 1.0, 0x0006 = 0.6.
+    /// PtVersion retains the historical little-endian API values 1 / 1536.</summary>
+    public ushort PtVersionCode => System.Buffers.Binary.BinaryPrimitives.ReverseEndianness(unchecked((ushort)PtVersion));
+
     /// <summary>Gets or sets the number of positions in one measure.</summary>
     public short PositionsPerMeasure { get; set; }
 
@@ -52,6 +56,13 @@ public sealed class PatternHeader
 
     /// <summary>Gets or sets the format-specific tag B value.</summary>
     public int TagB { get; set; }
+
+    /// <summary>PT header +0x12: play time float in seconds; TagB preserves its bits.</summary>
+    public float PtPlayTime
+    {
+        get => BitConverter.Int32BitsToSingle(TagB);
+        set => TagB = BitConverter.SingleToInt32Bits(value);
+    }
 
     /// <summary>Gets or sets the bytes-format tag C value.</summary>
     public int TagC { get; set; }
@@ -73,6 +84,9 @@ public sealed class PatternSound
 
     /// <summary>Gets or sets the fixed-width sound file name.</summary>
     public string FileName { get; set; } = string.Empty;
+
+    /// <summary>Original fixed-width filename bytes, including nonzero bytes after NUL.</summary>
+    public byte[]? PtNameBytes { get; set; }
 }
 
 /// <summary>
@@ -85,6 +99,9 @@ public sealed class PatternTrack
 
     /// <summary>Gets or sets the track name.</summary>
     public string Name { get; set; } = string.Empty;
+    public byte[]? PtNameBytes { get; set; }
+    public ushort PtHeaderField { get; set; }
+    public ushort PtTrailingField { get; set; }
 
     /// <summary>Gets or sets the bytes-format track-start position.</summary>
     public long StartPosition { get; set; }
@@ -111,6 +128,23 @@ public sealed class PatternTrack
 public sealed class PatternCommand
 {
     private byte[] _rawParameters = new byte[8];
+    private byte[] _ptPadding = new byte[3];
+
+    /// <summary>Three reserved bytes after the PT 1.0 command identifier.</summary>
+    public byte[] PtPadding
+    {
+        get => _ptPadding;
+        set
+        {
+            ArgumentNullException.ThrowIfNull(value);
+            if (value.Length != 3)
+            {
+                throw new ArgumentException("PT command padding must contain exactly 3 bytes.", nameof(value));
+            }
+
+            _ptPadding = [.. value];
+        }
+    }
 
     /// <summary>Gets or sets the absolute command position.</summary>
     public long Position { get; set; }
@@ -144,6 +178,23 @@ public sealed class PatternCommand
 
     /// <summary>Gets or sets the note's unknown 16-bit value.</summary>
     public ushort NoteUnknown { get; set; }
+
+    /// <summary>PT note +13 (1.0) / +9 (0.6), unsigned 16-bit duration.
+    /// Overlays legacy Length and low byte of NoteUnknown without discarding the reserved byte.</summary>
+    public ushort PtDuration
+    {
+        get => (ushort)(Length | ((NoteUnknown & 0xff) << 8));
+        set
+        {
+            Length = (byte)value;
+            NoteUnknown = (ushort)((NoteUnknown & 0xff00) | (value >> 8));
+            // A duration explicitly edited as PT must override a previous Bytes projection.
+            BytesDuration = null;
+        }
+    }
+
+    /// <summary>T3 expands only durations above six by four when building runtime events.</summary>
+    public uint PtRuntimeDuration => PtDuration > 6 ? (uint)PtDuration * 4 : PtDuration;
 
     /// <summary>Gets or sets the BPM value for a BPM change command.</summary>
     public float Bpm { get; set; }
